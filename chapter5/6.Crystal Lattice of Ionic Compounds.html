@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Crystal Lattice</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #0f172a;
+            --na: #4ade80; /* Sodium Cation */
+            --cl: #fbbf24; /* Chloride Anion */
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .viewport { flex-grow: 1; position: relative; perspective: 1000px; background: #000; cursor: move; }
+        
+        #scene {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(20deg);
+        }
+
+        .ion {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            color: rgba(0,0,0,0.5);
+            transition: transform 0.1s;
+        }
+
+        .na { background: var(--na); box-shadow: 0 0 15px var(--na); }
+        .cl { background: var(--cl); box-shadow: 0 0 15px var(--cl); }
+
+        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; font-size: 0.85rem; }
+        
+        input[type=range] { width: 100%; accent-color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="color:var(--cl); margin:0;">Crystal Lattice</h2>
+    
+    <div class="card">
+        <label>Lattice Density (Grid Size)</label>
+        <div style="display:flex; justify-content: space-between; margin-top:5px;">
+            <span>Small</span>
+            <span>Large</span>
+        </div>
+        <input type="range" id="density" min="2" max="4" value="3" oninput="initLattice()">
+    </div>
+
+    <div class="card">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <div style="width:15px; height:15px; background:var(--na); border-radius:50%;"></div>
+            <span>Na+ (Sodium Cation)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div style="width:15px; height:15px; background:var(--cl); border-radius:50%;"></div>
+            <span>Cl- (Chloride Anion)</span>
+        </div>
+    </div>
+
+    <div class="card" style="color: #94a3b8; line-height: 1.4;">
+        <b>The Unit Cell:</b> Notice how no two ions of the same charge touch. This maximizes attraction and minimizes repulsion.
+    </div>
+</div>
+
+<div class="viewport" id="viewport">
+    <div id="scene"></div>
+</div>
+
+<script>
+    const scene = document.getElementById('scene');
+    const viewport = document.getElementById('viewport');
+    let rotX = -20;
+    let rotY = 20;
+
+    function initLattice() {
+        scene.innerHTML = '';
+        const size = parseInt(document.getElementById('density').value);
+        const spacing = 80;
+        const offset = ((size - 1) * spacing) / 2;
+
+        for (let z = 0; z < size; z++) {
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const ion = document.createElement('div');
+                    // Checkers pattern logic: if sum of indices is even/odd
+                    const isNa = (x + y + z) % 2 === 0;
+                    
+                    ion.className = `ion ${isNa ? 'na' : 'cl'}`;
+                    const radius = isNa ? 20 : 30; // Cl- is physically larger than Na+
+                    ion.style.width = radius + 'px';
+                    ion.style.height = radius + 'px';
+                    
+                    const posX = x * spacing - offset;
+                    const posY = y * spacing - offset;
+                    const posZ = z * spacing - offset;
+
+                    ion.style.transform = `translate3d(${posX + 400}px, ${posY + 300}px, ${posZ}px)`;
+                    ion.innerText = isNa ? '+' : '-';
+                    scene.appendChild(ion);
+                }
+            }
+        }
+    }
+
+    // Interaction logic
+    let isDragging = false;
+    let lastX, lastY;
+
+    viewport.onmousedown = (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; };
+    window.onmouseup = () => isDragging = false;
+    window.onmousemove = (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - lastX;
+        const deltaY = e.clientY - lastY;
+        rotY += deltaX * 0.5;
+        rotX -= deltaY * 0.5;
+        scene.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        lastX = e.clientX;
+        lastY = e.clientY;
+    };
+
+    initLattice();
+</script>
+</body>
+</html>

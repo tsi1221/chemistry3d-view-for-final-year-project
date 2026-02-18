@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRT Deflection Lab</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --beam: #4ade80; /* Electron Green */
+            --electric: #f87171;
+            --magnetic: #38bdf8;
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        }
+
+        .viewport { flex-grow: 1; position: relative; background: #000; overflow: hidden; }
+        canvas { width: 100%; height: 100%; }
+
+        .card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        h1 { font-size: 1.2rem; color: var(--beam); margin: 0; }
+        label { display: block; font-size: 0.7rem; color: #94a3b8; margin: 15px 0 5px; text-transform: uppercase; letter-spacing: 1px;}
+        
+        input[type=range] { width: 100%; accent-color: var(--beam); cursor: pointer; }
+
+        .equation {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 10px;
+            color: var(--text);
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h1>CRT Deflection</h1>
+    
+    <div class="card">
+        <label>Electric Field (E)</label>
+        <input type="range" id="eField" min="-100" max="100" value="0">
+        <label>Magnetic Field (B)</label>
+        <input type="range" id="bField" min="-100" max="100" value="0">
+    </div>
+
+    <div class="card">
+        <div class="equation">
+            $F_{net} = qE + q(v \times B)$
+        </div>
+    </div>
+
+    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
+        <b>Goal:</b> Can you adjust both sliders so the beam stays perfectly straight? This is called <b>Velocity Selection</b>.
+    </div>
+    
+    <button onclick="resetFields()" style="background:#334155; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer;">Reset Fields</button>
+</div>
+
+<div class="viewport">
+    <canvas id="crtCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('crtCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function createParticle() {
+        return {
+            x: 50,
+            y: canvas.height / 2,
+            vx: 8,
+            vy: 0,
+            history: []
+        };
+    }
+
+    function resetFields() {
+        document.getElementById('eField').value = 0;
+        document.getElementById('bField').value = 0;
+    }
+
+    function update() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const E = parseFloat(document.getElementById('eField').value) / 500;
+        const B = parseFloat(document.getElementById('bField').value) / 500;
+
+        // Visualizing the plates
+        ctx.fillStyle = "rgba(255,255,255,0.05)";
+        ctx.fillRect(200, 50, canvas.width - 400, 20); // Top plate
+        ctx.fillRect(200, canvas.height - 70, canvas.width - 400, 20); // Bottom plate
+
+        // Spawn electrons
+        if (particles.length < 100) particles.push(createParticle());
+
+        particles.forEach((p, i) => {
+            // Net Force: Electric + Magnetic
+            // Since electrons are negative, they move opposite to E field
+            const force = (-E) + (p.vx * B);
+            p.vy += force;
+            p.x += p.vx;
+            p.y += p.vy;
+
+            // Draw Beam
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#4ade80";
+            ctx.fillStyle = "#4ade80";
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            if (p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                particles.splice(i, 1);
+            }
+        });
+
+        requestAnimationFrame(update);
+    }
+
+    update();
+</script>
+</body>
+</html>

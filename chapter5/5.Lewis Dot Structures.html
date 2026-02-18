@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Lewis Builder</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #0f172a;
+            --primary: #38bdf8;
+            --dot: #fbbf24;
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .viewport { flex-grow: 1; position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #1e293b 0%, #020617 100%); }
+        
+        .atom-container {
+            position: relative;
+            width: 320px;
+            height: 320px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(56, 189, 248, 0.1);
+            border-radius: 50%;
+        }
+
+        .symbol {
+            font-size: 90px;
+            font-weight: 900;
+            color: var(--text);
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        .dot {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--dot);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--dot);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
+        
+        select, button {
+            width: 100%; padding: 12px; border-radius: 8px; border: none;
+            cursor: pointer; font-weight: bold; font-family: inherit;
+        }
+
+        select { background: #1e293b; color: white; border: 1px solid #334155; margin-bottom: 10px; }
+        button { background: var(--primary); color: #000; margin-top: 8px; }
+        button:active { transform: scale(0.98); }
+
+        .status {
+            text-align: center; font-weight: 800; padding: 10px; border-radius: 8px;
+            margin-top: 10px; text-transform: uppercase; font-size: 0.8rem;
+        }
+        .stable { background: #059669; color: white; box-shadow: 0 0 15px rgba(5,150,105,0.4); }
+        .unstable { background: #475569; color: #fff; }
+
+        .charge-tag {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            font-size: 2rem;
+            font-weight: 900;
+            color: var(--dot);
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="color:var(--primary); margin:0;">Lewis Dot Lab</h2>
+    
+    <div class="card">
+        <label style="font-size:0.7rem; color:#94a3b8;">SELECT ELEMENT</label>
+        <select id="elSelect" onchange="initAtom()">
+            <optgroup label="Period 1 & 2">
+                <option value="H">Hydrogen (1)</option>
+                <option value="He">Helium (2)</option>
+                <option value="Li">Lithium (1)</option>
+                <option value="Be">Beryllium (2)</option>
+                <option value="B">Boron (3)</option>
+                <option value="C">Carbon (4)</option>
+                <option value="N">Nitrogen (5)</option>
+                <option value="O" selected>Oxygen (6)</option>
+                <option value="F">Fluorine (7)</option>
+                <option value="Ne">Neon (8)</option>
+            </optgroup>
+            <optgroup label="Period 3">
+                <option value="Na">Sodium (1)</option>
+                <option value="Mg">Magnesium (2)</option>
+                <option value="Al">Aluminum (3)</option>
+                <option value="Si">Silicon (4)</option>
+                <option value="P">Phosphorus (5)</option>
+                <option value="S">Sulfur (6)</option>
+                <option value="Cl">Chlorine (7)</option>
+                <option value="Ar">Argon (8)</option>
+                <option value="K">Potassium (1)</option>
+                <option value="Ca">Calcium (2)</option>
+            </optgroup>
+        </select>
+        <button onclick="addDot()">Add Electron</button>
+        <button onclick="resetDots()" style="background:#475569; color:white;">Reset to Neutral</button>
+    </div>
+
+    <div class="card">
+        <div style="font-size:0.8rem; margin-bottom:5px;">Current Valence: <span id="count" style="color:var(--dot)">0</span></div>
+        <div id="octStatus" class="status unstable">Unstable</div>
+    </div>
+
+    <div class="card" style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5;">
+        <b>The Goal:</b> Noble Gases (far right) are naturally stable. All other elements want to reach 8 electrons (or 2 for H/He) to satisfy the <b>Octet Rule</b>.
+    </div>
+</div>
+
+<div class="viewport">
+    <div class="atom-container" id="container">
+        <div class="symbol" id="symbol">O</div>
+        <div class="charge-tag" id="chargeDisp"></div>
+    </div>
+</div>
+
+<script>
+    let dots = 0;
+    const elements = {
+        'H': 1, 'He': 2, 'Li': 1, 'Be': 2, 'B': 3, 'C': 4, 'N': 5, 'O': 6, 'F': 7, 'Ne': 8,
+        'Na': 1, 'Mg': 2, 'Al': 3, 'Si': 4, 'P': 5, 'S': 6, 'Cl': 7, 'Ar': 8, 'K': 1, 'Ca': 2
+    };
+
+    const positions = [
+        {t: '15%', l: '42%'}, {t: '15%', l: '54%'}, // Top pair
+        {t: '42%', r: '15%'}, {t: '54%', r: '15%'}, // Right pair
+        {b: '15%', l: '42%'}, {b: '15%', l: '54%'}, // Bottom pair
+        {t: '42%', l: '15%'}, {t: '54%', l: '15%'}  // Left pair
+    ];
+
+    function initAtom() {
+        const el = document.getElementById('elSelect').value;
+        document.getElementById('symbol').innerText = el;
+        resetDots();
+    }
+
+    function addDot() {
+        if (dots >= 8) return;
+        
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        const pos = positions[dots];
+        
+        if (pos.t) dot.style.top = pos.t;
+        if (pos.b) dot.style.bottom = pos.b;
+        if (pos.l) dot.style.left = pos.l;
+        if (pos.r) dot.style.right = pos.r;
+        
+        document.getElementById('container').appendChild(dot);
+        dots++;
+        updateUI();
+    }
+
+    function resetDots() {
+        const container = document.getElementById('container');
+        container.querySelectorAll('.dot').forEach(d => d.remove());
+        dots = 0;
+        updateUI();
+    }
+
+    function updateUI() {
+        const symbol = document.getElementById('elSelect').value;
+        const naturalValence = elements[symbol];
+        const status = document.getElementById('octStatus');
+        const chargeDisp = document.getElementById('chargeDisp');
+        document.getElementById('count').innerText = dots;
+
+        // Stability check
+        const isOctet = (dots === 8) || (dots === 2 && (symbol === 'H' || symbol === 'He' || symbol === 'Li' || symbol === 'Be'));
+        
+        if (isOctet) {
+            status.innerText = "Stable (Octet/Duet)";
+            status.className = "status stable";
+        } else {
+            status.innerText = "Unstable Shell";
+            status.className = "status unstable";
+        }
+
+        // Charge calculation
+        const charge = naturalValence - dots;
+        if (charge === 0) {
+            chargeDisp.innerText = "";
+        } else {
+            const sign = charge < 0 ? "-" : "+";
+            const num = Math.abs(charge) === 1 ? "" : Math.abs(charge);
+            chargeDisp.innerText = `${num}${sign}`;
+        }
+    }
+
+    initAtom();
+</script>
+</body>
+</html>

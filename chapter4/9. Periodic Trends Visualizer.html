@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Radius Lab</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #0f172a;
+            --primary: #38bdf8;
+            --accent: #fbbf24;
+            --proton: #f87171;
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 400px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .viewport { flex-grow: 1; position: relative; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        canvas { width: 100%; height: 80%; }
+
+        /* The mini Periodic Table */
+        .ptable {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: #1e293b;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+
+        .cell:hover { border-color: var(--primary); transform: scale(1.05); z-index: 10; }
+        .cell.active { background: var(--primary); color: #000; font-weight: bold; border-color: white; }
+
+        .data-display {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid var(--primary);
+        }
+
+        .label-text { font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
+        .val-text { font-size: 1.4rem; font-weight: 800; color: var(--accent); }
+
+        .explainer { font-size: 0.85rem; line-height: 1.6; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h1 style="color:var(--primary); margin:0; font-size: 1.5rem;">Atomic Size Lab</h1>
+    
+    <div class="explainer">
+        Select an element from <b>Period 2</b> or <b>Period 3</b> to see how the atom's size changes.
+    </div>
+
+    <div class="ptable" id="table">
+        </div>
+
+    <div class="data-display" id="info">
+        <div class="label-text">Element</div>
+        <div class="val-text" id="elName">Sodium (Na)</div>
+        <div style="display:flex; justify-content:space-between; margin-top:15px;">
+            <div>
+                <div class="label-text">Protons (Z)</div>
+                <div class="val-text" id="elZ" style="color:var(--proton)">11</div>
+            </div>
+            <div>
+                <div class="label-text">Radius</div>
+                <div class="val-text" id="elR">186 pm</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="explainer" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px;">
+        <b>Look closely:</b> Notice that as you go <b>Right</b>, the atom gets <b>Smaller</b>, even though it's heavier!
+    </div>
+</div>
+
+<div class="viewport">
+    <div style="position:absolute; top:40px; text-align:center;">
+        <h2 id="viewTitle" style="margin:0;">Atom Visualization</h2>
+        <p style="color:var(--primary)" id="viewScale">Scale: 1px = 1 picometer</p>
+    </div>
+    <canvas id="atomCanvas"></canvas>
+</div>
+
+<script>
+    const elements = [
+        // Period 2
+        { sym: "Li", name: "Lithium", z: 3, r: 152, period: 2 },
+        { sym: "Be", name: "Beryllium", z: 4, r: 112, period: 2 },
+        { sym: "B",  name: "Boron", z: 5, r: 88, period: 2 },
+        { sym: "C",  name: "Carbon", z: 6, r: 77, period: 2 },
+        { sym: "N",  name: "Nitrogen", z: 7, r: 70, period: 2 },
+        { sym: "O",  name: "Oxygen", z: 8, r: 66, period: 2 },
+        { sym: "F",  name: "Fluorine", z: 9, r: 64, period: 2 },
+        { sym: "Ne", name: "Neon", z: 10, r: 58, period: 2 },
+        // Period 3
+        { sym: "Na", name: "Sodium", z: 11, r: 186, period: 3 },
+        { sym: "Mg", name: "Magnesium", z: 12, r: 160, period: 3 },
+        { sym: "Al", name: "Aluminum", z: 13, r: 143, period: 3 },
+        { sym: "Si", name: "Silicon", z: 14, r: 118, period: 3 },
+        { sym: "P",  name: "Phosphorus", z: 15, r: 110, period: 3 },
+        { sym: "S",  name: "Sulfur", z: 16, r: 103, period: 3 },
+        { sym: "Cl", name: "Chlorine", z: 17, r: 99, period: 3 },
+        { sym: "Ar", name: "Argon", z: 18, r: 97, period: 3 }
+    ];
+
+    let activeEl = elements[8]; // Default Sodium
+    const canvas = document.getElementById('atomCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function init() {
+        const table = document.getElementById('table');
+        elements.forEach(el => {
+            const btn = document.createElement('div');
+            btn.className = `cell ${el.sym === activeEl.sym ? 'active' : ''}`;
+            btn.innerHTML = `<span>${el.z}</span><b>${el.sym}</b>`;
+            btn.onclick = () => {
+                activeEl = el;
+                document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                updateDisplay();
+            };
+            table.appendChild(btn);
+        });
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+    }
+
+    function updateDisplay() {
+        document.getElementById('elName').innerText = `${activeEl.name} (${activeEl.sym})`;
+        document.getElementById('elZ').innerText = activeEl.z;
+        document.getElementById('elR').innerText = activeEl.r + " pm";
+        document.getElementById('viewTitle').innerText = `${activeEl.name} Atom`;
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // 1. Draw the "Circle" (Electron Cloud)
+        // This is where the electrons live.
+        const pulse = Math.sin(Date.now() / 500) * 2;
+        const currentR = activeEl.r + pulse;
+
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, currentR);
+        grad.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+        grad.addColorStop(0.8, 'rgba(56, 189, 248, 0.1)');
+        grad.addColorStop(1, 'rgba(56, 189, 248, 0)');
+
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, currentR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Outline of the cloud
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.arc(cx, cy, currentR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 2. Draw the "Center" (Nucleus)
+        // This is the positive "magnet" that pulls the circle in.
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = "#f87171";
+        ctx.fillStyle = "#f87171";
+        ctx.beginPath();
+        // Nucleus looks bigger as protons increase
+        const nSize = 5 + (activeEl.z * 0.5);
+        ctx.arc(cx, cy, nSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // 3. Draw Pull Lines (Visualizing Force)
+        ctx.strokeStyle = 'rgba(248, 113, 113, 0.2)';
+        for(let i=0; i < activeEl.z; i++) {
+            const angle = (i / activeEl.z) * Math.PI * 2 + (Date.now() / 2000);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(angle) * currentR, cy + Math.sin(angle) * currentR);
+            ctx.stroke();
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    init();
+</script>
+</body>
+</html>

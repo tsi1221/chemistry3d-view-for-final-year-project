@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ion Formation Lab</title>
+    <style>
+        :root {
+            --bg: #030712;
+            --panel: #111827;
+            --proton: #f87171;
+            --electron: #38bdf8;
+            --cation: #4ade80; /* Positive Green */
+            --anion: #fb7185;  /* Negative Red */
+            --text: #f9fafb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .viewport { flex-grow: 1; position: relative; overflow: hidden; background: radial-gradient(circle, #1e1b4b 0%, #030712 100%); }
+        canvas { width: 100%; height: 100%; }
+
+        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
+        
+        .controls { display: flex; flex-direction: column; gap: 10px; }
+        button {
+            padding: 12px; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; font-size: 1rem;
+            background: var(--electron); color: #000;
+        }
+        button:active { transform: scale(0.95); }
+
+        .charge-display {
+            font-size: 3rem; font-weight: 900; text-align: center;
+            margin: 10px 0; transition: all 0.3s;
+        }
+        
+        .status-text { text-align: center; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .neutral { color: #94a3b8; }
+        .pos { color: var(--cation); text-shadow: 0 0 10px var(--cation); }
+        .neg { color: var(--anion); text-shadow: 0 0 10px var(--anion); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="margin:0;">Ion Architect</h2>
+    
+    <div class="card">
+        <div class="status-text neutral" id="typeLabel">Neutral Atom</div>
+        <div class="charge-display" id="chargeVal">0</div>
+        <div style="text-align:center; font-size: 0.9rem;">Net Charge</div>
+    </div>
+
+    <div class="card">
+        <div class="controls">
+            <button onclick="changeE(1)">+ Add Electron (Gain)</button>
+            <button onclick="changeE(-1)" style="background:#f87171">- Remove Electron (Lose)</button>
+        </div>
+    </div>
+
+    <div class="card" style="font-size: 0.85rem; color: #94a3b8; line-height: 1.4;">
+        <b>Remember:</b> Electrons are negative.
+        <ul style="padding-left:15px; margin-top:10px;">
+            <li>Lose ($-$) = Become Positive (+)</li>
+            <li>Gain ($-$) = Become Negative (-)</li>
+        </ul>
+    </div>
+</div>
+
+<div class="viewport">
+    <canvas id="ionCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('ionCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let protons = 10; // Neon-like base
+    let electrons = 10;
+
+    function changeE(amt) {
+        electrons = Math.max(0, Math.min(20, electrons + amt));
+        updateUI();
+    }
+
+    function updateUI() {
+        const charge = protons - electrons;
+        const valDisp = document.getElementById('chargeVal');
+        const label = document.getElementById('typeLabel');
+
+        valDisp.innerText = charge > 0 ? `+${charge}` : charge;
+        
+        if (charge === 0) {
+            valDisp.className = "charge-display neutral";
+            label.innerText = "Neutral Atom";
+            label.className = "status-text neutral";
+        } else if (charge > 0) {
+            valDisp.className = "charge-display pos";
+            label.innerText = "Cation (+)";
+            label.className = "status-text pos";
+        } else {
+            valDisp.className = "charge-display neg";
+            label.innerText = "Anion (-)";
+            label.className = "status-text neg";
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const time = Date.now() * 0.002;
+        const charge = protons - electrons;
+
+        // Draw Nucleus
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "#f87171";
+        ctx.fillStyle = "#f87171";
+        ctx.beginPath();
+        ctx.arc(cx, cy, 25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Draw Electrons in shells
+        const shellConfig = [2, 8, 8, 2];
+        let eRemaining = electrons;
+
+        shellConfig.forEach((max, sIdx) => {
+            const currentShellE = Math.min(eRemaining, max);
+            if (currentShellE <= 0) return;
+            
+            const radius = 70 + (sIdx * 40);
+            ctx.strokeStyle = "rgba(255,255,255,0.1)";
+            ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+
+            for (let i = 0; i < currentShellE; i++) {
+                const angle = (i / currentShellE) * Math.PI * 2 + (time * (1 / (sIdx + 1)));
+                const ex = cx + Math.cos(angle) * radius;
+                const ey = cy + Math.sin(angle) * radius;
+
+                ctx.fillStyle = "#38bdf8";
+                ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
+            }
+            eRemaining -= currentShellE;
+        });
+
+        // Glowing Charge Sign
+        if (charge !== 0) {
+            ctx.font = "bold 80px Inter";
+            ctx.textAlign = "center";
+            ctx.fillStyle = charge > 0 ? "rgba(74, 222, 128, 0.3)" : "rgba(251, 113, 133, 0.3)";
+            ctx.fillText(charge > 0 ? "+" : "-", cx, cy + 30);
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    });
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    updateUI();
+    draw();
+</script>
+</body>
+</html>

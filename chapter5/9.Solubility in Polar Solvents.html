@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solubility & Dissociation Lab</title>
+<style>
+:root {
+    --bg: #020617;
+    --panel: #0f172a;
+    --water: #38bdf8;
+    --oil: #fbbf24;
+    --na: #4ade80;
+    --cl: #fbbf24;
+    --text: #f1f5f9;
+    --hydration: rgba(56,189,248,0.3);
+    --conductive: #22c55e;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 360px;
+    background: var(--panel);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar h2 {
+    margin: 0;
+    color: var(--water);
+}
+
+.card {
+    background: rgba(255,255,255,0.05);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-water { background: var(--water); color: #000; }
+.btn-water:hover { background: #0ea5e9; }
+.btn-oil { background: var(--oil); color: #000; }
+.btn-oil:hover { background: #f59e0b; }
+
+.reset-btn { background:#334155; color:white; }
+.reset-btn:hover { background:#1e293b; }
+
+.status-box {
+    text-align: center;
+    font-size: 0.9rem;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-weight: bold;
+}
+
+.conductivity {
+    height: 20px;
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.conductivity-inner {
+    height: 100%;
+    width: 0%;
+    background: var(--conductive);
+    transition: width 0.3s ease;
+    border-radius: 8px;
+}
+
+.viewport {
+    flex-grow: 1;
+    position: relative;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+canvas {
+    width: 100%;
+    height: 100%;
+    border-left: 2px solid rgba(255,255,255,0.05);
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Solubility Lab</h2>
+
+    <div class="card">
+        <label style="font-size:0.75rem; color:#94a3b8;">SELECT SOLVENT</label>
+        <button class="btn-water" onclick="setSolvent('water')">Water (Polar)</button>
+        <button class="btn-oil" onclick="setSolvent('oil')">Oil (Non-Polar)</button>
+    </div>
+
+    <div class="card">
+        <div class="status-box" id="status">Crystal is stable.</div>
+        <div class="conductivity">
+            <div class="conductivity-inner" id="conductivityBar"></div>
+        </div>
+        <button class="reset-btn" onclick="reset()">Reset Simulation</button>
+    </div>
+
+    <div class="card" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
+        <b>Observation Rule:</b> "Like Dissolves Like."
+        <br><br>
+        Polar solvents like water can pull ions away from the crystal lattice, forming free ions surrounded by a <b>hydration shell</b>. Non-polar solvents like oil do not interact with ions; the crystal remains intact.
+    </div>
+</div>
+
+<div class="viewport">
+    <canvas id="solCanvas"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('solCanvas');
+const ctx = canvas.getContext('2d');
+let solvent = 'none';
+const ions = [];
+const spacing = 40;
+const rows = 6;
+const cols = 6;
+let conductivity = 0;
+
+function reset() {
+    ions.length = 0;
+    solvent = 'none';
+    conductivity = 0;
+    document.getElementById('status').innerText = "Crystal is stable.";
+    document.getElementById('conductivityBar').style.width = '0%';
+
+    const startX = canvas.width/2 - (cols*spacing)/2;
+    const startY = canvas.height/2 - (rows*spacing)/2;
+
+    for(let r=0; r<rows; r++){
+        for(let c=0; c<cols; c++){
+            ions.push({
+                x: startX + c*spacing,
+                y: startY + r*spacing,
+                origX: startX + c*spacing,
+                origY: startY + r*spacing,
+                isNa: (r+c)%2===0,
+                vx: (Math.random()-0.5)*2,
+                vy: (Math.random()-0.5)*2,
+                dissolved: false
+            });
+        }
+    }
+}
+
+function setSolvent(type){
+    solvent = type;
+    if(type==='water'){
+        document.getElementById('status').innerText = "Dissociation in progress...";
+    } else {
+        document.getElementById('status').innerText = "Crystal is insoluble.";
+    }
+}
+
+function animate(){
+    ctx.fillStyle = solvent === 'oil' ? '#1a1a05' : solvent==='water' ? '#081c2e' : '#000';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    let dissolvedCount = 0;
+
+    ions.forEach((ion)=>{
+        if(solvent==='water'){
+            const delay = (Math.abs(ion.origX-canvas.width/2)+Math.abs(ion.origY-canvas.height/2))*3;
+            if(Date.now()%5000>delay){
+                ion.dissolved = true;
+            }
+            if(ion.dissolved){
+                ion.x += ion.vx;
+                ion.y += ion.vy;
+
+                if(ion.x<20 || ion.x>canvas.width-20) ion.vx*=-1;
+                if(ion.y<20 || ion.y>canvas.height-20) ion.vy*=-1;
+
+                dissolvedCount++;
+            }
+        } else if(solvent==='oil'){
+            ion.x = ion.origX + (Math.random()-0.5);
+            ion.y = ion.origY + (Math.random()-0.5);
+        }
+
+        ctx.fillStyle = ion.isNa ? '#4ade80' : '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(ion.x, ion.y, ion.isNa?8:12, 0, Math.PI*2);
+        ctx.fill();
+
+        if(solvent==='water' && ion.dissolved){
+            ctx.strokeStyle = 'rgba(56,189,248,0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(ion.x, ion.y, 20, 0, Math.PI*2);
+            ctx.stroke();
+        }
+    });
+
+    // Update conductivity bar
+    conductivity = Math.round((dissolvedCount/(rows*cols))*100);
+    document.getElementById('conductivityBar').style.width = conductivity+'%';
+    document.getElementById('status').innerText = solvent==='water' ? `Dissociation in progress... (${conductivity}%)` : document.getElementById('status').innerText;
+
+    requestAnimationFrame(animate);
+}
+
+window.addEventListener('resize', ()=>{
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    reset();
+});
+
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+reset();
+animate();
+</script>
+
+</body>
+</html>

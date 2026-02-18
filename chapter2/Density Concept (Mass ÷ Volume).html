@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-STEM Density & Graph Explorer</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+        }
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: var(--bg); color: var(--text);
+            display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 20px;
+        }
+        .main-container {
+            display: grid;
+            grid-template-columns: 400px 400px;
+            gap: 20px;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .canvas-container { position: relative; text-align: center; }
+        canvas { border-radius: 12px; background: #000; }
+        .controls {
+            display: flex; flex-direction: column; gap: 15px;
+            grid-column: span 2; padding-top: 20px; border-top: 1px solid #334155;
+        }
+        .slider-box { display: flex; align-items: center; gap: 15px; }
+        input[type="range"] { flex-grow: 1; accent-color: var(--accent); }
+        select, button {
+            padding: 12px; border-radius: 8px; border: none;
+            background: #334155; color: white; cursor: pointer;
+        }
+        button { background: var(--accent); color: #000; font-weight: bold; }
+        .stats-readout {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
+            font-size: 0.9rem; color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: var(--accent); margin-bottom: 5px;">Density Explorer 3D</h1>
+    <p style="color: #94a3b8; margin-bottom: 25px;">Interactive Archimedes' Principle & Linear Regression</p>
+
+    <div class="main-container">
+        <div class="canvas-container">
+            <label style="display:block; margin-bottom:10px;">3D Displacement</label>
+            <canvas id="renderCanvas" width="380" height="450"></canvas>
+        </div>
+
+        <div class="canvas-container">
+            <label style="display:block; margin-bottom:10px;">Mass vs. Volume Graph</label>
+            <canvas id="graphCanvas" width="380" height="450"></canvas>
+        </div>
+
+        <div class="controls">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <select id="matSelect">
+                    <option value="19.3" color="#fbbf24">Gold (19.3 g/cm³)</option>
+                    <option value="11.3" color="#94a3b8">Lead (11.3 g/cm³)</option>
+                    <option value="2.7" color="#e2e8f0">Aluminum (2.7 g/cm³)</option>
+                    <option value="0.6" color="#d97706">Wood (0.6 g/cm³)</option>
+                </select>
+                <div class="slider-box">
+                    <span>Mass</span>
+                    <input type="range" id="massRange" min="50" max="400" value="150">
+                    <span id="massVal">150g</span>
+                </div>
+                <button onclick="dropObject()">Drop Material</button>
+            </div>
+            <div class="stats-readout" id="dataLog">
+                Ready to experiment. Drop an object to calculate displacement.
+            </div>
+            <button onclick="resetSim()" style="background: #ef4444; color: white;">Clear All Data</button>
+        </div>
+    </div>
+
+<script>
+/** @type {HTMLCanvasElement} */
+const simCanvas = document.getElementById('renderCanvas');
+const simCtx = simCanvas.getContext('2d');
+const graphCanvas = document.getElementById('graphCanvas');
+const graphCtx = graphCanvas.getContext('2d');
+
+// State Management
+let waterLevel = 200; 
+let targetWaterLevel = 200;
+let history = []; // To store {mass, volume} for graph
+let objectsInCylinder = [];
+
+// Constants
+const CYL_X = 190, CYL_Y = 400, CYL_W = 140, SCALE = 1.2;
+
+function draw3DCylinder() {
+    simCtx.clearRect(0, 0, 380, 450);
+    
+    // Smooth Animation
+    waterLevel += (targetWaterLevel - waterLevel) * 0.05;
+    const wHeight = waterLevel * SCALE;
+
+    // 1. Back of Glass
+    simCtx.strokeStyle = "rgba(255,255,255,0.2)";
+    simCtx.lineWidth = 2;
+    ellipse(simCtx, CYL_X, CYL_Y, CYL_W, 30, false, true);
+
+    // 2. Water Body
+    const grad = simCtx.createLinearGradient(CYL_X - CYL_W/2, 0, CYL_X + CYL_W/2, 0);
+    grad.addColorStop(0, "#075985");
+    grad.addColorStop(0.5, "#0ea5e9");
+    grad.addColorStop(1, "#075985");
+    simCtx.fillStyle = grad;
+    simCtx.globalAlpha = 0.6;
+    simCtx.fillRect(CYL_X - CYL_W/2, CYL_Y - wHeight, CYL_W, wHeight);
+    simCtx.globalAlpha = 1.0;
+
+    // 3. Water Surface (The 3D "Top")
+    ellipse(simCtx, CYL_X, CYL_Y - wHeight, CYL_W, 30, "#7dd3fc", "white");
+
+    // 4. Objects
+    objectsInCylinder.forEach(obj => {
+        if(obj.y < obj.targetY) obj.y += 5;
+        simCtx.fillStyle = obj.color;
+        simCtx.fillRect(CYL_X - obj.size/2, obj.y, obj.size, obj.size);
+    });
+
+    // 5. Front Glass & Ticks
+    simCtx.strokeStyle = "rgba(255,255,255,0.4)";
+    simCtx.strokeRect(CYL_X - CYL_W/2, 50, CYL_W, 350);
+    for(let i=0; i<=350; i+=50) {
+        let ty = CYL_Y - (i * SCALE);
+        simCtx.beginPath();
+        simCtx.moveTo(CYL_X + CYL_W/2, ty);
+        simCtx.lineTo(CYL_X + CYL_W/2 - 10, ty);
+        simCtx.stroke();
+        simCtx.fillStyle = "#94a3b8";
+        simCtx.fillText(i + "ml", CYL_X + CYL_W/2 + 5, ty + 4);
+    }
+}
+
+function drawGraph() {
+    graphCtx.clearRect(0, 0, 380, 450);
+    const origin = {x: 50, y: 400};
+    const gSize = 300;
+
+    // Axes
+    graphCtx.strokeStyle = "#475569";
+    graphCtx.beginPath();
+    graphCtx.moveTo(origin.x, 20); graphCtx.lineTo(origin.x, origin.y);
+    graphCtx.lineTo(370, origin.y);
+    graphCtx.stroke();
+
+    // Labels
+    graphCtx.fillStyle = "#94a3b8";
+    graphCtx.fillText("Volume (cm³)", 300, origin.y + 30);
+    graphCtx.save();
+    graphCtx.rotate(-Math.PI/2);
+    graphCtx.fillText("Mass (g)", -100, 20);
+    graphCtx.restore();
+
+    // Data Points
+    history.forEach(pt => {
+        graphCtx.fillStyle = pt.color;
+        // Map mass 0-500 and vol 0-200 to graph coords
+        const gx = origin.x + (pt.v * (gSize/200));
+        const gy = origin.y - (pt.m * (gSize/500));
+        graphCtx.beginPath();
+        graphCtx.arc(gx, gy, 5, 0, Math.PI*2);
+        graphCtx.fill();
+    });
+}
+
+function dropObject() {
+    const mass = parseFloat(document.getElementById('massRange').value);
+    const select = document.getElementById('matSelect');
+    const density = parseFloat(select.value);
+    const color = select.options[select.selectedIndex].getAttribute('color');
+    
+    const vol = mass / density;
+    const sinks = density >= 1.0;
+    const displaced = sinks ? vol : (mass / 1.0); // Floaters displace weight
+
+    targetWaterLevel += displaced;
+    
+    objectsInCylinder.push({
+        y: 0,
+        targetY: sinks ? CYL_Y - 20 : CYL_Y - (targetWaterLevel * SCALE),
+        size: Math.pow(vol, 1/3) * 12,
+        color: color
+    });
+
+    history.push({m: mass, v: vol, color: color});
+    document.getElementById('dataLog').innerText = `Added ${mass}g (Density: ${density}). Displaced: ${displaced.toFixed(2)}mL. Total Volume: ${targetWaterLevel.toFixed(1)}mL`;
+}
+
+function ellipse(ctx, x, y, w, h, fill, stroke) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, w/2, h/2, 0, 0, Math.PI*2);
+    if(fill) { ctx.fillStyle = fill; ctx.fill(); }
+    if(stroke) ctx.stroke();
+}
+
+function resetSim() {
+    targetWaterLevel = 200;
+    waterLevel = 200;
+    objectsInCylinder = [];
+    history = [];
+}
+
+document.getElementById('massRange').oninput = (e) => {
+    document.getElementById('massVal').innerText = e.target.value + "g";
+};
+
+function mainLoop() {
+    draw3DCylinder();
+    drawGraph();
+    requestAnimationFrame(mainLoop);
+}
+mainLoop();
+</script>
+</body>
+</html>

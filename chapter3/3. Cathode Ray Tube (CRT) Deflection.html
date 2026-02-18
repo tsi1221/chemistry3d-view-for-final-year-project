@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRT Electron Lab</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #1e293b;
+            --primary: #38bdf8; /* Cyber Blue */
+            --accent: #fbbf24;
+            --text: #f1f5f9;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        /* Screen Area */
+        .viewport {
+            background: var(--panel);
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            width: 100%;
+            height: 500px;
+            background: #000;
+            border-radius: 12px;
+            display: block;
+        }
+
+        /* Sidebar Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card {
+            background: var(--panel);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        h2 { color: var(--primary); margin: 0 0 10px 0; font-size: 1.2rem; }
+        label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #334155;
+            background: #0f172a;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button.active {
+            background: var(--primary);
+            color: var(--bg);
+            border-color: var(--primary);
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .data-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(56, 189, 248, 0.1);
+        }
+
+        .data-box span {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        @media (max-width: 900px) {
+            .lab-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <div class="viewport">
+        <h2 style="margin-bottom:15px;">Electron Beam Deflection</h2>
+        <canvas id="crtCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="card">
+            <h2>Field Settings</h2>
+            <div class="btn-group">
+                <button id="eBtn" class="active" onclick="setMode('E')">Electric</button>
+                <button id="mBtn" onclick="setMode('M')">Magnetic</button>
+            </div>
+            
+            <label>Field Strength (+/-)</label>
+            <input type="range" id="strength" min="-15" max="15" value="0">
+            
+            <label>Beam Speed</label>
+            <input type="range" id="speed" min="5" max="20" value="10">
+        </div>
+
+        <div class="card">
+            <h2>Impact Data</h2>
+            <div class="data-box">
+                <span id="yDisp">0.00</span><br>
+                <small style="color:#64748b">mm from center</small>
+            </div>
+        </div>
+
+        <div class="card" style="font-size: 0.85rem; line-height: 1.6; color: #94a3b8;">
+            <b style="color:var(--accent)">Lab Summary:</b><br>
+            <p id="theoryText">In <b>Electric Mode</b>, particles are attracted to the opposite charge. If the top plate is (+), the negative electron bends UP.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('crtCanvas');
+    const ctx = canvas.getContext('2d');
+    let mode = 'E';
+    let particles = [];
+    let frame = 0;
+
+    function init() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        animate();
+    }
+
+    class Particle {
+        constructor() {
+            this.x = 20;
+            this.y = canvas.height / 2;
+            this.vx = parseFloat(document.getElementById('speed').value);
+            this.vy = 0;
+            this.history = [];
+            this.active = true;
+        }
+
+        update() {
+            this.history.push({x: this.x, y: this.y});
+            if(this.history.length > 40) this.history.shift();
+
+            const strength = parseFloat(document.getElementById('strength').value);
+            const plateStart = canvas.width * 0.25;
+            const plateEnd = canvas.width * 0.65;
+
+            // Inside the Field?
+            if (this.x > plateStart && this.x < plateEnd) {
+                if (mode === 'E') {
+                    // Electric: Force is parallel to Field lines
+                    this.vy += strength * 0.04;
+                } else {
+                    // Magnetic: Lorentz Force is perpendicular to velocity
+                    const angle = Math.atan2(this.vy, this.vx);
+                    const force = strength * 0.02;
+                    this.vx -= Math.sin(angle) * force;
+                    this.vy += Math.cos(angle) * force;
+                }
+            }
+
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // Impact with screen
+            if (this.x >= canvas.width - 10) {
+                this.active = false;
+                document.getElementById('yDisp').innerText = (canvas.height/2 - this.y).toFixed(2);
+            }
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+            ctx.lineWidth = 3;
+            if(this.history.length > 0) {
+                ctx.moveTo(this.history[0].x, this.history[0].y);
+                this.history.forEach(p => ctx.lineTo(p.x, p.y));
+            }
+            ctx.stroke();
+            
+            // Electron Head
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 3, 0, Math.PI*2);
+            ctx.fill();
+        }
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('eBtn').className = (mode === 'E' ? 'active' : '');
+        document.getElementById('mBtn').className = (mode === 'M' ? 'active' : '');
+        
+        document.getElementById('theoryText').innerHTML = (mode === 'E')
+            ? "In <b>Electric Mode</b>, particles follow a <b>Parabolic</b> path. They are pushed directly away from same charges."
+            : "In <b>Magnetic Mode</b>, the force is always sideways to motion, creating a <b>Circular</b> arc.";
+        particles = [];
+    }
+
+    function animate() {
+        // Subtle glow trail
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw hardware (plates)
+        ctx.fillStyle = '#334155';
+        const pStart = canvas.width * 0.25;
+        const pWidth = canvas.width * 0.4;
+        ctx.fillRect(pStart, canvas.height/2 - 100, pWidth, 10); // Top
+        ctx.fillRect(pStart, canvas.height/2 + 90, pWidth, 10);  // Bottom
+
+        // Field Visualization
+        const s = parseFloat(document.getElementById('strength').value);
+        if(Math.abs(s) > 1) {
+            ctx.strokeStyle = (mode === 'E') ? 'rgba(56, 189, 248, 0.1)' : 'rgba(251, 191, 36, 0.1)';
+            for(let i=pStart; i<pStart+pWidth; i+=30) {
+                ctx.beginPath();
+                ctx.moveTo(i, canvas.height/2 - 80);
+                ctx.lineTo(i, canvas.height/2 + 70);
+                ctx.stroke();
+            }
+        }
+
+        // Spawn particles
+        if (frame % 3 === 0) particles.push(new Particle());
+
+        particles.forEach((p, i) => {
+            p.update();
+            p.draw();
+            if(!p.active) particles.splice(i, 1);
+        });
+
+        frame++;
+        requestAnimationFrame(animate);
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>

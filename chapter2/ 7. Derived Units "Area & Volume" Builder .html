@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Derived Units: Area & Volume</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --primary: #38bdf8;
+            --accent: #f472b6;
+            --success: #4ade80;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0; 
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--panel);
+            padding: 25px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+
+        .visual-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        canvas { 
+            width: 100%; 
+            height: 400px; 
+            background: #ffffff; 
+            border-radius: 16px;
+            cursor: move;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .stat-card h4 { margin: 0 0 5px 0; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; }
+        .stat-card div { font-size: 1.5rem; font-weight: bold; font-family: monospace; }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input[type=range] { width: 100%; accent-color: var(--primary); }
+        .unit-sq { color: var(--accent); }
+        .unit-cu { color: var(--success); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 style="margin-top:0;">📦 Derived Units Explorer</h2>
+        <p style="color: #94a3b8; margin-bottom: 20px;">Adjust the dimensions to see how units transform from 1D to 3D.</p>
+
+        <div class="visual-area">
+            <canvas id="cubeCanvas"></canvas>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>Dimensions (1D)</h4>
+                    <div id="dimText">1 x 1 x 1</div>
+                </div>
+                <div class="stat-card" style="border-color: var(--accent)">
+                    <h4>Surface Area (2D)</h4>
+                    <div class="unit-sq" id="areaText">6 units²</div>
+                </div>
+                <div class="stat-card" style="border-color: var(--success)">
+                    <h4>Volume (3D)</h4>
+                    <div class="unit-cu" id="volText">1 unit³</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <label>Length (X): <span id="valL">5</span></label>
+            <input type="range" id="len" min="1" max="10" step="0.5" value="5">
+            
+            <label>Width (Y): <span id="valW">4</span></label>
+            <input type="range" id="wid" min="1" max="10" step="0.5" value="4">
+            
+            <label>Height (Z): <span id="valH">3</span></label>
+            <input type="range" id="hei" min="1" max="10" step="0.5" value="3">
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('cubeCanvas');
+    const ctx = canvas.getContext('2d');
+    const sliders = {
+        L: document.getElementById('len'),
+        W: document.getElementById('wid'),
+        H: document.getElementById('hei')
+    };
+
+    function draw() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+
+        const cw = canvas.offsetWidth;
+        const ch = canvas.offsetHeight;
+        
+        const L = parseFloat(sliders.L.value) * 20;
+        const W = parseFloat(sliders.W.value) * 20;
+        const H = parseFloat(sliders.H.value) * 20;
+
+        ctx.clearRect(0,0,cw,ch);
+
+        // Center Point
+        const cx = cw / 2 - L/2;
+        const cy = ch / 2 + H/2;
+
+        // Isometric projection math
+        const isoX = W * 0.5;
+        const isoY = W * 0.3;
+
+        // Update Labels
+        document.getElementById('valL').innerText = sliders.L.value;
+        document.getElementById('valW').innerText = sliders.W.value;
+        document.getElementById('valH').innerText = sliders.H.value;
+
+        // Calculate Stats
+        const lNum = parseFloat(sliders.L.value);
+        const wNum = parseFloat(sliders.W.value);
+        const hNum = parseFloat(sliders.H.value);
+        
+        const area = 2 * (lNum*wNum + lNum*hNum + wNum*hNum);
+        const volume = lNum * wNum * hNum;
+
+        document.getElementById('dimText').innerText = `${lNum} × ${wNum} × ${hNum}`;
+        document.getElementById('areaText').innerText = `${area.toFixed(1)} units²`;
+        document.getElementById('volText').innerText = `${volume.toFixed(1)} units³`;
+
+        // 1. Draw Back Faces (Visual Depth)
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(cx + isoX, cy - H - isoY, L, H); // Back rect
+        ctx.setLineDash([]);
+
+        // 2. Draw Main Faces
+        // Bottom Face
+        ctx.fillStyle = "rgba(56, 189, 248, 0.1)";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + isoX, cy - isoY);
+        ctx.lineTo(cx + L + isoX, cy - isoY);
+        ctx.lineTo(cx + L, cy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Right Face
+        ctx.fillStyle = "rgba(244, 114, 182, 0.2)";
+        ctx.beginPath();
+        ctx.moveTo(cx + L, cy);
+        ctx.lineTo(cx + L + isoX, cy - isoY);
+        ctx.lineTo(cx + L + isoX, cy - H - isoY);
+        ctx.lineTo(cx + L, cy - H);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Front Face
+        ctx.fillStyle = "rgba(74, 222, 128, 0.2)";
+        ctx.beginPath();
+        ctx.fillRect(cx, cy - H, L, H);
+        ctx.strokeRect(cx, cy - H, L, H);
+
+        // Top Face
+        ctx.fillStyle = "rgba(56, 189, 248, 0.3)";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - H);
+        ctx.lineTo(cx + isoX, cy - H - isoY);
+        ctx.lineTo(cx + L + isoX, cy - H - isoY);
+        ctx.lineTo(cx + L, cy - H);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    Object.values(sliders).forEach(s => s.addEventListener('input', draw));
+    window.addEventListener('resize', draw);
+    draw();
+</script>
+</body>
+</html>

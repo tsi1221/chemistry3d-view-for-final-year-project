@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boyle's Law 3D – Particle Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: #0a0a1a;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: white;
+            height: 100vh;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #4fc3f7;
+            min-width: 260px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #info h1 {
+            font-size: 1.5rem;
+            color: #4fc3f7;
+            margin-bottom: 10px;
+        }
+        #info p {
+            font-size: 0.9rem;
+            color: #ccc;
+            line-height: 1.5;
+        }
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            padding: 20px 30px;
+            border-radius: 60px;
+            border: 1px solid #4fc3f7;
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+            z-index: 20;
+            pointer-events: all;
+        }
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 140px;
+        }
+        .control-item label {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        .control-item input[type=range] {
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #2196f3, #f44336);
+            border-radius: 5px;
+            -webkit-appearance: none;
+        }
+        .control-item input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #4fc3f7;
+            cursor: pointer;
+        }
+        .value-badge {
+            background: #1e293b;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            border: 1px solid #4fc3f7;
+        }
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #f44336;
+            min-width: 200px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 1rem;
+        }
+        .stat-value {
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+        #law {
+            position: absolute;
+            bottom: 120px;
+            right: 20px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 15px;
+            border-radius: 16px;
+            border-left: 5px solid #4fc3f7;
+            max-width: 250px;
+            font-size: 0.9rem;
+            z-index: 10;
+        }
+        #law h3 {
+            color: #4fc3f7;
+            margin-bottom: 5px;
+        }
+        .formula {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #fff;
+        }
+        .btn {
+            background: #2196f3;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 0 5px;
+            transition: 0.2s;
+        }
+        .btn:hover {
+            background: #42a5f5;
+            transform: scale(1.02);
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        @media (max-width: 700px) {
+            #controls { flex-direction: column; gap: 15px; width: 90%; border-radius: 30px; bottom: 10px; }
+            #info { top: 10px; left: 10px; padding: 12px; }
+            #stats { top: 10px; right: 10px; padding: 12px; }
+            #law { bottom: 280px; right: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>🔬 Boyle's Law in 3D</h1>
+        <p>Pressure ∝ 1/Volume (constant T). Move the piston, watch particles bounce. Red arrows show collision force.</p>
+    </div>
+    <div id="stats">
+        <div class="stat-row"><span>Pressure</span><span class="stat-value" id="pressureDisplay">1.00 atm</span></div>
+        <div class="stat-row"><span>Volume</span><span class="stat-value" id="volumeDisplay">5.0 L</span></div>
+        <div class="stat-row"><span>Collisions/s</span><span class="stat-value" id="collisionDisplay">0</span></div>
+        <div class="stat-row"><span>Temperature</span><span class="stat-value" id="tempDisplay">300 K</span></div>
+    </div>
+    <div id="law">
+        <h3>📐 Boyle's Law</h3>
+        <div class="formula">P₁V₁ = P₂V₂</div>
+        <p style="color:#ccc;">At constant temperature, pressure increases as volume decreases.</p>
+    </div>
+    <div id="controls">
+        <div class="control-item">
+            <label>🔽 Volume (piston)</label>
+            <input type="range" id="volumeSlider" min="20" max="100" value="60">
+            <span class="value-badge" id="volumeVal">60%</span>
+        </div>
+        <div class="control-item">
+            <label>🔵 Particle count</label>
+            <input type="range" id="countSlider" min="20" max="250" value="80">
+            <span class="value-badge" id="countVal">80</span>
+        </div>
+        <div class="control-item">
+            <label>🔥 Temperature (K)</label>
+            <input type="range" id="tempSlider" min="200" max="500" value="300">
+            <span class="value-badge" id="tempVal">300 K</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn" id="pauseBtn">⏸️ Pause</button>
+            <button class="btn" id="resetBtn">🔄 Reset</button>
+        </div>
+    </div>
+
+    <!-- Three.js will insert canvas here -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+
+    <script>
+        (function() {
+            // --- setup scene ---
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a1a);
+
+            const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(12, 8, 18);
+            camera.lookAt(0, 0, 0);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.autoRotate = false;
+            controls.maxPolarAngle = Math.PI/2;
+            controls.minDistance = 5;
+            controls.maxDistance = 40;
+
+            // --- lights ---
+            const ambient = new THREE.AmbientLight(0x404060);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(5, 15, 10);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            const d = 15;
+            dirLight.shadow.camera.left = -d;
+            dirLight.shadow.camera.right = d;
+            dirLight.shadow.camera.top = d;
+            dirLight.shadow.camera.bottom = -d;
+            dirLight.shadow.camera.near = 1;
+            dirLight.shadow.camera.far = 30;
+            scene.add(dirLight);
+
+            const fillLight = new THREE.PointLight(0x4fc3f7, 0.8, 30);
+            fillLight.position.set(-3, 5, 5);
+            scene.add(fillLight);
+
+            // --- grid floor (cosmetic) ---
+            const gridHelper = new THREE.GridHelper(30, 20, 0x4fc3f7, 0x1e3a5f);
+            gridHelper.position.y = -3.5;
+            scene.add(gridHelper);
+
+            // --- container parameters ---
+            const wallWidth = 8;
+            const wallHeight = 6;
+            const wallDepthInitial = 6;      // back wall at z = -3, piston at z = +3 initially
+            let pistonZ = 3.0;                // initial piston position (front wall)
+            const backZ = -3.0;
+
+            // --- materials ---
+            const glassMaterial = new THREE.MeshPhysicalMaterial({
+                color: 0xaaccff,
+                transparent: true,
+                opacity: 0.2,
+                roughness: 0.1,
+                metalness: 0,
+                emissive: 0x000000,
+                side: THREE.DoubleSide
+            });
+
+            const frameMaterial = new THREE.LineBasicMaterial({ color: 0x4fc3f7 });
+
+            // --- container group ---
+            const containerGroup = new THREE.Group();
+
+            // fixed walls (back, left, right, top, bottom) using planes
+            function createFixedWalls() {
+                // back wall (z = backZ)
+                const backWall = new THREE.Mesh(new THREE.PlaneGeometry(wallWidth, wallHeight), glassMaterial);
+                backWall.position.set(0, 0, backZ);
+                backWall.rotation.y = Math.PI;
+                backWall.receiveShadow = true;
+                containerGroup.add(backWall);
+
+                // left wall (x = -wallWidth/2)
+                const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(wallDepthInitial, wallHeight), glassMaterial);
+                leftWall.position.set(-wallWidth/2, 0, 0);
+                leftWall.rotation.y = Math.PI/2;
+                leftWall.receiveShadow = true;
+                containerGroup.add(leftWall);
+
+                // right wall (x = wallWidth/2)
+                const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(wallDepthInitial, wallHeight), glassMaterial);
+                rightWall.position.set(wallWidth/2, 0, 0);
+                rightWall.rotation.y = -Math.PI/2;
+                rightWall.receiveShadow = true;
+                containerGroup.add(rightWall);
+
+                // top wall (y = wallHeight/2)
+                const topWall = new THREE.Mesh(new THREE.PlaneGeometry(wallWidth, wallDepthInitial), glassMaterial);
+                topWall.position.set(0, wallHeight/2, 0);
+                topWall.rotation.x = -Math.PI/2;
+                topWall.receiveShadow = true;
+                containerGroup.add(topWall);
+
+                // bottom wall (y = -wallHeight/2)
+                const bottomWall = new THREE.Mesh(new THREE.PlaneGeometry(wallWidth, wallDepthInitial), glassMaterial);
+                bottomWall.position.set(0, -wallHeight/2, 0);
+                bottomWall.rotation.x = Math.PI/2;
+                bottomWall.receiveShadow = true;
+                containerGroup.add(bottomWall);
+            }
+            createFixedWalls();
+
+            // --- piston (movable front wall) ---
+            const pistonMaterial = new THREE.MeshPhongMaterial({
+                color: 0xff5722,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide,
+                emissive: 0x441100
+            });
+            const piston = new THREE.Mesh(new THREE.PlaneGeometry(wallWidth, wallHeight), pistonMaterial);
+            piston.position.set(0, 0, pistonZ);
+            piston.castShadow = true;
+            piston.receiveShadow = true;
+            piston.userData.isPiston = true;
+            containerGroup.add(piston);
+
+            // wireframe to show edges
+            const boxGeo = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepthInitial);
+            const edges = new THREE.EdgesGeometry(boxGeo);
+            const wireframe = new THREE.LineSegments(edges, frameMaterial);
+            wireframe.position.set(0, 0, 0);
+            containerGroup.add(wireframe);
+
+            scene.add(containerGroup);
+
+            // --- force vectors (red arrows) on piston and back wall ---
+            const forceArrows = [];
+            function createForceVectors() {
+                // remove old ones
+                forceArrows.forEach(a => containerGroup.remove(a));
+                forceArrows.length = 0;
+
+                const color = 0xff3333;
+                const arrowLength = 1.2;
+                // back wall arrows (pointing inward)
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(i*2.5, j*1.8, backZ+0.2), arrowLength, color, 0.5, 0.3);
+                        containerGroup.add(arrow);
+                        forceArrows.push(arrow);
+                    }
+                }
+                // piston arrows (pointing inward, i.e., negative z)
+                for (let i = -1; i <= 1; i++) {
+                    for (let j = -1; j <= 1; j++) {
+                        const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, -1), new THREE.Vector3(i*2.5, j*1.8, pistonZ-0.2), arrowLength, color, 0.5, 0.3);
+                        containerGroup.add(arrow);
+                        forceArrows.push(arrow);
+                    }
+                }
+            }
+            createForceVectors();
+
+            // --- particles ---
+            let particles = [];
+            const particleGeo = new THREE.SphereGeometry(0.18, 8, 8);
+            const particleMat = new THREE.MeshStandardMaterial({
+                color: 0x4fc3f7,
+                emissive: 0x12456b,
+                roughness: 0.2,
+                metalness: 0.1
+            });
+
+            function createParticles(count) {
+                // remove old
+                particles.forEach(p => scene.remove(p));
+                particles = [];
+                for (let i = 0; i < count; i++) {
+                    const sphere = new THREE.Mesh(particleGeo, particleMat);
+                    // random within container bounds
+                    const x = (Math.random() - 0.5) * (wallWidth - 0.8);
+                    const y = (Math.random() - 0.5) * (wallHeight - 0.8);
+                    const z = (Math.random() - 0.5) * (wallDepthInitial - 0.8);
+                    sphere.position.set(x, y, z);
+                    sphere.castShadow = true;
+                    sphere.receiveShadow = true;
+                    // velocity
+                    const baseSpeed = 0.03 * (temperature/300);
+                    sphere.userData = {
+                        vel: new THREE.Vector3(
+                            (Math.random() - 0.5) * baseSpeed,
+                            (Math.random() - 0.5) * baseSpeed,
+                            (Math.random() - 0.5) * baseSpeed
+                        )
+                    };
+                    scene.add(sphere);
+                    particles.push(sphere);
+                }
+            }
+
+            // --- simulation state ---
+            let isPlaying = true;
+            let particleCount = 80;
+            let temperature = 300;
+            let collisionCount = 0;
+            let lastCollisionUpdate = performance.now();
+            let collisionsPerSec = 0;
+
+            // --- UI elements ---
+            const volumeSlider = document.getElementById('volumeSlider');
+            const volumeVal = document.getElementById('volumeVal');
+            const countSlider = document.getElementById('countSlider');
+            const countVal = document.getElementById('countVal');
+            const tempSlider = document.getElementById('tempSlider');
+            const tempVal = document.getElementById('tempVal');
+            const pressureDisplay = document.getElementById('pressureDisplay');
+            const volumeDisplay = document.getElementById('volumeDisplay');
+            const collisionDisplay = document.getElementById('collisionDisplay');
+            const tempDisplay = document.getElementById('tempDisplay');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resetBtn = document.getElementById('resetBtn');
+
+            // init
+            createParticles(particleCount);
+
+            // slider events
+            volumeSlider.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value);
+                volumeVal.textContent = val + '%';
+                // map 20% -> pistonZ=1.0, 100% -> pistonZ=5.0 (so back wall at -3, piston range 1..5)
+                pistonZ = 1.0 + (val - 20) * (4.0 / 80.0); // when 20%->1, 100%->5
+                piston.position.z = pistonZ;
+                // update force arrows on piston side
+                forceArrows.forEach((arrow, idx) => {
+                    if (idx >= 9) { // second half are piston arrows (indices 9..17)
+                        const localIdx = idx - 9;
+                        const i = Math.floor(localIdx / 3) - 1;
+                        const j = (localIdx % 3) - 1;
+                        arrow.position.set(i*2.5, j*1.8, pistonZ-0.2);
+                    }
+                });
+            });
+
+            countSlider.addEventListener('input', (e) => {
+                particleCount = parseInt(e.target.value);
+                countVal.textContent = particleCount;
+                createParticles(particleCount);
+            });
+
+            tempSlider.addEventListener('input', (e) => {
+                temperature = parseInt(e.target.value);
+                tempVal.textContent = temperature + ' K';
+                tempDisplay.textContent = temperature + ' K';
+                // adjust speeds (scale velocities)
+                const factor = Math.sqrt(temperature / 300);
+                particles.forEach(p => {
+                    p.userData.vel.multiplyScalar(factor);
+                });
+            });
+
+            pauseBtn.addEventListener('click', () => {
+                isPlaying = !isPlaying;
+                pauseBtn.textContent = isPlaying ? '⏸️ Pause' : '▶️ Play';
+            });
+
+            resetBtn.addEventListener('click', () => {
+                volumeSlider.value = 60;
+                volumeVal.textContent = '60%';
+                pistonZ = 1.0 + (60 - 20) * (4.0 / 80.0); // approx 3.0
+                piston.position.z = pistonZ;
+                countSlider.value = 80;
+                particleCount = 80;
+                countVal.textContent = '80';
+                tempSlider.value = 300;
+                temperature = 300;
+                tempVal.textContent = '300 K';
+                tempDisplay.textContent = '300 K';
+                createParticles(particleCount);
+                // reset force arrows piston positions
+                forceArrows.forEach((arrow, idx) => {
+                    if (idx >= 9) {
+                        const localIdx = idx - 9;
+                        const i = Math.floor(localIdx / 3) - 1;
+                        const j = (localIdx % 3) - 1;
+                        arrow.position.set(i*2.5, j*1.8, pistonZ-0.2);
+                    }
+                });
+                collisionCount = 0;
+                collisionsPerSec = 0;
+            });
+
+            // --- animation loop & physics ---
+            let lastTime = performance.now();
+            function animate() {
+                const timeNow = performance.now();
+                const delta = Math.min(16, timeNow - lastTime); // ms
+                lastTime = timeNow;
+
+                if (isPlaying) {
+                    const speedFactor = delta * 0.06; // adjust for smooth motion
+                    let collisionFrame = 0;
+                    // move particles
+                    particles.forEach(p => {
+                        p.position.x += p.userData.vel.x * speedFactor;
+                        p.position.y += p.userData.vel.y * speedFactor;
+                        p.position.z += p.userData.vel.z * speedFactor;
+
+                        // boundary checks (with radius)
+                        const r = 0.18;
+                        const halfW = wallWidth/2 - r;
+                        const halfH = wallHeight/2 - r;
+
+                        // x walls
+                        if (p.position.x > halfW) {
+                            p.position.x = halfW;
+                            p.userData.vel.x *= -1;
+                            collisionFrame++;
+                        } else if (p.position.x < -halfW) {
+                            p.position.x = -halfW;
+                            p.userData.vel.x *= -1;
+                            collisionFrame++;
+                        }
+                        // y walls
+                        if (p.position.y > halfH) {
+                            p.position.y = halfH;
+                            p.userData.vel.y *= -1;
+                            collisionFrame++;
+                        } else if (p.position.y < -halfH) {
+                            p.position.y = -halfH;
+                            p.userData.vel.y *= -1;
+                            collisionFrame++;
+                        }
+                        // z: back wall (fixed) and piston (movable)
+                        if (p.position.z > pistonZ - r) {
+                            p.position.z = pistonZ - r;
+                            p.userData.vel.z *= -1;
+                            collisionFrame++;
+                        } else if (p.position.z < backZ + r) {
+                            p.position.z = backZ + r;
+                            p.userData.vel.z *= -1;
+                            collisionFrame++;
+                        }
+                    });
+
+                    // update collision counter
+                    collisionCount += collisionFrame;
+
+                    // every second update collisions per second
+                    if (timeNow - lastCollisionUpdate > 1000) {
+                        collisionsPerSec = collisionCount;
+                        collisionCount = 0;
+                        lastCollisionUpdate = timeNow;
+                    }
+
+                    // compute volume and pressure (Boyle: P = k / V, with k scaled by collisions and temp)
+                    const currentVolume = wallWidth * wallHeight * (pistonZ - backZ);
+                    const initialVolume = wallWidth * wallHeight * 6; // when pistonZ=3, depth=6
+                    const volumeRatio = initialVolume / currentVolume;
+                    // pressure also depends on temp and collisions (simulate ideal gas)
+                    const tempFactor = temperature / 300;
+                    const collisionFactor = 0.5 + (collisionsPerSec / 200); // normalize
+                    const pressure = volumeRatio * tempFactor * collisionFactor;
+
+                    // update UI stats
+                    pressureDisplay.textContent = pressure.toFixed(2) + ' atm';
+                    volumeDisplay.textContent = currentVolume.toFixed(1) + ' L';
+                    collisionDisplay.textContent = collisionsPerSec;
+
+                    // scale force arrows with pressure (and a little pulse)
+                    const scale = Math.min(2.0, pressure * 0.8);
+                    forceArrows.forEach(arrow => {
+                        arrow.setLength(0.8 + scale * 0.4, 0.3, 0.2);
+                    });
+                }
+
+                controls.update();
+                renderer.render(scene, camera);
+                requestAnimationFrame(animate);
+            }
+            animate();
+
+            // resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            // initial update
+            volumeSlider.dispatchEvent(new Event('input'));
+            countSlider.dispatchEvent(new Event('input'));
+            tempSlider.dispatchEvent(new Event('input'));
+        })();
+    </script>
+</body>
+</html>

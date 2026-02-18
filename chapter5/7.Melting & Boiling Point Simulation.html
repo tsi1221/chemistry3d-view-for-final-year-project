@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionic Phase Simulator</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #0f172a;
+            --na: #4ade80;
+            --cl: #fbbf24;
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .viewport { flex-grow: 1; position: relative; background: #000; overflow: hidden; }
+        canvas { width: 100%; height: 100%; }
+
+        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
+        
+        .temp-readout {
+            font-size: 2.5rem; font-weight: 800; text-align: center;
+            color: #f87171; margin-bottom: 5px;
+        }
+
+        input[type=range] { width: 100%; accent-color: #f87171; cursor: pointer; }
+
+        .phase-badge {
+            text-align: center; font-weight: bold; padding: 5px;
+            border-radius: 6px; text-transform: uppercase; font-size: 0.8rem;
+        }
+        .solid { background: #334155; }
+        .liquid { background: #1d4ed8; }
+        .gas { background: #7c3aed; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="margin:0;">NaCl Phase Transitions</h2>
+    
+    <div class="card">
+        <div class="temp-readout" id="tempText">25°C</div>
+        <input type="range" id="tempSlider" min="25" max="2000" value="25" oninput="updateTemp()">
+        <div id="phaseTag" class="phase-badge solid">Solid Lattice</div>
+    </div>
+
+    <div class="card" style="font-size: 0.85rem; line-height: 1.5;">
+        <b>Milestones:</b>
+        <ul style="padding-left:18px; color: #94a3b8;">
+            <li><b>801°C:</b> Melting Point (Lattice breaks)</li>
+            <li><b>1465°C:</b> Boiling Point (Ions escape)</li>
+        </ul>
+    </div>
+
+    <div class="card" style="color: #94a3b8; font-size: 0.8rem;">
+        Notice how the <b>Vibration</b> increases with temperature. This is "Thermal Energy" fighting the "Lattice Energy."
+    </div>
+</div>
+
+<div class="viewport">
+    <canvas id="phaseCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('phaseCanvas');
+    const ctx = canvas.getContext('2d');
+    let temp = 25;
+    let ions = [];
+
+    function initIons() {
+        ions = [];
+        const cols = 8;
+        const rows = 8;
+        const spacing = 45;
+        const startX = (canvas.width - (cols * spacing)) / 2;
+        const startY = (canvas.height - (rows * spacing)) / 2;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                ions.push({
+                    baseX: startX + c * spacing,
+                    baseY: startY + r * spacing,
+                    x: startX + c * spacing,
+                    y: startY + r * spacing,
+                    isNa: (r + c) % 2 === 0,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2
+                });
+            }
+        }
+    }
+
+    function updateTemp() {
+        temp = parseInt(document.getElementById('tempSlider').value);
+        document.getElementById('tempText').innerText = temp + "°C";
+        
+        const tag = document.getElementById('phaseTag');
+        if (temp < 801) {
+            tag.innerText = "Solid Lattice";
+            tag.className = "phase-badge solid";
+        } else if (temp < 1465) {
+            tag.innerText = "Liquid (Molten)";
+            tag.className = "phase-badge liquid";
+        } else {
+            tag.innerText = "Gas (Vaporized)";
+            tag.className = "phase-badge gas";
+        }
+    }
+
+    function animate() {
+        ctx.fillStyle = `rgba(0, 0, 0, ${temp > 1465 ? '0.3' : '1'})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const jitter = (temp / 100);
+        
+        ions.forEach(ion => {
+            if (temp < 801) {
+                // SOLID: Vibrating in place
+                ion.x = ion.baseX + (Math.random() - 0.5) * jitter;
+                ion.y = ion.baseY + (Math.random() - 0.5) * jitter;
+            } else if (temp < 1465) {
+                // LIQUID: Moving freely but staying within bounds
+                ion.x += ion.vx * (temp / 400);
+                ion.y += ion.vy * (temp / 400);
+                
+                if (ion.x < 100 || ion.x > canvas.width - 100) ion.vx *= -1;
+                if (ion.y < 100 || ion.y > canvas.height - 100) ion.vy *= -1;
+            } else {
+                // GAS: High speed, escaping
+                ion.x += ion.vx * (temp / 200);
+                ion.y += ion.vy * (temp / 200);
+                
+                if (ion.x < 0 || ion.x > canvas.width) ion.vx *= -1;
+                if (ion.y < 0 || ion.y > canvas.height) ion.vy *= -1;
+            }
+
+            ctx.fillStyle = ion.isNa ? '#4ade80' : '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(ion.x, ion.y, ion.isNa ? 10 : 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw Heat Glow
+            if (temp > 500) {
+                ctx.shadowBlur = temp / 50;
+                ctx.shadowColor = "rgba(248, 113, 113, 0.5)";
+            }
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        initIons();
+    });
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    initIons();
+    updateTemp();
+    animate();
+</script>
+</body>
+</html>

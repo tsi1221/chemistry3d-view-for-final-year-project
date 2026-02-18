@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>De Broglie Duality Lab</title>
+<style>
+    :root {
+        --bg: #020617;
+        --panel: #1e293b;
+        --wave: #f472b6;
+        --particle: #38bdf8;
+        --text: #f1f5f9;
+    }
+
+    body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 320px;
+        background: var(--panel);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .viewport {
+        flex-grow: 1;
+        position: relative;
+        background: #000;
+    }
+
+    canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .card {
+        background: rgba(0,0,0,0.25);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .math-display {
+        font-family: 'JetBrains Mono', monospace;
+        background: #000;
+        padding: 8px;
+        border-radius: 6px;
+        color: var(--wave);
+        text-align: center;
+        font-size: 1rem;
+    }
+
+    input[type=range] {
+        width: 100%;
+        accent-color: var(--particle);
+        cursor: pointer;
+    }
+
+    label {
+        display: block;
+        font-size: 0.7rem;
+        color: #94a3b8;
+        margin: 8px 0 4px;
+        text-transform: uppercase;
+    }
+
+    .regime-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        margin-top: 8px;
+    }
+
+    .hint {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        line-height: 1.4;
+    }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="color:var(--particle); margin:0;">De Broglie Duality Lab</h2>
+
+    <div class="card">
+        <label>Object Mass (m)</label>
+        <input type="range" id="mass" min="1" max="100" value="10">
+
+        <label>Velocity (v)</label>
+        <input type="range" id="vel" min="1" max="50" value="20">
+    </div>
+
+    <div class="card">
+        <label>De Broglie Wavelength</label>
+        <div class="math-display" id="lambdaVal">λ = h / (mv)</div>
+        <div id="regime" class="regime-badge"></div>
+    </div>
+
+    <div class="card hint">
+        <b>Learning Clues:</b><br>
+        - Low mass → Quantum regime: Wave-like behavior dominates, particle is "spread out".<br>
+        - High mass → Classical regime: Particle behavior dominates, wave effects are negligible.<br>
+        - Observe how increasing velocity decreases wavelength (λ ∝ 1/v).<br>
+        - Try combining low mass + high velocity to see short but visible waves.
+    </div>
+</div>
+
+<div class="viewport">
+    <canvas id="waveCanvas"></canvas>
+    <div id="quantumAlert" style="position:absolute; bottom:15px; left:15px; color:#4ade80; font-family:monospace; font-size:0.85rem;"></div>
+</div>
+
+<script>
+const canvas = document.getElementById('waveCanvas');
+const ctx = canvas.getContext('2d');
+
+let time = 0;
+
+// Resize canvas to match viewport
+function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Main draw loop
+function draw() {
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerY = height / 2;
+
+    // Clear with a soft trail effect
+    ctx.fillStyle = 'rgba(2,6,23,0.25)';
+    ctx.fillRect(0,0,width,height);
+
+    const m = parseFloat(document.getElementById('mass').value);
+    const v = parseFloat(document.getElementById('vel').value);
+
+    // Scaled Planck constant for visualization
+    const h_sim = 5000;
+    const wavelength = h_sim / (m * v);
+    const amplitude = Math.max(2, 100 / m);
+
+    // Update λ display
+    document.getElementById('lambdaVal').innerHTML = `λ ≈ ${(wavelength*0.1).toFixed(2)} nm`;
+
+    // Quantum/Classical regime
+    const regime = document.getElementById('regime');
+    if(m < 20) {
+        regime.innerText = "QUANTUM REGIME";
+        regime.style.background = "rgba(244, 114, 182, 0.2)";
+        regime.style.color = "#f472b6";
+    } else {
+        regime.innerText = "CLASSICAL REGIME";
+        regime.style.background = "rgba(56, 189, 248, 0.2)";
+        regime.style.color = "#38bdf8";
+    }
+
+    // Draw sine wave (wave nature)
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(244,114,182,0.3)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5,5]);
+    for(let x=0;x<width;x++){
+        const y = centerY + Math.sin(x / wavelength + time) * amplitude;
+        if(x===0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw particle (particle nature)
+    const pX = (time * v * 5) % width;
+    const pY = centerY + Math.sin(pX / wavelength + time) * amplitude;
+
+    ctx.fillStyle = "#fff";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "#38bdf8";
+    ctx.beginPath();
+    ctx.arc(pX, pY, 3 + (m/10), 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    time += 0.05;
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isotope Builder</title>
+    <style>
+        :root {
+            --bg: #030712;
+            --panel: #111827;
+            --proton: #f87171;
+            --neutron: #94a3b8;
+            --electron: #38bdf8;
+            --text: #f9fafb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .viewport { flex-grow: 1; position: relative; overflow: hidden; background: radial-gradient(circle, #1e1b4b 0%, #030712 100%); }
+        canvas { width: 100%; height: 100%; }
+
+        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
+        .controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        
+        button {
+            width: 35px; height: 35px; border-radius: 50%; border: none;
+            cursor: pointer; font-weight: bold; font-size: 1.2rem;
+        }
+        .btn-p { background: var(--proton); }
+        .btn-n { background: var(--neutron); }
+        .btn-e { background: var(--electron); }
+
+        .symbol-box {
+            font-size: 2.5rem; font-weight: 800; text-align: center;
+            border: 2px solid var(--text); width: 80px; margin: 10px auto; padding: 10px;
+        }
+        .instability-warning { color: #facc15; font-weight: bold; text-align: center; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="margin:0; font-size: 1.2rem;">Atomic Architect</h2>
+    
+    <div class="card">
+        <div class="controls">
+            <span>Protons (Z)</span>
+            <div>
+                <button class="btn-p" onclick="change('p', -1)">-</button>
+                <button class="btn-p" onclick="change('p', 1)">+</button>
+            </div>
+        </div>
+        <div class="controls">
+            <span>Neutrons (N)</span>
+            <div>
+                <button class="btn-n" onclick="change('n', -1)">-</button>
+                <button class="btn-n" onclick="change('n', 1)">+</button>
+            </div>
+        </div>
+        <div class="controls">
+            <span>Electrons</span>
+            <div>
+                <button class="btn-e" onclick="change('e', -1)">-</button>
+                <button class="btn-e" onclick="change('e', 1)">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div id="isotopeName" style="text-align:center; font-weight:bold;">Hydrogen-1</div>
+        <div class="symbol-box" id="symbol">H</div>
+        <div style="text-align:center; font-size: 0.9rem;">
+            Mass Number (A): <span id="massNum">1</span><br>
+            Net Charge: <span id="charge">0</span>
+        </div>
+    </div>
+
+    <div id="warning" class="instability-warning">⚠️ UNSTABLE NUCLEUS</div>
+</div>
+
+<div class="viewport">
+    <canvas id="atomCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('atomCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let p = 1, n = 0, e = 1;
+    const elements = ["","H","He","Li","Be","B","C","N","O","F","Ne"];
+
+    function change(type, amt) {
+        if (type === 'p') p = Math.max(1, Math.min(10, p + amt));
+        if (type === 'n') n = Math.max(0, Math.min(12, n + amt));
+        if (type === 'e') e = Math.max(0, Math.min(10, e + amt));
+        updateUI();
+    }
+
+    function updateUI() {
+        document.getElementById('symbol').innerText = elements[p];
+        document.getElementById('isotopeName').innerText = `${elements[p]}-${p + n}`;
+        document.getElementById('massNum').innerText = p + n;
+        document.getElementById('charge').innerText = p - e;
+        
+        // Stability Logic: N/P ratio
+        const ratio = n / p;
+        const unstable = (p > 1 && (ratio < 0.5 || ratio > 1.5));
+        document.getElementById('warning').style.display = unstable ? 'block' : 'none';
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const ratio = n / p;
+        const shake = (p > 1 && (ratio < 0.5 || ratio > 1.5)) ? Math.random() * 5 : 0;
+
+        // Draw Nucleus
+        for (let i = 0; i < p + n; i++) {
+            const angle = (i / (p + n)) * Math.PI * 2;
+            const dist = 10 + Math.random() * 15;
+            ctx.fillStyle = i < p ? '#f87171' : '#94a3b8';
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(angle) * dist + shake, cy + Math.sin(angle) * dist + shake, 8, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Draw Electrons
+        const time = Date.now() * 0.002;
+        for (let i = 0; i < e; i++) {
+            const orbit = i < 2 ? 60 : 100;
+            const speed = i < 2 ? time : time * 0.6;
+            const ex = cx + Math.cos(speed + (i * 2)) * orbit;
+            const ey = cy + Math.sin(speed + (i * 2)) * orbit;
+            
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+            ctx.beginPath(); ctx.arc(cx, cy, orbit, 0, Math.PI * 2); ctx.stroke();
+            
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
+        }
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    });
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    updateUI();
+    draw();
+</script>
+</body>
+</html>

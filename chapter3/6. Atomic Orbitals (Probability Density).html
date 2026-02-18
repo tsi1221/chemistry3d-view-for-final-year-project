@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Orbital Visualizer</title>
+    <style>
+        :root {
+            --bg: #030712;
+            --panel: #111827;
+            --primary: #8b5cf6;
+            --accent: #22d3ee;
+            --text: #f9fafb;
+            --node: #f43f5e;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar UI */
+        .sidebar {
+            width: 350px;
+            background: var(--panel);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .main-view {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #030712 100%);
+        }
+
+        canvas { width: 100%; flex-grow: 1; }
+
+        /* Controls */
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        h1 { font-size: 1.25rem; margin: 0 0 5px; color: var(--primary); }
+        h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; margin-bottom: 12px; }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .graph-container {
+            height: 150px;
+            width: 100%;
+            background: #000;
+            border-radius: 8px;
+            position: relative;
+            border: 1px solid #374151;
+        }
+
+        .legend { font-size: 0.85rem; line-height: 1.5; color: #9ca3af; }
+        .legend b { color: var(--accent); }
+        .node-text { color: var(--node); font-weight: bold; }
+
+        @media (max-width: 850px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid #374151; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div>
+        <h1>Orbital Visualizer</h1>
+        <p style="font-size: 0.8rem; color: #6b7280;">Hydrogen-like Atomic Orbitals</p>
+    </div>
+
+    <div class="card">
+        <h2>Select Quantum State</h2>
+        <select id="orbitalType">
+            <option value="1s">1s (n=1, l=0, m=0)</option>
+            <option value="2s">2s (n=2, l=0, m=0)</option>
+            <option value="2p">2p (n=2, l=1, m=0)</option>
+            <option value="3s">3s (n=3, l=0, m=0)</option>
+            <option value="3d">3d (n=3, l=2, m=0)</option>
+        </select>
+    </div>
+
+    <div class="card">
+        <h2>Radial Probability $P(r)$</h2>
+        <canvas id="graphCanvas" class="graph-container"></canvas>
+        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#6b7280; margin-top:5px;">
+            <span>Nucleus</span>
+            <span>Distance (r)</span>
+        </div>
+    </div>
+
+    <div class="card legend">
+        <p id="description">The 1s orbital is the ground state. It is a dense sphere with no nodes.</p>
+        <p>• Points: <span id="pCount" style="color:var(--accent)">0</span></p>
+    </div>
+    
+    <button onclick="resetPoints()" style="background:var(--primary); color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">Regenerate Cloud</button>
+</div>
+
+<div class="main-view">
+    <canvas id="mainCanvas"></canvas>
+</div>
+
+<script>
+    const mainCanvas = document.getElementById('mainCanvas');
+    const mainCtx = mainCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const graphCtx = graphCanvas.getContext('2d');
+
+    let points = [];
+    const maxPoints = 12000;
+    const bohrRadius = 45;
+
+    function resize() {
+        mainCanvas.width = mainCanvas.clientWidth;
+        mainCanvas.height = mainCanvas.clientHeight;
+        graphCanvas.width = graphCanvas.clientWidth;
+        graphCanvas.height = graphCanvas.clientHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Wavefunctions (Probability Densities)
+    function getDensity(r, theta, type) {
+        const rho = r / bohrRadius;
+        switch(type) {
+            case '1s': 
+                return Math.exp(-2 * rho);
+            case '2s': 
+                return Math.pow((2 - rho), 2) * Math.exp(-rho);
+            case '2p': 
+                return Math.pow(rho, 2) * Math.exp(-rho) * Math.pow(Math.cos(theta), 2);
+            case '3s': 
+                return Math.pow((6 - 6*rho + rho*rho), 2) * Math.exp(-2*rho/3);
+            case '3d': 
+                return Math.pow(rho, 4) * Math.exp(-2*rho/3) * Math.pow(Math.sin(theta)*Math.cos(theta), 2);
+            default: return 0;
+        }
+    }
+
+    function updateDescription(type) {
+        const desc = {
+            '1s': "<b>1s:</b> Ground state. Maximum probability is at the nucleus. 0 Nodes.",
+            '2s': "<b>2s:</b> One <span class='node-text'>Radial Node</span>. The electron is forbidden from that dark ring.",
+            '2p': "<b>2p:</b> An <span class='node-text'>Angular Node</span> at the center creates two distinct lobes.",
+            '3s': "<b>3s:</b> Two <span class='node-text'>Radial Nodes</span>. Notice the three concentric shells of probability.",
+            '3d': "<b>3d:</b> Four lobes with complex angular nodes."
+        };
+        document.getElementById('description').innerHTML = desc[type];
+    }
+
+    function drawGraph() {
+        graphCtx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+        const type = document.getElementById('orbitalType').value;
+        graphCtx.strokeStyle = '#8b5cf6';
+        graphCtx.lineWidth = 2;
+        graphCtx.beginPath();
+        
+        for(let x = 0; x < graphCanvas.width; x++) {
+            let r = (x / graphCanvas.width) * 400;
+            // P(r) = r^2 * RadialPart^2
+            let y = getDensity(r, 0, type) * (type.includes('s') ? 1 : 2); 
+            let drawY = graphCanvas.height - (y * graphCanvas.height * 0.8) - 5;
+            if(x === 0) graphCtx.moveTo(x, drawY);
+            else graphCtx.lineTo(x, drawY);
+        }
+        graphCtx.stroke();
+    }
+
+    function generatePoints() {
+        const type = document.getElementById('orbitalType').value;
+        const centerX = mainCanvas.width / 2;
+        const centerY = mainCanvas.height / 2;
+
+        for (let i = 0; i < 150; i++) {
+            if (points.length < maxPoints) {
+                let r = Math.random() * 400;
+                let theta = Math.random() * Math.PI * 2;
+                let prob = getDensity(r, theta, type);
+
+                if (Math.random() < prob) {
+                    points.push({
+                        x: centerX + r * Math.cos(theta),
+                        y: centerY + r * Math.sin(theta),
+                        alpha: prob * 0.8 + 0.1,
+                        r: r
+                    });
+                }
+            }
+        }
+    }
+
+    function resetPoints() {
+        points = [];
+        updateDescription(document.getElementById('orbitalType').value);
+        drawGraph();
+    }
+
+    function render() {
+        // Fade effect for smoother cloud feel
+        mainCtx.fillStyle = 'rgba(3, 7, 18, 0.15)';
+        mainCtx.fillRect(0, 0, mainCanvas.width, mainCanvas.height);
+
+        points.forEach(p => {
+            mainCtx.globalAlpha = p.alpha;
+            mainCtx.fillStyle = `hsl(${220 + p.r/5}, 70%, 60%)`;
+            mainCtx.beginPath();
+            mainCtx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
+            mainCtx.fill();
+        });
+        
+        mainCtx.globalAlpha = 1;
+        document.getElementById('pCount').innerText = points.toLocaleString();
+        generatePoints();
+        requestAnimationFrame(render);
+    }
+
+    document.getElementById('orbitalType').addEventListener('change', resetPoints);
+    resetPoints();
+    render();
+</script>
+</body>
+</html>

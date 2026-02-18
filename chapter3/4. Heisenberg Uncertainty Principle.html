@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heisenberg Uncertainty Lab</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #1e293b;
+            --primary: #38bdf8;
+            --accent: #fbbf24;
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .lab-container {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        .viewport {
+            background: var(--panel);
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 550px;
+            background: #000;
+            border-radius: 12px;
+            cursor: none; /* We use a custom reticle */
+        }
+
+        .controls { display: flex; flex-direction: column; gap: 15px; }
+        .card { background: var(--panel); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+
+        h2 { color: var(--primary); margin: 0 0 10px 0; font-size: 1.2rem; }
+        label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 5px; }
+
+        input[type=range] { width: 100%; accent-color: var(--primary); margin-bottom: 15px; }
+
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .data-box {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(56, 189, 248, 0.1);
+        }
+        .data-box div { font-family: monospace; font-size: 1.1rem; color: var(--primary); }
+
+        @media (max-width: 900px) { .lab-container { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <div class="viewport">
+        <h2 style="margin-bottom:10px;">Quantum Uncertainty Visualizer</h2>
+        <canvas id="quantumCanvas"></canvas>
+    </div>
+
+    <div class="sidebar">
+        <div class="card">
+            <h2>Measurement Precision</h2>
+            <label>Precision ($\Delta x$)</label>
+            <input type="range" id="precision" min="5" max="150" value="80">
+            <p style="font-size: 0.75rem; color: #64748b;">Lower precision (wider circle) causes less disturbance to the electron's path.</p>
+        </div>
+
+        <div class="card">
+            <h2>Live Telemetry</h2>
+            <div class="data-grid">
+                <div class="data-box">
+                    <label>Position Error</label>
+                    <div id="posErr">0</div>
+                </div>
+                <div class="data-box">
+                    <label>Momentum Jitter</label>
+                    <div id="momErr">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="font-size: 0.85rem; line-height: 1.6; color: #94a3b8;">
+            <b style="color:var(--accent)">What You Are Learning:</b>
+            <p>The "Reticle" is your measurement photon. When you get closer to the electron to find its <b>Position</b>, you transfer energy, making its <b>Momentum</b> (velocity) skyrocket.</p>
+            <p>$$ \Delta x \cdot \Delta p \ge \frac{h}{4\pi} $$</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('quantumCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let electron = { x: 0, y: 0, vx: 2, vy: 1.5, history: [] };
+    let mouse = { x: 0, y: 0, active: false };
+    let frame = 0;
+
+    function init() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        electron.x = canvas.width / 2;
+        electron.y = canvas.height / 2;
+        animate();
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+        mouse.active = true;
+    });
+
+    function animate() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const precision = parseFloat(document.getElementById('precision').value);
+        
+        // 1. Calculate Interaction
+        const dx = electron.x - mouse.x;
+        const dy = electron.y - mouse.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        // Heisenberg logic: The smaller the precision (delta X), the higher the momentum kick (delta P)
+        if (dist < precision && mouse.active) {
+            const jitterStrength = (160 - precision) * 0.05;
+            electron.vx += (Math.random() - 0.5) * jitterStrength;
+            electron.vy += (Math.random() - 0.5) * jitterStrength;
+            
+            document.getElementById('posErr').innerText = precision.toFixed(0);
+            document.getElementById('momErr').innerText = (jitterStrength * 10).toFixed(1);
+        } else {
+            document.getElementById('momErr').innerText = "0.0";
+        }
+
+        // 2. Update Electron
+        electron.x += electron.vx;
+        electron.y += electron.vy;
+
+        // Friction/Damping (Quantum vacuum isn't perfect here)
+        electron.vx *= 0.99;
+        electron.vy *= 0.99;
+
+        // Boundary bounce
+        if (electron.x < 0 || electron.x > canvas.width) electron.vx *= -1;
+        if (electron.y < 0 || electron.y > canvas.height) electron.vy *= -1;
+
+        // 3. Draw Electron History (Fuzzy Cloud)
+        electron.history.push({x: electron.x, y: electron.y});
+        if(electron.history.length > 30) electron.history.shift();
+
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+        electron.history.forEach((p, i) => {
+            ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+
+        // 4. Draw Electron
+        const gradient = ctx.createRadialGradient(electron.x, electron.y, 0, electron.x, electron.y, 10);
+        gradient.addColorStop(0, '#fff');
+        gradient.addColorStop(1, 'rgba(56, 189, 248, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(electron.x, electron.y, 10, 0, Math.PI*2);
+        ctx.fill();
+
+        // 5. Draw Mouse Reticle (Measurement Tool)
+        if(mouse.active) {
+            ctx.beginPath();
+            ctx.arc(mouse.x, mouse.y, precision, 0, Math.PI*2);
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.4)';
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Reticle Crosshair
+            ctx.strokeStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.moveTo(mouse.x - 10, mouse.y); ctx.lineTo(mouse.x + 10, mouse.y);
+            ctx.moveTo(mouse.x, mouse.y - 10); ctx.lineTo(mouse.x, mouse.y + 10);
+            ctx.stroke();
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

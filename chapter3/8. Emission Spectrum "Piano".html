@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Emission Piano</title>
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --panel: #17171a;
+            --primary: #6366f1;
+            --text: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 900px;
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border: 1px solid #27272a;
+        }
+
+        h1 { text-align: center; margin-bottom: 25px; color: var(--primary); font-weight: 300; letter-spacing: 2px; }
+
+        canvas {
+            width: 100%;
+            height: 150px;
+            background: #000;
+            border-radius: 8px;
+            display: block;
+            margin-bottom: 30px;
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
+        }
+
+        .keyboard {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .key {
+            padding: 15px 25px;
+            background: #27272a;
+            border: 1px solid #3f3f46;
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .key:hover { background: #3f3f46; transform: translateY(-2px); }
+        .key.active { background: var(--primary); border-color: #818cf8; box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 50px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: #71717a;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+
+        .toggle-btn.active { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Emission Spectrum Piano</h1>
+    
+    <canvas id="spectrumCanvas"></canvas>
+
+    <div class="keyboard">
+        <button class="key" onclick="setElement('H', this)">Hydrogen</button>
+        <button class="key" onclick="setElement('He', this)">Helium</button>
+        <button class="key" onclick="setElement('Ne', this)">Neon</button>
+        <button class="key" onclick="setElement('Hg', this)">Mercury</button>
+    </div>
+
+    <div class="controls">
+        <button id="modeEmission" class="toggle-btn active" onclick="setMode('emission')">EMISSION</button>
+        <span style="color:#3f3f46">|</span>
+        <button id="modeAbsorption" class="toggle-btn" onclick="setMode('absorption')">ABSORPTION</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('spectrumCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let currentElement = 'H';
+    let mode = 'emission'; // 'emission' or 'absorption'
+
+    // Real spectral data (wavelengths in nm)
+    const elements = {
+        'H': [410, 434, 486, 656],
+        'He': [447, 471, 492, 501, 587, 667, 706],
+        'Ne': [540, 585, 588, 603, 607, 614, 621, 626, 633, 638, 640, 650, 659, 692, 703],
+        'Hg': [404, 435, 546, 577, 579]
+    };
+
+    function nmToRGB(wavelength) {
+        let r, g, b, factor;
+        if (wavelength >= 380 && wavelength < 440) { r = -(wavelength - 440) / (440 - 380); g = 0; b = 1; }
+        else if (wavelength >= 440 && wavelength < 490) { r = 0; g = (wavelength - 440) / (490 - 440); b = 1; }
+        else if (wavelength >= 490 && wavelength < 510) { r = 0; g = 1; b = -(wavelength - 510) / (510 - 490); }
+        else if (wavelength >= 510 && wavelength < 580) { r = (wavelength - 510) / (580 - 510); g = 1; b = 0; }
+        else if (wavelength >= 580 && wavelength < 645) { r = 1; g = -(wavelength - 645) / (645 - 580); b = 0; }
+        else if (wavelength >= 645 && wavelength <= 780) { r = 1; g = 0; b = 0; }
+        else { r = 0; g = 0; b = 0; }
+        return `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const w = canvas.width;
+        const h = canvas.height;
+
+        if (mode === 'absorption') {
+            // Draw rainbow background for absorption
+            for (let x = 0; x < w; x++) {
+                const nm = 380 + (x / w) * (780 - 380);
+                ctx.fillStyle = nmToRGB(nm);
+                ctx.fillRect(x, 0, 1, h);
+            }
+            ctx.fillStyle = 'rgba(0,0,0,0.85)'; // Black lines
+        } else {
+            // Black background for emission
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+        }
+
+        // Draw spectral lines
+        const lines = elements[currentElement];
+        lines.forEach(nm => {
+            const x = ((nm - 380) / (780 - 380)) * w;
+            if (mode === 'emission') {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = nmToRGB(nm);
+                ctx.fillStyle = nmToRGB(nm);
+            } else {
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#000'; // Absorption lines are black
+            }
+            ctx.fillRect(x, 0, 3, h);
+        });
+        ctx.shadowBlur = 0;
+    }
+
+    function setElement(el, btn) {
+        currentElement = el;
+        document.querySelectorAll('.key').forEach(k => k.classList.remove('active'));
+        btn.classList.add('active');
+        draw();
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('modeEmission').classList.toggle('active', m === 'emission');
+        document.getElementById('modeAbsorption').classList.toggle('active', m === 'absorption');
+        draw();
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    });
+
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    draw();
+</script>
+</body>
+</html>

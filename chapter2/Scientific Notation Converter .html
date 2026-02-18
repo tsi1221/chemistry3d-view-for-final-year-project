@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Scientific Notation Visualizer</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --primary: #38bdf8;
+            --accent: #fbbf24;
+            --danger: #ef4444;
+            --text: #f8fafc;
+            --success: #22c55e;
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--panel);
+            padding: clamp(20px, 5vw, 40px);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        header { text-align: center; margin-bottom: 30px; }
+        h1 { font-size: 1.8rem; margin: 0; color: var(--primary); }
+        p { color: #94a3b8; font-size: 0.95rem; }
+
+        /* The Magnitude Visualizer (3D Canvas) */
+        #magnitudeCanvas {
+            width: 100%;
+            height: 120px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            margin-bottom: 25px;
+        }
+
+        .number-strip-container {
+            position: relative;
+            background: #020617;
+            padding: 30px 15px;
+            border-radius: 16px;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #334155;
+            margin-bottom: 25px;
+        }
+
+        .digit-slot {
+            display: flex;
+            align-items: center;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 700;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .gap {
+            width: 20px;
+            height: 60px;
+            margin: 0 2px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 4px;
+        }
+
+        .gap:hover { background: rgba(56, 189, 248, 0.2); }
+
+        .decimal-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--accent);
+            z-index: 10;
+        }
+
+        .result-card {
+            background: rgba(56, 189, 248, 0.05);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 25px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .sci-notation {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .exponent { color: var(--accent); vertical-align: super; font-size: 0.6em; }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 24px;
+            border-radius: 10px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: var(--bg);
+        }
+
+        .status-msg {
+            font-size: 0.9rem;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Scientific Notation Explorer</h1>
+        <p>Interactive tool to visualize decimal movement and powers of 10</p>
+    </header>
+
+    <div class="controls">
+        <button id="modeLarge" class="active">(Large)</button>
+        <button id="modeSmall">(Small)</button>
+    </div>
+
+    <canvas id="magnitudeCanvas"></canvas>
+
+    <div class="number-strip-container" id="strip">
+        </div>
+
+    <div class="result-card">
+        <div class="sci-notation" id="output">1.0 &times; 10<span class="exponent">0</span></div>
+        <div id="status" class="status-msg"></div>
+    </div>
+</div>
+
+<script>
+    const strip = document.getElementById('strip');
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+    const canvas = document.getElementById('magnitudeCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let digits = [];
+    let currentIdx = 1; // Position of decimal
+    let firstSigIdx = 0;
+    let baseExponent = 0;
+
+    function init(mode) {
+        if(mode === 'large') {
+            digits = "6022000000".split("");
+            baseExponent = digits.length - 1;
+            currentIdx = digits.length;
+        } else {
+            digits = "0000000125".split("");
+            baseExponent = -1;
+            currentIdx = 1;
+        }
+        render();
+    }
+
+    function render() {
+        strip.innerHTML = "";
+        
+        // Add initial gap
+        createGap(0);
+
+        digits.forEach((d, i) => {
+            const digit = document.createElement('div');
+            digit.className = 'digit-slot';
+            digit.innerText = d;
+            strip.appendChild(digit);
+            createGap(i + 1);
+        });
+
+        updateLogic();
+        drawMagnitude();
+    }
+
+    function createGap(idx) {
+        const gap = document.createElement('div');
+        gap.className = 'gap';
+        if (currentIdx === idx) {
+            const dot = document.createElement('div');
+            dot.className = 'decimal-dot';
+            gap.appendChild(dot);
+        }
+        gap.onclick = () => { currentIdx = idx; render(); };
+        strip.appendChild(gap);
+    }
+
+    function updateLogic() {
+        firstSigIdx = digits.findIndex(d => d !== "0");
+        const properIdx = firstSigIdx + 1;
+        
+        // Calculate exponent relative to standard position
+        let exponent = (currentIdx <= firstSigIdx) 
+            ? (firstSigIdx - currentIdx + 1) * -1 
+            : (currentIdx - (firstSigIdx + 1));
+
+        // Adjust for "Small" mode leading zeros
+        let displayExp = currentIdx - (digits.length);
+        if (btnSmall.classList.contains('active')) {
+            displayExp = currentIdx - (firstSigIdx + 1);
+        } else {
+            displayExp = currentIdx - (firstSigIdx + 1);
+        }
+
+        // Generate Mantissa
+        let mantissa = digits[firstSigIdx] + "." + digits.slice(firstSigIdx+1).join("").replace(/0+$/, "");
+        if (mantissa.endsWith(".")) mantissa = mantissa.slice(0, -1);
+
+        output.innerHTML = `${mantissa} &times; 10<span class="exponent">${displayExp}</span>`;
+
+        if (currentIdx === properIdx) {
+            status.innerHTML = "✓ Proper Scientific Notation";
+            status.style.color = "var(--success)";
+        } else {
+            status.innerHTML = `⚠ Move decimal after '${digits[firstSigIdx]}' for proper format`;
+            status.style.color = "var(--accent)";
+        }
+    }
+
+    function drawMagnitude() {
+        const w = canvas.width = canvas.offsetWidth;
+        const h = canvas.height = canvas.offsetHeight;
+        ctx.clearRect(0, 0, w, h);
+        
+        const exponent = currentIdx - (firstSigIdx + 1);
+        const count = Math.abs(exponent);
+        const radius = 15;
+        const spacing = 40;
+        
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = exponent >= 0 ? "var(--primary)" : "var(--danger)";
+        ctx.fillStyle = exponent >= 0 ? "var(--primary)" : "var(--danger)";
+
+        // Draw representational bubbles for each "Power of Ten"
+        const startX = (w - (count * spacing)) / 2;
+        for(let i = 0; i < count; i++) {
+            ctx.beginPath();
+            ctx.arc(startX + (i * spacing), h/2, radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "14px Inter";
+        ctx.textAlign = "center";
+        ctx.fillText(exponent === 0 ? "Unity (10⁰)" : `Magnitude: 10^${exponent}`, w/2, h - 20);
+    }
+
+    const btnLarge = document.getElementById('modeLarge');
+    const btnSmall = document.getElementById('modeSmall');
+
+    btnLarge.onclick = () => { btnLarge.className = 'active'; btnSmall.className = ''; init('large'); };
+    btnSmall.onclick = () => { btnSmall.className = 'active'; btnLarge.className = ''; init('small'); };
+
+    init('large');
+    window.onresize = drawMagnitude;
+</script>
+
+</body>
+</html>

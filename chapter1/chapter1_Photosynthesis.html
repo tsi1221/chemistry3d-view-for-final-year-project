@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 Photosynthesis 3D Interactive</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #canvas3d {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            cursor: move;
+        }
+        
+        .label {
+            position: absolute;
+            padding: 8px 16px;
+            background: rgba(0, 30, 0, 0.9);
+            color: #0f0;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 1000;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            backdrop-filter: blur(5px);
+            transform: translate(-50%, -100%);
+            white-space: nowrap;
+            animation: floatUp 0.5s ease-out;
+        }
+        
+        @keyframes floatUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -100%);
+            }
+        }
+        
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 20, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #0f0;
+            color: #fff;
+            width: 300px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        .info-title {
+            color: #0f0;
+            font-size: 18px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #0f0;
+            padding-bottom: 5px;
+        }
+        
+        .info-content {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #a0ffa0;
+        }
+        
+        .stats-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        
+        .stat {
+            background: rgba(0, 30, 30, 0.8);
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid #0ff;
+            color: #0ff;
+            font-size: 12px;
+            text-align: center;
+            min-width: 80px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 5px;
+            color: #fff;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .control-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 40, 40, 0.9);
+            border: 2px solid #0ff;
+            color: #0ff;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        
+        .control-btn:hover {
+            background: rgba(0, 60, 60, 1);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #0ff;
+        }
+        
+        .mode-selector {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .mode-btn {
+            padding: 8px 15px;
+            background: rgba(40, 0, 40, 0.8);
+            border: 2px solid #f0f;
+            color: #f0f;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+            backdrop-filter: blur(5px);
+        }
+        
+        .mode-btn.active {
+            background: rgba(60, 0, 60, 1);
+            box-shadow: 0 0 15px #f0f;
+        }
+        
+        .sun-control {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            background: rgba(40, 40, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #ff0;
+            z-index: 100;
+            width: 200px;
+        }
+        
+        .sun-slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #333, #ff0);
+            border-radius: 4px;
+            outline: none;
+            margin-top: 10px;
+        }
+        
+        .sun-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ff0;
+            cursor: pointer;
+            box-shadow: 0 0 10px #ff0;
+        }
+        
+        .highlight {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            z-index: 50;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+        
+        .molecule-label {
+            position: absolute;
+            font-size: 10px;
+            color: #fff;
+            text-shadow: 0 0 5px #000;
+            pointer-events: none;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .energy-beam {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div id="labels"></div>
+    <div id="highlights"></div>
+    <div id="moleculeLabels"></div>
+    <div id="energyBeams"></div>
+    
+    <div class="info-panel" style="display: none;" id="infoPanel">
+        <div class="info-title" id="infoTitle">Info</div>
+        <div class="info-content" id="infoContent">Click or hover on any element to learn about it</div>
+    </div>
+    
+    <div class="stats-bar">
+        <div class="stat">
+            CO₂ <div class="stat-value" id="co2Count">24</div>
+        </div>
+        <div class="stat">
+            H₂O <div class="stat-value" id="h2oCount">24</div>
+        </div>
+        <div class="stat">
+            O₂ <div class="stat-value" id="o2Count">0</div>
+        </div>
+        <div class="stat">
+            Glucose <div class="stat-value" id="glucoseCount">0</div>
+        </div>
+    </div>
+    
+    <div class="mode-selector">
+        <div class="mode-btn active" data-mode="view">👁️ View</div>
+        <div class="mode-btn" data-mode="info">ℹ️ Info</div>
+        <div class="mode-btn" data-mode="interact">🔄 Interact</div>
+    </div>
+    
+    <div class="sun-control">
+        <div style="color: #ff0; font-size: 12px;">☀️ Sun Intensity</div>
+        <input type="range" min="10" max="100" value="70" class="sun-slider" id="sunSlider">
+    </div>
+    
+    <div class="controls">
+        <button class="control-btn" id="btnReset">🔄</button>
+        <button class="control-btn" id="btnZoomIn">➕</button>
+        <button class="control-btn" id="btnZoomOut">➖</button>
+    </div>
+    
+    <canvas id="canvas3d"></canvas>
+
+    <script>
+        // Get canvas and context
+        const canvas = document.getElementById('canvas3d');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Elements for labels and highlights
+        const labelsDiv = document.getElementById('labels');
+        const highlightsDiv = document.getElementById('highlights');
+        const moleculeLabelsDiv = document.getElementById('moleculeLabels');
+        const energyBeamsDiv = document.getElementById('energyBeams');
+        const infoPanel = document.getElementById('infoPanel');
+        const infoTitle = document.getElementById('infoTitle');
+        const infoContent = document.getElementById('infoContent');
+        
+        // Colors
+        const colors = {
+            co2: '#ff3366',
+            h2o: '#3366ff',
+            o2: '#ffff66',
+            glucose: '#33ff66',
+            chloroplast: '#33cc33',
+            leaf: '#226622',
+            stem: '#8b4513',
+            sun: '#ffff33',
+            energy: '#ffff00',
+            bond: '#ffffff',
+            highlight: '#00ffff',
+            photon: '#ffff88'
+        };
+        
+        // 3D System
+        let particles = [];
+        let chloroplasts = [];
+        let bonds = [];
+        let reactions = [];
+        let lastTime = 0;
+        let hoveredElement = null;
+        let clickedElement = null;
+        
+        // Stats
+        let co2Count = 24;
+        let h2oCount = 24;
+        let o2Count = 0;
+        let glucoseCount = 0;
+        let reactionCount = 0;
+        
+        // View settings
+        let viewMode = 'view';
+        let rotationX = 0.3;
+        let rotationY = 0;
+        let cameraZ = 800;
+        let zoom = 1;
+        let sunIntensity = 70;
+        
+        // Interaction
+        let isDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        // Information database
+        const elementInfo = {
+            'co2': {
+                title: 'Carbon Dioxide (CO₂)',
+                content: 'Enters the leaf through stomata. Contains carbon and oxygen atoms that are used to build glucose.',
+                color: colors.co2
+            },
+            'h2o': {
+                title: 'Water (H₂O)',
+                content: 'Travels up from roots through xylem. Provides hydrogen atoms and electrons for photosynthesis.',
+                color: colors.h2o
+            },
+            'o2': {
+                title: 'Oxygen (O₂)',
+                content: 'Released as a byproduct. Comes from splitting water molecules during light reactions.',
+                color: colors.o2
+            },
+            'glucose': {
+                title: 'Glucose (C₆H₁₂O₆)',
+                content: 'Sugar produced by photosynthesis. Stores chemical energy for the plant.',
+                color: colors.glucose
+            },
+            'photon': {
+                title: 'Sunlight Energy',
+                content: 'Photons from sunlight provide energy to drive the chemical reactions.',
+                color: colors.photon
+            },
+            'chloroplast': {
+                title: 'Chloroplast',
+                content: 'The organelle where photosynthesis occurs. Contains chlorophyll and thylakoids.',
+                color: colors.chloroplast
+            },
+            'leaf': {
+                title: 'Leaf',
+                content: 'Main photosynthetic organ. Flat surface maximizes sunlight capture.',
+                color: colors.leaf
+            },
+            'stem': {
+                title: 'Stem',
+                content: 'Transports water from roots to leaves and glucose from leaves to other parts.',
+                color: colors.stem
+            }
+        };
+        
+        // Update stats display
+        function updateStats() {
+            document.getElementById('co2Count').textContent = co2Count;
+            document.getElementById('h2oCount').textContent = h2oCount;
+            document.getElementById('o2Count').textContent = o2Count;
+            document.getElementById('glucoseCount').textContent = glucoseCount;
+        }
+        
+        // 3D Vector class
+        class Vector3 {
+            constructor(x, y, z) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+            }
+            
+            rotateX(angle) {
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                return new Vector3(
+                    this.x,
+                    this.y * cos - this.z * sin,
+                    this.y * sin + this.z * cos
+                );
+            }
+            
+            rotateY(angle) {
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                return new Vector3(
+                    this.x * cos + this.z * sin,
+                    this.y,
+                    -this.x * sin + this.z * cos
+                );
+            }
+            
+            project() {
+                const scale = cameraZ / (cameraZ - this.z);
+                return {
+                    x: width/2 + (this.x * scale),
+                    y: height/2 + (this.y * scale)
+                };
+            }
+            
+            distanceTo(other) {
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                const dz = this.z - other.z;
+                return Math.sqrt(dx*dx + dy*dy + dz*dz);
+            }
+        }
+        
+        // Particle class (3D molecules)
+        class Particle3D {
+            constructor(position, velocity, type) {
+                this.position = position;
+                this.velocity = velocity;
+                this.type = type;
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.size = this.getSize();
+                this.color = this.getColor();
+                this.atoms = [];
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+                this.glow = 0;
+                this.target = null;
+                this.inReaction = false;
+                this.reactionProgress = 0;
+                this.labelVisible = false;
+                
+                this.createAtoms();
+            }
+            
+            getSize() {
+                switch(this.type) {
+                    case 'co2': return 20;
+                    case 'h2o': return 18;
+                    case 'o2': return 16;
+                    case 'glucose': return 30;
+                    case 'photon': return 8;
+                    default: return 15;
+                }
+            }
+            
+            getColor() {
+                return colors[this.type] || colors.highlight;
+            }
+            
+            createAtoms() {
+                if (this.type === 'co2') {
+                    this.atoms = [
+                        new Vector3(-10, 0, 0),
+                        new Vector3(0, 0, 0),
+                        new Vector3(10, 0, 0)
+                    ];
+                } else if (this.type === 'h2o') {
+                    const angle = 104.5 * Math.PI / 180;
+                    const bondLength = 12;
+                    this.atoms = [
+                        new Vector3(0, -bondLength * Math.cos(angle/2), 0),
+                        new Vector3(-bondLength * Math.sin(angle/2), bondLength * Math.cos(angle/2), 0),
+                        new Vector3(bondLength * Math.sin(angle/2), bondLength * Math.cos(angle/2), 0)
+                    ];
+                } else if (this.type === 'o2') {
+                    this.atoms = [
+                        new Vector3(-8, 0, 0),
+                        new Vector3(8, 0, 0)
+                    ];
+                } else if (this.type === 'glucose') {
+                    this.atoms = [];
+                    const radius = 15;
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i / 6) * Math.PI * 2;
+                        this.atoms.push(new Vector3(
+                            Math.cos(angle) * radius,
+                            Math.sin(angle) * radius,
+                            0
+                        ));
+                    }
+                }
+            }
+            
+            update(deltaTime) {
+                this.position.x += this.velocity.x;
+                this.position.y += this.velocity.y;
+                this.position.z += this.velocity.z;
+                
+                this.rotation += this.rotationSpeed;
+                
+                if (this.type === 'photon') {
+                    this.glow = Math.sin(Date.now() * 0.01) * 0.5 + 0.5;
+                }
+                
+                if (this.inReaction) {
+                    this.reactionProgress += deltaTime * 0.001;
+                    this.glow = Math.sin(Date.now() * 0.05) * 0.3 + 0.7;
+                }
+                
+                this.checkBounds();
+                
+                if (this.target && !this.inReaction) {
+                    const dx = this.target.position.x - this.position.x;
+                    const dy = this.target.position.y - this.position.y;
+                    const dz = this.target.position.z - this.position.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    
+                    if (dist < 50) {
+                        this.inReaction = true;
+                        this.velocity = new Vector3(0, 0, 0);
+                        startChloroplastReaction(this.target);
+                    } else {
+                        const speed = 0.5;
+                        this.velocity.x = dx / dist * speed;
+                        this.velocity.y = dy / dist * speed;
+                        this.velocity.z = dz / dist * speed;
+                    }
+                }
+                
+                this.updateLabel();
+            }
+            
+            checkBounds() {
+                const bounds = 400;
+                
+                if (this.position.x < -bounds) this.velocity.x = Math.abs(this.velocity.x);
+                if (this.position.x > bounds) this.velocity.x = -Math.abs(this.velocity.x);
+                if (this.position.y < -bounds) this.velocity.y = Math.abs(this.velocity.y);
+                if (this.position.y > bounds) this.velocity.y = -Math.abs(this.velocity.y);
+                if (this.position.z < -bounds) this.velocity.z = Math.abs(this.velocity.z);
+                if (this.position.z > bounds) this.velocity.z = -Math.abs(this.velocity.z);
+            }
+            
+            updateLabel() {
+                if (viewMode === 'info') {
+                    this.showLabel();
+                }
+            }
+            
+            showLabel() {
+                const proj = this.position.project();
+                const label = document.getElementById(`label-${this.id}`);
+                
+                if (!label) {
+                    const newLabel = document.createElement('div');
+                    newLabel.id = `label-${this.id}`;
+                    newLabel.className = 'molecule-label';
+                    newLabel.textContent = this.type.toUpperCase();
+                    newLabel.style.left = proj.x + 'px';
+                    newLabel.style.top = proj.y + 'px';
+                    newLabel.style.color = this.color;
+                    moleculeLabelsDiv.appendChild(newLabel);
+                } else {
+                    label.style.left = proj.x + 'px';
+                    label.style.top = proj.y + 'px';
+                }
+            }
+            
+            hideLabel() {
+                const label = document.getElementById(`label-${this.id}`);
+                if (label) {
+                    label.remove();
+                }
+            }
+            
+            isPointInside(projX, projY) {
+                const proj = this.position.project();
+                const dx = projX - proj.x;
+                const dy = projY - proj.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                return distance < this.size + 10;
+            }
+            
+            draw(ctx) {
+                const proj = this.position.project();
+                
+                if (this.glow > 0) {
+                    const glowSize = this.size + 15;
+                    ctx.save();
+                    ctx.globalAlpha = this.glow * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, glowSize, 0, Math.PI * 2);
+                    const gradient = ctx.createRadialGradient(
+                        proj.x, proj.y, 0,
+                        proj.x, proj.y, glowSize
+                    );
+                    gradient.addColorStop(0, this.color + '80');
+                    gradient.addColorStop(1, this.color + '00');
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    ctx.restore();
+                }
+                
+                ctx.save();
+                ctx.translate(proj.x, proj.y);
+                ctx.rotate(this.rotation);
+                
+                if (this.type === 'photon') {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    this.drawMolecule(ctx);
+                }
+                
+                ctx.restore();
+                
+                if (this === hoveredElement || this === clickedElement) {
+                    this.drawHighlight(ctx, proj);
+                }
+            }
+            
+            drawMolecule(ctx) {
+                ctx.strokeStyle = colors.bond + '80';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                
+                if (this.type === 'co2') {
+                    ctx.beginPath();
+                    ctx.moveTo(this.atoms[0].x, this.atoms[0].y);
+                    ctx.lineTo(this.atoms[1].x, this.atoms[1].y);
+                    ctx.lineTo(this.atoms[2].x, this.atoms[2].y);
+                    ctx.stroke();
+                } else if (this.type === 'h2o') {
+                    ctx.beginPath();
+                    ctx.moveTo(this.atoms[0].x, this.atoms[0].y);
+                    ctx.lineTo(this.atoms[1].x, this.atoms[1].y);
+                    ctx.moveTo(this.atoms[0].x, this.atoms[0].y);
+                    ctx.lineTo(this.atoms[2].x, this.atoms[2].y);
+                    ctx.stroke();
+                } else if (this.type === 'o2') {
+                    ctx.beginPath();
+                    ctx.moveTo(this.atoms[0].x, this.atoms[0].y);
+                    ctx.lineTo(this.atoms[1].x, this.atoms[1].y);
+                    ctx.stroke();
+                } else if (this.type === 'glucose') {
+                    for (let i = 0; i < this.atoms.length; i++) {
+                        const next = (i + 1) % this.atoms.length;
+                        ctx.beginPath();
+                        ctx.moveTo(this.atoms[i].x, this.atoms[i].y);
+                        ctx.lineTo(this.atoms[next].x, this.atoms[next].y);
+                        ctx.stroke();
+                    }
+                }
+                
+                this.atoms.forEach(atom => {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(atom.x, atom.y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+            
+            drawHighlight(ctx, proj) {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, this.size + 20, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            getInfo() {
+                return elementInfo[this.type] || {
+                    title: this.type.toUpperCase(),
+                    content: 'Click to learn more about this element.',
+                    color: this.color
+                };
+            }
+        }
+        
+        // Chloroplast class
+        class Chloroplast3D {
+            constructor(position) {
+                this.position = position;
+                this.id = Math.random().toString(36).substr(2, 9);
+                this.size = 40;
+                this.color = colors.chloroplast;
+                this.active = false;
+                this.reactionProgress = 0;
+                this.glow = 0;
+                this.thylakoids = [];
+                this.createStructure();
+            }
+            
+            createStructure() {
+                for (let i = 0; i < 5; i++) {
+                    const angle = (i / 5) * Math.PI * 2;
+                    this.thylakoids.push({
+                        position: new Vector3(
+                            Math.cos(angle) * 20,
+                            Math.sin(angle) * 20,
+                            0
+                        ),
+                        size: 10
+                    });
+                }
+            }
+            
+            update(deltaTime) {
+                if (this.active) {
+                    this.reactionProgress += deltaTime * 0.0005;
+                    this.glow = Math.sin(Date.now() * 0.01) * 0.5 + 0.5;
+                    
+                    if (this.reactionProgress >= 1) {
+                        this.completeReaction();
+                        this.active = false;
+                        this.reactionProgress = 0;
+                    }
+                } else {
+                    this.glow = Math.sin(Date.now() * 0.005 + this.position.x * 0.01) * 0.2 + 0.3;
+                }
+                
+                if (viewMode === 'info') {
+                    this.showLabel();
+                }
+            }
+            
+            showLabel() {
+                const proj = this.position.project();
+                const label = document.getElementById(`label-chloroplast-${this.id}`);
+                
+                if (!label) {
+                    const newLabel = document.createElement('div');
+                    newLabel.id = `label-chloroplast-${this.id}`;
+                    newLabel.className = 'molecule-label';
+                    newLabel.textContent = 'CHLOROPLAST';
+                    newLabel.style.left = proj.x + 'px';
+                    newLabel.style.top = (proj.y - this.size - 10) + 'px';
+                    newLabel.style.color = this.color;
+                    moleculeLabelsDiv.appendChild(newLabel);
+                } else {
+                    label.style.left = proj.x + 'px';
+                    label.style.top = (proj.y - this.size - 10) + 'px';
+                }
+            }
+            
+            hideLabel() {
+                const label = document.getElementById(`label-chloroplast-${this.id}`);
+                if (label) {
+                    label.remove();
+                }
+            }
+            
+            completeReaction() {
+                reactionCount++;
+                glucoseCount++;
+                co2Count -= 6;
+                h2oCount -= 6;
+                o2Count += 6;
+                
+                const glucose = new Particle3D(
+                    new Vector3(this.position.x, this.position.y, this.position.z),
+                    new Vector3(
+                        (Math.random() - 0.5) * 0.3,
+                        (Math.random() - 0.5) * 0.3,
+                        (Math.random() - 0.5) * 0.3
+                    ),
+                    'glucose'
+                );
+                particles.push(glucose);
+                
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => {
+                        const o2 = new Particle3D(
+                            new Vector3(this.position.x, this.position.y, this.position.z),
+                            new Vector3(
+                                (Math.random() - 0.5) * 2,
+                                -Math.random() * 2 - 1,
+                                (Math.random() - 0.5) * 2
+                            ),
+                            'o2'
+                        );
+                        particles.push(o2);
+                    }, i * 100);
+                }
+                
+                updateStats();
+            }
+            
+            isPointInside(projX, projY) {
+                const proj = this.position.project();
+                const dx = projX - proj.x;
+                const dy = projY - proj.y;
+                const distance = Math.sqrt(dx*dx + dy*dy);
+                return distance < this.size + 10;
+            }
+            
+            draw(ctx) {
+                const proj = this.position.project();
+                
+                if (this.glow > 0) {
+                    ctx.save();
+                    ctx.globalAlpha = this.glow * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(proj.x, proj.y, this.size + 20, 0, Math.PI * 2);
+                    const gradient = ctx.createRadialGradient(
+                        proj.x, proj.y, 0,
+                        proj.x, proj.y, this.size + 20
+                    );
+                    gradient.addColorStop(0, this.color + '80');
+                    gradient.addColorStop(1, this.color + '00');
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                    ctx.restore();
+                }
+                
+                ctx.save();
+                ctx.translate(proj.x, proj.y);
+                
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+                gradient.addColorStop(0, this.color + '80');
+                gradient.addColorStop(1, this.color + '20');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                ctx.strokeStyle = colors.highlight + '80';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                this.thylakoids.forEach(thylakoid => {
+                    const tProj = thylakoid.position.project();
+                    ctx.beginPath();
+                    ctx.arc(tProj.x - proj.x, tProj.y - proj.y, thylakoid.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color + '60';
+                    ctx.fill();
+                    ctx.strokeStyle = this.color + '90';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+                
+                if (this.reactionProgress > 0) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.size + 5, -Math.PI/2, -Math.PI/2 + this.reactionProgress * Math.PI * 2);
+                    ctx.strokeStyle = colors.glucose;
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+                
+                if (this === hoveredElement || this === clickedElement) {
+                    this.drawHighlight(ctx, proj);
+                }
+            }
+            
+            drawHighlight(ctx, proj) {
+                ctx.save();
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, this.size + 25, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            getInfo() {
+                return elementInfo.chloroplast;
+            }
+        }
+        
+        // Initialize system
+        function init() {
+            particles = [];
+            chloroplasts = [];
+            bonds = [];
+            reactions = [];
+            
+            co2Count = 24;
+            h2oCount = 24;
+            o2Count = 0;
+            glucoseCount = 0;
+            reactionCount = 0;
+            
+            clearLabels();
+            
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const radius = 200;
+                chloroplasts.push(new Chloroplast3D(
+                    new Vector3(
+                        Math.cos(angle) * radius,
+                        Math.sin(angle) * radius,
+                        (Math.random() - 0.5) * 100
+                    )
+                ));
+            }
+            
+            for (let i = 0; i < 12; i++) {
+                const co2 = new Particle3D(
+                    new Vector3(
+                        (Math.random() - 0.5) * 600,
+                        300 + Math.random() * 100,
+                        (Math.random() - 0.5) * 200
+                    ),
+                    new Vector3(
+                        (Math.random() - 0.5) * 0.5,
+                        -Math.random() * 0.5 - 0.3,
+                        (Math.random() - 0.5) * 0.3
+                    ),
+                    'co2'
+                );
+                co2.target = chloroplasts[Math.floor(Math.random() * chloroplasts.length)];
+                particles.push(co2);
+            }
+            
+            for (let i = 0; i < 12; i++) {
+                const h2o = new Particle3D(
+                    new Vector3(
+                        (Math.random() - 0.5) * 600,
+                        -300 - Math.random() * 100,
+                        (Math.random() - 0.5) * 200
+                    ),
+                    new Vector3(
+                        (Math.random() - 0.5) * 0.3,
+                        Math.random() * 0.5 + 0.3,
+                        (Math.random() - 0.5) * 0.3
+                    ),
+                    'h2o'
+                );
+                h2o.target = chloroplasts[Math.floor(Math.random() * chloroplasts.length)];
+                particles.push(h2o);
+            }
+            
+            for (let i = 0; i < 20; i++) {
+                const photon = new Particle3D(
+                    new Vector3(
+                        (Math.random() - 0.5) * 800,
+                        -400,
+                        (Math.random() - 0.5) * 200
+                    ),
+                    new Vector3(
+                        (Math.random() - 0.5) * 0.2,
+                        2 + Math.random(),
+                        (Math.random() - 0.5) * 0.2
+                    ),
+                    'photon'
+                );
+                particles.push(photon);
+            }
+            
+            updateStats();
+        }
+        
+        // Clear all labels
+        function clearLabels() {
+            labelsDiv.innerHTML = '';
+            highlightsDiv.innerHTML = '';
+            moleculeLabelsDiv.innerHTML = '';
+            energyBeamsDiv.innerHTML = '';
+        }
+        
+        // Show label for element
+        function showLabel(x, y, text, color) {
+            const label = document.createElement('div');
+            label.className = 'label';
+            label.textContent = text;
+            label.style.left = x + 'px';
+            label.style.top = y + 'px';
+            label.style.borderColor = color;
+            label.style.boxShadow = `0 0 20px ${color}80`;
+            
+            labelsDiv.appendChild(label);
+            
+            setTimeout(() => {
+                label.style.opacity = '0';
+                setTimeout(() => label.remove(), 500);
+            }, 2000);
+        }
+        
+        // Show highlight
+        function showHighlight(x, y, size, color) {
+            const highlight = document.createElement('div');
+            highlight.className = 'highlight';
+            highlight.style.left = (x - size/2) + 'px';
+            highlight.style.top = (y - size/2) + 'px';
+            highlight.style.width = size + 'px';
+            highlight.style.height = size + 'px';
+            highlight.style.background = `radial-gradient(circle, ${color}20 0%, transparent 70%)`;
+            
+            highlightsDiv.appendChild(highlight);
+            
+            setTimeout(() => {
+                highlight.remove();
+            }, 2000);
+        }
+        
+        // Show info panel
+        function showInfoPanel(x, y, info) {
+            infoTitle.textContent = info.title;
+            infoContent.textContent = info.content;
+            infoPanel.style.display = 'block';
+            infoPanel.style.left = Math.min(x + 20, width - 320) + 'px';
+            infoPanel.style.top = Math.min(y + 20, height - 200) + 'px';
+            infoPanel.style.borderColor = info.color;
+        }
+        
+        // Start chloroplast reaction
+        function startChloroplastReaction(chloroplast) {
+            chloroplast.active = true;
+            chloroplast.reactionProgress = 0.01;
+            
+            const reactingParticles = particles.filter(p => 
+                p.target === chloroplast && p.inReaction
+            );
+            
+            const co2Count = reactingParticles.filter(p => p.type === 'co2').length;
+            const h2oCount = reactingParticles.filter(p => p.type === 'h2o').length;
+            
+            if (co2Count >= 6 && h2oCount >= 6) {
+                let co2Used = 0;
+                let h2oUsed = 0;
+                
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    if (p.target === chloroplast && p.inReaction) {
+                        if (p.type === 'co2' && co2Used < 6) {
+                            particles.splice(i, 1);
+                            co2Used++;
+                        } else if (p.type === 'h2o' && h2oUsed < 6) {
+                            particles.splice(i, 1);
+                            h2oUsed++;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Draw 3D scene
+        function drawScene() {
+            const gradient = ctx.createRadialGradient(
+                width/2, height/2, 0,
+                width/2, height/2, Math.max(width, height)/2
+            );
+            gradient.addColorStop(0, '#001a00');
+            gradient.addColorStop(1, '#000500');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            draw3DGrid();
+            drawLeafStructure();
+            
+            chloroplasts.forEach(chloroplast => {
+                chloroplast.update(16);
+                chloroplast.draw(ctx);
+            });
+            
+            particles.forEach(particle => {
+                particle.update(16);
+                particle.draw(ctx);
+                
+                if (!particle.inReaction && (particle.type === 'co2' || particle.type === 'h2o')) {
+                    chloroplasts.forEach(chloroplast => {
+                        const dist = particle.position.distanceTo(chloroplast.position);
+                        if (dist < 60 && !particle.target) {
+                            particle.target = chloroplast;
+                        }
+                    });
+                }
+                
+                if (particle.type === 'photon' && particle.position.y > 400) {
+                    const index = particles.indexOf(particle);
+                    if (index > -1) particles.splice(index, 1);
+                }
+            });
+            
+            if (Math.random() < sunIntensity / 1000) {
+                const photon = new Particle3D(
+                    new Vector3(
+                        (Math.random() - 0.5) * 800,
+                        -400,
+                        (Math.random() - 0.5) * 200
+                    ),
+                    new Vector3(
+                        (Math.random() - 0.5) * 0.2,
+                        2 + Math.random() * (sunIntensity / 50),
+                        (Math.random() - 0.5) * 0.2
+                    ),
+                    'photon'
+                );
+                particles.push(photon);
+            }
+            
+            if (co2Count < 6 && Math.random() < 0.01) {
+                const co2 = new Particle3D(
+                    new Vector3(
+                        (Math.random() - 0.5) * 600,
+                        300,
+                        (Math.random() - 0.5) * 200
+                    ),
+                    new Vector3(
+                        (Math.random() - 0.5) * 0.5,
+                        -0.3,
+                        (Math.random() - 0.5) * 0.3
+                    ),
+                    'co2'
+                );
+                co2.target = chloroplasts[Math.floor(Math.random() * chloroplasts.length)];
+                particles.push(co2);
+                co2Count++;
+            }
+            
+            if (h2oCount < 6 && Math.random() < 0.01) {
+                const h2o = new Particle3D(
+                    new Vector3(
+                        (Math.random() - 0.5) * 600,
+                        -300,
+                        (Math.random() - 0.5) * 200
+                    ),
+                    new Vector3(
+                        (Math.random() - 0.5) * 0.3,
+                        0.3,
+                        (Math.random() - 0.5) * 0.3
+                    ),
+                    'h2o'
+                );
+                h2o.target = chloroplasts[Math.floor(Math.random() * chloroplasts.length)];
+                particles.push(h2o);
+                h2oCount++;
+            }
+        }
+        
+        // Draw 3D grid
+        function draw3DGrid() {
+            const gridSize = 100;
+            const gridLines = 20;
+            
+            ctx.strokeStyle = '#003300';
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.3;
+            
+            for (let i = -gridLines; i <= gridLines; i++) {
+                let start = new Vector3(i * gridSize, 0, -gridLines * gridSize);
+                let end = new Vector3(i * gridSize, 0, gridLines * gridSize);
+                start = start.rotateY(rotationY).rotateX(rotationX);
+                end = end.rotateY(rotationY).rotateX(rotationX);
+                
+                const startProj = start.project();
+                const endProj = end.project();
+                
+                ctx.beginPath();
+                ctx.moveTo(startProj.x, startProj.y);
+                ctx.lineTo(endProj.x, endProj.y);
+                ctx.stroke();
+                
+                start = new Vector3(-gridLines * gridSize, 0, i * gridSize);
+                end = new Vector3(gridLines * gridSize, 0, i * gridSize);
+                start = start.rotateY(rotationY).rotateX(rotationX);
+                end = end.rotateY(rotationY).rotateX(rotationX);
+                
+                const startProj2 = start.project();
+                const endProj2 = end.project();
+                
+                ctx.beginPath();
+                ctx.moveTo(startProj2.x, startProj2.y);
+                ctx.lineTo(endProj2.x, endProj2.y);
+                ctx.stroke();
+            }
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        // Draw leaf structure
+        function drawLeafStructure() {
+            ctx.strokeStyle = colors.leaf + '60';
+            ctx.lineWidth = 10;
+            ctx.lineCap = 'round';
+            
+            const veinStart = new Vector3(0, -150, 0);
+            const veinEnd = new Vector3(0, 150, 0);
+            
+            const veinStartRot = veinStart.rotateY(rotationY).rotateX(rotationX);
+            const veinEndRot = veinEnd.rotateY(rotationY).rotateX(rotationX);
+            
+            const veinStartProj = veinStartRot.project();
+            const veinEndProj = veinEndRot.project();
+            
+            ctx.beginPath();
+            ctx.moveTo(veinStartProj.x, veinStartProj.y);
+            ctx.lineTo(veinEndProj.x, veinEndProj.y);
+            ctx.stroke();
+            
+            ctx.fillStyle = colors.leaf + '20';
+            ctx.beginPath();
+            for (let i = 0; i < 20; i++) {
+                const angle = (i / 20) * Math.PI * 2;
+                const radius = 250;
+                const point = new Vector3(
+                    Math.cos(angle) * radius,
+                    Math.sin(angle) * radius * 0.6,
+                    Math.sin(angle) * 50
+                );
+                const pointRot = point.rotateY(rotationY).rotateX(rotationX);
+                const pointProj = pointRot.project();
+                
+                if (i === 0) ctx.moveTo(pointProj.x, pointProj.y);
+                else ctx.lineTo(pointProj.x, pointProj.y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.strokeStyle = colors.stem;
+            ctx.lineWidth = 15;
+            
+            const stemStart = new Vector3(0, 200, 0);
+            const stemEnd = new Vector3(0, 400, 0);
+            
+            const stemStartRot = stemStart.rotateY(rotationY).rotateX(rotationX);
+            const stemEndRot = stemEnd.rotateY(rotationY).rotateX(rotationX);
+            
+            const stemStartProj = stemStartRot.project();
+            const stemEndProj = stemEndRot.project();
+            
+            ctx.beginPath();
+            ctx.moveTo(stemStartProj.x, stemStartProj.y);
+            ctx.lineTo(stemEndProj.x, stemEndProj.y);
+            ctx.stroke();
+        }
+        
+        // Handle click on element
+        function handleElementClick(x, y) {
+            let foundElement = null;
+            
+            particles.forEach(particle => {
+                if (particle.isPointInside(x, y)) {
+                    foundElement = particle;
+                }
+            });
+            
+            chloroplasts.forEach(chloroplast => {
+                if (chloroplast.isPointInside(x, y)) {
+                    foundElement = chloroplast;
+                }
+            });
+            
+            if (foundElement) {
+                clickedElement = foundElement;
+                const info = foundElement.getInfo();
+                const proj = foundElement.position.project ? foundElement.position.project() : {x: x, y: y};
+                
+                showLabel(proj.x, proj.y, info.title, info.color);
+                showHighlight(proj.x, proj.y, 80, info.color);
+                showInfoPanel(proj.x, proj.y, info);
+                
+                return true;
+            }
+            
+            return false;
+        }
+        
+        // Animation loop
+        function animate() {
+            drawScene();
+            requestAnimationFrame(animate);
+        }
+        
+        // Handle window resize
+        function handleResize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        // Mouse interaction
+        canvas.addEventListener('mousedown', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            if (viewMode === 'interact') {
+                if (handleElementClick(x, y)) {
+                    return;
+                }
+            }
+            
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            if (!isDragging && viewMode === 'info') {
+                hoveredElement = null;
+                
+                particles.forEach(particle => {
+                    if (particle.isPointInside(x, y)) {
+                        hoveredElement = particle;
+                    }
+                });
+                
+                chloroplasts.forEach(chloroplast => {
+                    if (chloroplast.isPointInside(x, y)) {
+                        hoveredElement = chloroplast;
+                    }
+                });
+            }
+            
+            if (isDragging) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                
+                rotationY += deltaX * 0.01;
+                rotationX += deltaY * 0.01;
+                
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+        
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            canvas.style.cursor = 'move';
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom += e.deltaY * -0.001;
+            zoom = Math.min(Math.max(0.5, zoom), 2);
+            cameraZ = 800 / zoom;
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            if (viewMode === 'view' || viewMode === 'info') {
+                if (handleElementClick(x, y)) {
+                    return;
+                }
+            }
+            
+            infoPanel.style.display = 'none';
+            clickedElement = null;
+        });
+        
+        // Control buttons
+        document.getElementById('btnReset').addEventListener('click', init);
+        document.getElementById('btnZoomIn').addEventListener('click', () => {
+            zoom = Math.min(zoom + 0.1, 2);
+            cameraZ = 800 / zoom;
+        });
+        document.getElementById('btnZoomOut').addEventListener('click', () => {
+            zoom = Math.max(zoom - 0.1, 0.5);
+            cameraZ = 800 / zoom;
+        });
+        
+        // Mode buttons
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                viewMode = btn.dataset.mode;
+                
+                clearLabels();
+                
+                if (viewMode === 'info') {
+                    particles.forEach(p => p.showLabel());
+                    chloroplasts.forEach(c => c.showLabel());
+                } else {
+                    particles.forEach(p => p.hideLabel());
+                    chloroplasts.forEach(c => c.hideLabel());
+                }
+            });
+        });
+        
+        // Sun intensity slider
+        const sunSlider = document.getElementById('sunSlider');
+        sunSlider.addEventListener('input', (e) => {
+            sunIntensity = parseInt(e.target.value);
+        });
+        
+        // Initialize and start
+        window.addEventListener('load', () => {
+            init();
+            animate();
+        });
+        
+        window.addEventListener('resize', handleResize);
+    </script>
+</body>
+</html>

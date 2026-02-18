@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bohr Model Interactive Lab</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #1e293b;
+            --primary: #38bdf8;
+            --energy: #fbbf24;
+            --text: #f1f5f9;
+            --danger: #f87171;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .lab-container {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            width: 95%;
+            max-width: 1100px;
+            height: 650px;
+        }
+
+        .viewport {
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            border-radius: 20px;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden;
+        }
+
+        canvas { width: 100%; height: 100%; }
+
+        /* Alert System */
+        #quantumAlert {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(56, 189, 248, 0.9);
+            color: #000;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 100;
+            animation: slideDown 0.4s ease-out;
+        }
+
+        @keyframes slideDown { from { top: -50px; } to { top: 20px; } }
+
+        .sidebar { display: flex; flex-direction: column; gap: 15px; }
+
+        .card {
+            background: var(--panel);
+            padding: 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .energy-graph {
+            height: 180px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            border-bottom: 2px solid #475569;
+        }
+
+        .bar {
+            flex: 1;
+            background: #334155;
+            transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+        }
+
+        .bar.active { background: var(--energy); box-shadow: 0 0 15px var(--energy); }
+        .bar::after {
+            content: attr(data-n);
+            position: absolute;
+            bottom: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #94a3b8;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 800;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .btn-up { background: var(--energy); color: #000; }
+        .btn-down { background: var(--primary); color: #000; }
+        button:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-2px); }
+        button:disabled { opacity: 0.2; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <div class="viewport">
+        <div id="quantumAlert"></div>
+        <canvas id="bohrCanvas"></canvas>
+    </div>
+
+    <div class="sidebar">
+        <div class="card">
+            <h3 style="margin:0 0 15px 0; color:var(--primary)">Electron Control</h3>
+            <button class="btn-up" id="btnUp" onclick="changeLevel(1)">ABSORB PHOTON (+E)</button>
+            <button class="btn-down" id="btnDown" onclick="changeLevel(-1)">EMIT PHOTON (-E)</button>
+        </div>
+
+        <div class="card">
+            <h3 style="margin:0 0 10px 0; font-size:0.8rem; color:#94a3b8;">ENERGY POTENTIAL (U)</h3>
+            <div class="energy-graph">
+                <div class="bar" data-n="n=1" style="height: 25%"></div>
+                <div class="bar" data-n="n=2" style="height: 55%"></div>
+                <div class="bar" data-n="n=3" style="height: 75%"></div>
+                <div class="bar" data-n="n=4" style="height: 90%"></div>
+            </div>
+            <div id="stateLabel" style="text-align:center; margin-top:25px; font-weight:bold; color:var(--primary)">GROUND STATE</div>
+        </div>
+
+        <div class="card" style="font-size:0.8rem; color:#94a3b8;">
+            <b>Lesson:</b> Electrons only exist in specific shells. Jumping between them requires a specific packet of energy called a <b>Quantum</b>.
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('bohrCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('quantumAlert');
+    
+    let n = 1;
+    let angle = 0;
+    let particles = [];
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function showHideAlert(msg, color) {
+        alertBox.innerText = msg;
+        alertBox.style.background = color;
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+    }
+
+    function changeLevel(dir) {
+        const oldN = n;
+        n += dir;
+        
+        if (dir > 0) {
+            showHideAlert(`Photon Absorbed! Electron promoted to n=${n}`, '#fbbf24');
+            createFlash('#fbbf24');
+        } else {
+            showHideAlert(`Photon Emitted! Energy released as light.`, '#38bdf8');
+            createFlash('#38bdf8');
+        }
+        updateUI();
+    }
+
+    function createFlash(color) {
+        // Visual cue for energy transfer
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.globalAlpha = 1.0;
+    }
+
+    function updateUI() {
+        document.getElementById('btnUp').disabled = (n === 4);
+        document.getElementById('btnDown').disabled = (n === 1);
+        
+        const bars = document.querySelectorAll('.bar');
+        bars.forEach((bar, idx) => {
+            bar.classList.toggle('active', idx === n - 1);
+        });
+
+        const stateLabel = document.getElementById('stateLabel');
+        if (n === 1) stateLabel.innerText = "GROUND STATE";
+        else stateLabel.innerText = `EXCITED STATE (n=${n})`;
+    }
+
+    function animate() {
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.3)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // Draw Orbits
+        for (let i = 1; i <= 4; i++) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, i * 65, 0, Math.PI * 2);
+            ctx.strokeStyle = i === n ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = i === n ? 3 : 1;
+            ctx.stroke();
+        }
+
+        // Nucleus
+        ctx.fillStyle = '#f87171';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#f87171';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Electron
+        const radius = n * 65;
+        const ex = cx + Math.cos(angle) * radius;
+        const ey = cy + Math.sin(angle) * radius;
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(ex, ey, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        angle += 0.02 / (n * 0.5);
+        requestAnimationFrame(animate);
+    }
+
+    updateUI();
+    animate();
+</script>
+</body>
+</html>

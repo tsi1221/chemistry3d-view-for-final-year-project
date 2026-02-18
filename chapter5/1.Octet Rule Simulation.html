@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Octet Rule Simulator</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #111827;
+            --primary: #a855f7; /* Purple for stability */
+            --electron: #38bdf8;
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .viewport { flex-grow: 1; position: relative; background: radial-gradient(circle, #1e1b4b 0%, #020617 100%); display: flex; align-items: center; justify-content: center; }
+        canvas { width: 100%; height: 100%; }
+
+        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        
+        .controls { display: flex; gap: 10px; margin-top: 10px; }
+        button {
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; transition: 0.2s;
+        }
+        .btn-add { background: var(--electron); color: #000; }
+        .btn-sub { background: #f87171; color: #000; }
+        
+        .status-badge {
+            text-align: center; padding: 10px; border-radius: 8px;
+            font-weight: 800; margin-top: 10px; text-transform: uppercase;
+        }
+        .stable { background: #22c55e; color: #fff; box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
+        .reactive { background: #eab308; color: #000; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="color:var(--primary); margin:0;">Octet Simulator</h2>
+    
+    <div class="card">
+        <label style="font-size: 0.75rem; color: #94a3b8;">VALENCE ELECTRONS</label>
+        <div class="controls">
+            <button class="btn-sub" onclick="changeE(-1)">Remove</button>
+            <button class="btn-add" onclick="changeE(1)">Add</button>
+        </div>
+        <div id="status" class="status-badge reactive">Reactive</div>
+    </div>
+
+    <div class="card">
+        <div style="font-size: 0.9rem;">Current State:</div>
+        <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary);" id="configDisplay">2, 8, 1</div>
+        <div style="font-size: 0.8rem; margin-top: 5px;" id="ionLabel">Sodium Atom (Neutral)</div>
+    </div>
+
+    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
+        <b>Goal:</b> Adjust the electrons until the outermost shell has exactly <b>8</b>. This represents a full, stable valence shell.
+    </div>
+</div>
+
+<div class="viewport">
+    <canvas id="octetCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('octetCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Starting with Sodium (2, 8, 1)
+    let coreShells = [2, 8];
+    let valence = 1;
+
+    function changeE(amt) {
+        valence += amt;
+        if (valence < 0) {
+            if (coreShells.length > 0) {
+                valence = coreShells.pop() - 1;
+            } else {
+                valence = 0;
+            }
+        }
+        if (valence > 8) {
+            coreShells.push(8);
+            valence = 1;
+        }
+        updateUI();
+    }
+
+    function updateUI() {
+        const status = document.getElementById('status');
+        const config = [...coreShells, valence].join(', ');
+        document.getElementById('configDisplay').innerText = config;
+        
+        const isStable = valence === 8 || (valence === 2 && coreShells.length === 0);
+        status.innerText = isStable ? "Stable (Octet)" : "Reactive";
+        status.className = `status-badge ${isStable ? 'stable' : 'reactive'}`;
+        
+        // Simple naming logic
+        let name = "Ion";
+        if (coreShells.length === 2 && valence === 1) name = "Sodium Atom";
+        if (coreShells.length === 2 && valence === 0) name = "Sodium Ion (Na+)";
+        if (coreShells.length === 1 && valence === 7) name = "Fluorine Atom";
+        if (coreShells.length === 1 && valence === 8) name = "Fluoride Ion (F-)";
+        document.getElementById('ionLabel').innerText = name;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        const time = Date.now() * 0.001;
+
+        // Draw Nucleus
+        ctx.fillStyle = "#f87171";
+        ctx.shadowBlur = 15; ctx.shadowColor = "#f87171";
+        ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        const allShells = [...coreShells, valence];
+        
+        allShells.forEach((count, sIdx) => {
+            const radius = 60 + (sIdx * 50);
+            const isValence = sIdx === allShells.length - 1;
+            
+            // Draw Orbit path
+            ctx.strokeStyle = isValence ? 'rgba(168, 85, 247, 0.4)' : 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = isValence ? 3 : 1;
+            ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+
+            // Draw Electrons
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2 + (time * (1 / (sIdx + 1)));
+                const ex = cx + Math.cos(angle) * radius;
+                const ey = cy + Math.sin(angle) * radius;
+
+                ctx.fillStyle = isValence && count === 8 ? "#22c55e" : "#38bdf8";
+                ctx.beginPath(); ctx.arc(ex, ey, 6, 0, Math.PI * 2); ctx.fill();
+            }
+        });
+
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    });
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    updateUI();
+    draw();
+</script>
+</body>
+</html>

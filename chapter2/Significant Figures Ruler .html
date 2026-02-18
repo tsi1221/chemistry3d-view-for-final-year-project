@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Significant Figures Lab</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --primary: #38bdf8;
+            --highlight: #fbbf24;
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: var(--bg); 
+            color: white; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            padding: 20px;
+        }
+
+        .tool-container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--panel);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        canvas { 
+            width: 100%; 
+            height: 200px; 
+            background: #f8fafc; 
+            border-radius: 8px; 
+            margin: 20px 0;
+        }
+
+        .controls {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .readout {
+            text-align: center;
+            font-size: 1.5rem;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid var(--primary);
+        }
+
+        .sig-fig-digit { display: inline-block; padding: 2px 5px; }
+        .certain { color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .uncertain { color: var(--highlight); border-bottom: 2px solid var(--highlight); font-style: italic; }
+
+        input[type=range] { width: 100%; accent-color: var(--primary); }
+        label { font-weight: bold; font-size: 0.9rem; color: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <div class="tool-container">
+        <h2>📏 Measurement & Significant Figures</h2>
+        <p style="color: #94a3b8;">Move the arrow to measure the blue object. Change the ruler's resolution to see how "Certainty" changes.</p>
+
+        <canvas id="rulerCanvas"></canvas>
+
+        <div class="readout" id="measurementReadout">
+            Measure: <span class="certain">0</span><span class="uncertain">.0</span> cm
+        </div>
+
+        <div class="controls">
+            <div>
+                <label>Ruler Resolution (Markings Every...)</label>
+                <select id="resolutionSelect" style="width: 100%; padding: 10px; border-radius: 5px; margin-top:5px;">
+                    <option value="10">10 units (Low Precision)</option>
+                    <option value="1">1 unit (Standard)</option>
+                    <option value="0.1" selected>0.1 units (High Precision)</option>
+                </select>
+            </div>
+            
+            <div>
+                <label>Move Measurement Arrow</label>
+                <input type="range" id="measurePos" min="0" max="100" step="0.01" value="42.35">
+            </div>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('rulerCanvas');
+    const ctx = canvas.getContext('2d');
+    const posSlider = document.getElementById('measurePos');
+    const resSelect = document.getElementById('resolutionSelect');
+    const readout = document.getElementById('measurementReadout');
+
+    function draw() {
+        const w = canvas.width = canvas.offsetWidth * 2;
+        const h = canvas.height = canvas.offsetHeight * 2;
+        ctx.scale(2, 2); // Sharper rendering for mobile
+        
+        const drawW = w/2;
+        const drawH = h/2;
+        const res = parseFloat(resSelect.value);
+        const val = parseFloat(posSlider.value);
+
+        ctx.clearRect(0,0, drawW, drawH);
+
+        // 1. Draw Object to Measure (The Blue Bar)
+        ctx.fillStyle = "#3b82f6";
+        ctx.fillRect(0, 40, val * (drawW/100), 40);
+
+        // 2. Draw Ruler Base
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(0, 100, drawW, 60);
+
+        // 3. Draw Markings
+        ctx.strokeStyle = "white";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.font = "12px sans-serif";
+
+        for (let i = 0; i <= 100; i += res) {
+            let x = i * (drawW / 100);
+            let tickH = 10;
+            
+            if (i % 10 === 0) tickH = 30; // Large markings
+            else if (i % 1 === 0) tickH = 20; // Medium markings
+
+            ctx.beginPath();
+            ctx.moveTo(x, 100);
+            ctx.lineTo(x, 100 + tickH);
+            ctx.stroke();
+
+            if (i % 10 === 0) {
+                ctx.fillText(i, x, 145);
+            }
+        }
+
+        // 4. Draw Measurement Indicator (The Red Arrow)
+        let arrowX = val * (drawW / 100);
+        ctx.strokeStyle = "#e94560";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(arrowX, 20);
+        ctx.lineTo(arrowX, 110);
+        ctx.stroke();
+
+        updateReadout(val, res);
+    }
+
+    function updateReadout(val, res) {
+        // Logic: Which digits are we sure of?
+        // If resolution is 0.1, we are sure of tenths, estimate hundredths.
+        let valStr = val.toFixed(res < 1 ? 2 : (res < 10 ? 1 : 0));
+        let certainPart = valStr.slice(0, -1);
+        let uncertainDigit = valStr.slice(-1);
+
+        readout.innerHTML = `Measure: <span class="certain">${certainPart}</span><span class="uncertain">${uncertainDigit}</span> units`;
+    }
+
+    posSlider.oninput = draw;
+    resSelect.onchange = draw;
+    window.onresize = draw;
+    draw();
+</script>
+</body>
+</html>

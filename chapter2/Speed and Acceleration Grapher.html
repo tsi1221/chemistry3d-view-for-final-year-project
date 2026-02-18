@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinematics Visualizer | Speed & Acceleration</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --primary: #38bdf8;
+            --secondary: #818cf8;
+            --accent: #fbbf24;
+            --text: #f8fafc;
+            --graph-speed: #22c55e;
+            --graph-accel: #ef4444;
+        }
+
+        * { box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--panel);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { margin: 0; color: var(--primary); font-size: 1.5rem; }
+        
+        /* Simulation Track */
+        .track-container {
+            position: relative;
+            background: #020617;
+            height: 120px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 2px solid #334155;
+        }
+
+        #car {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 60px;
+            height: 30px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px var(--primary);
+            transition: transform 0.1s linear;
+        }
+        #car::after { content: '🏎️'; font-size: 20px; }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        canvas { width: 100%; height: 200px; background: #000; border-radius: 8px; }
+
+        /* Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        label { font-size: 0.85rem; color: #94a3b8; font-weight: 600; display: flex; justify-content: space-between; }
+        label span { color: var(--primary); }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--bg);
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-box { text-align: center; }
+        .stat-label { font-size: 0.7rem; display: block; margin-bottom: 4px; color: #64748b; }
+        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .btn-reset { background: #334155; color: white; }
+        .btn-play { background: var(--graph-speed); color: var(--bg); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>Kinematics Visualizer</h1>
+        <p style="font-size: 0.9rem; color: #64748b;">Observe the relationship between Velocity and Acceleration</p>
+    </header>
+
+    <div class="track-container">
+        <div id="car"></div>
+        <div style="position: absolute; bottom: 5px; width: 100%; height: 2px; background: repeating-linear-gradient(90deg, #334155, #334155 20px, transparent 20px, transparent 40px);"></div>
+    </div>
+
+    <div class="grid-container">
+        <div class="card">
+            <label>Velocity vs Time ($v/t$)</label>
+            <canvas id="velocityChart"></canvas>
+        </div>
+        <div class="card">
+            <label>Acceleration vs Time ($a/t$)</label>
+            <canvas id="accelChart"></canvas>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="control-group">
+            <label>Initial Velocity ($u$): <span id="vVal">0</span> m/s</label>
+            <input type="range" id="vInp" min="0" max="50" value="0">
+        </div>
+        <div class="control-group">
+            <label>Acceleration ($a$): <span id="aVal">2</span> m/s²</label>
+            <input type="range" id="aInp" min="-10" max="10" value="2" step="0.5">
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat-box"><span class="stat-label">TIME</span><span id="statTime" class="stat-value">0.00</span>s</div>
+        <div class="stat-box"><span class="stat-label">VELOCITY</span><span id="statVel" class="stat-value">0.0</span>m/s</div>
+        <div class="stat-box"><span class="stat-label">DISTANCE</span><span id="statDist" class="stat-value">0</span>m</div>
+    </div>
+
+    <div class="btn-row">
+        <button class="btn-reset" onclick="resetSim()">Reset</button>
+        <button class="btn-play" id="playBtn" onclick="toggleSim()">Start Simulation</button>
+    </div>
+</div>
+
+<script>
+    const vCanvas = document.getElementById('velocityChart');
+    const aCanvas = document.getElementById('accelChart');
+    const vCtx = vCanvas.getContext('2d');
+    const aCtx = aCanvas.getContext('2d');
+    const car = document.getElementById('car');
+
+    let animationId;
+    let isRunning = false;
+    let time = 0;
+    let velocity = 0;
+    let acceleration = 2;
+    let initialVelocity = 0;
+    let distance = 0;
+    
+    let vHistory = [];
+    let aHistory = [];
+
+    // Initialization
+    function init() {
+        vCanvas.width = vCanvas.offsetWidth;
+        vCanvas.height = vCanvas.offsetHeight;
+        aCanvas.width = aCanvas.offsetWidth;
+        aCanvas.height = aCanvas.offsetHeight;
+        drawGrid(vCtx);
+        drawGrid(aCtx);
+    }
+
+    function drawGrid(ctx) {
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        for(let i=0; i<ctx.canvas.width; i+=40) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, ctx.canvas.height); ctx.stroke();
+        }
+        for(let i=0; i<ctx.canvas.height; i+=40) {
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(ctx.canvas.width, i); ctx.stroke();
+        }
+    }
+
+    function updateSim() {
+        if(!isRunning) return;
+
+        time += 0.016; // Approx 60fps
+        acceleration = parseFloat(document.getElementById('aInp').value);
+        
+        // Kinematic Equation: v = u + at
+        velocity = initialVelocity + (acceleration * time);
+        
+        // Kinematic Equation: s = ut + 0.5at^2
+        distance = (initialVelocity * time) + (0.5 * acceleration * Math.pow(time, 2));
+
+        // Update Car Position (Looping track)
+        const trackWidth = document.querySelector('.track-container').offsetWidth;
+        let carPos = (distance * 10) % (trackWidth + 60); 
+        car.style.transform = `translateX(${carPos - 60}px)`;
+
+        // Update Stats
+        document.getElementById('statTime').innerText = time.toFixed(2);
+        document.getElementById('statVel').innerText = velocity.toFixed(1);
+        document.getElementById('statDist').innerText = Math.floor(Math.max(0, distance));
+
+        updateCharts();
+        animationId = requestAnimationFrame(updateSim);
+    }
+
+    function updateCharts() {
+        vHistory.push({t: time, v: velocity});
+        aHistory.push({t: time, a: acceleration});
+        
+        if(vHistory.length > 200) vHistory.shift();
+        if(aHistory.length > 200) aHistory.shift();
+
+        drawChart(vCtx, vHistory, 'v', '#22c55e', 100);
+        drawChart(aCtx, aHistory, 'a', '#ef4444', 20);
+    }
+
+    function drawChart(ctx, data, key, color, scale) {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        drawGrid(ctx);
+        
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        
+        const padding = 20;
+        data.forEach((point, i) => {
+            const x = (i / 200) * ctx.canvas.width;
+            const y = ctx.canvas.height / 2 - (point[key] * (ctx.canvas.height / scale));
+            if(i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    function toggleSim() {
+        isRunning = !isRunning;
+        const btn = document.getElementById('playBtn');
+        if(isRunning) {
+            initialVelocity = parseFloat(document.getElementById('vInp').value);
+            btn.innerText = "Pause Simulation";
+            btn.style.background = "#fbbf24";
+            updateSim();
+        } else {
+            btn.innerText = "Resume Simulation";
+            btn.style.background = "#22c55e";
+            cancelAnimationFrame(animationId);
+        }
+    }
+
+    function resetSim() {
+        isRunning = false;
+        cancelAnimationFrame(animationId);
+        time = 0; distance = 0; velocity = 0;
+        vHistory = []; aHistory = [];
+        car.style.transform = `translateX(-60px)`;
+        document.getElementById('playBtn').innerText = "Start Simulation";
+        document.getElementById('playBtn').style.background = "#22c55e";
+        document.getElementById('statTime').innerText = "0.00";
+        document.getElementById('statVel').innerText = "0.0";
+        document.getElementById('statDist').innerText = "0";
+        vCtx.clearRect(0, 0, vCanvas.width, vCanvas.height);
+        aCtx.clearRect(0, 0, aCanvas.width, aCanvas.height);
+        init();
+    }
+
+    // Input Listeners
+    document.getElementById('vInp').addEventListener('input', (e) => {
+        document.getElementById('vVal').innerText = e.target.value;
+        if(!isRunning) initialVelocity = parseFloat(e.target.value);
+    });
+    document.getElementById('aInp').addEventListener('input', (e) => {
+        document.getElementById('aVal').innerText = e.target.value;
+    });
+
+    window.onload = init;
+</script>
+</body>
+</html>

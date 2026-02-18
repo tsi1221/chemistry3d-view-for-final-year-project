@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Reactions - Particle Level</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0a0a15;
+            overflow: hidden;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .info-overlay {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            color: white;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #00d9ff;
+            backdrop-filter: blur(10px);
+            max-width: 400px;
+            z-index: 100;
+        }
+        
+        .info-overlay h2 {
+            color: #00d9ff;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        
+        .info-overlay p {
+            color: #a0a0ff;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+        
+        .stats {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            color: white;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #ff6b6b;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        .stat-item {
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+        
+        .stat-value {
+            color: #ffd166;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-left: 10px;
+        }
+        
+        .legend {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            color: #c0c0ff;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .reaction-equation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+            background: rgba(20, 20, 40, 0.7);
+            padding: 20px 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 217, 255, 0.3);
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .reaction-equation span {
+            color: #ff6b6b;
+            text-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+        }
+        
+        .reaction-equation .product {
+            color: #4ecdc4;
+            text-shadow: 0 0 15px rgba(78, 205, 196, 0.5);
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(20, 20, 40, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        
+        .control-item {
+            margin: 15px 0;
+        }
+        
+        .control-item label {
+            color: #00d9ff;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        input[type="range"] {
+            width: 200px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00d9ff;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+        }
+        
+        .particle-counter {
+            position: absolute;
+            bottom: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.2rem;
+            color: #ffd166;
+            background: rgba(20, 20, 40, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="mainCanvas"></canvas>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ff6b6b;"></div>
+            <span>Hydrogen (H₂)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #4ecdc4;"></div>
+            <span>Oxygen (O₂)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #1e90ff;"></div>
+            <span>Water (H₂O)</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: #ffd166;"></div>
+            <span>Active Bond</span>
+        </div>
+    </div>
+    
+    <div class="reaction-equation">
+        <span>2H₂</span> + <span>O₂</span> → <span class="product">2H₂O</span>
+    </div>
+    
+    <div class="stats">
+        <div class="stat-item">Successful Collisions: <span class="stat-value" id="successCount">0</span></div>
+        <div class="stat-item">Failed Collisions: <span class="stat-value" id="failCount">0</span></div>
+        <div class="stat-item">Reactants Left: <span class="stat-value" id="reactantCount">18</span></div>
+        <div class="stat-item">Water Formed: <span class="stat-value" id="productCount">0</span></div>
+        <div class="stat-item">Energy Level: <span class="stat-value" id="energyLevel">Medium</span></div>
+    </div>
+    
+    <div class="info-overlay">
+        <h2>Chemical Reactions at Particle Level</h2>
+        <p>Watch hydrogen (red) and oxygen (teal) molecules collide to form water (blue).</p>
+        <p>For a reaction to occur, particles must:</p>
+        <p>1. Collide with correct orientation</p>
+        <p>2. Have sufficient energy (activation energy)</p>
+        <p>3. Break old bonds and form new ones</p>
+    </div>
+    
+    <div class="particle-counter" id="particleCounter">
+        Particles: <span id="particleCount">18</span>
+    </div>
+    
+    <div class="controls">
+        <div class="control-item">
+            <label>Particle Energy (Temperature)</label>
+            <input type="range" id="energySlider" min="10" max="100" value="50">
+        </div>
+        <div class="control-item">
+            <label>Collision Frequency</label>
+            <input type="range" id="speedSlider" min="10" max="100" value="50">
+        </div>
+        <div class="control-item">
+            <label>Reaction Probability</label>
+            <input type="range" id="probSlider" min="10" max="100" value="60">
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Statistics elements
+        const successCount = document.getElementById('successCount');
+        const failCount = document.getElementById('failCount');
+        const reactantCount = document.getElementById('reactantCount');
+        const productCount = document.getElementById('productCount');
+        const energyLevel = document.getElementById('energyLevel');
+        const particleCount = document.getElementById('particleCount');
+        const particleCounter = document.getElementById('particleCounter');
+        
+        // Control sliders
+        const energySlider = document.getElementById('energySlider');
+        const speedSlider = document.getElementById('speedSlider');
+        const probSlider = document.getElementById('probSlider');
+        
+        // Canvas setup
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Colors
+        const colors = {
+            hydrogen: '#FF6B6B',
+            oxygen: '#4ECDC4',
+            water: '#1E90FF',
+            bond: '#FFD166',
+            glow: '#00D9FF',
+            background: '#0a0a15',
+            grid: '#1a1a2a'
+        };
+        
+        // Particle system
+        let particles = [];
+        let bonds = [];
+        let collisions = [];
+        let lastTime = 0;
+        let successfulCollisions = 0;
+        let failedCollisions = 0;
+        let totalProducts = 0;
+        
+        // 3D camera
+        let cameraZ = 500;
+        let rotationX = 0;
+        let rotationY = 0;
+        let mouseDown = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        
+        // Particle class with 3D capabilities
+        class Particle3D {
+            constructor(x, y, z, type) {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.vz = (Math.random() - 0.5) * 1;
+                this.type = type; // 'H2', 'O2', 'H2O'
+                this.atoms = [];
+                this.bonds = [];
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+                this.radius = this.getRadius();
+                this.color = this.getColor();
+                this.glow = 0;
+                this.colliding = false;
+                this.collisionTime = 0;
+                this.reacting = false;
+                this.reactionProgress = 0;
+                
+                // Create atom positions based on molecule type
+                this.createAtoms();
+            }
+            
+            getRadius() {
+                switch(this.type) {
+                    case 'H2': return 15;
+                    case 'O2': return 18;
+                    case 'H2O': return 22;
+                    default: return 15;
+                }
+            }
+            
+            getColor() {
+                switch(this.type) {
+                    case 'H2': return colors.hydrogen;
+                    case 'O2': return colors.oxygen;
+                    case 'H2O': return colors.water;
+                    default: return colors.hydrogen;
+                }
+            }
+            
+            createAtoms() {
+                if (this.type === 'H2') {
+                    this.atoms = [
+                        { x: -8, y: 0, z: 0 },
+                        { x: 8, y: 0, z: 0 }
+                    ];
+                    this.bonds = [[0, 1, 'single']];
+                } else if (this.type === 'O2') {
+                    this.atoms = [
+                        { x: -10, y: 0, z: 0 },
+                        { x: 10, y: 0, z: 0 }
+                    ];
+                    this.bonds = [[0, 1, 'double']];
+                } else if (this.type === 'H2O') {
+                    // Water molecule (bent shape)
+                    const angle = 104.5 * Math.PI / 180;
+                    const bondLength = 15;
+                    
+                    this.atoms = [
+                        { x: 0, y: -bondLength * Math.cos(angle/2), z: 0 }, // Oxygen
+                        { x: -bondLength * Math.sin(angle/2), y: bondLength * Math.cos(angle/2), z: 0 }, // Hydrogen 1
+                        { x: bondLength * Math.sin(angle/2), y: bondLength * Math.cos(angle/2), z: 0 }  // Hydrogen 2
+                    ];
+                    this.bonds = [[0, 1, 'single'], [0, 2, 'single']];
+                }
+            }
+            
+            update(deltaTime, speed, energy) {
+                // Update position
+                const speedFactor = speed / 50;
+                const energyFactor = energy / 50;
+                
+                if (!this.reacting) {
+                    this.x += this.vx * speedFactor * energyFactor;
+                    this.y += this.vy * speedFactor * energyFactor;
+                    this.z += this.vz * speedFactor * energyFactor;
+                    
+                    // Boundary collision with gentle bounce
+                    const margin = 50;
+                    if (this.x < margin || this.x > width - margin) this.vx *= -0.95;
+                    if (this.y < margin || this.y > height - margin) this.vy *= -0.95;
+                    if (this.z < -100 || this.z > 100) this.vz *= -0.95;
+                    
+                    // Keep within bounds
+                    this.x = Math.max(margin, Math.min(width - margin, this.x));
+                    this.y = Math.max(margin, Math.min(height - margin, this.y));
+                    this.z = Math.max(-100, Math.min(100, this.z));
+                }
+                
+                // Update rotation
+                this.rotation += this.rotationSpeed * speedFactor;
+                
+                // Update reaction progress
+                if (this.reacting) {
+                    this.reactionProgress += deltaTime * 0.001 * speedFactor;
+                    this.glow = Math.sin(Date.now() * 0.01) * 0.5 + 0.5;
+                    
+                    if (this.reactionProgress >= 1) {
+                        this.reacting = false;
+                        this.glow = 0;
+                    }
+                }
+                
+                // Update collision glow
+                if (this.colliding) {
+                    this.collisionTime -= deltaTime;
+                    if (this.collisionTime <= 0) {
+                        this.colliding = false;
+                        this.glow = 0;
+                    } else {
+                        this.glow = Math.sin(Date.now() * 0.02) * 0.3 + 0.7;
+                    }
+                }
+                
+                // Slow natural glow for all particles
+                this.glow = Math.max(this.glow, Math.sin(Date.now() * 0.002 + this.x * 0.01) * 0.1 + 0.1);
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                
+                // Apply 3D transformations
+                const scale = cameraZ / (cameraZ - this.z);
+                const screenX = this.x + (this.x - width/2) * (this.z / 1000);
+                const screenY = this.y + (this.y - height/2) * (this.z / 1000);
+                
+                ctx.translate(screenX, screenY);
+                ctx.scale(scale, scale);
+                ctx.rotate(this.rotation);
+                
+                // Draw particle glow
+                if (this.glow > 0) {
+                    const glowRadius = this.radius + 15;
+                    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, glowRadius);
+                    gradient.addColorStop(0, this.color + '80');
+                    gradient.addColorStop(1, this.color + '00');
+                    
+                    ctx.beginPath();
+                    ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+                
+                // Draw molecule bonds
+                ctx.strokeStyle = colors.bond;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                
+                this.bonds.forEach(bond => {
+                    const [i, j, type] = bond;
+                    const atom1 = this.atoms[i];
+                    const atom2 = this.atoms[j];
+                    
+                    if (type === 'single') {
+                        ctx.beginPath();
+                        ctx.moveTo(atom1.x, atom1.y);
+                        ctx.lineTo(atom2.x, atom2.y);
+                        ctx.stroke();
+                    } else if (type === 'double') {
+                        ctx.beginPath();
+                        ctx.moveTo(atom1.x, atom1.y - 2);
+                        ctx.lineTo(atom2.x, atom2.y - 2);
+                        ctx.stroke();
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(atom1.x, atom1.y + 2);
+                        ctx.lineTo(atom2.x, atom2.y + 2);
+                        ctx.stroke();
+                    }
+                });
+                
+                // Draw atoms
+                this.atoms.forEach((atom, i) => {
+                    ctx.save();
+                    ctx.translate(atom.x, atom.y);
+                    
+                    // Atom glow
+                    const atomGradient = ctx.createRadialGradient(-3, -3, 0, 0, 0, 10);
+                    atomGradient.addColorStop(0, '#ffffff');
+                    atomGradient.addColorStop(0.5, this.color);
+                    atomGradient.addColorStop(1, this.color + '80');
+                    
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = atomGradient;
+                    ctx.fill();
+                    
+                    // Atom outline
+                    ctx.strokeStyle = '#ffffff40';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    ctx.restore();
+                });
+                
+                ctx.restore();
+            }
+            
+            distanceTo(other) {
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                const dz = this.z - other.z;
+                return Math.sqrt(dx * dx + dy * dy + dz * dz);
+            }
+            
+            checkCollision(other) {
+                const distance = this.distanceTo(other);
+                return distance < (this.radius + other.radius);
+            }
+        }
+        
+        // Bond visualization class
+        class Bond {
+            constructor(particle1, particle2, type) {
+                this.p1 = particle1;
+                this.p2 = particle2;
+                this.type = type; // 'forming', 'breaking', 'active'
+                this.progress = 0;
+                this.duration = 1500;
+                this.startTime = Date.now();
+            }
+            
+            update() {
+                const elapsed = Date.now() - this.startTime;
+                this.progress = elapsed / this.duration;
+                return this.progress < 1;
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                
+                // Get screen positions
+                const scale1 = cameraZ / (cameraZ - this.p1.z);
+                const scale2 = cameraZ / (cameraZ - this.p2.z);
+                
+                const x1 = this.p1.x + (this.p1.x - width/2) * (this.p1.z / 1000);
+                const y1 = this.p1.y + (this.p1.y - height/2) * (this.p1.z / 1000);
+                const x2 = this.p2.x + (this.p2.x - width/2) * (this.p2.z / 1000);
+                const y2 = this.p2.y + (this.p2.y - height/2) * (this.p2.z / 1000);
+                
+                // Draw bond line
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                
+                let lineColor, lineWidth, dashPattern;
+                
+                switch(this.type) {
+                    case 'forming':
+                        lineColor = colors.water;
+                        lineWidth = 4;
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = colors.water;
+                        break;
+                    case 'breaking':
+                        lineColor = colors.hydrogen;
+                        lineWidth = 3;
+                        dashPattern = [10, 5];
+                        break;
+                    case 'active':
+                        lineColor = colors.bond;
+                        lineWidth = 5 + Math.sin(Date.now() * 0.01) * 2;
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = colors.bond;
+                        break;
+                }
+                
+                if (dashPattern) {
+                    ctx.setLineDash(dashPattern);
+                }
+                
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                
+                // Draw moving particle along bond
+                if (this.type === 'forming' || this.type === 'breaking') {
+                    const progressX = x1 + (x2 - x1) * this.progress;
+                    const progressY = y1 + (y2 - y1) * this.progress;
+                    
+                    const particleGradient = ctx.createRadialGradient(
+                        progressX, progressY, 0,
+                        progressX, progressY, 8
+                    );
+                    particleGradient.addColorStop(0, '#ffffff');
+                    particleGradient.addColorStop(1, colors.glow);
+                    
+                    ctx.beginPath();
+                    ctx.arc(progressX, progressY, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = particleGradient;
+                    ctx.fill();
+                    
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = colors.glow;
+                }
+                
+                ctx.restore();
+            }
+        }
+        
+        // Initialize particles
+        function initParticles() {
+            particles = [];
+            
+            // Create hydrogen molecules (H₂)
+            for (let i = 0; i < 12; i++) {
+                const x = Math.random() * (width - 100) + 50;
+                const y = Math.random() * (height - 100) + 50;
+                const z = (Math.random() - 0.5) * 100;
+                particles.push(new Particle3D(x, y, z, 'H2'));
+            }
+            
+            // Create oxygen molecules (O₂)
+            for (let i = 0; i < 6; i++) {
+                const x = Math.random() * (width - 100) + 50;
+                const y = Math.random() * (height - 100) + 50;
+                const z = (Math.random() - 0.5) * 100;
+                particles.push(new Particle3D(x, y, z, 'O2'));
+            }
+            
+            bonds = [];
+            collisions = [];
+            updateStats();
+        }
+        
+        // Handle collisions
+        function handleCollisions(energy, probability) {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+                    
+                    if (p1.checkCollision(p2)) {
+                        p1.colliding = true;
+                        p2.colliding = true;
+                        p1.collisionTime = 500;
+                        p2.collisionTime = 500;
+                        p1.glow = 0.8;
+                        p2.glow = 0.8;
+                        
+                        // Check if it's a reactive pair (H₂ + O₂)
+                        const isReactivePair = 
+                            (p1.type === 'H2' && p2.type === 'O2') || 
+                            (p1.type === 'O2' && p2.type === 'H2');
+                        
+                        if (isReactivePair && !p1.reacting && !p2.reacting) {
+                            // Check if collision has enough energy
+                            const hasEnergy = Math.random() < (energy / 100);
+                            // Check correct orientation
+                            const correctOrientation = Math.random() < (probability / 100);
+                            
+                            if (hasEnergy && correctOrientation) {
+                                // Successful reaction
+                                successfulCollisions++;
+                                p1.reacting = true;
+                                p2.reacting = true;
+                                
+                                // Create reaction bond
+                                bonds.push(new Bond(p1, p2, 'active'));
+                                
+                                // Create water molecules after reaction completes
+                                setTimeout(() => {
+                                    if (particles.includes(p1) && particles.includes(p2)) {
+                                        const x = (p1.x + p2.x) / 2;
+                                        const y = (p1.y + p2.y) / 2;
+                                        const z = (p1.z + p2.z) / 2;
+                                        
+                                        // Create two water molecules (2H₂ + O₂ → 2H₂O)
+                                        const water1 = new Particle3D(x - 30, y, z, 'H2O');
+                                        const water2 = new Particle3D(x + 30, y, z, 'H2O');
+                                        
+                                        // Give water molecules some velocity
+                                        water1.vx = (Math.random() - 0.5) * 2;
+                                        water1.vy = (Math.random() - 0.5) * 2;
+                                        water2.vx = (Math.random() - 0.5) * 2;
+                                        water2.vy = (Math.random() - 0.5) * 2;
+                                        
+                                        particles.push(water1, water2);
+                                        totalProducts += 2;
+                                        
+                                        // Remove reactants
+                                        particles = particles.filter(p => p !== p1 && p !== p2);
+                                    }
+                                }, 1000);
+                            } else {
+                                // Failed collision
+                                failedCollisions++;
+                                
+                                // Bounce particles
+                                const dx = p2.x - p1.x;
+                                const dy = p2.y - p1.y;
+                                const dz = p2.z - p1.z;
+                                const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                                
+                                if (distance > 0) {
+                                    const nx = dx / distance;
+                                    const ny = dy / distance;
+                                    const nz = dz / distance;
+                                    
+                                    // Swap velocities for elastic collision
+                                    const dot1 = p1.vx * nx + p1.vy * ny + p1.vz * nz;
+                                    const dot2 = p2.vx * nx + p2.vy * ny + p2.vz * nz;
+                                    
+                                    p1.vx = (2 * dot2 - dot1) * nx;
+                                    p1.vy = (2 * dot2 - dot1) * ny;
+                                    p1.vz = (2 * dot2 - dot1) * nz;
+                                    
+                                    p2.vx = (2 * dot1 - dot2) * nx;
+                                    p2.vy = (2 * dot1 - dot2) * ny;
+                                    p2.vz = (2 * dot1 - dot2) * nz;
+                                }
+                            }
+                            
+                            updateStats();
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Update statistics display
+        function updateStats() {
+            const reactants = particles.filter(p => p.type === 'H2' || p.type === 'O2');
+            const products = particles.filter(p => p.type === 'H2O');
+            
+            successCount.textContent = successfulCollisions;
+            failCount.textContent = failedCollisions;
+            reactantCount.textContent = reactants.length;
+            productCount.textContent = products.length;
+            particleCount.textContent = particles.length;
+            
+            const energy = parseInt(energySlider.value);
+            if (energy < 33) energyLevel.textContent = 'Low';
+            else if (energy < 66) energyLevel.textContent = 'Medium';
+            else energyLevel.textContent = 'High';
+        }
+        
+        // Draw background with subtle grid
+        function drawBackground() {
+            // Gradient background
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, '#0a0a15');
+            gradient.addColorStop(1, '#1a1a2a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // Subtle grid
+            ctx.strokeStyle = colors.grid;
+            ctx.lineWidth = 1;
+            const gridSize = 80;
+            
+            for (let x = 0; x < width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y < height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // Central glow
+            const centerGradient = ctx.createRadialGradient(
+                width/2, height/2, 0,
+                width/2, height/2, 400
+            );
+            centerGradient.addColorStop(0, 'rgba(0, 217, 255, 0.1)');
+            centerGradient.addColorStop(1, 'transparent');
+            
+            ctx.fillStyle = centerGradient;
+            ctx.fillRect(0, 0, width, height);
+        }
+        
+        // Main animation loop
+        function animate(timestamp) {
+            const deltaTime = timestamp - lastTime || 0;
+            lastTime = timestamp;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, width);
+            
+            // Draw background
+            drawBackground();
+            
+            // Get current settings
+            const energy = parseInt(energySlider.value);
+            const speed = parseInt(speedSlider.value);
+            const probability = parseInt(probSlider.value);
+            
+            // Update particles
+            particles.forEach(particle => {
+                particle.update(deltaTime, speed, energy);
+                particle.draw(ctx);
+            });
+            
+            // Update and draw bonds
+            bonds = bonds.filter(bond => bond.update());
+            bonds.forEach(bond => bond.draw(ctx));
+            
+            // Handle collisions
+            handleCollisions(energy, probability);
+            
+            // Update particle counter position
+            const counter = document.getElementById('particleCounter');
+            counter.style.transform = `translateX(-50%) translateY(${Math.sin(timestamp * 0.001) * 5}px)`;
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Handle window resize
+        function handleResize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            initParticles();
+        }
+        
+        // Mouse interaction for 3D rotation
+        canvas.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            canvas.style.cursor = 'grabbing';
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+            if (mouseDown) {
+                const deltaX = e.clientX - lastMouseX;
+                const deltaY = e.clientY - lastMouseY;
+                
+                rotationY += deltaX * 0.01;
+                rotationX += deltaY * 0.01;
+                
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+        
+        window.addEventListener('mouseup', () => {
+            mouseDown = false;
+            canvas.style.cursor = 'default';
+        });
+        
+        // Auto-reset when reaction completes
+        function checkReset() {
+            const reactants = particles.filter(p => p.type === 'H2' || p.type === 'O2');
+            if (reactants.length <= 2) {
+                setTimeout(() => {
+                    initParticles();
+                }, 3000);
+            }
+        }
+        
+        setInterval(checkReset, 1000);
+        
+        // Initialize and start
+        window.addEventListener('load', () => {
+            initParticles();
+            animate(0);
+        });
+        
+        window.addEventListener('resize', handleResize);
+        
+        // Add floating atoms in background
+        function createBackgroundAtoms() {
+            const atoms = [];
+            for (let i = 0; i < 50; i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const size = Math.random() * 3 + 1;
+                atoms.push({ x, y, size, speed: Math.random() * 0.5 + 0.1 });
+            }
+            
+            function drawAtoms() {
+                atoms.forEach(atom => {
+                    ctx.save();
+                    ctx.globalAlpha = 0.1;
+                    ctx.fillStyle = '#00d9ff';
+                    ctx.beginPath();
+                    ctx.arc(atom.x, atom.y, atom.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Move atoms slowly
+                    atom.x += Math.sin(Date.now() * 0.001 + atom.y) * atom.speed;
+                    atom.y += Math.cos(Date.now() * 0.001 + atom.x) * atom.speed;
+                    
+                    // Wrap around edges
+                    if (atom.x < 0) atom.x = width;
+                    if (atom.x > width) atom.x = 0;
+                    if (atom.y < 0) atom.y = height;
+                    if (atom.y > height) atom.y = 0;
+                    
+                    ctx.restore();
+                });
+            }
+            
+            return drawAtoms;
+        }
+        
+        // Create background animation
+        const drawBackgroundAtoms = createBackgroundAtoms();
+        
+        // Modify animate function to include background atoms
+        const originalAnimate = animate;
+        animate = function(timestamp) {
+            originalAnimate(timestamp);
+            drawBackgroundAtoms();
+        };
+    </script>
+</body>
+</html>

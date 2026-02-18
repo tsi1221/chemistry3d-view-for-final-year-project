@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hund's Rule Interactive Lab</title>
+<style>
+:root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --primary: #38bdf8;
+    --spin-up: #4ade80;
+    --spin-down: #f87171;
+    --text: #f1f5f9;
+    --hint-bg: rgba(56, 189, 248, 0.1);
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 15px;
+    margin: 0;
+}
+
+h1 {
+    margin-bottom: 5px;
+}
+
+p.sub-title {
+    color: #94a3b8;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+}
+
+.orbital-map {
+    display: flex;
+    flex-direction: column-reverse; /* Aufbau order */
+    gap: 20px;
+    background: var(--panel);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    max-width: 600px;
+    width: 100%;
+}
+
+.subshell {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.label {
+    width: 50px;
+    font-weight: 900;
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.boxes {
+    display: flex;
+    gap: 10px;
+}
+
+.box {
+    width: 60px;
+    height: 60px;
+    border: 3px solid #475569;
+    background: #020617;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.box.active { border-color: var(--primary); }
+
+.arrow {
+    font-size: 40px;
+    font-weight: bold;
+    position: absolute;
+}
+
+.up { color: var(--spin-up); transform: translateX(-10px); }
+.down { color: var(--spin-down); transform: translateX(10px); }
+
+.controls {
+    margin-top: 25px;
+    display: flex;
+    gap: 15px;
+}
+
+button {
+    padding: 12px 25px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    background: var(--primary);
+    color: #000;
+    transition: transform 0.1s;
+}
+
+button:active { transform: scale(0.95); }
+button.reset { background: #475569; color: white; }
+
+.lesson-box {
+    max-width: 600px;
+    margin-top: 20px;
+    padding: 18px;
+    background: var(--hint-bg);
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.lesson-box b { color: var(--primary); }
+</style>
+</head>
+<body>
+
+<h1>Hund's Rule Interactive Lab</h1>
+<p class="sub-title">Learn how electrons fill subshells in atoms using Aufbau, Pauli, and Hund's principles.</p>
+
+<div class="orbital-map">
+    <div class="subshell" id="ss-2p">
+        <div class="label">2p</div>
+        <div class="boxes">
+            <div class="box"></div>
+            <div class="box"></div>
+            <div class="box"></div>
+        </div>
+    </div>
+    <div class="subshell" id="ss-2s">
+        <div class="label">2s</div>
+        <div class="boxes">
+            <div class="box"></div>
+        </div>
+    </div>
+    <div class="subshell" id="ss-1s">
+        <div class="label">1s</div>
+        <div class="boxes">
+            <div class="box"></div>
+        </div>
+    </div>
+</div>
+
+<div class="controls">
+    <button onclick="addElectron()">Add Electron</button>
+    <button class="reset" onclick="reset()">Reset Atom</button>
+</div>
+
+<div class="lesson-box" id="msg">
+    <b>Aufbau Principle:</b> Electrons start at 1s (lowest energy). Click "Add Electron" to begin.
+</div>
+
+<script>
+let totalE = 0;
+
+// Electron filling order: 1s → 2s → 2p (up first for Hund's rule) → 2p down
+const order = [
+    {id:'ss-1s', box:0, spin:'up'},
+    {id:'ss-1s', box:0, spin:'down'},
+    {id:'ss-2s', box:0, spin:'up'},
+    {id:'ss-2s', box:0, spin:'down'},
+    {id:'ss-2p', box:0, spin:'up'},
+    {id:'ss-2p', box:1, spin:'up'},
+    {id:'ss-2p', box:2, spin:'up'},
+    {id:'ss-2p', box:0, spin:'down'},
+    {id:'ss-2p', box:1, spin:'down'},
+    {id:'ss-2p', box:2, spin:'down'}
+];
+
+// Step-by-step lessons explaining each principle
+const lessons = [
+    "<b>1s Subshell:</b> Electrons enter the lowest energy level first (Aufbau Principle).",
+    "<b>Pauli Exclusion:</b> 1s now has 1 electron, spin up. Next must be spin down.",
+    "<b>1s Full:</b> Both electrons present, opposite spins. Pauli Exclusion Principle satisfied.",
+    "<b>2s Subshell:</b> Moving to next higher energy orbital.",
+    "<b>2s Full:</b> Spin up then spin down, obeying Pauli Exclusion.",
+    "<b>2p Subshell:</b> Hund's Rule applies: place one electron per orbital first, all spin up.",
+    "<b>2p Half-Filled:</b> Each orbital has one spin-up electron, electrons repel minimally.",
+    "<b>2p Pairing:</b> Now begin adding spin-down electrons to each orbital.",
+    "<b>2p Full:</b> All orbitals filled, 2p stable now.",
+    "<b>Neon Configuration:</b> Atom is stable, all orbitals obey Aufbau, Pauli, and Hund's rules."
+];
+
+function addElectron(){
+    if(totalE >= order.length) return;
+
+    const step = order[totalE];
+    const subshell = document.getElementById(step.id);
+    const box = subshell.querySelectorAll('.box')[step.box];
+
+    const arrow = document.createElement('span');
+    arrow.className = `arrow ${step.spin}`;
+    arrow.innerHTML = step.spin === 'up' ? '↑' : '↓';
+    box.appendChild(arrow);
+    box.classList.add('active');
+
+    // Update lesson message
+    document.getElementById('msg').innerHTML = lessons[totalE];
+    totalE++;
+}
+
+function reset(){
+    totalE = 0;
+    document.querySelectorAll('.box').forEach(b=>{
+        b.innerHTML = '';
+        b.classList.remove('active');
+    });
+    document.getElementById('msg').innerHTML = "<b>Reset:</b> Start filling from 1s. Observe Aufbau, Pauli, Hund rules.";
+}
+</script>
+
+</body>
+</html>

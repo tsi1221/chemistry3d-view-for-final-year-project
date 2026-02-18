@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ionic Bond Simulator</title>
+<style>
+:root {
+    --bg: #020617;
+    --panel: #0f172a;
+    --metal: #94a3b8;
+    --nonmetal: #fbbf24;
+    --electron: #38bdf8;
+    --text: #f1f5f9;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 320px;
+    background: var(--panel);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.viewport { flex-grow: 1; position: relative; background: #000; }
+canvas { width: 100%; height: 100%; display: block; }
+
+.card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+
+button {
+    width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: none;
+    cursor: pointer; font-weight: bold; transition: 0.2s;
+    color: #000;
+}
+.btn-na { background: #4ade80; }
+.btn-ca { background: #60a5fa; }
+.reset-btn { background:#475569; color:white; }
+
+.status { font-weight: bold; text-align: center; color: var(--electron); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="color:var(--nonmetal); margin:0;">Ionic Bonding</h2>
+    <div class="card">
+        <button class="btn-na" onclick="setMolecule('NaCl')">Form NaCl (Table Salt)</button>
+        <button class="btn-ca" onclick="setMolecule('CaCl2')">Form CaCl₂ (Calcium Chloride)</button>
+    </div>
+
+    <div class="card">
+        <div class="status" id="stateMsg">Ready to Bond</div>
+        <p style="font-size: 0.8rem; line-height: 1.4; color: #94a3b8; margin-top:10px;">
+            Metals <b>lose</b> electrons to become (+). <br>
+            Non-metals <b>gain</b> electrons to become (-).
+        </p>
+    </div>
+
+    <button class="reset-btn" onclick="reset()">Reset Simulation</button>
+</div>
+
+<div class="viewport">
+    <canvas id="bondCanvas"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('bondCanvas');
+const ctx = canvas.getContext('2d');
+
+let mode = 'NaCl';
+let bonded = false;
+let atoms = [];
+let transferProgress = 0;
+
+// Initialize atoms positions
+function initAtoms() {
+    atoms = [];
+    if(mode === 'NaCl'){
+        atoms.push({x: 200, y: 0, type:'Na', r:40, e:1, color:'#4ade80'});
+        atoms.push({x: 600, y: 0, type:'Cl', r:50, e:7, color:'#fbbf24'});
+    } else {
+        atoms.push({x: 400, y: 0, type:'Ca', r:50, e:2, color:'#60a5fa'});
+        atoms.push({x: 150, y: -100, type:'Cl', r:40, e:7, color:'#fbbf24'});
+        atoms.push({x: 650, y: 100, type:'Cl', r:40, e:7, color:'#fbbf24'});
+    }
+}
+
+// Set molecule
+function setMolecule(m) {
+    mode = m;
+    reset();
+    bonded = true;
+    document.getElementById('stateMsg').innerText = "Transferring Electrons...";
+}
+
+// Reset
+function reset(){
+    bonded = false;
+    transferProgress = 0;
+    initAtoms();
+    document.getElementById('stateMsg').innerText = "Ready to Bond";
+}
+
+// Draw loop
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const cy = canvas.height/2;
+    const cx = canvas.width/2;
+
+    if(bonded && transferProgress < 1) transferProgress += 0.01;
+
+    atoms.forEach((atom, idx)=>{
+        // Target positions
+        let targetX = (idx===0)? cx-120 : (idx===1? cx+120 : cx+170);
+        let targetY = (idx===0)? cy : (idx===1? cy : cy+100);
+
+        // Smooth movement
+        if(bonded){
+            atom.x += (targetX - atom.x)*0.05;
+            atom.y += (targetY - atom.y)*0.05;
+        }
+
+        // Atom body
+        ctx.fillStyle = atom.color;
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, atom.r,0,Math.PI*2);
+        ctx.fill();
+
+        // Atom label or charge
+        ctx.fillStyle = "#000";
+        ctx.font = bonded && transferProgress>=1 ? "bold 20px sans-serif" : "bold 16px sans-serif";
+        let label = atom.type;
+        if(bonded && transferProgress>=1){
+            if(atom.type==='Na') label = "+";
+            if(atom.type==='Ca') label = "2+";
+            if(atom.type==='Cl') label = "-";
+        }
+        ctx.fillText(label, atom.x-10, atom.y+7);
+
+        // Electrons
+        const eCount = atom.e;
+        for(let i=0;i<eCount;i++){
+            let angle = (i/eCount)*Math.PI*2 + Date.now()*0.002;
+            let dist = atom.r+15;
+            let ex = atom.x + Math.cos(angle)*dist;
+            let ey = atom.y + Math.sin(angle)*dist;
+
+            // Electron transfer animation
+            if(bonded && transferProgress<1){
+                if(mode==='NaCl' && atom.type==='Na'){
+                    let target = atoms[1];
+                    ex = atom.x + (target.x - atom.x)*transferProgress;
+                    ey = atom.y + (target.y - atom.y)*transferProgress;
+                } else if(mode==='CaCl2' && atom.type==='Ca'){
+                    let target = atoms[i+1];
+                    if(target) {
+                        ex = atom.x + (target.x - atom.x)*transferProgress;
+                        ey = atom.y + (target.y - atom.y)*transferProgress;
+                    }
+                }
+            }
+
+            ctx.fillStyle = "#38bdf8"; // electron color
+            ctx.beginPath();
+            ctx.arc(ex, ey, 5, 0, Math.PI*2);
+            ctx.fill();
+        }
+    });
+
+    // Draw bond line when transfer complete
+    if(bonded && transferProgress>=1){
+        document.getElementById('stateMsg').innerText = "Electrostatic Attraction!";
+        ctx.setLineDash([5,10]);
+        ctx.strokeStyle = "rgba(255,255,255,0.3)";
+        ctx.lineWidth = 2;
+        if(mode==='NaCl'){
+            ctx.beginPath();
+            ctx.moveTo(atoms[0].x, atoms[0].y);
+            ctx.lineTo(atoms[1].x, atoms[1].y);
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            ctx.moveTo(atoms[0].x, atoms[0].y);
+            ctx.lineTo(atoms[1].x, atoms[1].y);
+            ctx.moveTo(atoms[0].x, atoms[0].y);
+            ctx.lineTo(atoms[2].x, atoms[2].y);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+    }
+
+    requestAnimationFrame(draw);
+}
+
+// Resize handler
+function resize(){
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    initAtoms();
+}
+
+// Initial setup
+window.addEventListener('resize', resize);
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+initAtoms();
+draw();
+
+</script>
+</body>
+</html>

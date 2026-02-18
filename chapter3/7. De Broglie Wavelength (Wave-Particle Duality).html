@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Broglie Wave-Particle Duality</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --primary: #22d3ee;
+            --accent: #f472b6;
+            --text: #f1f5f9;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 340px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .viewport {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        h1 { font-size: 1.2rem; color: var(--primary); margin: 0 0 10px; }
+        label { display: block; font-size: 0.8rem; color: #94a3b8; margin: 15px 0 5px; text-transform: uppercase; }
+        
+        input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; }
+
+        .math-box {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent);
+            text-align: center;
+            padding: 10px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .quantum { background: rgba(34, 211, 238, 0.2); color: var(--primary); }
+        .classical { background: rgba(244, 114, 182, 0.2); color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h1>Wave-Particle Lab</h1>
+    
+    <div class="card">
+        <label>Object Mass (m)</label>
+        <input type="range" id="mass" min="1" max="100" value="5">
+        
+        <label>Velocity (v)</label>
+        <input type="range" id="velocity" min="1" max="20" value="5">
+    </div>
+
+    <div class="card">
+        <label>Calculated Wavelength ($\lambda$)</label>
+        <div class="math-box" id="lambdaDisp">λ = h / mv</div>
+        <div id="regime" class="status-badge quantum">QUANTUM REGIME</div>
+    </div>
+
+    <div class="card" style="font-size: 0.85rem; color: #94a3b8; line-height: 1.6;">
+        <b>Explanation:</b> Low mass particles (like electrons) behave like waves. As mass increases, the wavelength 
+        becomes so small that the object appears to travel in a straight line.
+    </div>
+</div>
+
+<div class="viewport">
+    <canvas id="waveCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let time = 0;
+    let particles = [];
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function draw() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const m = parseFloat(document.getElementById('mass').value);
+        const v = parseFloat(document.getElementById('velocity').value);
+        
+        // De Broglie logic: wavelength is inversely proportional to momentum (m*v)
+        // We scale Planck's constant (h) for visual effect
+        const h_scaled = 2000;
+        const wavelength = h_scaled / (m * v);
+        const amplitude = Math.max(5, 100 / m); // Lighter objects wiggle more
+
+        // Update UI
+        document.getElementById('lambdaDisp').innerText = `λ ≈ ${(wavelength/10).toFixed(2)} nm`;
+        const regime = document.getElementById('regime');
+        if (wavelength > 20) {
+            regime.innerText = "QUANTUM REGIME";
+            regime.className = "status-badge quantum";
+        } else {
+            regime.innerText = "CLASSICAL REGIME";
+            regime.className = "status-badge classical";
+        }
+
+        // Draw the Wave Path
+        ctx.beginPath();
+        ctx.strokeStyle = wavelength > 20 ? '#22d3ee' : '#f472b6';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.globalAlpha = 0.3;
+
+        const centerY = canvas.height / 2;
+        for (let x = 0; x < canvas.width; x += 5) {
+            const y = centerY + Math.sin(x / wavelength + time) * amplitude;
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 1;
+
+        // Draw the "Particle"
+        const particleX = (time * v * 20) % canvas.width;
+        const particleY = centerY + Math.sin(particleX / wavelength + time) * amplitude;
+
+        // Glow effect
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = ctx.strokeStyle;
+        
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(particleX, particleY, Math.min(15, 3 + m/5), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        time += 0.05;
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photoelectric Effect Lab</title>
+    <style>
+        :root {
+            --bg: #030712;
+            --panel: #111827;
+            --text: #f9fafb;
+            --metal: #64748b;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .viewport { flex-grow: 1; position: relative; background: #000; }
+        canvas { width: 100%; height: 100%; }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; }
+        input[type=range] { width: 100%; margin-bottom: 15px; cursor: pointer; }
+
+        .stats { font-family: monospace; font-size: 0.9rem; color: #fbbf24; }
+        .alert { color: #f87171; font-size: 0.8rem; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2 style="margin:0; font-size: 1.2rem; color: #38bdf8;">Photoelectric Lab</h2>
+    
+    <div class="card">
+        <label>Light Frequency (Color)</label>
+        <input type="range" id="freq" min="300" max="800" value="400">
+        
+        <label>Light Intensity (Brightness)</label>
+        <input type="range" id="intensity" min="0" max="10" value="5">
+    </div>
+
+    <div class="card stats">
+        Photon Energy: <span id="eDisplay">0</span> eV<br>
+        Metal Work Function: 4.0 eV
+        <div id="statusAlert" class="alert">Low Energy: No Electrons</div>
+    </div>
+
+    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
+        <b>The Rule:</b> Intensity (brightness) only increases the <i>number</i> of electrons. Only Frequency (color) increases their <i>speed</i>.
+    </div>
+</div>
+
+<div class="viewport">
+    <canvas id="photoCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('photoCanvas');
+    const ctx = canvas.getContext('2d');
+    let photons = [];
+    let electrons = [];
+    const workFunction = 4.0;
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function nmToRGB(wavelength) {
+        if (wavelength < 440) return "#8b5cf6"; // Violet
+        if (wavelength < 490) return "#3b82f6"; // Blue
+        if (wavelength < 580) return "#22c55e"; // Green
+        if (wavelength < 645) return "#eab308"; // Yellow
+        return "#ef4444"; // Red
+    }
+
+    function update() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const wavelength = 1100 - document.getElementById('freq').value; // Inverted for UI
+        const intensity = document.getElementById('intensity').value;
+        const photonEnergy = (1240 / wavelength).toFixed(2);
+        
+        document.getElementById('eDisplay').innerText = photonEnergy;
+        const canEmit = photonEnergy > workFunction;
+        document.getElementById('statusAlert').style.display = canEmit ? 'none' : 'block';
+
+        // Draw Metal Plate
+        ctx.fillStyle = "#475569";
+        ctx.fillRect(canvas.width/2 - 50, 100, 100, canvas.height - 200);
+
+        // Spawn Photons
+        if (intensity > 0 && Math.random() < intensity/10) {
+            photons.push({ x: 0, y: 150 + Math.random() * (canvas.height - 300), color: nmToRGB(wavelength) });
+        }
+
+        // Process Photons
+        photons.forEach((p, i) => {
+            p.x += 10;
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for(let j=0; j<20; j++) ctx.lineTo(p.x - j, p.y + Math.sin((p.x-j)/5)*5);
+            ctx.stroke();
+
+            // Hit Metal?
+            if (p.x > canvas.width/2 - 50) {
+                if (canEmit) {
+                    electrons.push({ 
+                        x: p.x, y: p.y, 
+                        vx: (photonEnergy - workFunction) * 2, 
+                        vy: (Math.random() - 0.5) * 2 
+                    });
+                }
+                photons.splice(i, 1);
+            }
+        });
+
+        // Process Electrons
+        electrons.forEach((e, i) => {
+            e.x += e.vx;
+            e.y += e.vy;
+            ctx.fillStyle = "#fbbf24";
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, 3, 0, Math.PI*2);
+            ctx.fill();
+            if (e.x > canvas.width) electrons.splice(i, 1);
+        });
+
+        requestAnimationFrame(update);
+    }
+    update();
+</script>
+</body>
+</html>

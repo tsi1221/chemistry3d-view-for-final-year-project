@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mass Spectrometry Lab</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #1e293b;
+            --mag: #8b5cf6;
+            --text: #f1f5f9;
+            --iso1: #4ade80; /* Light */
+            --iso2: #fbbf24; /* Medium */
+            --iso3: #f87171; /* Heavy */
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 320px;
+            background: var(--panel);
+            padding: 25px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        }
+
+        .viewport { flex-grow: 1; position: relative; background: #000; }
+        canvas { width: 100%; height: 100%; }
+
+        .card {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        h1 { font-size: 1.2rem; color: var(--mag); margin: 0; }
+        label { display: block; font-size: 0.75rem; color: #94a3b8; margin: 15px 0 5px; text-transform: uppercase; }
+        
+        input[type=range] { width: 100%; accent-color: var(--mag); cursor: pointer; }
+
+        .detector-readout {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #4ade80;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h1>Mass Spectrometer</h1>
+    
+    <div class="card">
+        <label>Magnetic Field Strength (B)</label>
+        <input type="range" id="magField" min="5" max="50" value="25">
+    </div>
+
+    <div class="card detector-readout">
+        <div style="color:var(--iso1)">● Light Isotope: <span id="hit1">0</span></div>
+        <div style="color:var(--iso2)">● Mid Isotope: <span id="hit2">0</span></div>
+        <div style="color:var(--iso3)">● Heavy Isotope: <span id="hit3">0</span></div>
+    </div>
+
+    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
+        <b>Physics Principle:</b> F = qvB. 
+        Higher mass means higher momentum, making it harder for the magnetic field to "bend" the particle's path.
+    </div>
+    
+    <button onclick="clearHits()" style="background:#334155; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer;">Reset Detector</button>
+</div>
+
+<div class="viewport">
+    <canvas id="specCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('specCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let hits = [0, 0, 0];
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function createParticle() {
+        const types = [
+            { m: 10, color: '#4ade80', id: 0 }, // Light
+            { m: 20, color: '#fbbf24', id: 1 }, // Mid
+            { m: 30, color: '#f87171', id: 2 }  // Heavy
+        ];
+        const type = types[Math.floor(Math.random() * 3)];
+        return {
+            x: 50,
+            y: canvas.height - 50,
+            vx: 6,
+            vy: 0,
+            ...type,
+            active: true
+        };
+    }
+
+    function clearHits() {
+        hits = [0, 0, 0];
+        updateReadout();
+    }
+
+    function updateReadout() {
+        document.getElementById('hit1').innerText = hits[0];
+        document.getElementById('hit2').innerText = hits[1];
+        document.getElementById('hit3').innerText = hits[2];
+    }
+
+    function update() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const B = parseFloat(document.getElementById('magField').value) / 1000;
+
+        // Draw Magnetic Region
+        ctx.fillStyle = "rgba(139, 92, 246, 0.05)";
+        ctx.fillRect(150, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = "rgba(139, 92, 246, 0.2)";
+        ctx.strokeRect(150, 0, canvas.width, canvas.height);
+
+        // Spawn
+        if (Math.random() < 0.2) particles.push(createParticle());
+
+        particles.forEach((p, i) => {
+            if (p.x > 150) {
+                // Centripetal force: a = (q*v*B)/m
+                // We simplify: delta_vy = (vx * B) / mass
+                const force = (p.vx * B * 50) / p.m;
+                p.vy -= force; 
+            }
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hit detection (right wall)
+            if (p.x > canvas.width - 20 && p.active) {
+                hits[p.id]++;
+                p.active = false;
+                updateReadout();
+            }
+
+            if (p.x > canvas.width || p.y < 0) particles.splice(i, 1);
+        });
+
+        requestAnimationFrame(update);
+    }
+
+    update();
+</script>
+</body>
+</html>

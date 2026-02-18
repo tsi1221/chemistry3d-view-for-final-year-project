@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Accuracy vs Precision Lab</title>
+    <style>
+        :root {
+            --primary: #4db8ff;
+            --accent: #e94560;
+            --bg: #1a1a2e;
+            --panel: #16213e;
+        }
+
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .layout {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1000px;
+        }
+
+        canvas { 
+            background: var(--panel); 
+            border-radius: 50%; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.5); 
+            border: 8px solid #0f3460;
+        }
+
+        .ui-panel { 
+            background: rgba(255,255,255,0.05); 
+            backdrop-filter: blur(10px); 
+            padding: 30px; 
+            border-radius: 20px; 
+            width: 350px; 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .label-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        input[type=range] { 
+            width: 100%; 
+            margin-bottom: 25px;
+            cursor: pointer; 
+            accent-color: var(--primary); 
+        }
+
+        .analysis-card {
+            background: var(--panel);
+            padding: 15px;
+            border-left: 4px solid var(--accent);
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        h2 { margin-bottom: 10px; color: var(--primary); }
+        p { color: #8a8a8a; margin-top: 0; }
+        b { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <h2>🎯 Precision vs. Accuracy Lab</h2>
+    <p>Move the sliders to see how <b>Systematic</b> and <b>Random</b> errors affect data.</p>
+
+    <div class="layout">
+        <canvas id="dartboard" width="500" height="500"></canvas>
+
+        <div class="ui-panel">
+            <div class="label-group">
+                <label>Systematic Error (Accuracy)</label>
+                <span id="accVal">0</span>
+            </div>
+            <input type="range" id="acc" min="0" max="150" value="0">
+            
+            <div class="label-group">
+                <label>Random Error (Precision)</label>
+                <span id="precVal">0</span>
+            </div>
+            <input type="range" id="prec" min="10" max="200" value="30">
+            
+            <button id="fireBtn" style="width: 100%; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">THROW NEW SAMPLES</button>
+
+            <div class="analysis-card">
+                <strong>Current State:</strong><br>
+                <span id="analysisText">Perfect Calibration</span>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('dartboard');
+    const ctx = canvas.getContext('2d');
+    const accSlider = document.getElementById('acc');
+    const precSlider = document.getElementById('prec');
+    const analysisText = document.getElementById('analysisText');
+    
+    let darts = [];
+    const dartCount = 15;
+
+    // 1. DATA GENERATION LOGIC
+    function generateDarts() {
+        darts = [];
+        const bias = parseInt(accSlider.value);
+        const spread = parseInt(precSlider.value);
+        
+        // Update the textual analysis for the learner
+        updateAnalysis(bias, spread);
+
+        for (let i = 0; i < dartCount; i++) {
+            // MATH NOTE: 
+            // Accuracy (Bias) is a CONSTANT added to every point.
+            // Precision (Spread) is a RANDOM range added to every point.
+            const targetX = 250 + bias;
+            const targetY = 250;
+            
+            darts.push({
+                x: 250, 
+                y: 250,
+                destX: targetX + (Math.random() - 0.5) * spread,
+                destY: targetY + (Math.random() - 0.5) * spread,
+                opacity: 0
+            });
+        }
+    }
+
+    function updateAnalysis(bias, spread) {
+        document.getElementById('accVal').innerText = bias;
+        document.getElementById('precVal').innerText = spread;
+
+        if (bias < 30 && spread < 50) analysisText.innerText = "High Accuracy, High Precision";
+        else if (bias >= 30 && spread < 50) analysisText.innerText = "Low Accuracy, High Precision (Systematic Bias)";
+        else if (bias < 30 && spread >= 50) analysisText.innerText = "High Accuracy, Low Precision (High Noise)";
+        else analysisText.innerText = "Low Accuracy, Low Precision (Unreliable)";
+    }
+
+    // 2. DRAWING THE TARGET
+    function drawBoard() {
+        const rings = [240, 190, 140, 90, 40, 15];
+        const colors = ['#0f3460', '#16213e', '#0f3460', '#16213e', '#e94560', '#f1c40f'];
+        
+        rings.forEach((r, i) => {
+            ctx.beginPath();
+            ctx.arc(250, 250, r, 0, Math.PI * 2);
+            ctx.fillStyle = colors[i];
+            ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,0.05)";
+            ctx.stroke();
+        });
+
+        // VISUAL NOTE: Drawing the 'Probability Circle'
+        // This shows the user the area where darts are expected to land
+        ctx.beginPath();
+        ctx.arc(250 + parseInt(accSlider.value), 250, parseInt(precSlider.value)/2, 0, Math.PI*2);
+        ctx.strokeStyle = "rgba(77, 184, 255, 0.4)";
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // 3. ANIMATION LOOP
+    function animate() {
+        ctx.clearRect(0, 0, 500, 500);
+        drawBoard();
+
+        darts.forEach(d => {
+            // Ease-out movement logic
+            d.x += (d.destX - d.x) * 0.12;
+            d.y += (d.destY - d.y) * 0.12;
+            if (d.opacity < 1) d.opacity += 0.05;
+
+            // Drawing the 'Darts' (Data Points)
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 255, 150, ${d.opacity})`;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "#00ff96";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    // Event Listeners
+    [accSlider, precSlider].forEach(s => s.addEventListener('input', generateDarts));
+    document.getElementById('fireBtn').addEventListener('click', generateDarts);
+
+    // Initial Start
+    generateDarts();
+    animate();
+</script>
+</body>
+</html>
