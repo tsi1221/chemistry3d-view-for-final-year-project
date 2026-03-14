@@ -1,0 +1,771 @@
+// Chapter1AtomicModel.tsx
+import React, { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer';
+
+// ----------------------------------------------------------------------
+// Types & Interfaces
+// ----------------------------------------------------------------------
+interface AtomConfig {
+  name: string;
+  protons: number;
+  neutrons: number;
+  electrons: number;
+  symbol: string;
+  mass: number;
+  description: string;
+}
+
+interface ElectronData {
+  shell: number;
+  radius: number;
+  speed: number;
+  offset: number;
+  angle1: number;
+  angle2: number;
+}
+
+// ----------------------------------------------------------------------
+// Atom configurations with educational info
+// ----------------------------------------------------------------------
+const atoms: Record<string, AtomConfig> = {
+  hydrogen: {
+    name: 'Hydrogen',
+    protons: 1,
+    neutrons: 0,
+    electrons: 1,
+    symbol: 'H',
+    mass: 1,
+    description: 'The simplest atom. One proton, one electron. Most abundant element in the universe.',
+  },
+  helium: {
+    name: 'Helium',
+    protons: 2,
+    neutrons: 2,
+    electrons: 2,
+    symbol: 'He',
+    mass: 4,
+    description: 'Two protons, two neutrons. Inert gas used in balloons and cooling.',
+  },
+  carbon: {
+    name: 'Carbon',
+    protons: 6,
+    neutrons: 6,
+    electrons: 6,
+    symbol: 'C',
+    mass: 12,
+    description: 'Foundation of organic chemistry. Six electrons in two shells.',
+  },
+  oxygen: {
+    name: 'Oxygen',
+    protons: 8,
+    neutrons: 8,
+    electrons: 8,
+    symbol: 'O',
+    mass: 16,
+    description: 'Essential for respiration. Two unpaired electrons make it reactive.',
+  },
+  neon: {
+    name: 'Neon',
+    protons: 10,
+    neutrons: 10,
+    electrons: 10,
+    symbol: 'Ne',
+    mass: 20,
+    description: 'Noble gas with full outer shell. Glows orange-red in discharge tubes.',
+  },
+};
+
+// ----------------------------------------------------------------------
+// Main Component
+// ----------------------------------------------------------------------
+const Chapter1AtomicModel: React.FC = () => {
+  // --------------------------------------------------------------------
+  // Refs for Three.js objects
+  // --------------------------------------------------------------------
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const labelRendererRef = useRef<CSS2DRenderer | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const nucleusGroupRef = useRef<THREE.Group | null>(null);
+  const protonInstancesRef = useRef<THREE.InstancedMesh | null>(null);
+  const neutronInstancesRef = useRef<THREE.InstancedMesh | null>(null);
+  const electronInstancesRef = useRef<THREE.InstancedMesh | null>(null);
+  const shellMeshesRef = useRef<THREE.Mesh[]>([]);
+  const dummy = useRef(new THREE.Object3D());
+  const animationIdRef = useRef<number>(0);
+
+  // --------------------------------------------------------------------
+  // State
+  // --------------------------------------------------------------------
+  const [currentAtom, setCurrentAtom] = useState<keyof typeof atoms>('hydrogen');
+  const [showNucleus, setShowNucleus] = useState(true);
+  const [showElectrons, setShowElectrons] = useState(true);
+  const [showShells, setShowShells] = useState(true);
+  const [shellOpacity, setShellOpacity] = useState(0.15);
+  const [electronOpacity, setElectronOpacity] = useState(0.8);
+  const [animationSpeed, setAnimationSpeed] = useState(1);
+  const [selectedObject, setSelectedObject] = useState<{ type: string; info: string } | null>(null);
+  const [hoveredObject, setHoveredObject] = useState<{ type: string; position: THREE.Vector3 } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // --------------------------------------------------------------------
+  // Initialize Three.js scene
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a1a);
+    sceneRef.current = scene;
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(10, 5, 15);
+    cameraRef.current = camera;
+
+    // WebGL Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    containerRef.current.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
+
+    // CSS2 Renderer for labels
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    containerRef.current.appendChild(labelRenderer.domElement);
+    labelRendererRef.current = labelRenderer;
+
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.maxPolarAngle = Math.PI / 2;
+    controlsRef.current = controls;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404060);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5, 10, 7);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    const pointLight = new THREE.PointLight(0x4466aa, 0.5, 50);
+    pointLight.position.set(-3, 5, 5);
+    scene.add(pointLight);
+
+    // Add a subtle grid floor for reference
+    const gridHelper = new THREE.GridHelper(20, 20, 0x88aaff, 0x335577);
+    gridHelper.position.y = -3;
+    scene.add(gridHelper);
+
+    // Background stars
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsCount = 1000;
+    const starsPositions = new Float32Array(starsCount * 3);
+    for (let i = 0; i < starsCount; i++) {
+      starsPositions[i * 3] = (Math.random() - 0.5) * 200;
+      starsPositions[i * 3 + 1] = (Math.random() - 0.5) * 200;
+      starsPositions[i * 3 + 2] = (Math.random() - 0.5) * 200 - 50;
+    }
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(stars);
+
+    setTimeout(() => setLoading(false), 800);
+
+    // Cleanup
+    return () => {
+      if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
+      if (rendererRef.current && containerRef.current) {
+        containerRef.current.removeChild(rendererRef.current.domElement);
+        containerRef.current.removeChild(labelRendererRef.current!.domElement);
+      }
+      rendererRef.current?.dispose();
+    };
+  }, []);
+
+  // --------------------------------------------------------------------
+  // Build nucleus with instanced protons and neutrons
+  // --------------------------------------------------------------------
+  const buildNucleus = (protons: number, neutrons: number) => {
+    if (!sceneRef.current) return;
+
+    // Remove old nucleus group if exists
+    if (nucleusGroupRef.current) {
+      sceneRef.current.remove(nucleusGroupRef.current);
+      nucleusGroupRef.current = null;
+    }
+
+    const group = new THREE.Group();
+
+    // Proton geometry (red, emissive)
+    const protonGeo = new THREE.SphereGeometry(0.35, 16, 16);
+    const protonMat = new THREE.MeshStandardMaterial({
+      color: 0xff4444,
+      emissive: 0x440000,
+      roughness: 0.2,
+      metalness: 0.1,
+    });
+
+    // Neutron geometry (blue, emissive)
+    const neutronGeo = new THREE.SphereGeometry(0.35, 16, 16);
+    const neutronMat = new THREE.MeshStandardMaterial({
+      color: 0x4444ff,
+      emissive: 0x000044,
+      roughness: 0.2,
+      metalness: 0.1,
+    });
+
+    // Place particles roughly in a spherical cluster
+    const total = protons + neutrons;
+    for (let i = 0; i < total; i++) {
+      const angle1 = Math.acos(2 * Math.random() - 1);
+      const angle2 = Math.random() * Math.PI * 2;
+      const r = 0.8 + Math.random() * 0.3; // slight variation for natural look
+
+      const x = Math.sin(angle1) * Math.cos(angle2) * r;
+      const y = Math.sin(angle1) * Math.sin(angle2) * r;
+      const z = Math.cos(angle1) * r;
+
+      const particle = new THREE.Mesh(
+        i < protons ? protonGeo : neutronGeo,
+        i < protons ? protonMat : neutronMat
+      );
+      particle.position.set(x, y, z);
+      particle.castShadow = true;
+      particle.receiveShadow = true;
+      particle.userData = { type: i < protons ? 'proton' : 'neutron' };
+      group.add(particle);
+    }
+
+    // Add a subtle glow sphere
+    const glowGeo = new THREE.SphereGeometry(1.2, 32, 32);
+    const glowMat = new THREE.MeshPhongMaterial({
+      color: 0x88aaff,
+      emissive: 0x112233,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.BackSide,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    group.add(glow);
+
+    sceneRef.current.add(group);
+    nucleusGroupRef.current = group;
+  };
+
+  // --------------------------------------------------------------------
+  // Build electron shells and electrons (instanced)
+  // --------------------------------------------------------------------
+  const buildElectronShells = (electronCount: number) => {
+    if (!sceneRef.current) return;
+
+    // Remove old shells and electrons
+    shellMeshesRef.current.forEach(mesh => sceneRef.current!.remove(mesh));
+    if (electronInstancesRef.current) sceneRef.current.remove(electronInstancesRef.current);
+    shellMeshesRef.current = [];
+
+    // Determine shell occupancy (simplified)
+    const shells: { electrons: number; radius: number; color: number }[] = [];
+    let remaining = electronCount;
+    let shellIndex = 1;
+    while (remaining > 0 && shellIndex <= 4) {
+      const capacity = shellIndex === 1 ? 2 : 8;
+      const electronsInShell = Math.min(capacity, remaining);
+      shells.push({
+        electrons: electronsInShell,
+        radius: shellIndex * 2.5,
+        color: shellIndex === 1 ? 0xffff00 : shellIndex === 2 ? 0x00ff00 : shellIndex === 3 ? 0x00ffff : 0xff00ff,
+      });
+      remaining -= electronsInShell;
+      shellIndex++;
+    }
+
+    // Create transparent shell spheres (wireframe + translucent)
+    shells.forEach((shell, idx) => {
+      const geo = new THREE.SphereGeometry(shell.radius, 64, 64);
+      const mat = new THREE.MeshPhongMaterial({
+        color: shell.color,
+        transparent: true,
+        opacity: shellOpacity,
+        wireframe: true,
+        emissive: 0x000000,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.userData = { type: 'shell', shell: idx + 1, radius: shell.radius };
+      sceneRef.current!.add(mesh);
+      shellMeshesRef.current.push(mesh);
+    });
+
+    // Create instanced electrons
+    const electronGeo = new THREE.SphereGeometry(0.2, 8, 8);
+    const electronMat = new THREE.MeshStandardMaterial({
+      color: 0xffdd44,
+      emissive: 0x442200,
+      transparent: true,
+      opacity: electronOpacity,
+    });
+
+    const instanceCount = electronCount;
+    const instancedMesh = new THREE.InstancedMesh(electronGeo, electronMat, instanceCount);
+    instancedMesh.castShadow = true;
+    instancedMesh.receiveShadow = true;
+
+    const dummy = new THREE.Object3D();
+    let instanceIndex = 0;
+
+    // Assign electrons to shells
+    shells.forEach(shell => {
+      for (let i = 0; i < shell.electrons; i++) {
+        // Random position on sphere surface
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const x = shell.radius * Math.sin(phi) * Math.cos(theta);
+        const y = shell.radius * Math.sin(phi) * Math.sin(theta);
+        const z = shell.radius * Math.cos(phi);
+
+        dummy.position.set(x, y, z);
+        dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+
+        instancedMesh.setMatrixAt(instanceIndex, dummy.matrix);
+        instancedMesh.setColorAt(instanceIndex, new THREE.Color(shell.color));
+
+        // Store data for animation
+        instancedMesh.userData[`electron_${instanceIndex}`] = {
+          shell: shell,
+          speed: 0.5 + Math.random() * 0.5,
+          offset: Math.random() * Math.PI * 2,
+        };
+
+        instanceIndex++;
+      }
+    });
+
+    instancedMesh.instanceMatrix.needsUpdate = true;
+    sceneRef.current.add(instancedMesh);
+    electronInstancesRef.current = instancedMesh;
+  };
+
+  // --------------------------------------------------------------------
+  // Update atom when selection changes
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    const config = atoms[currentAtom];
+    buildNucleus(config.protons, config.neutrons);
+    buildElectronShells(config.electrons);
+    setSelectedObject(null);
+    setHoveredObject(null);
+  }, [currentAtom]);
+
+  // --------------------------------------------------------------------
+  // Animation loop with electron motion and raycasting
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    let time = 0;
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const onMouseMove = (event: MouseEvent) => {
+      // Normalize coordinates
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    };
+    window.addEventListener('mousemove', onMouseMove);
+
+    const onClick = () => {
+      if (!cameraRef.current || !sceneRef.current) return;
+      raycaster.setFromCamera(mouse, cameraRef.current);
+      const objects: THREE.Object3D[] = [];
+      if (nucleusGroupRef.current) {
+        nucleusGroupRef.current.children.forEach(child => objects.push(child));
+      }
+      objects.push(...shellMeshesRef.current);
+      if (electronInstancesRef.current) objects.push(electronInstancesRef.current);
+
+      const intersects = raycaster.intersectObjects(objects);
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        let info = '';
+        if (hit.userData.type === 'proton') info = 'Proton: Positive charge, mass ≈ 1 amu';
+        else if (hit.userData.type === 'neutron') info = 'Neutron: Neutral charge, mass ≈ 1 amu';
+        else if (hit.userData.type === 'shell') {
+          const shell = hit.userData.shell;
+          info = `Electron Shell ${shell}: Can hold up to ${shell === 1 ? 2 : 8} electrons.`;
+        } else if (hit === electronInstancesRef.current) {
+          info = 'Electron: Negative charge, negligible mass. Occupies probability cloud.';
+        }
+        setSelectedObject({ type: hit.userData.type || 'electron', info });
+      } else {
+        setSelectedObject(null);
+      }
+    };
+    rendererRef.current?.domElement.addEventListener('click', onClick);
+
+    const animate = () => {
+      if (
+        !sceneRef.current ||
+        !cameraRef.current ||
+        !rendererRef.current ||
+        !labelRendererRef.current ||
+        !controlsRef.current
+      ) {
+        animationIdRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      time += 0.01 * animationSpeed;
+
+      // Update electron positions (instanced)
+      if (electronInstancesRef.current) {
+        const instanceMesh = electronInstancesRef.current;
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < instanceMesh.count; i++) {
+          const data = instanceMesh.userData[`electron_${i}`];
+          if (!data) continue;
+
+          const shell = data.shell;
+          const speed = data.speed;
+          const offset = data.offset;
+
+          // Move electron in a complex 3D orbit around the shell surface
+          const angle1 = time * speed + offset;
+          const angle2 = time * 0.7 * speed + offset * 2;
+          const angle3 = time * 0.3 * speed + offset * 3;
+
+          // Distribute position on sphere with some variation
+          const x = shell.radius * Math.sin(angle1) * Math.cos(angle2);
+          const y = shell.radius * Math.sin(angle2) * Math.cos(angle3);
+          const z = shell.radius * Math.cos(angle1) * Math.sin(angle3);
+
+          dummy.position.set(x, y, z);
+          dummy.rotation.set(angle1, angle2, angle3);
+          dummy.scale.set(1, 1, 1);
+          dummy.updateMatrix();
+          instanceMesh.setMatrixAt(i, dummy.matrix);
+        }
+        instanceMesh.instanceMatrix.needsUpdate = true;
+      }
+
+      // Raycast for hover (optional, we can just use CSS labels)
+      // For simplicity, we'll use CSS labels only for selected object
+      if (selectedObject) {
+        // Clear previous labels
+        while (labelRendererRef.current.domElement.firstChild) {
+          labelRendererRef.current.domElement.removeChild(labelRendererRef.current.domElement.firstChild);
+        }
+        // Create label for selected object (we need its position)
+        // For this demo, we'll just show a fixed label in corner; but we could try to get position
+        // Let's instead show a panel in UI
+      }
+
+      controlsRef.current.update();
+      rendererRef.current.render(sceneRef.current, cameraRef.current);
+      labelRendererRef.current.render(sceneRef.current, cameraRef.current);
+
+      animationIdRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove);
+      rendererRef.current?.domElement.removeEventListener('click', onClick);
+      if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
+    };
+  }, [animationSpeed, selectedObject]);
+
+  // --------------------------------------------------------------------
+  // Update shell opacity when slider changes
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    shellMeshesRef.current.forEach(mesh => {
+      (mesh.material as THREE.MeshPhongMaterial).opacity = shellOpacity;
+    });
+  }, [shellOpacity]);
+
+  // --------------------------------------------------------------------
+  // Update electron opacity
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    if (electronInstancesRef.current) {
+      // Instanced material opacity can't be changed per instance easily; we'll adjust material property
+      const mat = electronInstancesRef.current.material as THREE.MeshStandardMaterial;
+      mat.opacity = electronOpacity;
+      mat.transparent = true;
+    }
+  }, [electronOpacity]);
+
+  // --------------------------------------------------------------------
+  // Toggle visibility
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    if (nucleusGroupRef.current) nucleusGroupRef.current.visible = showNucleus;
+  }, [showNucleus]);
+
+  useEffect(() => {
+    if (electronInstancesRef.current) electronInstancesRef.current.visible = showElectrons;
+  }, [showElectrons]);
+
+  useEffect(() => {
+    shellMeshesRef.current.forEach(mesh => (mesh.visible = showShells));
+  }, [showShells]);
+
+  // --------------------------------------------------------------------
+  // Window resize
+  // --------------------------------------------------------------------
+  useEffect(() => {
+    const handleResize = () => {
+      if (cameraRef.current && rendererRef.current && labelRendererRef.current) {
+        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+        cameraRef.current.updateProjectionMatrix();
+        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+        labelRendererRef.current.setSize(window.innerWidth, window.innerHeight);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // --------------------------------------------------------------------
+  // UI Handlers
+  // --------------------------------------------------------------------
+  const atomConfig = atoms[currentAtom];
+
+  return (
+    <>
+      <div ref={containerRef} style={{ position: 'fixed', width: '100vw', height: '100vh', top: 0, left: 0 }} />
+
+      {loading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: '#0a0a1a',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          color: 'white',
+          fontSize: '20px'
+        }}>
+          Loading 3D Atomic Model...
+        </div>
+      )}
+
+      {/* Top-left atom selector */}
+      <div style={{
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        zIndex: 100,
+        display: 'flex',
+        gap: '8px',
+        flexWrap: 'wrap',
+        maxWidth: '500px',
+      }}>
+        {(Object.keys(atoms) as Array<keyof typeof atoms>).map(atomKey => (
+          <button
+            key={atomKey}
+            onClick={() => setCurrentAtom(atomKey)}
+            style={{
+              background: currentAtom === atomKey ? 'rgba(52,152,219,0.8)' : 'rgba(20,20,40,0.7)',
+              border: currentAtom === atomKey ? '2px solid #3498db' : '2px solid rgba(52,152,219,0.3)',
+              color: 'white',
+              padding: '8px 16px',
+              borderRadius: 25,
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              backdropFilter: 'blur(8px)',
+              transition: 'all 0.3s',
+              boxShadow: currentAtom === atomKey ? '0 0 15px #3498db80' : 'none',
+            }}
+          >
+            {atoms[atomKey].symbol} – {atoms[atomKey].name}
+          </button>
+        ))}
+      </div>
+
+      {/* Top-right atom info */}
+      <div style={{
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        zIndex: 100,
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(10px)',
+        padding: '15px 25px',
+        borderRadius: 15,
+        border: '1px solid #88aaff',
+        color: 'white',
+        maxWidth: 300,
+      }}>
+        <h2 style={{ margin: 0, color: '#88aaff' }}>{atomConfig.name} ({atomConfig.symbol})</h2>
+        <div style={{ margin: '8px 0', fontSize: 14, color: '#ccc' }}>
+          {atomConfig.protons} protons, {atomConfig.neutrons} neutrons, {atomConfig.electrons} electrons
+          <br />Mass: ~{atomConfig.mass} amu
+        </div>
+        <p style={{ fontSize: 12, lineHeight: 1.5, margin: 0 }}>{atomConfig.description}</p>
+      </div>
+
+      {/* Control panel - bottom left */}
+      <div style={{
+        position: 'absolute',
+        bottom: 30,
+        left: 30,
+        zIndex: 100,
+        background: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(10px)',
+        padding: 20,
+        borderRadius: 15,
+        border: '1px solid #88aaff',
+        color: 'white',
+        width: 260,
+      }}>
+        <h4 style={{ margin: '0 0 15px 0', color: '#88aaff' }}>Controls</h4>
+
+        {/* Visibility toggles */}
+        <div style={{ marginBottom: 15 }}>
+          <button
+            onClick={() => setShowNucleus(!showNucleus)}
+            style={{ ...toggleButtonStyle, background: showNucleus ? '#3498db40' : 'transparent', borderColor: '#3498db' }}
+          >⚛️ Nucleus</button>
+          <button
+            onClick={() => setShowElectrons(!showElectrons)}
+            style={{ ...toggleButtonStyle, background: showElectrons ? '#3498db40' : 'transparent', borderColor: '#3498db', marginLeft: 8 }}
+          >⚡ Electrons</button>
+          <button
+            onClick={() => setShowShells(!showShells)}
+            style={{ ...toggleButtonStyle, background: showShells ? '#3498db40' : 'transparent', borderColor: '#3498db', marginLeft: 8 }}
+          >🌀 Shells</button>
+        </div>
+
+        {/* Sliders */}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', fontSize: 12, color: '#aaa', marginBottom: 4 }}>Shell Opacity</label>
+          <input
+            type="range"
+            min="0"
+            max="0.5"
+            step="0.01"
+            value={shellOpacity}
+            onChange={e => setShellOpacity(Number(e.target.value))}
+            style={{ width: '100%' }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display: 'block', fontSize: 12, color: '#aaa', marginBottom: 4 }}>Electron Opacity</label>
+          <input
+            type="range"
+            min="0.2"
+            max="1"
+            step="0.01"
+            value={electronOpacity}
+            onChange={e => setElectronOpacity(Number(e.target.value))}
+            style={{ width: '100%' }}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: 'block', fontSize: 12, color: '#aaa', marginBottom: 4 }}>Animation Speed</label>
+          <input
+            type="range"
+            min="0"
+            max="3"
+            step="0.1"
+            value={animationSpeed}
+            onChange={e => setAnimationSpeed(Number(e.target.value))}
+            style={{ width: '100%' }}
+          />
+        </div>
+      </div>
+
+      {/* Selected info panel - bottom right */}
+      {selectedObject && (
+        <div style={{
+          position: 'absolute',
+          bottom: 30,
+          right: 30,
+          zIndex: 100,
+          background: 'rgba(20,20,40,0.9)',
+          backdropFilter: 'blur(10px)',
+          padding: 15,
+          borderRadius: 10,
+          border: '2px solid #ffaa00',
+          color: 'white',
+          maxWidth: 250,
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 8, color: '#ffaa00' }}>ℹ️ Selected</div>
+          <div style={{ fontSize: 14 }}>{selectedObject.info}</div>
+          <button
+            onClick={() => setSelectedObject(null)}
+            style={{
+              marginTop: 10,
+              background: 'transparent',
+              border: '1px solid #aaa',
+              color: 'white',
+              padding: '4px 12px',
+              borderRadius: 15,
+              cursor: 'pointer',
+              fontSize: 12,
+            }}
+          >Dismiss</button>
+        </div>
+      )}
+
+      {/* Educational note */}
+      <div style={{
+        position: 'absolute',
+        bottom: 30,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 100,
+        background: 'rgba(0,0,0,0.5)',
+        backdropFilter: 'blur(5px)',
+        padding: '8px 16px',
+        borderRadius: 20,
+        border: '1px solid #88aaff',
+        color: '#ccc',
+        fontSize: 12,
+      }}>
+        ⚠️ Scale exaggerated: nucleus is 100,000× smaller than atom
+      </div>
+    </>
+  );
+};
+
+// Shared button style
+const toggleButtonStyle: React.CSSProperties = {
+  padding: '6px 12px',
+  borderRadius: 20,
+  border: '1px solid',
+  cursor: 'pointer',
+  fontWeight: 'bold',
+  fontSize: 12,
+  color: 'white',
+  transition: 'all 0.3s',
+};
+
+export default Chapter1AtomicModel;
