@@ -1,13 +1,15 @@
 
-import './index.css'
-
-function App() {
+export default function App() {
   return (
-    <div className="">
-      
-        <h1>chemistry grade 9</h1>
+    <div>
+      <h1>Chemistry 3D Viewer</h1>
+      <a
+        href="/chapter1/chemicalreaction.html"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Open Chemical Reactions
+      </a>
     </div>
-  )
+  );
 }
-
-export default App
