@@ -3,20 +3,13 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  root: './',
-
-  server: {
-    host: true,
-    port: 10000,
-    allowedHosts: true
-  },
-
+  root: './', // your project root
   build: {
     outDir: 'dist',
     rollupOptions: {
       input: {
-        main: './index.html',
-        chemicalreaction: './public/chapter1/chemicalreaction.html'
+        main: './index.html',          // your main React entry
+        chemicalreaction: './public/chapter1/chemicalreaction.html', // optional if you want to build it separately
       }
     }
   }
