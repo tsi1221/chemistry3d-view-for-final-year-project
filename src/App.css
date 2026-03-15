@@ -5,12 +5,23 @@
   --glass-border: rgba(255, 255, 255, 0.15);
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
   color: white;
-  margin: 0;
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   min-height: 100vh;
+
+  /* Cross-browser font smoothing */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
@@ -19,6 +30,7 @@ body {
   padding: 20px;
 }
 
+/* Glass Header */
 .glass-header {
   background: var(--glass);
   backdrop-filter: blur(12px);
@@ -32,14 +44,19 @@ body {
   z-index: 100;
 }
 
+/* Main Title Gradient */
 .main-title {
-  margin-top: 0;
   font-size: 2.5rem;
   background: linear-gradient(to right, #fff, var(--primary));
-  
+  -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+  margin-top: 0;
+  text-align: center;
 }
 
+/* Search Bar */
 .search-bar {
   width: 100%;
   max-width: 500px;
@@ -49,20 +66,24 @@ body {
   padding: 12px 25px;
   color: white;
   font-size: 1rem;
-  margin-bottom: 20px;
+  margin: 0 auto 20px auto;
+  display: block;
   outline: none;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, background 0.3s;
 }
 
 .search-bar:focus {
   border-color: var(--primary);
+  background: rgba(0,0,0,0.45);
 }
 
+/* Tabs */
 .tabs {
   display: flex;
   justify-content: center;
   gap: 10px;
   flex-wrap: wrap;
+  margin-bottom: 40px;
 }
 
 .tab-btn {
@@ -85,6 +106,7 @@ body {
   box-shadow: 0 0 20px rgba(122, 44, 255, 0.4);
 }
 
+/* Section Title */
 .section-title {
   margin: 40px 0 20px;
   font-size: 1.6rem;
@@ -92,12 +114,14 @@ body {
   padding-left: 15px;
 }
 
+/* Grid Layout */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
 }
 
+/* Card */
 .card-wrapper {
   position: relative;
 }
@@ -112,7 +136,6 @@ body {
   text-decoration: none;
   color: white;
   height: 100%;
-  box-sizing: border-box;
   transition: all 0.3s ease;
 }
 
@@ -122,6 +145,7 @@ body {
   border-color: var(--primary);
 }
 
+/* Card Number */
 .number {
   display: block;
   font-size: 0.8rem;
@@ -130,6 +154,7 @@ body {
   margin-bottom: 10px;
 }
 
+/* Favorite Button */
 .fav-btn {
   position: absolute;
   top: 15px;
@@ -148,8 +173,25 @@ body {
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
+/* Empty State */
 .empty-state {
   text-align: center;
   padding: 50px;
   opacity: 0.6;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .main-title {
+    font-size: 2rem;
+  }
+
+  .search-bar {
+    max-width: 100%;
+    padding: 10px 20px;
+  }
+
+  .tab-btn {
+    padding: 6px 16px;
+  }
 }
