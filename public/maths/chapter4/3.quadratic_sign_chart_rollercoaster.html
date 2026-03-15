@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin Lab: Sign Chart Rollercoaster</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --bg: #f8fafc;
+            --positive: #22c55e;
+            --negative: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .viz-box {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            display: block;
+        }
+
+        .formula-card {
+            background: #e7f1ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .equation-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .control-panel {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-blue);
+        }
+
+        .btn-toggle {
+            padding: 10px;
+            background: var(--white);
+            border: 2px solid var(--primary-blue);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary-blue);
+            transition: 0.3s;
+        }
+
+        .btn-toggle.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        #solutionAlert {
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">Sign Chart Rollercoaster</h2>
+        <p style="margin:5px 0 0">Visualizing Product Properties & Inequalities</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-card">
+                <div class="equation-text" id="eqDisplay">(x - 1)(x - 3) < 0</div>
+            </div>
+            <div class="viz-box">
+                <canvas id="quadCanvas" width="600" height="400"></canvas>
+            </div>
+            <div id="solutionAlert"></div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="slider-group">
+                <label>Root 1 (r₁): <span id="labelR1">1</span></label>
+                <input type="range" id="valR1" min="-5" max="5" value="1" step="0.5">
+            </div>
+
+            <div class="slider-group">
+                <label>Root 2 (r₂): <span id="labelR2">3</span></label>
+                <input type="range" id="valR2" min="-5" max="5" value="3" step="0.5">
+            </div>
+
+            <div class="slider-group">
+                <label>Inequality Type</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="btn-toggle active" id="btnLess">< 0 (Under)</button>
+                    <button class="btn-toggle" id="btnGreater">> 0 (Above)</button>
+                </div>
+            </div>
+
+            <div style="background: #fffbe6; padding: 15px; border-radius: 10px; font-size: 0.85rem; border-left: 5px solid #fbbf24;">
+                <strong>Concept:</strong> The rollercoaster goes <strong>negative (Red)</strong> when it's below the ground. If our goal is < 0, the red section is our solution!
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('quadCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('solutionAlert');
+
+    let r1 = 1, r2 = 3;
+    let mode = 'less'; // 'less' or 'greater'
+    const scale = 40;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+
+        // 1. Draw Grid & Ground
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.beginPath();
+        for(let i=-7; i<=7; i++) {
+            ctx.moveTo(cx + i*scale, 0); ctx.lineTo(cx + i*scale, canvas.height);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy);
+        ctx.stroke();
+
+        // 2. Draw Quadratic Curve (y = (x-r1)(x-r2))
+        ctx.lineWidth = 4;
+        let lastX, lastY;
+
+        for (let x = -7; x <= 7; x += 0.1) {
+            let y = (x - r1) * (x - r2);
+            let screenX = cx + x * scale;
+            let screenY = cy - y * scale;
+
+            if (lastX !== undefined) {
+                // Color coding based on sign
+                ctx.strokeStyle = y > 0 ? '#22c55e' : '#ef4444'; 
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(screenX, screenY);
+                ctx.stroke();
+            }
+            lastX = screenX;
+            lastY = screenY;
+        }
+
+        // 3. Draw Critical Points (Roots)
+        ctx.fillStyle = '#1e293b';
+        [r1, r2].forEach(r => {
+            ctx.beginPath();
+            ctx.arc(cx + r * scale, cy, 6, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // 4. Update UI
+        const symbol = mode === 'less' ? '<' : '>';
+        document.getElementById('eqDisplay').innerText = `(x - ${r1})(x - ${r2}) ${symbol} 0`;
+        document.getElementById('labelR1').innerText = r1;
+        document.getElementById('labelR2').innerText = r2;
+
+        // 5. Solution Alert
+        alertBox.style.display = 'block';
+        let lower = Math.min(r1, r2);
+        let upper = Math.max(r1, r2);
+
+        if (mode === 'less') {
+            alertBox.style.backgroundColor = '#fee2e2';
+            alertBox.style.color = '#991b1b';
+            alertBox.innerText = `Solution: ${lower} < x < ${upper}`;
+        } else {
+            alertBox.style.backgroundColor = '#dcfce7';
+            alertBox.style.color = '#166534';
+            alertBox.innerText = `Solution: x < ${lower} OR x > ${upper}`;
+        }
+    }
+
+    // Event Listeners
+    document.getElementById('valR1').addEventListener('input', e => { r1 = parseFloat(e.target.value); draw(); });
+    document.getElementById('valR2').addEventListener('input', e => { r2 = parseFloat(e.target.value); draw(); });
+    
+    document.getElementById('btnLess').addEventListener('click', function() {
+        mode = 'less';
+        this.classList.add('active');
+        document.getElementById('btnGreater').classList.remove('active');
+        draw();
+    });
+
+    document.getElementById('btnGreater').addEventListener('click', function() {
+        mode = 'greater';
+        this.classList.add('active');
+        document.getElementById('btnLess').classList.remove('active');
+        draw();
+    });
+
+    draw();
+</script>
+</body>
+</html>

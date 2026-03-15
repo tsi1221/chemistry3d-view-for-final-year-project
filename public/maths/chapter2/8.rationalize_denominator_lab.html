@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Rationalize Mirror</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f0f7ff;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 45px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .viz-box {
+            background: #ffffff;
+            border: 2px solid #e1e8ed;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-container {
+            background: #eef6ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 4px solid var(--accent-blue);
+        }
+
+        .math-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .control-panel {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-action {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn-action:hover {
+            background: var(--accent-blue);
+            transform: translateY(-2px);
+        }
+
+        .info-panel {
+            font-size: 0.85rem;
+            color: #475569;
+            background: #fffbe6;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #fbbf24;
+            line-height: 1.5;
+        }
+
+        #blueAlert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 35px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div id="blueAlert">Denominator Rationalized!</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">Rationalization "Mirror Flip"</h2>
+        <p style="margin:5px 0 0">Grade 9: Removing Radicals from Denominators</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-container">
+                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 10px;">FRACTION STATE</div>
+                <div class="math-display" id="fractionUI">1 / √2</div>
+            </div>
+            <div class="viz-box">
+                <canvas id="ratCanvas" width="600" height="400"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="input-group">
+                <label style="font-weight: bold; font-size: 0.9rem;">Choose Root ($x$)</label>
+                <input type="range" id="valX" min="2" max="10" value="2" step="1" style="width:100%">
+                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelX">√2</div>
+            </div>
+
+            <button class="btn-action" onclick="rationalize()">Flip & Rationalize</button>
+
+            <div class="info-panel">
+                <strong>The Mirror Rule:</strong> We multiply the top and bottom by the same root. This creates a "Perfect Square" in the denominator, which removes the radical!
+            </div>
+            
+            <div style="font-size: 0.8rem; color: #64748b;">
+                Mathematically: $\frac{1}{\sqrt{x}} \cdot \frac{\sqrt{x}}{\sqrt{x}} = \frac{\sqrt{x}}{x}$
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('ratCanvas');
+    const ctx = canvas.getContext('2d');
+    const labelX = document.getElementById('labelX');
+    const fractionUI = document.getElementById('fractionUI');
+    const alertBox = document.getElementById('blueAlert');
+
+    let xVal = 2;
+    let isRationalized = false;
+    let animProgress = 0;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Draw Fraction Bar
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 60, centerY);
+        ctx.lineTo(centerX + 60, centerY);
+        ctx.stroke();
+
+        // Numerator Position
+        let numY = centerY - 50;
+        let denY = centerY + 70;
+
+        // Denominator Logic (Fragmented vs Solid)
+        if (!isRationalized) {
+            // Draw "1" on top
+            drawText("1", centerX, numY, "#0056b3", "30px");
+            // Draw "√x" on bottom
+            drawRadicalBlock(centerX, denY, xVal, true);
+        } else {
+            // Animating the flip
+            drawText(`√${xVal}`, centerX, numY, "#00a2ff", "30px");
+            drawRadicalBlock(centerX, denY, xVal, false);
+        }
+    }
+
+    function drawText(txt, x, y, color, size) {
+        ctx.fillStyle = color;
+        ctx.font = `bold ${size} Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText(txt, x, y);
+    }
+
+    function drawRadicalBlock(x, y, val, fragmented) {
+        const size = 50;
+        ctx.strokeStyle = fragmented ? "#d9534f" : "#28a745";
+        ctx.lineWidth = 2;
+
+        if (fragmented) {
+            // Fragmented "Radical" Look
+            ctx.strokeRect(x - size/2, y - size/2, size, size);
+            ctx.beginPath();
+            ctx.moveTo(x - size/2, y - size/2);
+            ctx.lineTo(x + size/2, y + size/2);
+            ctx.moveTo(x + size/2, y - size/2);
+            ctx.lineTo(x - size/2, y + size/2);
+            ctx.stroke();
+            drawText(`√${val}`, x, y + 5, "#d9534f", "18px");
+        } else {
+            // Solid "Rational" Look
+            ctx.fillStyle = "rgba(40, 167, 69, 0.1)";
+            ctx.fillRect(x - size/2, y - size/2, size, size);
+            ctx.strokeRect(x - size/2, y - size/2, size, size);
+            drawText(`${val}`, x, y + 5, "#28a745", "22px");
+        }
+    }
+
+    function rationalize() {
+        isRationalized = !isRationalized;
+        if (isRationalized) {
+            fractionUI.innerHTML = `√${xVal} / ${xVal}`;
+            alertBox.style.display = 'block';
+            setTimeout(() => { alertBox.style.display = 'none'; }, 2000);
+        } else {
+            fractionUI.innerHTML = `1 / √${xVal}`;
+        }
+        draw();
+    }
+
+    document.getElementById('valX').addEventListener('input', (e) => {
+        xVal = e.target.value;
+        labelX.innerText = `√${xVal}`;
+        isRationalized = false;
+        fractionUI.innerHTML = `1 / √${xVal}`;
+        draw();
+    });
+
+    // Initial Load
+    draw();
+</script>
+
+</body>
+</html>

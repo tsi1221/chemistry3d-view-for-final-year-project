@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin Lab: Absolute Value Tent</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .viz-box {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-card {
+            background: #e7f1ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .equation-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+            font-family: 'Courier New', monospace;
+        }
+
+        .control-panel {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-blue);
+            cursor: pointer;
+        }
+
+        #distanceAlert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div id="distanceAlert">Two Solutions Found!</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">Absolute Value Tent</h2>
+        <p style="margin:5px 0 0">Visualizing Distance as a 3D Structure</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-card">
+                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 5px;">CURRENT EQUATION</div>
+                <div class="equation-text" id="eqDisplay">|x - 2| = 4</div>
+            </div>
+            <div class="viz-box">
+                <canvas id="tentCanvas" width="600" height="400"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="slider-group">
+                <label>Center Shift (a)</label>
+                <input type="range" id="valA" min="-10" max="10" value="2" step="0.5">
+                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelA">a = 2</div>
+            </div>
+
+            <div class="slider-group">
+                <label>Cutter Height (b)</label>
+                <input type="range" id="valB" min="0" max="8" value="4" step="0.2">
+                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelB">b = 4</div>
+            </div>
+
+            <div style="background: #fffbe6; padding: 15px; border-radius: 10px; border-left: 5px solid #fbbf24; font-size: 0.85rem;">
+                <strong>Concept:</strong> The horizontal blue bar "cuts" the tent. Notice how it hits the tent in two places, creating two solutions on the number line below.
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('tentCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('distanceAlert');
+
+    let a = 2; // Center
+    let b = 4; // Height/Distance
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const baseY = 320;
+        const scale = 25;
+
+        // Update UI Text
+        document.getElementById('eqDisplay').innerText = `|x - ${a}| = ${b}`;
+        document.getElementById('labelA').innerText = `a = ${a}`;
+        document.getElementById('labelB').innerText = `b = ${b}`;
+
+        // 1. Draw Number Line (Floor)
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(50, baseY);
+        ctx.lineTo(550, baseY);
+        ctx.stroke();
+
+        // Draw Ticks
+        for(let i = -10; i <= 10; i++) {
+            let xPos = centerX + (i * scale);
+            ctx.beginPath();
+            ctx.moveTo(xPos, baseY - 5);
+            ctx.lineTo(xPos, baseY + 5);
+            ctx.stroke();
+        }
+
+        // 2. Draw the 3D "Tent" (Absolute Value Function)
+        // y = |x - a|
+        ctx.strokeStyle = '#0056b3';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        
+        // Left side of V
+        ctx.moveTo(centerX + (a * scale), baseY);
+        ctx.lineTo(centerX + ((a - 10) * scale), baseY - (10 * scale));
+        
+        // Right side of V
+        ctx.moveTo(centerX + (a * scale), baseY);
+        ctx.lineTo(centerX + ((a + 10) * scale), baseY - (10 * scale));
+        ctx.stroke();
+
+        // 3. Draw "Cutter Bar" (The result b)
+        const barY = baseY - (b * scale);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(50, barY);
+        ctx.lineTo(550, barY);
+        ctx.stroke();
+
+        // 4. Calculate Solutions and Draw Projections
+        const sol1 = a - b;
+        const sol2 = a + b;
+        const x1 = centerX + (sol1 * scale);
+        const x2 = centerX + (sol2 * scale);
+
+        // Projection Lines (Dashed)
+        ctx.strokeStyle = '#64748b';
+        ctx.setLineDash([5, 5]);
+        ctx.lineWidth = 1;
+        
+        // Left Projection
+        ctx.beginPath();
+        ctx.moveTo(x1, barY);
+        ctx.lineTo(x1, baseY);
+        ctx.stroke();
+
+        // Right Projection
+        ctx.beginPath();
+        ctx.moveTo(x2, barY);
+        ctx.lineTo(x2, baseY);
+        ctx.stroke();
+
+        // 5. Draw Solution Points on Number Line
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ef4444';
+        
+        // Point 1
+        ctx.beginPath();
+        ctx.arc(x1, baseY, 6, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Point 2
+        ctx.beginPath();
+        ctx.arc(x2, baseY, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 6. Show Alert
+        if (b > 0) {
+            alertBox.style.display = 'block';
+        } else if (b === 0) {
+            alertBox.innerText = "Single Solution (The Peak)!";
+            alertBox.style.display = 'block';
+        } else {
+            alertBox.style.display = 'none';
+        }
+    }
+
+    // Event Listeners
+    document.getElementById('valA').addEventListener('input', (e) => { 
+        a = parseFloat(e.target.value); 
+        draw(); 
+    });
+    document.getElementById('valB').addEventListener('input', (e) => { 
+        b = parseFloat(e.target.value); 
+        draw(); 
+    });
+
+    // Initial Draw
+    draw();
+</script>
+
+</body>
+</html>

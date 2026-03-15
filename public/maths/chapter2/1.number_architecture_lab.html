@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Real Number Architecture</title>
+    <style>
+        :root {
+            --ethiopia-blue: #0056b3;
+            --glass-blue: rgba(0, 86, 179, 0.1);
+            --white: #ffffff;
+            --accent: #7A2CFF;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #f4f7fa;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .app-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--ethiopia-blue);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .lab-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Visualization Area */
+        .viz-container {
+            position: relative;
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #e1e8ed;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* UI Controls */
+        .controls {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .number-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            box-sizing: border-box;
+        }
+
+        .btn-drop {
+            background: var(--ethiopia-blue);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-drop:hover { background: var(--accent); }
+
+        .info-card {
+            font-size: 0.85rem;
+            background: #eef6ff;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid var(--ethiopia-blue);
+        }
+
+        /* Blue Alert System */
+        #alertBox {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--ethiopia-blue);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div id="alertBox">Calculating Position...</div>
+
+<div class="app-shell">
+    <header>
+        <h2 style="margin:0">Real Number Architecture</h2>
+        <p style="margin:5px 0 0">Interactive Hierarchy Explorer</p>
+    </header>
+
+    <div class="lab-grid">
+        <main class="viz-container">
+            <canvas id="architectureCanvas" width="600" height="500"></canvas>
+        </main>
+
+        <aside class="controls">
+            <div class="input-group">
+                <label>Enter a Number (e.g., 5, -2, 0.75, π)</label>
+                <input type="text" id="numInput" class="number-input" placeholder="Enter value...">
+            </div>
+
+            <button class="btn-drop" onclick="dropNumber()">Classify & Drop</button>
+
+            <div class="info-card">
+                <strong>Hierarchy:</strong><br>
+                $\mathbb{N} \subset \mathbb{Z} \subset \mathbb{Q} \subset \mathbb{R}$
+            </div>
+
+            <div style="font-size: 0.8rem; color: #666;">
+                * Irrational numbers ($\mathbb{I}$) exist outside the rational nested layers but still within Real numbers ($\mathbb{R}$).
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('architectureCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('alertBox');
+    const input = document.getElementById('numInput');
+
+    let particles = [];
+    
+    // Define the "Cylinders" (Layers)
+    const layers = [
+        { name: "Rational (Q)", r: 220, color: 'rgba(0, 86, 179, 0.05)', label: 'Q' },
+        { name: "Integers (Z)", r: 150, color: 'rgba(0, 86, 179, 0.1)', label: 'Z' },
+        { name: "Natural (N)", r: 80, color: 'rgba(0, 86, 179, 0.2)', label: 'N' }
+    ];
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2 + 50;
+
+        // 1. Draw Irrational Pillar (Separate)
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(cx + 180, 100, 80, 350);
+        ctx.strokeStyle = '#ddd';
+        ctx.strokeRect(cx + 180, 100, 80, 350);
+        ctx.fillStyle = '#666';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText('Irrational (I)', cx + 185, 90);
+
+        // 2. Draw Nested Layers
+        layers.forEach(layer => {
+            ctx.beginPath();
+            ctx.arc(cx, cy, layer.r, 0, Math.PI * 2);
+            ctx.fillStyle = layer.color;
+            ctx.fill();
+            ctx.strokeStyle = '#0056b3';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            
+            ctx.fillStyle = '#0056b3';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText(layer.label, cx - 10, cy - layer.r + 20);
+        });
+
+        // 3. Update and Draw Falling Numbers
+        particles.forEach((p, index) => {
+            p.y += p.speed;
+            
+            // Logic to stop at correct layer
+            if (p.y > p.targetY) p.y = p.targetY;
+
+            ctx.fillStyle = p.color;
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(p.val, p.x, p.y);
+        });
+
+        requestAnimationFrame(draw);
+    }
+
+    function dropNumber() {
+        const val = input.value.trim();
+        if (!val) return;
+
+        let targetY, xPos;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2 + 50;
+
+        // Simple Classification Logic
+        const isIrrational = (val.includes('π') || val.includes('sqrt') || val.includes('..'));
+        const num = parseFloat(val);
+
+        if (isIrrational) {
+            xPos = cx + 220;
+            targetY = 250 + (Math.random() * 100);
+            triggerAlert(`${val} is Irrational!`);
+        } else if (Number.isInteger(num) && num > 0) {
+            xPos = cx;
+            targetY = cy + (Math.random() * 30 - 15);
+            triggerAlert(`${val} is a Natural Number!`);
+        } else if (Number.isInteger(num)) {
+            xPos = cx;
+            targetY = cy + 110;
+            triggerAlert(`${val} is an Integer!`);
+        } else {
+            xPos = cx;
+            targetY = cy + 180;
+            triggerAlert(`${val} is a Rational Number!`);
+        }
+
+        particles.push({
+            val: val,
+            x: xPos,
+            y: 0,
+            targetY: targetY,
+            speed: 4,
+            color: '#7A2CFF'
+        });
+    }
+
+    function triggerAlert(msg) {
+        alertBox.innerText = msg;
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+    }
+
+    draw();
+</script>
+
+</body>
+</html>

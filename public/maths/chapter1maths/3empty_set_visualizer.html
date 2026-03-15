@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: The Empty Set</title>
+    <style>
+        :root {
+            --ethiopia-blue: #0056b3;
+            --soft-white: #fcfdfe;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --danger-red: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at center, #e3f2fd 0%, #bbdefb 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .lab-card {
+            background: var(--glass-bg);
+            width: 100%;
+            max-width: 850px;
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 86, 179, 0.15);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid white;
+        }
+
+        header {
+            background: var(--ethiopia-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 700px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        /* Canvas Styles */
+        .canvas-container {
+            position: relative;
+            background: white;
+            border-radius: 15px;
+            border: 2px dashed #0056b355;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            touch-action: none;
+        }
+
+        /* UI Elements */
+        .formula-bar {
+            background: #f1f8ff;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--ethiopia-blue);
+            border: 1px solid #d0e3ff;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-add { background: var(--ethiopia-blue); color: white; }
+        .btn-clear { background: var(--danger-red); color: white; }
+        .btn-zero { background: #6c757d; color: white; }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        .info-box {
+            font-size: 0.85rem;
+            color: #546e7a;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+<div class="lab-card">
+    <header>
+        <h2 style="margin:0">Set Content Visualizer</h2>
+        <p style="margin:5px 0 0">Understanding $\emptyset$ vs $\{0\}$</p>
+    </header>
+
+    <div class="main-layout">
+        <section>
+            <div class="formula-bar" id="formulaDisplay">Set A = { }</div>
+            <div class="canvas-container">
+                <canvas id="setCanvas" width="500" height="300"></canvas>
+            </div>
+        </section>
+
+        <aside class="controls">
+            <button class="btn btn-add" onclick="addElement()">Add Random Element</button>
+            <button class="btn btn-zero" onclick="addZero()">Add Number '0'</button>
+            <button class="btn btn-clear" onclick="clearSet()">Clear Set (Vacuum)</button>
+            
+            <div class="info-box">
+                <strong>Did you know?</strong><br>
+                An empty set ($\emptyset$) has 0 elements. <br><br>
+                A set containing zero $\{0\}$ has <strong>1 element</strong>.
+            </div>
+
+            <div style="margin-top:10px">
+                <label style="font-size:0.8rem">Cardinality ($n(A)$):</label>
+                <div id="cardinalityText" style="font-weight:bold; font-size:1.2rem">0</div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('setCanvas');
+    const ctx = canvas.getContext('2d');
+    const formulaDisplay = document.getElementById('formulaDisplay');
+    const cardText = document.getElementById('cardinalityText');
+
+    let elements = [];
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Set Container (The Bubble)
+        ctx.beginPath();
+        ctx.arc(canvas.width/2, canvas.height/2, 110, 0, Math.PI * 2);
+        ctx.strokeStyle = '#0056b3';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]); // Dashed line for empty set feel
+        if (elements.length > 0) ctx.setLineDash([]);
+        ctx.stroke();
+
+        // Label
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#0056b3";
+        ctx.font = "bold 16px Arial";
+        ctx.fillText("Set A", canvas.width/2 - 20, 30);
+
+        // Draw Elements
+        elements.forEach(el => {
+            ctx.beginPath();
+            ctx.arc(el.x, el.y, 20, 0, Math.PI * 2);
+            ctx.fillStyle = el.val === 0 ? "#ffc107" : "#7A2CFF";
+            ctx.fill();
+            
+            ctx.fillStyle = "white";
+            ctx.font = "bold 14px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(el.val, el.x, el.y + 5);
+        });
+
+        updateUI();
+    }
+
+    function addElement() {
+        if (elements.length >= 8) return;
+        const val = Math.floor(Math.random() * 20) + 1;
+        spawnElement(val);
+    }
+
+    function addZero() {
+        // Prevent duplicate zeros for this visualization
+        if (elements.some(e => e.val === 0)) return;
+        spawnElement(0);
+    }
+
+    function spawnElement(val) {
+        // Random position within the circle
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 70;
+        elements.push({
+            val: val,
+            x: canvas.width/2 + Math.cos(angle) * dist,
+            y: canvas.height/2 + Math.sin(angle) * dist
+        });
+        draw();
+    }
+
+    function clearSet() {
+        elements = [];
+        draw();
+    }
+
+    function updateUI() {
+        const count = elements.length;
+        cardText.innerText = count;
+
+        if (count === 0) {
+            formulaDisplay.innerHTML = "Set A = ∅";
+        } else {
+            const vals = elements.map(e => e.val);
+            formulaDisplay.innerHTML = `Set A = { ${vals.join(", ")} }`;
+        }
+    }
+
+    // Initial draw
+    draw();
+</script>
+
+</body>
+</html>

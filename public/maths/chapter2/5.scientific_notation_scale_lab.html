@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: The Space Scale</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --u-bg: #f8fbff;
+            --white: #ffffff;
+            --atom-accent: #7A2CFF;
+            --galaxy-accent: #ffc107;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-content {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .lab-content { grid-template-columns: 1fr; }
+        }
+
+        /* Visualization Area */
+        .viz-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .formula-card {
+            width: 100%;
+            background: var(--u-bg);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .notation {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        canvas {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 15px;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+        }
+
+        /* Controls */
+        .control-panel {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .info-box {
+            font-size: 0.85rem;
+            color: #555;
+            padding: 12px;
+            background: #e7f1ff;
+            border-radius: 8px;
+            border-left: 5px solid var(--primary-blue);
+            line-height: 1.4;
+        }
+
+        .desc {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* Custom Alert styling */
+        .custom-alert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div id="alertBox" class="custom-alert">Alert! Scale Updated.</div>
+
+<div class="container">
+    <header>
+        <h2 style="margin:0">Scientific Notation "Space Scale"</h2>
+        <p style="margin:5px 0 0">Visualizing the Power of 10 ($a \times 10^n$)</p>
+    </header>
+
+    <div class="lab-content">
+        <main class="viz-section">
+            <div class="formula-card">
+                <div style="font-size:0.8rem; color:#888; margin-bottom:5px">FORMULA RESULT</div>
+                <div class="notation" id="formula">5.0 × 10¹</div>
+            </div>
+            <canvas id="scaleCanvas" width="500" height="350"></canvas>
+        </main>
+
+        <aside class="controls">
+            <div class="slider-group">
+                <label>Change Mantissa ($a$)</label>
+                <input type="range" id="mantissaSlider" min="1" max="9.9" step="0.1" value="5">
+                <div class="desc" id="mantissaLabel">Current: a = 5.0</div>
+            </div>
+
+            <div class="slider-group">
+                <label>Change Exponent ($n$)</label>
+                <input type="range" id="exponentSlider" min="-10" max="10" step="1" value="1">
+                <div class="desc" id="exponentLabel">Current: n = 1 (Tens)</div>
+            </div>
+            
+            <div class="info-box">
+                <strong>Memory Trick:</strong><br>
+                <ul>
+                    <li>If $n$ is <strong>positive</strong>, the number is very LARGE (zooming OUT).</li>
+                    <li>If $n$ is <strong>negative</strong>, the number is very small (zooming IN).</li>
+                </ul>
+            </div>
+
+            <div class="desc" >
+                Adjust the sliders to move the "Space Camera" through different worlds.
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('scaleCanvas');
+    const ctx = canvas.getContext('2d');
+    const formulaDisplay = document.getElementById('formula');
+    const mantissaSlider = document.getElementById('mantissaSlider');
+    const exponentSlider = document.getElementById('exponentSlider');
+    const mantissaLabel = document.getElementById('mantissaLabel');
+    const exponentLabel = document.getElementById('exponentLabel');
+    const alertBox = document.getElementById('alertBox');
+
+    // App State
+    let a = 5.0;
+    let n = 1;
+    let prevN = 1;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const baseRadius = 20;
+        
+        // Calculate dynamic radius based on mantissa a
+        const radius = baseRadius * (a/5); 
+        
+        // --- 1. Shading the Object based on Scale n ---
+        if (n > 5) { // Macro World (Galaxy)
+            drawGalaxy(centerX, centerY, radius);
+        } else if (n > 0) { // Solar System / Large Object
+            drawLargeObject(centerX, centerY, radius);
+        } else if (n < -5) { // Micro World (Atom)
+            drawAtom(centerX, centerY, radius);
+        } else { // Human Scale (10^0)
+            drawHumanObject(centerX, centerY, radius);
+        }
+
+        // --- 2. Scale Text Overlay (The "Camera Readout") ---
+        ctx.fillStyle = '#0056b3';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Scale: 10^${n} meters`, centerX, canvas.height - 20);
+    }
+
+    function drawHumanObject(x, y, r) {
+        // Draw a pencil
+        ctx.strokeStyle = '#333';
+        ctx.fillStyle = '#ffc107'; // Pencil yellow
+        ctx.lineWidth = 3;
+        ctx.fillRect(x - r*2, y - r/4, r*4, r/2);
+        ctx.strokeRect(x - r*2, y - r/4, r*4, r/2);
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText("Pencil (10^0)", x, y + r + 15);
+    }
+
+    function drawLargeObject(x, y, r) {
+        // Draw a globe (Planet scale)
+        ctx.fillStyle = 'rgba(0, 162, 255, 0.2)';
+        ctx.beginPath(); ctx.arc(x, y, r * 4, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#00a2ff';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, r * 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = "#00a2ff";
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText(`Planet Scale (10^${n})`, x, y + r*4 + 20);
+    }
+
+    function drawGalaxy(x, y, r) {
+        // Draw a Spiral Galaxy
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Date.now() / 2000); // Simple slow rotation
+        ctx.strokeStyle = 'rgba(255, 193, 7, 0.4)'; // Galaxy Accent
+        for (let i = 0; i < 12; i++) {
+            ctx.rotate(Math.PI / 6);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, r * 5, r * 0.8, 0, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+        ctx.fillStyle = "#ffc107";
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText(`Galaxy Scale (10^${n})`, x, y + r*5 + 20);
+    }
+
+    function drawAtom(x, y, r) {
+        // Draw Bohr model
+        ctx.fillStyle = 'rgba(122, 44, 255, 0.4)'; // Atom Accent
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); // Nucleus
+        
+        ctx.strokeStyle = 'rgba(122, 44, 255, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(x, y, r * 3, 0, Math.PI * 2); ctx.stroke(); // Electron orbit
+        
+        ctx.fillStyle = "#7A2CFF";
+        ctx.beginPath(); ctx.arc(x + r*3, y, r/3, 0, Math.PI * 2); ctx.fill(); // Electron
+        
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillText(`Atomic Scale (10^${n})`, x, y + r*3 + 20);
+    }
+
+    function triggerAlert(msg) {
+        alertBox.innerText = msg;
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 2000);
+    }
+
+    function updateNotation() {
+        // Formula Display: a × 10ⁿ
+        formulaDisplay.innerHTML = `${a.toFixed(1)} × 10<sup>${n}</sup>`;
+        mantissaLabel.innerText = `Current: a = ${a.toFixed(1)}`;
+        
+        let prefix = "";
+        if (n >= 6) prefix = "Millions";
+        else if (n > 0) prefix = "Tens / Thousands";
+        else if (n == 0) prefix = "Units (1m)";
+        else if (n > -6) prefix = "Microns / Small";
+        else prefix = "Nano (Atomic)";
+
+        exponentLabel.innerText = `Current: n = ${n} (${prefix})`;
+    }
+
+    // Input listeners
+    mantissaSlider.addEventListener('input', (e) => {
+        a = parseFloat(e.target.value);
+        updateNotation();
+        draw();
+    });
+
+    exponentSlider.addEventListener('input', (e) => {
+        n = parseInt(e.target.value);
+        
+        // Trigger alert at macro/micro boundaries
+        if (n > 5 && prevN <= 5) triggerAlert("Entering the Macro World (Large Scale)!");
+        if (n < -5 && prevN >= -5) triggerAlert("Entering the Micro World (Atomic Scale)!");
+        if ((n <= 5 && prevN > 5) || (n >= -5 && prevN < -5)) triggerAlert("Returning to Human Scale.");
+        
+        prevN = n;
+        updateNotation();
+        draw();
+    });
+
+    // Initial draw
+    updateNotation();
+    draw();
+</script>
+
+</body>
+</html>

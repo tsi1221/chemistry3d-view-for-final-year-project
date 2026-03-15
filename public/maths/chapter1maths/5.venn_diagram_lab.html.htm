@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Venn Operations</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --accent: #7A2CFF;
+            --bg: #f4f7f9;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.85);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: #333;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Visualization Area */
+        .canvas-container {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid #e1e8ed;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            max-width: 500px;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        /* Dynamic Formula Display */
+        .formula-card {
+            width: 100%;
+            background: var(--white);
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border-left: 6px solid var(--accent);
+        }
+
+        .symbol-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        /* Controls */
+        .controls {
+            background: var(--glass);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .mode-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px;
+            border: 2px solid var(--primary);
+            background: transparent;
+            color: var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .hint-box {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.5;
+            background: #fffbe6;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ffe58f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <header>
+        <h2 style="margin:0">Venn Diagram Collision Lab</h2>
+        <p style="margin:5px 0 0">Interacting with Union ($\cup$) and Intersection ($\cap$)</p>
+    </header>
+
+    <div class="lab-grid">
+        <main>
+            <div class="formula-card">
+                <div id="opLabel" style="font-size:0.8rem; color:#666; margin-bottom:5px">CURRENT OPERATION</div>
+                <div class="symbol-text" id="notationDisplay">A ∩ B</div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="vennCanvas" width="500" height="350"></canvas>
+            </div>
+        </main>
+
+        <aside class="controls">
+            <div class="mode-buttons">
+                <button class="btn active" id="btnInter" onclick="setMode('intersection')">Intersection ($\cap$)</button>
+                <button class="btn" id="btnUnion" onclick="setMode('union')">Union ($\cup$)</button>
+            </div>
+
+            <div class="control-group">
+                <label>Move Set B (Horizontal)</label>
+                <input type="range" id="posX" min="150" max="350" value="320">
+            </div>
+
+            <div class="control-group">
+                <label>Set Size (Radius)</label>
+                <input type="range" id="radiusSize" min="60" max="130" value="100">
+            </div>
+
+            <div class="hint-box" id="hintBox">
+                <strong>Intersection ($\cap$):</strong> Only the elements shared by both A and B are shaded.
+            </div>
+
+            <div style="font-size: 0.8rem; border-top: 1px solid #eee;">
+                <p><strong>Note for Grade 9:</strong> The overlap represents the logic "AND", while the union represents "OR".</p>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('vennCanvas');
+    const ctx = canvas.getContext('2d');
+    const notationDisplay = document.getElementById('notationDisplay');
+    const hintBox = document.getElementById('hintBox');
+
+    // App State
+    let mode = 'intersection';
+    let setA = { x: 180, y: 175, r: 100, color: 'rgba(0, 86, 179, 0.4)' };
+    let setB = { x: 320, y: 175, r: 100, color: 'rgba(122, 44, 255, 0.4)' };
+
+    function setMode(newMode) {
+        mode = newMode;
+        document.getElementById('btnInter').classList.toggle('active', mode === 'intersection');
+        document.getElementById('btnUnion').classList.toggle('active', mode === 'union');
+        
+        if(mode === 'intersection') {
+            notationDisplay.innerText = "A ∩ B";
+            hintBox.innerHTML = "<strong>Intersection (∩):</strong> Only the elements shared by both A and B are shaded.";
+        } else {
+            notationDisplay.innerText = "A ∪ B";
+            hintBox.innerHTML = "<strong>Union (∪):</strong> All elements from both Set A and Set B are shaded together.";
+        }
+        draw();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Draw Set Outlines
+        ctx.lineWidth = 3;
+        
+        // Set A Outline
+        ctx.beginPath();
+        ctx.arc(setA.x, setA.y, setA.r, 0, Math.PI * 2);
+        ctx.strokeStyle = '#0056b3';
+        ctx.stroke();
+
+        // Set B Outline
+        ctx.beginPath();
+        ctx.arc(setB.x, setB.y, setB.r, 0, Math.PI * 2);
+        ctx.strokeStyle = '#7A2CFF';
+        ctx.stroke();
+
+        // 2. Handle Shading Logic
+        ctx.save();
+        if (mode === 'intersection') {
+            // Clip to Set A then draw Set B to get intersection shading
+            ctx.beginPath();
+            ctx.arc(setA.x, setA.y, setA.r, 0, Math.PI * 2);
+            ctx.clip();
+            
+            ctx.beginPath();
+            ctx.arc(setB.x, setB.y, setB.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(40, 167, 69, 0.6)'; // Highlight green for intersection
+            ctx.fill();
+        } else {
+            // Shading for Union (Both sets)
+            ctx.beginPath();
+            ctx.arc(setA.x, setA.y, setA.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 86, 179, 0.2)';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(setB.x, setB.y, setB.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(122, 44, 255, 0.2)';
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // 3. Labels
+        ctx.fillStyle = '#0056b3';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText("A", setA.x - setA.r - 10, setA.y - setA.r - 10);
+        
+        ctx.fillStyle = '#7A2CFF';
+        ctx.fillText("B", setB.x + setB.r - 10, setB.y - setB.r - 10);
+    }
+
+    // Input Listeners
+    document.getElementById('posX').addEventListener('input', (e) => {
+        setB.x = parseInt(e.target.value);
+        draw();
+    });
+
+    document.getElementById('radiusSize').addEventListener('input', (e) => {
+        setA.r = parseInt(e.target.value);
+        setB.r = parseInt(e.target.value);
+        draw();
+    });
+
+    // Initial Draw
+    draw();
+</script>
+
+</body>
+</html>

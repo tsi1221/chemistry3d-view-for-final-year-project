@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin Lab: Exponent Expansion</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --white: #ffffff;
+            --bg: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            position: relative;
+            cursor: move;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-card {
+            background: #eef6ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 6px solid var(--primary-blue);
+            text-align: center;
+        }
+
+        .exponent-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+        }
+
+        .exponent-text span {
+            font-size: 1.5rem;
+            vertical-align: super;
+        }
+
+        .control-panel {
+            background: #f1f5f9;
+            padding: 25px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #475569;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-blue);
+        }
+
+        .alert-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div id="statusAlert" class="alert-toast">Dimension Expanded!</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">Exponent Expansion Lab</h2>
+        <p style="margin:5px 0 0">Visualizing Powers as Physical Dimensions</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-card">
+                <div class="exponent-text" id="eqDisplay">3<span>2</span> = 9</div>
+                <div style="color: #64748b; font-size: 0.9rem; margin-top: 5px;">
+                    Total Units: <span id="unitCount">9</span>
+                </div>
+            </div>
+            <div class="canvas-area">
+                <canvas id="cubeCanvas" width="600" height="500"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="slider-group">
+                <label>Base (x): <span id="labelBase">3</span></label>
+                <input type="range" id="valBase" min="1" max="5" value="3" step="1">
+            </div>
+
+            <div class="slider-group">
+                <label>Exponent (n): <span id="labelExp">2</span></label>
+                <input type="range" id="valExp" min="1" max="3" value="2" step="1">
+            </div>
+
+            <div style="background: #fffbe6; padding: 15px; border-radius: 12px; font-size: 0.85rem; border-left: 5px solid #fbbf24;">
+                <strong>Instruction:</strong> Change the exponent to <strong>3</strong> to watch the 2D area extrude into a 3D volume. Drag the canvas to rotate!
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('cubeCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('statusAlert');
+
+    let base = 3;
+    let exp = 2;
+    let rot = { x: -0.5, y: 0.5 };
+    let isDragging = false;
+    let lastMouse = { x: 0, y: 0 };
+
+    function project(x, y, z) {
+        let x1 = x * Math.cos(rot.y) - z * Math.sin(rot.y);
+        let z1 = x * Math.sin(rot.y) + z * Math.cos(rot.y);
+        let y2 = y * Math.cos(rot.x) - z1 * Math.sin(rot.x);
+        const scale = 40;
+        return {
+            x: (canvas.width / 2) + x1 * scale,
+            y: (canvas.height / 2) - y2 * scale
+        };
+    }
+
+    function drawBox(x, y, z, size, color) {
+        const s = size / 2;
+        const p1 = project(x-s, y-s, z-s);
+        const p2 = project(x+s, y-s, z-s);
+        const p3 = project(x+s, y+s, z-s);
+        const p4 = project(x-s, y+s, z-s);
+        const p5 = project(x-s, y-s, z+s);
+        const p6 = project(x+s, y-s, z+s);
+        const p7 = project(x+s, y+s, z+s);
+        const p8 = project(x-s, y+s, z+s);
+
+        ctx.strokeStyle = "rgba(0, 86, 179, 0.8)";
+        ctx.fillStyle = color;
+        ctx.lineWidth = 1;
+
+        // Simple back-to-front drawing order logic (simplified)
+        const drawFace = (pts) => {
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        };
+
+        drawFace([p1, p2, p3, p4]); // back
+        drawFace([p5, p6, p7, p8]); // front
+        drawFace([p1, p2, p6, p5]); // top
+        drawFace([p4, p3, p7, p8]); // bottom
+        drawFace([p1, p4, p8, p5]); // left
+        drawFace([p2, p3, p7, p6]); // right
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const total = Math.pow(base, exp);
+        document.getElementById('eqDisplay').innerHTML = `${base}<span>${exp}</span> = ${total}`;
+        document.getElementById('unitCount').innerText = total;
+        document.getElementById('labelBase').innerText = base;
+        document.getElementById('labelExp').innerText = exp;
+
+        const offset = (base - 1) / 2;
+        
+        // Loop through dimensions based on exponent
+        for (let i = 0; i < base; i++) {
+            for (let j = 0; j < (exp >= 2 ? base : 1); j++) {
+                for (let k = 0; k < (exp === 3 ? base : 1); k++) {
+                    const color = `rgba(0, 162, 255, ${0.3 + (k/base)*0.5})`;
+                    drawBox(i - offset, -j + offset, k - offset, 0.9, color);
+                }
+            }
+        }
+    }
+
+    // Controls
+    document.getElementById('valBase').addEventListener('input', (e) => { base = parseInt(e.target.value); draw(); });
+    document.getElementById('valExp').addEventListener('input', (e) => { 
+        let oldExp = exp;
+        exp = parseInt(e.target.value); 
+        if(oldExp !== exp) {
+            alertBox.innerText = exp === 1 ? "1D Line" : exp === 2 ? "2D Area" : "3D Volume!";
+            alertBox.style.display = 'block';
+            setTimeout(() => alertBox.style.display = 'none', 1500);
+        }
+        draw(); 
+    });
+
+    // Rotation
+    canvas.addEventListener('mousedown', e => { isDragging = true; lastMouse = {x: e.clientX, y: e.clientY}; });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        rot.y += (e.clientX - lastMouse.x) * 0.01;
+        rot.x += (e.clientY - lastMouse.y) * 0.01;
+        lastMouse = {x: e.clientX, y: e.clientY};
+        draw();
+    });
+
+    draw();
+</script>
+</body>
+</html>

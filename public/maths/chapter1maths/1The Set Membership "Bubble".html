@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Set Membership</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --light-blue: #e7f1ff;
+            --accent-purple: #7A2CFF; /* Modern accent */
+            --glass: rgba(255, 255, 255, 0.8);
+            --text-dark: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            color: var(--text-dark);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 100%;
+            padding: 20px;
+            background: var(--primary-blue);
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px auto;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 800px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .canvas-section {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background: white;
+            border-radius: 10px;
+            cursor: crosshair;
+            width: 100%;
+            max-width: 600px;
+            touch-action: none; /* Prevents scrolling while dragging on mobile */
+            border: 2px solid var(--light-blue);
+        }
+
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .formula-display {
+            font-size: 1.5rem;
+            padding: 15px;
+            background: var(--light-blue);
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary-blue);
+            border-left: 5px solid var(--accent-purple);
+        }
+
+        .btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn:hover {
+            background: #004494;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .instruction {
+            font-size: 0.9rem;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+ 
+    <p>Exploring Set Membership ($a \in A$)</p>
+</header>
+
+<div class="container">
+    <section class="canvas-section">
+        <div class="formula-display" id="formula">a ∉ A</div>
+        <canvas id="mathCanvas" width="500" height="400"></canvas>
+        <p class="instruction">Drag the element 'a' into the circle A.</p>
+    </section>
+
+    <aside class="control-panel">
+        <h3>Interactive Controls</h3>
+        
+        <label>Circle Radius (Size of Set A)</label>
+        <input type="range" id="radiusSlider" min="50" max="180" value="120">
+        
+        <label>Set A Position (X-axis)</label>
+        <input type="range" id="posXSlider" min="100" max="400" value="250">
+
+        <hr>
+        
+        <button class="btn" onclick="resetPosition()">Reset Element</button>
+        
+        <div style="margin-top: 10px;">
+            <strong>Concepts:</strong>
+            <ul style="padding-left: 20px; font-size: 0.85rem;">
+                <li>$\in$ (is an element of)</li>
+                <li>$\notin$ (is not an element of)</li>
+            </ul>
+        </div>
+    </aside>
+</div>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const formulaDisplay = document.getElementById('formula');
+    const radiusSlider = document.getElementById('radiusSlider');
+    const posXSlider = document.getElementById('posXSlider');
+
+    // State Variables
+    let setA = {
+        x: 250,
+        y: 200,
+        radius: 120,
+        color: 'rgba(0, 86, 179, 0.1)',
+        stroke: '#0056b3'
+    };
+
+    let elementA = {
+        x: 50,
+        y: 50,
+        radius: 15,
+        color: '#7A2CFF',
+        isDragging: false
+    };
+
+    // Initialize Logic
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Draw Coordinate Grid (Light)
+        drawGrid();
+
+        // 2. Draw Set A (The Bubble)
+        ctx.beginPath();
+        ctx.arc(setA.x, setA.y, setA.radius, 0, Math.PI * 2);
+        ctx.fillStyle = setA.color;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = setA.stroke;
+        ctx.stroke();
+        
+        // Label for Set A
+        ctx.fillStyle = setA.stroke;
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("Set A", setA.x - 25, setA.y - setA.radius - 10);
+
+        // 3. Draw Element 'a'
+        ctx.beginPath();
+        ctx.arc(elementA.x, elementA.y, elementA.radius, 0, Math.PI * 2);
+        ctx.fillStyle = elementA.color;
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText("a", elementA.x - 4, elementA.y + 5);
+
+        checkMembership();
+    }
+
+    function drawGrid() {
+        ctx.strokeStyle = "#eee";
+        ctx.lineWidth = 1;
+        for(let i=0; i<canvas.width; i+=50) {
+            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+    }
+
+    function checkMembership() {
+        // Distance formula: sqrt((x2-x1)^2 + (y2-y1)^2)
+        const distance = Math.sqrt(Math.pow(elementA.x - setA.x, 2) + Math.pow(elementA.y - setA.y, 2));
+        
+        if (distance < setA.radius) {
+            formulaDisplay.innerText = "a ∈ A";
+            formulaDisplay.style.color = "#28a745"; // Success green
+            setA.color = 'rgba(40, 167, 69, 0.2)';
+        } else {
+            formulaDisplay.innerText = "a ∉ A";
+            formulaDisplay.style.color = "#0056b3";
+            setA.color = 'rgba(0, 86, 179, 0.1)';
+        }
+    }
+
+    // Interaction Logic
+    function handleMouseDown(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = (e.clientX || e.touches[0].clientX) - rect.left;
+        const mouseY = (e.clientY || e.touches[0].clientY) - rect.top;
+
+        const dist = Math.sqrt(Math.pow(mouseX - elementA.x, 2) + Math.pow(mouseY - elementA.y, 2));
+        if (dist < elementA.radius * 2) {
+            elementA.isDragging = true;
+        }
+    }
+
+    function handleMouseMove(e) {
+        if (elementA.isDragging) {
+            const rect = canvas.getBoundingClientRect();
+            elementA.x = (e.clientX || e.touches[0].clientX) - rect.left;
+            elementA.y = (e.clientY || e.touches[0].clientY) - rect.top;
+            draw();
+        }
+    }
+
+    function handleMouseUp() {
+        elementA.isDragging = false;
+    }
+
+    function resetPosition() {
+        elementA.x = 50;
+        elementA.y = 50;
+        draw();
+    }
+
+    // Event Listeners
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    canvas.addEventListener('touchstart', handleMouseDown);
+    window.addEventListener('touchmove', handleMouseMove);
+    window.addEventListener('touchend', handleMouseUp);
+
+    radiusSlider.addEventListener('input', (e) => {
+        setA.radius = parseInt(e.target.value);
+        draw();
+    });
+
+    posXSlider.addEventListener('input', (e) => {
+        setA.x = parseInt(e.target.value);
+        draw();
+    });
+
+    // Initial Draw
+    draw();
+</script>
+
+</body>
+</html>

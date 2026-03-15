@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Equation Balance</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .viz-box {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-card {
+            background: #e7f1ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .equation-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .control-panel {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .info-box {
+            font-size: 0.85rem;
+            color: #475569;
+            background: #fffbe6;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #fbbf24;
+        }
+
+        #balanceAlert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div id="balanceAlert">Perfect Balance! Equation Solved.</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">3D Equation Balance</h2>
+        <p style="margin:5px 0 0">Solve for x: Balancing the Scale</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-card">
+                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 5px;">CURRENT EQUATION</div>
+                <div class="equation-text" id="eqDisplay">2x + 4 = 12</div>
+            </div>
+            <div class="viz-box">
+                <canvas id="balanceCanvas" width="600" height="400"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="slider-group">
+                <label>Set Constant (b)</label>
+                <input type="range" id="valB" min="0" max="10" value="4">
+                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelB">b = 4</div>
+            </div>
+
+            <div class="slider-group">
+                <label>Target Value (c)</label>
+                <input type="range" id="valC" min="10" max="30" value="12">
+                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelC">c = 12</div>
+            </div>
+
+            <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;">
+
+            <div class="slider-group">
+                <label style="color:var(--accent-blue)">Adjust Your Guess for x</label>
+                <input type="range" id="guessX" min="0" max="15" step="0.1" value="0">
+                <div style="text-align:right; font-weight:bold; color:var(--accent-blue)" id="labelX">Your x = 0</div>
+            </div>
+
+            <div class="info-box">
+                <strong>The Goal:</strong> Adjust x until the scale is perfectly level. This value of x is the solution to the equation.
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('balanceCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('balanceAlert');
+
+    // Equation State: 2x + b = c
+    let b = 4;
+    let c = 12;
+    let xGuess = 0;
+    const a = 2; 
+
+    // Helper to get CSS variables for Canvas
+    function getColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const baseY = 350;
+        
+        // Calculate physics/tilt
+        const leftWeight = (a * xGuess) + b;
+        const rightWeight = c;
+        const diff = rightWeight - leftWeight;
+        const tiltAngle = Math.max(-0.4, Math.min(0.4, diff * 0.05));
+
+        // Update UI Text
+        document.getElementById('eqDisplay').innerText = `${a}x + ${b} = ${c}`;
+        document.getElementById('labelB').innerText = `b = ${b}`;
+        document.getElementById('labelC').innerText = `c = ${c}`;
+        document.getElementById('labelX').innerText = `Your x = ${xGuess.toFixed(1)}`;
+
+        // 1. Draw Stand
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(centerX, baseY);
+        ctx.lineTo(centerX, baseY - 150);
+        ctx.stroke();
+        
+        // 2. Draw Balancing Beam
+        ctx.save();
+        ctx.translate(centerX, baseY - 150);
+        ctx.rotate(tiltAngle);
+        
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(-180, 0);
+        ctx.lineTo(180, 0);
+        ctx.stroke();
+
+        // 3. Draw Hanging Plates
+        drawPlate(-180, 100, `LEFT (${a}x + ${b})`);
+        drawPlate(180, 100, `RIGHT (${c})`);
+        
+        ctx.restore();
+
+        // 4. Alert Logic (Check if solved)
+        const solution = (c - b) / a;
+        if (Math.abs(xGuess - solution) < 0.15) {
+            alertBox.style.display = 'block';
+        } else {
+            alertBox.style.display = 'none';
+        }
+    }
+
+    function drawPlate(x, y, label) {
+        // Chains
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x - 50, y);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + 50, y);
+        ctx.stroke();
+
+        // Plate Base
+        ctx.fillStyle = getColor('--primary-blue');
+        ctx.fillRect(x - 60, y, 120, 8);
+
+        // Label below plate
+        ctx.fillStyle = '#334155';
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x, y + 25);
+    }
+
+    // Listeners
+    document.getElementById('valB').addEventListener('input', (e) => { 
+        b = parseInt(e.target.value); 
+        draw(); 
+    });
+    document.getElementById('valC').addEventListener('input', (e) => { 
+        c = parseInt(e.target.value); 
+        draw(); 
+    });
+    document.getElementById('guessX').addEventListener('input', (e) => { 
+        xGuess = parseFloat(e.target.value); 
+        draw(); 
+    });
+
+    // Initial render
+    draw();
+</script>
+
+</body>
+</html>

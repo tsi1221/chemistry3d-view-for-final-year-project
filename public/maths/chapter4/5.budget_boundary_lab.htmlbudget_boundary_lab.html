@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin Lab: Budget Boundary</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --white: #ffffff;
+            --bg: #f8fafc;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .viz-container {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-card {
+            background: #eef6ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 6px solid var(--primary-blue);
+            text-align: center;
+        }
+
+        .inequality-display {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+            font-family: 'Courier New', monospace;
+        }
+
+        .control-panel {
+            background: #f1f5f9;
+            padding: 25px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            color: #475569;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-blue);
+        }
+
+        .alert-toast {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--danger);
+            color: white;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+            animation: bounce 0.4s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="overBudgetAlert" class="alert-toast">⚠️ OVER BUDGET! Reduce items.</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">Budget Boundary Lab</h2>
+        <p style="margin:5px 0 0">Visualizing Costs & Linear Inequalities</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-card">
+                <div class="inequality-display" id="eqDisplay">30x + 10y ≤ 100</div>
+                <div style="margin-top:10px; color:#64748b">
+                    Spending: <span id="totalSpent" style="font-weight:bold">0</span> / <span id="maxBudget">100</span> Birr
+                </div>
+            </div>
+            <div class="viz-container">
+                <canvas id="budgetCanvas" width="600" height="500"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <h3 style="margin-top:0; font-size:1.1rem">Set Market Prices</h3>
+            <div class="slider-group">
+                <label>Price of Book (A) <span><span id="labelA">30</span> Birr</span></label>
+                <input type="range" id="valA" min="10" max="50" value="30" step="5">
+            </div>
+
+            <div class="slider-group">
+                <label>Price of Pen (B) <span><span id="labelB">10</span> Birr</span></label>
+                <input type="range" id="valB" min="5" max="25" value="10" step="1">
+            </div>
+
+            <div class="slider-group">
+                <label>Wallet Limit (C) <span><span id="labelC">100</span> Birr</span></label>
+                <input type="range" id="valC" min="50" max="300" value="100" step="10">
+            </div>
+
+            <hr style="border:0; border-top:1px solid #cbd5e1; margin:10px 0;">
+            <h3 style="margin:0; font-size:1.1rem">Your Shopping Cart</h3>
+            
+            <div class="slider-group">
+                <label>Books (x) <span id="labelX">0</span></label>
+                <input type="range" id="valX" min="0" max="10" value="0" step="1">
+            </div>
+
+            <div class="slider-group">
+                <label>Pens (y) <span id="labelY">0</span></label>
+                <input type="range" id="valY" min="0" max="20" value="0" step="1">
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('budgetCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('overBudgetAlert');
+
+    // State Variables: Ax + By <= C
+    let A = 30, B = 10, C = 100;
+    let x = 0, y = 0;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const padding = 60;
+        const graphW = canvas.width - padding * 2;
+        const graphH = canvas.height - padding * 2;
+        const unitScale = 25; // pixels per item
+
+        // Update Labels
+        document.getElementById('labelA').innerText = A;
+        document.getElementById('labelB').innerText = B;
+        document.getElementById('labelC').innerText = C;
+        document.getElementById('labelX').innerText = x;
+        document.getElementById('labelY').innerText = y;
+        document.getElementById('maxBudget').innerText = C;
+        document.getElementById('eqDisplay').innerText = `${A}x + ${B}y ≤ ${C}`;
+
+        const totalCost = (A * x) + (B * y);
+        document.getElementById('totalSpent').innerText = totalCost;
+
+        // Origin at bottom-left
+        ctx.save();
+        ctx.translate(padding, canvas.height - padding);
+
+        // 1. Draw Grid
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        for(let i=0; i<=20; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i * unitScale, 0); ctx.lineTo(i * unitScale, -graphH);
+            ctx.moveTo(0, -i * unitScale); ctx.lineTo(graphW, -i * unitScale);
+            ctx.stroke();
+        }
+
+        // 2. Draw Boundary Line: Ax + By = C
+        // x-intercept: C/A, y-intercept: C/B
+        const xIntercept = (C / A) * unitScale;
+        const yIntercept = (C / B) * unitScale;
+
+        // Shade Spending Zone (Inequality Area)
+        ctx.fillStyle = 'rgba(0, 86, 179, 0.1)';
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -yIntercept);
+        ctx.lineTo(xIntercept, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // The Line itself
+        ctx.strokeStyle = '#0056b3';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(0, -yIntercept);
+        ctx.lineTo(xIntercept, 0);
+        ctx.stroke();
+
+        // 3. Draw Axes
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(graphW, 0); // X axis
+        ctx.moveTo(0, 0); ctx.lineTo(0, -graphH); // Y axis
+        ctx.stroke();
+
+        // 4. Plot current point (Cart)
+        const cartX = x * unitScale;
+        const cartY = y * unitScale;
+        const isOver = totalCost > C;
+
+        if (isOver) {
+            alertBox.style.display = 'block';
+            ctx.fillStyle = '#ef4444';
+            // Flash effect for background
+            ctx.globalAlpha = 0.05;
+            ctx.fillRect(0, 0, graphW, -graphH);
+            ctx.globalAlpha = 1.0;
+        } else {
+            alertBox.style.display = 'none';
+            ctx.fillStyle = '#22c55e';
+        }
+
+        ctx.beginPath();
+        ctx.arc(cartX, -cartY, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Tooltip
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 12px Inter';
+        ctx.fillText(`Cart: (${x}, ${y})`, cartX + 15, -cartY - 15);
+
+        ctx.restore();
+    }
+
+    // Interaction logic
+    const inputs = ['valA', 'valB', 'valC', 'valX', 'valY'];
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+            if (id === 'valA') A = parseInt(e.target.value);
+            if (id === 'valB') B = parseInt(e.target.value);
+            if (id === 'valC') C = parseInt(e.target.value);
+            if (id === 'valX') x = parseInt(e.target.value);
+            if (id === 'valY') y = parseInt(e.target.value);
+            draw();
+        });
+    });
+
+    draw();
+</script>
+</body>
+</html>

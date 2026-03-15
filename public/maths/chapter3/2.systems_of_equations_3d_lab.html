@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin Math Lab: 3D Systems</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --bg: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            touch-action: none; /* Prevents scrolling while rotating on mobile */
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1100px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .canvas-container {
+            background: #0f172a;
+            border-radius: 16px;
+            position: relative;
+            cursor: move;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .equation-overlay {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border-left: 6px solid var(--primary-blue);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .equation-text {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 5px 0;
+        }
+
+        .control-panel {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .slider-group {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .slider-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-blue);
+        }
+
+        /* Alert Notification */
+        #alertContainer {
+            position: fixed;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2000;
+            pointer-events: none;
+        }
+
+        .math-alert {
+            background: var(--primary-blue);
+            color: white;
+            padding: 14px 35px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0, 86, 179, 0.3);
+            display: none;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="alertContainer">
+    <div id="solutionAlert" class="math-alert">✨ Intersection Found! System Solved.</div>
+</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">3D Systems Visualizer</h2>
+        <p style="margin:5px 0 0">Interactive Linear Equations Laboratory</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="equation-overlay">
+                <div class="equation-text" style="color: #3b82f6;" id="eq1Text">Eq 1: 1.0x + 1.0y = 5</div>
+                <div class="equation-text" style="color: #a855f7;" id="eq2Text">Eq 2: 1.0x - 1.0y = 2</div>
+            </div>
+            <div class="canvas-container" id="canvasFrame">
+                <canvas id="systemCanvas" width="600" height="500"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <h4 style="margin:0; color: #3b82f6;">Equation 1</h4>
+            <div class="slider-group">
+                <label>a1: <span id="v_a1">1.0</span></label>
+                <input type="range" id="a1" min="-3" max="3" step="0.1" value="1">
+                <label>b1: <span id="v_b1">1.0</span></label>
+                <input type="range" id="b1" min="-3" max="3" step="0.1" value="1">
+                <label>c1: <span id="v_c1">5.0</span></label>
+                <input type="range" id="c1" min="-10" max="10" step="1" value="5">
+            </div>
+
+            <h4 style="margin:10px 0 0; color: #a855f7;">Equation 2</h4>
+            <div class="slider-group">
+                <label>a2: <span id="v_a2">1.0</span></label>
+                <input type="range" id="a2" min="-3" max="3" step="0.1" value="1">
+                <label>b2: <span id="v_b2">-1.0</span></label>
+                <input type="range" id="b2" min="-3" max="3" step="0.1" value="-1">
+                <label>c2: <span id="v_c2">2.0</span></label>
+                <input type="range" id="c2" min="-10" max="10" step="1" value="2">
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('systemCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('solutionAlert');
+
+    let params = { a1: 1, b1: 1, c1: 5, a2: 1, b2: -1, c2: 2 };
+    let rotation = { x: 0.5, y: 0.7 };
+    let isDragging = false;
+    let lastMouse = { x: 0, y: 0 };
+    const scale = 22;
+
+    function project(x, y, z) {
+        let cosY = Math.cos(rotation.y);
+        let sinY = Math.sin(rotation.y);
+        let x1 = x * cosY - z * sinY;
+        let z1 = x * sinY + z * cosY;
+
+        let cosX = Math.cos(rotation.x);
+        let sinX = Math.sin(rotation.x);
+        let y2 = y * cosX - z1 * sinX;
+        let z2 = y * sinX + z1 * cosX;
+
+        return {
+            x: (canvas.width / 2) + x1 * scale,
+            y: (canvas.height / 2) - y2 * scale,
+            z: z2
+        };
+    }
+
+    function drawPlane(a, b, c, color) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.35;
+        const range = 12;
+
+        if (Math.abs(b) > 0.05) {
+            const getY = (currX) => (c - a * currX) / b;
+            let p1 = project(-range, getY(-range), -range);
+            let p2 = project(range, getY(range), -range);
+            let p3 = project(range, getY(range), range);
+            let p4 = project(-range, getY(-range), range);
+            
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.closePath();
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1.0;
+    }
+
+    function drawGrid() {
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        // X-Axis
+        let pX1 = project(-12, 0, 0); let pX2 = project(12, 0, 0);
+        ctx.moveTo(pX1.x, pX1.y); ctx.lineTo(pX2.x, pX2.y);
+        // Y-Axis
+        let pY1 = project(0, -12, 0); let pY2 = project(0, 12, 0);
+        ctx.moveTo(pY1.x, pY1.y); ctx.lineTo(pY2.x, pY2.y);
+        ctx.stroke();
+    }
+
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        drawPlane(params.a1, params.b1, params.c1, '#3b82f6');
+        drawPlane(params.a2, params.b2, params.c2, '#a855f7');
+
+        document.getElementById('eq1Text').innerText = `Eq 1: ${params.a1.toFixed(1)}x + ${params.b1.toFixed(1)}y = ${params.c1}`;
+        document.getElementById('eq2Text').innerText = `Eq 2: ${params.a2.toFixed(1)}x + ${params.b2.toFixed(1)}y = ${params.c2}`;
+
+        // Solve Intersection
+        const det = params.a1 * params.b2 - params.a2 * params.b1;
+        if (Math.abs(det) > 0.05) {
+            const solX = (params.c1 * params.b2 - params.c2 * params.b1) / det;
+            const solY = (params.a1 * params.c2 - params.a2 * params.c1) / det;
+            
+            const p = project(solX, solY, 0);
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Show alert if intersection is within visible bounds
+            if(Math.abs(solX) < 15 && Math.abs(solY) < 15) {
+                alertBox.style.display = 'block';
+            } else {
+                alertBox.style.display = 'none';
+            }
+        } else {
+            alertBox.style.display = 'none';
+        }
+    }
+
+    // Controls Logic
+    ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'].forEach(id => {
+        const input = document.getElementById(id);
+        input.addEventListener('input', (e) => {
+            params[id] = parseFloat(e.target.value);
+            document.getElementById('v_' + id).innerText = params[id].toFixed(1);
+            update();
+        });
+    });
+
+    // Interaction Logic
+    const frame = document.getElementById('canvasFrame');
+    frame.addEventListener('mousedown', e => { isDragging = true; lastMouse = {x: e.clientX, y: e.clientY}; });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        rotation.y += (e.clientX - lastMouse.x) * 0.01;
+        rotation.x += (e.clientY - lastMouse.y) * 0.01;
+        lastMouse = {x: e.clientX, y: e.clientY};
+        update();
+    });
+
+    // Mobile Touch
+    frame.addEventListener('touchstart', e => { 
+        isDragging = true; 
+        lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY}; 
+    });
+    window.addEventListener('touchend', () => isDragging = false);
+    window.addEventListener('touchmove', e => {
+        if (!isDragging) return;
+        rotation.y += (e.touches[0].clientX - lastMouse.x) * 0.01;
+        rotation.x += (e.touches[0].clientY - lastMouse.y) * 0.01;
+        lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+        update();
+    });
+
+    update();
+</script>
+</body>
+</html>

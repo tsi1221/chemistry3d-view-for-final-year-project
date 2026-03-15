@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Repeating Decimal Spiral</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --bg-light: #f0f4f8;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-light);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 15px 40px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .canvas-area {
+            background: white;
+            border: 2px solid #e1e8ed;
+            border-radius: 16px;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-card {
+            background: #e7f1ff;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .decimal-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+            letter-spacing: 2px;
+        }
+
+        .control-panel {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            font-size: 1rem;
+        }
+
+        .info-box {
+            font-size: 0.85rem;
+            color: #475569;
+            background: #fffbe6;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #fbbf24;
+        }
+
+        #blueAlert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div id="blueAlert">Pattern Detected! Repeating Period found.</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">Repeating Decimal Spiral</h2>
+        <p style="margin:5px 0 0">Visualizing the Period of Rational Numbers</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-card">
+                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 5px;">DECIMAL EXPANSION</div>
+                <div class="decimal-text" id="decimalDisplay">0.333...</div>
+            </div>
+            <div class="canvas-area">
+                <canvas id="spiralCanvas" width="600" height="500"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="input-group">
+                <label>Numerator (Dividend)</label>
+                <input type="number" id="numInput" value="1" min="1" max="99">
+            </div>
+
+            <div class="input-group">
+                <label>Denominator (Divisor)</label>
+                <input type="number" id="denInput" value="7" min="1" max="99">
+            </div>
+
+            <div class="info-box">
+                <strong>The Pattern:</strong> 
+                The "Period" is the length of the digits that repeat. A 1/7 spiral repeats every 6 digits!
+            </div>
+
+            <div style="font-size: 0.8rem; color: #64748b;">
+                Terminating decimals (like 1/2) will result in a straight line ending at zero.
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('spiralCanvas');
+    const ctx = canvas.getContext('2d');
+    const decimalDisplay = document.getElementById('decimalDisplay');
+    const alertBox = document.getElementById('blueAlert');
+
+    function getDecimalExpansion(num, den) {
+        let res = (num / den).toString();
+        if (res.length > 12) {
+            return res.substring(0, 10) + "...";
+        }
+        return res;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const num = parseInt(document.getElementById('numInput').value) || 1;
+        const den = parseInt(document.getElementById('denInput').value) || 1;
+        
+        decimalDisplay.innerText = getDecimalExpansion(num, den);
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // Generate digits of the decimal
+        let digits = [];
+        let remainder = num % den;
+        let seenRemainders = new Map();
+        let periodFound = false;
+
+        for (let i = 0; i < 100; i++) {
+            if (remainder === 0) break;
+            if (seenRemainders.has(remainder) && !periodFound) {
+                periodFound = true;
+                triggerAlert();
+            }
+            seenRemainders.set(remainder, i);
+            
+            remainder *= 10;
+            let digit = Math.floor(remainder / den);
+            digits.push(digit);
+            remainder %= den;
+        }
+
+        // Draw the 3D-style Cylinder Spiral
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        
+        let radius = 80;
+        let verticalSpacing = 4;
+        
+        for (let i = 0; i < digits.length; i++) {
+            // Mapping digit to angle (0-9 maps to 0-360 degrees)
+            let angle = (i * 0.5) + (digits[i] * (Math.PI * 2 / 10));
+            let x = centerX + Math.cos(angle) * radius;
+            let y = 50 + (i * verticalSpacing) + Math.sin(angle * 0.5) * 20;
+
+            // Color based on digit
+            ctx.strokeStyle = `hsl(${(digits[i] * 36)}, 70%, 50%)`;
+            
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+
+            // Draw small digit nodes
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.font = "10px Arial";
+            if (i % 2 === 0) ctx.fillText(digits[i], x + 5, y);
+        }
+        ctx.stroke();
+
+        // Labeling
+        ctx.fillStyle = "#0056b3";
+        ctx.textAlign = "center";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText("Digit Patterns in Space", centerX, canvas.height - 20);
+    }
+
+    function triggerAlert() {
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 2500);
+    }
+
+    // Input Listeners
+    document.getElementById('numInput').addEventListener('input', draw);
+    document.getElementById('denInput').addEventListener('input', draw);
+
+    // Initial Draw
+    draw();
+</script>
+
+</body>
+</html>

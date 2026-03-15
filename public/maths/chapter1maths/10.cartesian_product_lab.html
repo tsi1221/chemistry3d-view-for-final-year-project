@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Cartesian Product</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-purple: #7A2CFF;
+            --white: #ffffff;
+            --bg-grid: #f8fbff;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 15px 45px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 850px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        /* Visualization Area */
+        .viz-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .formula-card {
+            background: #eef6ff;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 6px solid var(--accent-purple);
+            text-align: center;
+        }
+
+        .formula-text {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+            word-wrap: break-word;
+        }
+
+        canvas {
+            background: white;
+            border: 2px solid #e1e8ed;
+            border-radius: 15px;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+        }
+
+        /* Control Panel */
+        .controls {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .info-box {
+            font-size: 0.85rem;
+            background: #fffbe6;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ffe58f;
+            line-height: 1.4;
+        }
+
+        /* Custom Blue Alert */
+        #customAlert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div id="customAlert">New Point Added to A × B!</div>
+
+<div class="app-container">
+    <header>
+        <h2 style="margin:0">Cartesian Product Laboratory</h2>
+        <p style="margin:5px 0 0">Visualizing $A \times B$ as Coordinate Points</p>
+    </header>
+
+    <div class="lab-layout">
+        <main class="viz-area">
+            <div class="formula-card">
+                <div style="font-size:0.8rem; color:#666; margin-bottom:5px">SET RESULT (A × B)</div>
+                <div class="formula-text" id="notationDisplay">{(1,1), (1,2)}</div>
+            </div>
+            
+            <canvas id="cartesianCanvas" width="500" height="500"></canvas>
+        </main>
+
+        <aside class="controls">
+            <div class="slider-group">
+                <label>Number of Elements in Set A (X-axis)</label>
+                <input type="range" id="sizeA" min="1" max="6" value="3">
+                <div id="labelA" style="font-size:0.8rem; text-align:right">Set A = {1, 2, 3}</div>
+            </div>
+
+            <div class="slider-group">
+                <label>Number of Elements in Set B (Y-axis)</label>
+                <input type="range" id="sizeB" min="1" max="6" value="2">
+                <div id="labelB" style="font-size:0.8rem; text-align:right">Set B = {1, 2}</div>
+            </div>
+
+            <div class="info-box">
+                <strong>Rule:</strong> The Cartesian product $A \times B$ is the set of all possible ordered pairs $(a, b)$ where $a \in A$ and $b \in B$.
+            </div>
+
+            <div style="font-size:0.8rem; color:#555">
+                <strong>Cardinality:</strong> <br>
+                $n(A \times B) = n(A) \times n(B)$ <br>
+                <span id="cardinalityCalc" style="color:var(--accent-purple); font-weight:bold">3 × 2 = 6 points</span>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('cartesianCanvas');
+    const ctx = canvas.getContext('2d');
+    const notationDisplay = document.getElementById('notationDisplay');
+    const alertBox = document.getElementById('customAlert');
+
+    let nA = 3;
+    let nB = 2;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const padding = 60;
+        const gridWidth = canvas.width - padding * 2;
+        const gridHeight = canvas.height - padding * 2;
+        const stepX = gridWidth / 6;
+        const stepY = gridHeight / 6;
+
+        // 1. Draw Axis
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // X-axis
+        ctx.moveTo(padding, canvas.height - padding);
+        ctx.lineTo(canvas.width - padding/2, canvas.height - padding);
+        // Y-axis
+        ctx.moveTo(padding, padding/2);
+        ctx.lineTo(padding, canvas.height - padding);
+        ctx.stroke();
+
+        // 2. Draw Points and Labels
+        let pairs = [];
+
+        for (let i = 1; i <= nA; i++) {
+            for (let j = 1; j <= nB; j++) {
+                const x = padding + i * stepX;
+                const y = (canvas.height - padding) - j * stepY;
+
+                // Draw Point
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#7A2CFF';
+                ctx.fill();
+
+                // Draw Projection Lines (Dashed)
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = '#cbd5e0';
+                ctx.beginPath();
+                ctx.moveTo(x, y); ctx.lineTo(x, canvas.height - padding);
+                ctx.moveTo(x, y); ctx.lineTo(padding, y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Label Pair
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.fillText(`(${i},${j})`, x + 8, y - 8);
+
+                pairs.push(`(${i},${j})`);
+            }
+        }
+
+        // Axis Labels
+        ctx.fillStyle = '#0056b3';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText("Set A (Elements)", canvas.width/2, canvas.height - 15);
+        ctx.save();
+        ctx.translate(20, canvas.height/2);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillText("Set B (Elements)", 0, 0);
+        ctx.restore();
+
+        updateUI(pairs);
+    }
+
+    function updateUI(pairs) {
+        notationDisplay.innerText = "{ " + pairs.join(", ") + " }";
+        document.getElementById('labelA').innerText = `Set A = {${Array.from({length: nA}, (_, i) => i + 1).join(', ')}}`;
+        document.getElementById('labelB').innerText = `Set B = {${Array.from({length: nB}, (_, i) => i + 1).join(', ')}}`;
+        document.getElementById('cardinalityCalc').innerText = `${nA} × ${nB} = ${nA * nB} points`;
+    }
+
+    function triggerAlert() {
+        alertBox.style.display = 'block';
+        setTimeout(() => { alertBox.style.display = 'none'; }, 1500);
+    }
+
+    // Input Listeners
+    document.getElementById('sizeA').addEventListener('input', (e) => {
+        nA = parseInt(e.target.value);
+        triggerAlert();
+        draw();
+    });
+
+    document.getElementById('sizeB').addEventListener('input', (e) => {
+        nB = parseInt(e.target.value);
+        triggerAlert();
+        draw();
+    });
+
+    // Initial Draw
+    draw();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin Lab: Quadratic Water Level</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --bg: #f1f5f9;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1100px;
+            margin: 20px;
+            background: var(--white);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 86, 179, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            padding: 25px;
+            gap: 25px;
+        }
+
+        @media (max-width: 900px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .canvas-area {
+            position: relative;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-box {
+            background: #e7f1ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 6px solid var(--primary-blue);
+            text-align: center;
+        }
+
+        .equation-display {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-blue);
+            letter-spacing: -1px;
+        }
+
+        .control-panel {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .slider-group {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #475569;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-blue);
+        }
+
+        #rootAlert {
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .info-tip {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.5;
+            padding: 10px;
+            background: #fffbe6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">Quadratic Water Level Lab</h2>
+        <p style="margin:5px 0 0">Visualizing the Discriminant (D)</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-box">
+                <div class="equation-display" id="eqText">y = 1x² + 0x + 0</div>
+                <div style="margin-top: 10px; color: #64748b; font-weight: bold;">
+                    Discriminant (D) = <span id="discVal">0</span>
+                </div>
+            </div>
+            <div class="canvas-area">
+                <canvas id="quadCanvas" width="600" height="450"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="slider-group">
+                <label>Width (a) <span id="valA">1.0</span></label>
+                <input type="range" id="inputA" min="-2" max="2" step="0.1" value="1">
+            </div>
+
+            <div class="slider-group">
+                <label>Position (b) <span id="valB">0.0</span></label>
+                <input type="range" id="inputB" min="-10" max="10" step="0.5" value="0">
+            </div>
+
+            <div class="slider-group">
+                <label>Height (c) <span id="valC">0.0</span></label>
+                <input type="range" id="inputC" min="-10" max="10" step="0.5" value="0">
+            </div>
+
+            <div id="rootAlert">Calculating roots...</div>
+
+            <div class="info-tip">
+                <strong>Lab Goal:</strong> Watch the red points. If the curve stays above the water, D < 0 (No Real Roots). If it touches the surface, D = 0.
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('quadCanvas');
+    const ctx = canvas.getContext('2d');
+    const rootAlert = document.getElementById('rootAlert');
+
+    let a = 1.0, b = 0.0, c = 0.0;
+    const scale = 20;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // 1. Draw "Water" (X-axis)
+        ctx.fillStyle = "rgba(0, 162, 255, 0.2)";
+        ctx.fillRect(0, centerY, canvas.width, canvas.height - centerY);
+        
+        ctx.strokeStyle = "#00a2ff";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(canvas.width, centerY);
+        ctx.stroke();
+
+        // 2. Draw Grid
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let i = -15; i <= 15; i++) {
+            ctx.moveTo(centerX + i*scale, 0); ctx.lineTo(centerX + i*scale, canvas.height);
+            ctx.moveTo(0, centerY + i*scale); ctx.lineTo(canvas.width, centerY + i*scale);
+        }
+        ctx.stroke();
+
+        // 3. Draw Parabola
+        ctx.strokeStyle = "#0056b3";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        
+        for (let px = -centerX; px < centerX; px++) {
+            let x = px / scale;
+            let y = a * x * x + b * x + c;
+            let screenX = centerX + px;
+            let screenY = centerY - y * scale;
+            
+            if (px === -centerX) ctx.moveTo(screenX, screenY);
+            else ctx.lineTo(screenX, screenY);
+        }
+        ctx.stroke();
+
+        // 4. Calculate Discriminant and Update UI
+        const D = (b * b) - (4 * a * c);
+        document.getElementById('discVal').innerText = D.toFixed(2);
+        document.getElementById('eqText').innerText = `y = ${a.toFixed(1)}x² + ${b.toFixed(1)}x + ${c.toFixed(1)}`;
+        
+        // Update Alert
+        if (D > 0) {
+            rootAlert.innerText = "D > 0: Two Real Roots (Dips into water)";
+            rootAlert.style.backgroundColor = "#dcfce7";
+            rootAlert.style.color = "#166534";
+            
+            // Draw Root Points
+            const x1 = (-b + Math.sqrt(D)) / (2 * a);
+            const x2 = (-b - Math.sqrt(D)) / (2 * a);
+            ctx.fillStyle = "#ef4444";
+            ctx.beginPath();
+            ctx.arc(centerX + x1 * scale, centerY, 6, 0, Math.PI*2);
+            ctx.arc(centerX + x2 * scale, centerY, 6, 0, Math.PI*2);
+            ctx.fill();
+        } else if (D === 0) {
+            rootAlert.innerText = "D = 0: One Real Root (Touches the water)";
+            rootAlert.style.backgroundColor = "#e0f2fe";
+            rootAlert.style.color = "#0369a1";
+        } else {
+            rootAlert.innerText = "D < 0: No Real Roots (Floats above)";
+            rootAlert.style.backgroundColor = "#fee2e2";
+            rootAlert.style.color = "#991b1b";
+        }
+    }
+
+    // Input Listeners
+    const inputs = ['inputA', 'inputB', 'inputC'];
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+            a = parseFloat(document.getElementById('inputA').value);
+            b = parseFloat(document.getElementById('inputB').value);
+            c = parseFloat(document.getElementById('inputC').value);
+            
+            document.getElementById('valA').innerText = a.toFixed(1);
+            document.getElementById('valB').innerText = b.toFixed(1);
+            document.getElementById('valC').innerText = c.toFixed(1);
+            draw();
+        });
+    });
+
+    draw();
+</script>
+
+</body>
+</html>

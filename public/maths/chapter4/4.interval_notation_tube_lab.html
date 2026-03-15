@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Interval Tube</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --accent-blue: #00a2ff;
+            --white: #ffffff;
+            --glass: rgba(255, 255, 255, 0.8);
+            --bg: #f0f7ff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .lab-shell {
+            width: 95%;
+            max-width: 1000px;
+            margin: 20px auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .lab-layout { grid-template-columns: 1fr; }
+        }
+
+        .viz-box {
+            background: #ffffff;
+            border: 2px solid #e1e8ed;
+            border-radius: 16px;
+            position: relative;
+        }
+
+        canvas {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .formula-card {
+            background: #e7f1ff;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 4px solid var(--primary-blue);
+        }
+
+        .notation-text {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+            letter-spacing: 2px;
+        }
+
+        .control-panel {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-blue);
+        }
+
+        .btn-toggle {
+            padding: 10px;
+            background: #f1f5f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-toggle.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        #statusAlert {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div id="statusAlert">Valid Interval Found!</div>
+
+<div class="lab-shell">
+    <header>
+        <h2 style="margin:0">3D Interval Tube Lab</h2>
+        <p style="margin:5px 0 0">Visualizing Number Regions in 3D Space</p>
+    </header>
+
+    <div class="lab-layout">
+        <main>
+            <div class="formula-card">
+                <div style="font-size: 0.8rem; color: #666;">CURRENT NOTATION</div>
+                <div class="notation-text" id="notationDisplay">[ 2, 7 ]</div>
+            </div>
+            <div class="viz-box">
+                <canvas id="intervalCanvas" width="600" height="400"></canvas>
+            </div>
+        </main>
+
+        <aside class="control-panel">
+            <div class="input-group">
+                <label>Left Point (a)</label>
+                <input type="range" id="valA" min="-10" max="10" value="2">
+                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelA">a = 2</div>
+            </div>
+
+            <div class="input-group">
+                <label>Right Point (b)</label>
+                <input type="range" id="valB" min="-10" max="10" value="7">
+                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelB">b = 7</div>
+            </div>
+
+            <div class="input-group">
+                <label>Left Boundary Type</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="btn-toggle active" id="typeA_In" onclick="setType('A', 'In')">[ Solid</button>
+                    <button class="btn-toggle" id="typeA_Ex" onclick="setType('A', 'Ex')">( Open</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Right Boundary Type</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="btn-toggle active" id="typeB_In" onclick="setType('B', 'In')">] Solid</button>
+                    <button class="btn-toggle" id="typeB_Ex" onclick="setType('B', 'Ex')">) Open</button>
+                </div>
+            </div>
+
+            <div style="background: #fffbe6; padding: 10px; border-radius: 8px; font-size: 0.85rem; border-left: 4px solid #fbbf24;">
+                <strong>Concept:</strong> Solid walls mean the number is *included*. Open portals mean the number is *excluded*.
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('intervalCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('statusAlert');
+
+    // App State
+    let a = 2, b = 7;
+    let boundaryA = 'In'; 
+    let boundaryB = 'In';
+
+    // Helper to get CSS variables - Renamed from 'var' to fix runtime error
+    function getCSSVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const baseY = canvas.height / 2 - 30;
+        const scale = 25; 
+
+        updateUI();
+
+        // Check validity (a must be < b)
+        if (a >= b) {
+            ctx.fillStyle = '#fee2e2';
+            ctx.fillRect(50, 50, canvas.width - 100, canvas.height - 100);
+            ctx.fillStyle = '#dc2626';
+            ctx.font = 'bold 20px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText("Invalid Interval: 'a' must be less than 'b'", centerX, baseY + 40);
+            alertBox.style.display = 'none';
+            return;
+        }
+
+        alertBox.style.display = 'block';
+
+        const ax = centerX + (a * scale);
+        const bx = centerX + (b * scale);
+        const tubeHeight = 60;
+        const depthOffset = 20;
+
+        // 1. Draw Number Line Grid
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for(let i=-10; i<=10; i++) {
+            let tickX = centerX + (i * scale);
+            ctx.moveTo(tickX, baseY - 5); 
+            ctx.lineTo(tickX, baseY + tubeHeight + 5);
+        }
+        ctx.stroke();
+
+        // 2. Draw Total Range Reference
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(centerX - (10 * scale), baseY, 20 * scale, tubeHeight);
+        ctx.setLineDash([]);
+
+        // 3. Draw The Interval Volume
+        ctx.fillStyle = 'rgba(0, 162, 255, 0.2)';
+        ctx.fillRect(ax, baseY, bx - ax, tubeHeight);
+        
+        // 3D Top Plane
+        ctx.fillStyle = 'rgba(0, 86, 179, 0.1)';
+        ctx.beginPath();
+        ctx.moveTo(ax, baseY);
+        ctx.lineTo(bx, baseY);
+        ctx.lineTo(bx + depthOffset, baseY - depthOffset);
+        ctx.lineTo(ax + depthOffset, baseY - depthOffset);
+        ctx.closePath();
+        ctx.fill();
+
+        // 4. Draw Boundaries
+        drawBoundary(ax, baseY, tubeHeight, depthOffset, boundaryA, 'Left');
+        drawBoundary(bx, baseY, tubeHeight, depthOffset, boundaryB, 'Right');
+
+        // Main Axis Line
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(centerX - (10 * scale), baseY + tubeHeight);
+        ctx.lineTo(centerX + (10 * scale), baseY + tubeHeight);
+        ctx.stroke();
+    }
+
+    function drawBoundary(x, y, h, d, type, side) {
+        const primaryBlue = getCSSVar('--primary-blue');
+        ctx.strokeStyle = primaryBlue;
+        ctx.lineWidth = 4;
+
+        if (type === 'In') {
+            // Solid Boundary
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(x - 5, y - 5, 10, h + 10);
+            ctx.strokeRect(x - 5, y - 5, 10, h + 10);
+            
+            // 3D Perspective Edge
+            ctx.fillStyle = 'rgba(0, 86, 179, 0.2)';
+            ctx.beginPath();
+            ctx.moveTo(x + 5, y - 5);
+            ctx.lineTo(x + 5 + d, y - 5 - d);
+            ctx.lineTo(x + 5 + d, y + h + 5 - d);
+            ctx.lineTo(x + 5, y + h + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            // Open Boundary
+            ctx.beginPath();
+            // Boolean for anticlockwise based on side
+            ctx.arc(x, y + h/2, h/2 + 5, -Math.PI/2, Math.PI/2, (side === 'Left'));
+            ctx.stroke();
+            
+            ctx.fillStyle = 'rgba(0, 162, 255, 0.1)';
+            ctx.beginPath();
+            ctx.arc(x, y + h/2, h/2 + 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    function updateUI() {
+        let startSymbol = boundaryA === 'In' ? '[' : '(';
+        let endSymbol = boundaryB === 'In' ? ']' : ')';
+        document.getElementById('notationDisplay').innerText = `${startSymbol} ${a}, ${b} ${endSymbol}`;
+        document.getElementById('labelA').innerText = `a = ${a}`;
+        document.getElementById('labelB').innerText = `b = ${b}`;
+    }
+
+    window.setType = function(point, type) {
+        if (point === 'A') boundaryA = type;
+        if (point === 'B') boundaryB = type;
+        
+        const group = point === 'A' ? ['typeA_In', 'typeA_Ex'] : ['typeB_In', 'typeB_Ex'];
+        document.getElementById(group[0]).classList.remove('active');
+        document.getElementById(group[1]).classList.remove('active');
+        
+        const activeId = point === 'A' 
+            ? (boundaryA === 'In' ? 'typeA_In' : 'typeA_Ex') 
+            : (boundaryB === 'In' ? 'typeB_In' : 'typeB_Ex');
+        document.getElementById(activeId).classList.add('active');
+        
+        draw();
+    };
+
+    document.getElementById('valA').addEventListener('input', (e) => {
+        a = parseInt(e.target.value);
+        draw();
+    });
+
+    document.getElementById('valB').addEventListener('input', (e) => {
+        b = parseInt(e.target.value);
+        draw();
+    });
+
+    // Initial Render
+    draw();
+</script>
+
+</body>
+</html>

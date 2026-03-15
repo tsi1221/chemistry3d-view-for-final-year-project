@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade 9 Math Lab: Set Complement</title>
+    <style>
+        :root {
+            --ethiopia-blue: #0056b3;
+            --highlight-blue: #00a2ff;
+            --u-bg: #f8f9fa;
+            --white: #ffffff;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #e9ecef;
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .lab-container {
+            width: 95%;
+            max-width: 900px;
+            margin: 20px auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 86, 179, 0.1);
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--ethiopia-blue);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .lab-grid {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .lab-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Canvas Styles */
+        .canvas-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        canvas {
+            background: var(--u-bg);
+            border-radius: 12px;
+            width: 100%;
+            height: auto;
+            border: 2px solid #dee2e6;
+            touch-action: none;
+        }
+
+        /* Formula/Notation Display */
+        .notation-display {
+            background: #e7f1ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--ethiopia-blue);
+            border: 1px solid #cfe2ff;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .btn {
+            background: var(--ethiopia-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-active {
+            background: #28a745;
+        }
+
+        .slider-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .desc-box {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.5;
+            background: #fffbe6;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ffe58f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <header>
+        <h2 style="margin:0">Set Complement Lab</h2>
+        <p style="margin:5px 0 0">Visualizing $A'$ within Universal Set $U$</p>
+    </header>
+
+    <div class="lab-grid">
+        <main class="canvas-section">
+            <div class="notation-display" id="notation">Set A</div>
+            <canvas id="compCanvas" width="500" height="350"></canvas>
+        </main>
+
+        <aside class="control-panel">
+            <button class="btn" id="toggleBtn">Show Complement (A')</button>
+            
+            <div class="slider-group">
+                <label>Radius of Set A</label>
+                <input type="range" id="radiusSlider" min="40" max="140" value="80">
+            </div>
+
+            <div class="slider-group">
+                <label>Set A Position (X)</label>
+                <input type="range" id="posXSlider" min="100" max="400" value="250">
+            </div>
+
+            <div class="desc-box">
+                <strong>The Mirror Concept:</strong><br>
+                $A'$ (the complement) includes all elements in the Universal Set $U$ that are <strong>not</strong> in Set $A$.
+            </div>
+
+            <div style="font-size:0.8rem">
+                <strong>Notation:</strong> $x \in A' \iff x \in U \text{ and } x \notin A$
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('compCanvas');
+    const ctx = canvas.getContext('2d');
+    const toggleBtn = document.getElementById('toggleBtn');
+    const notation = document.getElementById('notation');
+    
+    // State
+    let isComplement = false;
+    let setA = { x: 250, y: 175, r: 80 };
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Draw Universal Set U (The Boundary)
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText("U", 25, 35);
+
+        // 2. Complement Logic (Shading everything EXCEPT A)
+        if (isComplement) {
+            // First fill the whole U
+            ctx.fillStyle = 'rgba(0, 162, 255, 0.3)';
+            ctx.fillRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+            // Then "cut out" Set A by changing composite mode
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(setA.x, setA.y, setA.r, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Reset composite mode to draw the outline of A
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.beginPath();
+            ctx.arc(setA.x, setA.y, setA.r, 0, Math.PI * 2);
+            ctx.strokeStyle = varColor('--ethiopia-blue');
+            ctx.setLineDash([5, 5]); // Dashed line for A in complement mode
+            ctx.stroke();
+            ctx.setLineDash([]);
+        } else {
+            // Normal mode: Just shade A
+            ctx.beginPath();
+            ctx.arc(setA.x, setA.y, setA.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 86, 179, 0.4)';
+            ctx.fill();
+            ctx.strokeStyle = '#0056b3';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Label for Set A
+        ctx.fillStyle = "#0056b3";
+        ctx.font = "bold 18px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("A", setA.x, setA.y - setA.r - 10);
+    }
+
+    function varColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name);
+    }
+
+    // Controls
+    toggleBtn.addEventListener('click', () => {
+        isComplement = !isComplement;
+        toggleBtn.innerText = isComplement ? "Show Set A" : "Show Complement (A')";
+        toggleBtn.classList.toggle('btn-active', isComplement);
+        notation.innerText = isComplement ? "Set A'" : "Set A";
+        draw();
+    });
+
+    document.getElementById('radiusSlider').addEventListener('input', (e) => {
+        setA.r = parseInt(e.target.value);
+        draw();
+    });
+
+    document.getElementById('posXSlider').addEventListener('input', (e) => {
+        setA.x = parseInt(e.target.value);
+        draw();
+    });
+
+    // Initial Draw
+    draw();
+</script>
+
+</body>
+</html>

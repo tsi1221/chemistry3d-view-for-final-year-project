@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Lab: Finite vs Infinite Sets</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --secondary-blue: #e7f1ff;
+            --infinite-gold: #ffc107;
+            --white: #ffffff;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f0f4f8;
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 900px;
+            margin: 20px auto;
+            background: var(--white);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 86, 179, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lab-body {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        @media (max-width: 800px) {
+            .lab-body { grid-template-columns: 1fr; }
+        }
+
+        canvas {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            width: 100%;
+            height: auto;
+        }
+
+        .display-area {
+            background: var(--secondary-blue);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            border-left: 6px solid var(--primary-blue);
+        }
+
+        .notation {
+            font-family: 'Courier New', monospace;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .btn {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-infinite {
+            background: #28a745;
+        }
+
+        .description {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #64748b;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2 style="margin:0">Set Cardinality Lab</h2>
+        <p style="margin:5px 0 0">Visualizing Finite vs. Infinite Sets</p>
+    </header>
+
+    <div class="lab-body">
+        <main>
+            <div class="display-area">
+                <div id="setTag" class="tag" style="background:#0056b3">FINITE</div>
+                <div id="setNotation" class="notation">{ 1, 2, 3 }</div>
+            </div>
+            <canvas id="mathCanvas" width="550" height="300"></canvas>
+        </main>
+
+        <aside class="controls">
+            <label><strong>Set Size (n)</strong></label>
+            <input type="range" id="sizeSlider" min="1" max="15" value="3">
+            <p id="sizeLabel">Elements: 3</p>
+
+            <button class="btn" id="btnFinite">Make Finite Set</button>
+            <button class="btn btn-infinite" id="btnInfinite">Make Infinite Set</button>
+
+            <hr style="width:100%; border:0; border-top:1px solid #ddd">
+            
+            <div class="description">
+                <strong>Finite:</strong> You can count the elements and reach an end. <br><br>
+                <strong>Infinite:</strong> The elements go on forever (indicated by <span style="color:green; font-weight:bold">...</span>).
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const sizeSlider = document.getElementById('sizeSlider');
+    const sizeLabel = document.getElementById('sizeLabel');
+    const setNotation = document.getElementById('setNotation');
+    const setTag = document.getElementById('setTag');
+
+    let isInfinite = false;
+    let elementCount = 3;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        
+        // Draw Set Container
+        ctx.beginPath();
+        if (isInfinite) {
+            // "Open" container for infinite
+            ctx.arc(centerX - 50, centerY, 100, 1.5 * Math.PI, 0.5 * Math.PI, true);
+            ctx.setLineDash([10, 5]);
+            ctx.strokeStyle = '#28a745';
+        } else {
+            // "Closed" container for finite
+            ctx.arc(centerX, centerY, 110, 0, Math.PI * 2);
+            ctx.setLineDash([]);
+            ctx.strokeStyle = '#0056b3';
+        }
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Draw Elements
+        const elements = [];
+        for (let i = 1; i <= elementCount; i++) {
+            const x = isInfinite ? (centerX - 100) + (i * 45) : centerX + Math.cos(i) * 60;
+            const y = isInfinite ? centerY : centerY + Math.sin(i) * 60;
+            
+            drawElement(x, y, i);
+            elements.push(i);
+        }
+
+        if (isInfinite) {
+            // Draw the Ellipsis (...)
+            ctx.fillStyle = '#28a745';
+            ctx.font = "bold 30px Arial";
+            ctx.fillText("...", centerX + (elementCount * 25), centerY + 10);
+            
+            setTag.innerText = "INFINITE";
+            setTag.style.background = "#28a745";
+            setNotation.innerText = `{ ${elements.join(", ")}, ... }`;
+        } else {
+            setTag.innerText = "FINITE";
+            setTag.style.background = "#0056b3";
+            setNotation.innerText = `{ ${elements.join(", ")} }`;
+        }
+    }
+
+    function drawElement(x, y, val) {
+        ctx.beginPath();
+        ctx.arc(x, y, 15, 0, Math.PI * 2);
+        ctx.fillStyle = isInfinite ? "#e8f5e9" : "#e3f2fd";
+        ctx.fill();
+        ctx.strokeStyle = isInfinite ? "#28a745" : "#0056b3";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.stroke();
+
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(val, x, y + 4);
+    }
+
+    // Controls Logic
+    sizeSlider.addEventListener('input', (e) => {
+        elementCount = parseInt(e.target.value);
+        sizeLabel.innerText = `Elements: ${elementCount}`;
+        draw();
+    });
+
+    document.getElementById('btnFinite').addEventListener('click', () => {
+        isInfinite = false;
+        draw();
+    });
+
+    document.getElementById('btnInfinite').addEventListener('click', () => {
+        isInfinite = true;
+        draw();
+    });
+
+    // Initial Draw
+    draw();
+</script>
+
+</body>
+</html>
