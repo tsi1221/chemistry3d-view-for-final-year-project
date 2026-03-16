@@ -19,7 +19,6 @@ interface SectionProps {
 /* ================= COMPONENTS ================= */
 function Section({ title, items, favorites, toggleFavorite }: SectionProps) {
   if (items.length === 0) return null;
-
   return (
     <div className="section">
       <h2 className="section-title">{title}</h2>
@@ -58,7 +57,6 @@ export default function App() {
   type Tab_ = "All" | "Mathematics" | "Chemistry" | "Favorites";
   const [activeTab, setActiveTab] = useState<Tab_>("All");
 
-  // ✅ FIXED: Lazy initialization prevents cascading render error
   const [favorites, setFavorites] = useState<string[]>(() => {
     const saved = localStorage.getItem("eduTwin_bookmarks");
     return saved ? JSON.parse(saved) : [];
@@ -113,15 +111,35 @@ export default function App() {
     { name: "Interval Notation Tube", link: "/maths/chapter4/4.interval_notation_tube_lab.html", chapter: "Chapter 4: Functions & Inequalities", subject: "Mathematics" },
     { name: "Budget Boundary Lab", link: "/maths/chapter4/5.budget_boundary_lab.html", chapter: "Chapter 4: Functions & Inequalities", subject: "Mathematics" },
 
-    // Chemistry Chapter 1
+    // Mathematics Chapter 5 (ADDED ALL REQUESTED)
+    { name: "Unit Circle Trig Wave Visualizer", link: "/maths/chapter5/1.UnitCircle_TrigWave_Visualizer.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
+    { name: "3D Pythagoras Lab", link: "/maths/chapter5/2.3D_Pythagoras_Lab.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
+    { name: "Cone & Cylinder Volume Lab", link: "/maths/chapter5/3.Cone_Cylinder_Volume_Lab.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
+    { name: "Quadratic Paraboloid Lab", link: "/maths/chapter5/4.Quadratic_Paraboloid_Lab.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
+    { name: "3D Linear Plane Lab", link: "/maths/chapter5/5.3D_Linear_Plane_Lab.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
+
+    // Mathematics Chapter 6 (ADDED ALL REQUESTED)
+    { name: "3D Trig Helix Lab", link: "/maths/chapter6/1.3D_Trig_Helix_Lab.html", chapter: "Chapter 6: Advanced Geometry", subject: "Mathematics" },
+    { name: "2D Pythagoras Lab", link: "/maths/chapter6/2.D_Pythagoras_Lab.html", chapter: "Chapter 6: Advanced Geometry", subject: "Mathematics" },
+    { name: "Grade 9 Math Volume Lab", link: "/maths/chapter6/3.Grade9_Math_Volume_Lab.html", chapter: "Chapter 6: Advanced Geometry", subject: "Mathematics" },
+    { name: "Quadratic Reflector Lab", link: "/maths/chapter6/4.Quadratic_Reflector_Lab.html", chapter: "Chapter 6: Advanced Geometry", subject: "Mathematics" },
+    { name: "Linear Planes 3D Lab", link: "/maths/chapter6/5.Linear_Planes_3D_Lab.html", chapter: "Chapter 6: Advanced Geometry", subject: "Mathematics" },
+
+    // Mathematics Chapter 7 (ADDED ALL REQUESTED)
+    { name: "Scaling & Similarity Lab", link: "/maths/chapter7/1.Scaling_Similarity_Lab.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
+    { name: "3D Pythagoras Space Diagonal", link: "/maths/chapter7/2.3D_Pythagoras_Space_Diagonal.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
+    { name: "Shadow Similarity Lab", link: "/maths/chapter7/3.Shadow_Similarity_Lab.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
+    { name: "3D Congruency Rigid Motion (4)", link: "/maths/chapter7/4.3D_Congruency_Rigid_Motion.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
+    { name: "3D Congruency Rigid Motion (5)", link: "/maths/chapter7/5.3D_Congruency_Rigid_Motion.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
+    { name: "3D Linear Planes Lab (C7)", link: "/maths/chapter7/5.3D_Linear_Planes_Lab.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
+
+    // Chemistry Sections (Retained from previous code)
     { name: "Chemical Reactions", link: "/chapter1/chemicalreaction.html", chapter: "Chapter 1", subject: "Chemistry" },
     { name: "Boyle's Law", link: "/chapter1/BOYLE’S LAW.html", chapter: "Chapter 1", subject: "Chemistry" },
     { name: "Atomic Model", link: "/chapter1/atomicmodel.html", chapter: "Chapter 1", subject: "Chemistry" },
     { name: "Chemistry Central Science", link: "/chapter1/Chemistry – The Central Science.html", chapter: "Chapter 1", subject: "Chemistry" },
     { name: "Photosynthesis", link: "/chapter1/Photosynthesis.html", chapter: "Chapter 1", subject: "Chemistry" },
     { name: "State of Matter", link: "/chapter1/StateOfMatter.html", chapter: "Chapter 1", subject: "Chemistry" },
-
-    // Chemistry Chapter 2
     { name: "Density Concept", link: "/chapter2/Density Concept (Mass ÷ Volume).html", chapter: "Chapter 2", subject: "Chemistry" },
     { name: "Precision vs Accuracy", link: "/chapter2/PrecisionvsAccuracyDartboard.html", chapter: "Chapter 2", subject: "Chemistry" },
     { name: "Rounding and Calculations Lab", link: "/chapter2/Rounding and Calculations Lab.html", chapter: "Chapter 2", subject: "Chemistry" },
@@ -131,23 +149,17 @@ export default function App() {
     { name: "Derived Units Builder", link: "/chapter2/DerivedUnitsArea&Volum Builder .html", chapter: "Chapter 2", subject: "Chemistry" },
     { name: "Scientific Notation Converter", link: "/chapter2/ScientificNotationConverter .html", chapter: "Chapter 2", subject: "Chemistry" },
     { name: "Speed & Acceleration Grapher", link: "/chapter2/SpeedandAccelerationGrapher.html", chapter: "Chapter 2", subject: "Chemistry" },
-
-    // Chemistry Chapter 3
     { name: "Isotopes and Mass Spectrometry", link: "/chapter3/9. Isotopes and Mass Spectrometry.html", chapter: "Chapter 3", subject: "Chemistry" },
     { name: "Thomson vs Rutherford Experiment", link: "/chapter3/1. Thomson’s Plum Pudding vs. Rutherford’s Gold Foil.html", chapter: "Chapter 3", subject: "Chemistry" },
     { name: "Bohr Energy Transitions", link: "/chapter3/2. Bohr’s Model Energy Transitions.html", chapter: "Chapter 3", subject: "Chemistry" },
     { name: "CRT Deflection", link: "/chapter3/3. Cathode Ray Tube (CRT) Deflection.html", chapter: "Chapter 3", subject: "Chemistry" },
     { name: "Heisenberg Uncertainty", link: "/chapter3/4. Heisenberg Uncertainty Principle.html", chapter: "Chapter 3", subject: "Chemistry" },
     { name: "Photoelectric Effect", link: "/chapter3/5. Photoelectric Effect.html", chapter: "Chapter 3", subject: "Chemistry" },
-
-    // Chemistry Chapter 4
     { name: "Rutherford Gold Foil Experiment", link: "/chapter4/ 1. The Rutherford Gold Foil Experiment.html", chapter: "Chapter 4", subject: "Chemistry" },
     { name: "Bohr Orbitals", link: "/chapter4/2. Bohr’s Orbitals & Energy Levels.html", chapter: "Chapter 4", subject: "Chemistry" },
     { name: "Wave Particle Duality", link: "/chapter4/4. Wave-Particle Duality (De Broglie).html", chapter: "Chapter 4", subject: "Chemistry" },
     { name: "Atomic Number vs Mass Number", link: "/chapter4/5. Atomic Number vs. Mass Number (Isotope Builder).html", chapter: "Chapter 4", subject: "Chemistry" },
     { name: "Periodic Trends Visualizer", link: "/chapter4/9. Periodic Trends Visualizer.html", chapter: "Chapter 4", subject: "Chemistry" },
-
-    // Chemistry Chapter 5
     { name: "Octet Rule Simulation", link: "/chapter5/1.Octet Rule Simulation.html", chapter: "Chapter 5", subject: "Chemistry" },
     { name: "Electron Configuration Builder", link: "/chapter5/2.Electron Configuration Builder.html", chapter: "Chapter 5", subject: "Chemistry" },
     { name: "Formation of Ions", link: "/chapter5/3.  Formation of Ions (Cations & Anions).html", chapter: "Chapter 5", subject: "Chemistry" },
@@ -165,14 +177,12 @@ export default function App() {
     return matchesSearch && matchesTab;
   });
 
-  // Get unique chapter headers based on currently filtered lessons
   const visibleChapters = Array.from(new Set(filteredItems.map((i) => `${i.subject} – ${i.chapter}`)));
 
   return (
     <div className="container">
       <header className="glass-header">
         <h1 className="main-title">EduTwin Visualizer</h1>
-        
         <div className="controls">
           <input
             type="text"
@@ -181,7 +191,6 @@ export default function App() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          
           <div className="tabs">
             {["All", "Mathematics", "Chemistry", "Favorites"].map((tab) => (
               <button
@@ -195,7 +204,6 @@ export default function App() {
           </div>
         </div>
       </header>
-
       <main className="content">
         {visibleChapters.length > 0 ? (
           visibleChapters.map((title) => (
