@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grade 9 Math: Volume Visualizer</title>
+    <style>
+        :root {
+            --brand-blue: #0056b3;
+            --water-color: #3498db;
+            --white: #ffffff;
+            --accent: #ff8c00;
+        }
+
+        /* Essential for Mobile Touch */
+        * {
+            box-sizing: border-box;
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background-color: #f0f4f8;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--brand-blue);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        #alert-box {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-wrap {
+            flex: 1;
+            background: white;
+            margin: 10px;
+            border-radius: 15px;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui-panel {
+            background: white;
+            padding: 20px;
+            border-top: 3px solid var(--brand-blue);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .formula-box {
+            background: #eef4ff;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            color: var(--brand-blue);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .control-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        button {
+            background: var(--brand-blue);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:active { transform: scale(0.95); background: #003d7a; }
+
+        input[type="range"] { width: 100%; height: 35px; }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #ui-panel { width: 350px; border-top: none; border-left: 3px solid var(--brand-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Volume Lab: Cylinder vs. Cone</header>
+<div id="alert-box">Update</div>
+
+<main>
+    <div id="canvas-wrap">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="ui-panel">
+        <div class="formula-box" id="formula">
+            V = 1/3 × πr²h
+        </div>
+
+        <button id="fillBtn">POUR ONE CONE (1/3)</button>
+        <button id="resetBtn" style="background:#666;">EMPTY ALL</button>
+
+        <div class="control-row">
+            <label>Radius (r): <span id="rVal">50</span></label>
+            <input type="range" id="rSlider" min="30" max="80" value="50">
+        </div>
+
+        <div class="control-row">
+            <label>Height (h): <span id="hVal">150</span></label>
+            <input type="range" id="hSlider" min="80" max="200" value="150">
+        </div>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('alert-box');
+    
+    // Variables
+    let r = 50, h = 150;
+    let fills = 0; // 0 to 3
+    let waterLevel = 0; // Current water in cylinder
+    let isAnimating = false;
+
+    function notify(msg) {
+        alertBox.textContent = msg;
+        alertBox.style.display = 'block';
+        clearTimeout(window.t);
+        window.t = setTimeout(() => alertBox.style.display = 'none', 1500);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    function drawShape(x, y, rad, height, isCone, fillPercent) {
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#333';
+        
+        // Draw the Water inside
+        if (fillPercent > 0) {
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.7)';
+            if (isCone) {
+                // Cone water logic (geometric volume fill is complex, using linear for visual)
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - (rad * fillPercent), y - (height * fillPercent));
+                ctx.lineTo(x + (rad * fillPercent), y - (height * fillPercent));
+                ctx.fill();
+            } else {
+                ctx.fillRect(x - rad, y - (height * fillPercent), rad * 2, height * fillPercent);
+            }
+        }
+
+        // Draw Container Outline
+        ctx.beginPath();
+        if (isCone) {
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - rad, y - height);
+            ctx.lineTo(x + rad, y - height);
+            ctx.closePath();
+        } else {
+            ctx.strokeRect(x - rad, y - height, rad * 2, height);
+        }
+        ctx.stroke();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const spacing = canvas.width / 3;
+        const groundY = canvas.height * 0.8;
+
+        // Cylinder (Target)
+        drawShape(spacing * 2, groundY, r, h, false, waterLevel / 3);
+        ctx.fillStyle = '#000';
+        ctx.textAlign = 'center';
+        ctx.fillText("CYLINDER (Full)", spacing * 2, groundY + 20);
+
+        // Cone (Source)
+        let coneFill = isAnimating ? 0.5 : 1; 
+        drawShape(spacing * 1, groundY, r, h, true, coneFill);
+        ctx.fillText("CONE (1/3)", spacing * 1, groundY + 20);
+
+        // Update Formula
+        const vol = ( (1/3) * Math.PI * Math.pow(r, 2) * h / 1000).toFixed(1);
+        document.getElementById('formula').innerHTML = `Volume ≈ ${vol} units³<br><small>Water Level: ${fills}/3 Full</small>`;
+    }
+
+    // Interaction Logic
+    document.getElementById('fillBtn').addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (fills < 3) {
+            fills++;
+            waterLevel = fills;
+            notify("Poured 1 Cone into Cylinder");
+            draw();
+        } else {
+            notify("Cylinder is FULL! (3/3)");
+        }
+    });
+
+    document.getElementById('fillBtn').addEventListener('click', () => {
+        if (fills < 3) {
+            fills++;
+            waterLevel = fills;
+            draw();
+        }
+    });
+
+    document.getElementById('resetBtn').addEventListener('touchstart', () => {
+        fills = 0; waterLevel = 0; notify("Emptied the containers"); draw();
+    });
+
+    document.getElementById('rSlider').oninput = (e) => {
+        r = parseInt(e.target.value);
+        document.getElementById('rVal').textContent = r;
+        draw();
+    };
+
+    document.getElementById('hSlider').oninput = (e) => {
+        h = parseInt(e.target.value);
+        document.getElementById('hVal').textContent = h;
+        draw();
+    };
+
+    // Canvas Touch Support
+    canvas.addEventListener('touchstart', (e) => {
+        notify("Tapped the 3D Lab");
+        draw();
+    }, {passive: false});
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+</body>
+</html>

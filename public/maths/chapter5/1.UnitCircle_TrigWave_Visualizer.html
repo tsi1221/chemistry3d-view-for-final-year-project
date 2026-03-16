@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interactive Math Lab</title>
+    <style>
+        /* Modern UI Design */
+        :root {
+            --main-blue: #007AFF;
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-color: #1c1c1e;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: none; /* Disables browser zoom/scroll on the whole app */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Responsive Alert Box */
+        #alert-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 122, 255, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            z-index: 999;
+        }
+
+        /* App Header */
+        header {
+            background: var(--card-bg);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #d1d1d6;
+        }
+
+        h1 { margin: 0; font-size: 1.1rem; color: var(--main-blue); }
+
+        /* Canvas Area */
+        #container {
+            flex: 1;
+            position: relative;
+            background: white;
+            margin: 10px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Controls Area (Optimized for Mobile Thumbs) */
+        #controls {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+        }
+
+        .eq-panel {
+            text-align: center;
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: var(--main-blue);
+        }
+
+        .slider-row {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #8e8e93;
+            margin-bottom: 5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #e5e5ea;
+            border-radius: 5px;
+            outline: none;
+            appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--main-blue);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Tablet/Desktop Mode */
+        @media (min-width: 768px) {
+            body { flex-direction: row; }
+            #controls { width: 350px; border-radius: 0; border-left: 1px solid #d1d1d6; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="alert-box">Action Alert</div>
+
+<header>
+    <h1>Unit Circle & Sine Wave</h1>
+</header>
+
+<main id="container">
+    <canvas id="canvas"></canvas>
+</main>
+
+<section id="controls">
+    <div class="eq-panel" id="equation">sin(0°) = 0.00</div>
+    
+    <div class="slider-row">
+        <label>Drag to Change Angle</label>
+        <input type="range" id="angle" min="0" max="360" value="0">
+    </div>
+
+    <div class="slider-row">
+        <label>Wave Height (Amplitude)</label>
+        <input type="range" id="amp" min="30" max="100" value="70">
+    </div>
+</section>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('alert-box');
+    const eqDiv = document.getElementById('equation');
+
+    // Data State
+    let angle = 0;
+    let amplitude = 70;
+    let isTouching = false;
+
+    // Show Mobile Notification
+    function notify(text) {
+        alertBox.textContent = text;
+        alertBox.style.display = 'block';
+        clearTimeout(window.alertTimeout);
+        window.alertTimeout = setTimeout(() => alertBox.style.display = 'none', 1000);
+    }
+
+    // Adjust Canvas for Phone Screen
+    function resize() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+        update();
+    }
+
+    // Draw everything
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const cx = canvas.width * 0.3;
+        const cy = canvas.height / 2;
+        const rad = (angle * Math.PI) / 180;
+
+        // Draw Grid lines
+        ctx.strokeStyle = "#f0f0f0";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy);
+        ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height);
+        ctx.stroke();
+
+        // Draw Circle
+        ctx.strokeStyle = "#007AFF";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cx, cy, amplitude, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Draw Points
+        const px = cx + amplitude * Math.cos(rad);
+        const py = cy - amplitude * Math.sin(rad);
+
+        // Sine Projection (Vertical Red Line)
+        ctx.strokeStyle = "#FF3B30";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(px, cy); ctx.lineTo(px, py);
+        ctx.stroke();
+
+        // The Moving Ball
+        ctx.fillStyle = "#FF9500";
+        ctx.beginPath();
+        ctx.arc(px, py, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Trace the Sine Wave
+        const waveStart = cx + amplitude + 30;
+        ctx.strokeStyle = "#FF3B30";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for(let x = 0; x < (canvas.width - waveStart); x++) {
+            const val = cy - amplitude * Math.sin(rad - (x * 0.04));
+            if(x === 0) ctx.moveTo(waveStart + x, val);
+            else ctx.lineTo(waveStart + x, val);
+        }
+        ctx.stroke();
+
+        // Equation text
+        eqDiv.innerHTML = `sin(${angle}°) = ${Math.sin(rad).toFixed(2)}`;
+    }
+
+    // --- TOUCH & MOUSE LOGIC ---
+    function handleMove(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        const cx = canvas.width * 0.3;
+        const cy = canvas.height / 2;
+
+        // Math to find angle from touch position
+        let a = Math.atan2(cy - y, x - cx) * (180 / Math.PI);
+        if (a < 0) a += 360;
+        
+        angle = Math.round(a);
+        document.getElementById('angle').value = angle;
+        update();
+    }
+
+    // Touch Events
+    canvas.addEventListener('touchstart', (e) => {
+        isTouching = true;
+        handleMove(e);
+        notify("Graph Touched!");
+    }, {passive: false});
+
+    canvas.addEventListener('touchmove', (e) => {
+        if(isTouching) {
+            e.preventDefault(); 
+            handleMove(e);
+        }
+    }, {passive: false});
+
+    canvas.addEventListener('touchend', () => isTouching = false);
+
+    // Mouse Events
+    canvas.addEventListener('mousedown', (e) => { isTouching = true; handleMove(e); });
+    window.addEventListener('mousemove', (e) => { if(isTouching) handleMove(e); });
+    window.addEventListener('mouseup', () => isTouching = false);
+
+    // Slider Events
+    document.getElementById('angle').oninput = (e) => { 
+        angle = e.target.value; 
+        update(); 
+    };
+    document.getElementById('angle').onchange = () => notify("Variable Changed");
+
+    document.getElementById('amp').oninput = (e) => { 
+        amplitude = parseInt(e.target.value); 
+        update(); 
+    };
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+
+</body>
+</html>

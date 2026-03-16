@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Pythagoras | Space Diagonal Lab</title>
+    <style>
+        :root {
+            --brand-blue: #0056b3;
+            --light-blue: #e7f1ff;
+            --accent-orange: #ff8c00;
+            --accent-green: #28a745;
+            --white: #ffffff;
+            --text: #2c3e50;
+        }
+
+        * {
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: #f8fafc;
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--brand-blue);
+            color: var(--white);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        #alert-box {
+            position: fixed;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-orange);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-container {
+            flex: 1;
+            background: var(--white);
+            margin: 10px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        #sidebar {
+            background: var(--white);
+            padding: 20px;
+            border-top: 6px solid var(--brand-blue);
+            overflow-y: auto;
+            max-height: 55vh;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .math-card {
+            background: var(--light-blue);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 5px solid var(--brand-blue);
+        }
+
+        .math-card h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--brand-blue); }
+
+        .step-box {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] { width: 100%; height: 35px; cursor: pointer; }
+
+        .num-box {
+            width: 65px;
+            padding: 5px;
+            border: 2px solid var(--brand-blue);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            color: var(--brand-blue);
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            justify-content: center;
+            padding: 5px;
+            background: #eee;
+            border-radius: 5px;
+        }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #sidebar { width: 380px; max-height: 100%; border-top: none; border-left: 6px solid var(--brand-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Grade 9 Math: 3D Space Diagonal (d)</header>
+<div id="alert-box">Action Recorded</div>
+
+<main>
+    <div id="canvas-container">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="sidebar">
+        <div class="math-card">
+            <h3>Calculations for Diagonal (d)</h3>
+            <div class="step-box">
+                <span style="color:var(--accent-green)">●</span> 
+                <b>Step 1 (Floor):</b> <br>
+                Base Diagonal² = <span id="calc-base">x² + z²</span>
+            </div>
+            <div class="step-box">
+                <span style="color:var(--accent-orange)">●</span> 
+                <b>Step 2 (Space):</b> <br>
+                d² = (Base Diagonal)² + y²
+            </div>
+            <div style="font-size: 1.1rem; border-top: 1px solid #ccc; padding-top: 5px; font-weight: bold;">
+                d = <span id="final-result">0</span>
+            </div>
+        </div>
+
+        <div class="legend">
+            <span><b style="color:var(--accent-green)">---</b> Floor Diagonal</span>
+            <span><b style="color:var(--accent-orange)">---</b> Space Diagonal (d)</span>
+        </div>
+
+        <div class="control-group">
+            <div class="label-row"><span>Length (x)</span> <input type="number" id="nx" class="num-box" value="120"></div>
+            <input type="range" id="sx" min="30" max="220" value="120">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row"><span>Width (z)</span> <input type="number" id="nz" class="num-box" value="90"></div>
+            <input type="range" id="sz" min="30" max="220" value="90">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row"><span>Height (y)</span> <input type="number" id="ny" class="num-box" value="70"></div>
+            <input type="range" id="sy" min="30" max="220" value="70">
+        </div>
+
+        <p style="text-align:center; font-size:0.8rem; color:#666; margin:0;">
+            Rotate the box with your mouse or finger!
+        </p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('alert-box');
+
+    // Values
+    let xVal = 120, yVal = 70, zVal = 90;
+    let rotX = -0.4, rotY = 0.5;
+    let isDragging = false, lastX, lastY;
+
+    function notify(msg) {
+        alertBox.textContent = msg;
+        alertBox.style.display = 'block';
+        clearTimeout(window.aTimer);
+        window.aTimer = setTimeout(() => alertBox.style.display = 'none', 1500);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    // Project 3D points to 2D screen
+    function project(x, y, z) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2 + 50;
+        
+        // Simple rotation math
+        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+        let tx = x * cosY - z * sinY;
+        let tz = x * sinY + z * cosY;
+        let ty = y * cosX - tz * sinX;
+        let fz = y * sinX + tz * cosX;
+
+        const p = 850 / (850 + fz);
+        return { x: cx + tx * p, y: cy - ty * p };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const hx = xVal / 2, hy = yVal, hz = zVal / 2;
+        
+        // Define corners
+        const p = [
+            [-hx, 0, -hz], [hx, 0, -hz], [hx, 0, hz], [-hx, 0, hz], // Bottom 0,1,2,3
+            [-hx, -hy, -hz], [hx, -hy, -hz], [hx, -hy, hz], [-hx, -hy, hz] // Top 4,5,6,7
+        ].map(pt => project(pt[0], pt[1], pt[2]));
+
+        // Draw Box Edges (Dashed)
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "#cbd5e0";
+        ctx.lineWidth = 1;
+        const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+        edges.forEach(e => {
+            ctx.beginPath(); ctx.moveTo(p[e[0]].x, p[e[0]].y); ctx.lineTo(p[e[1]].x, p[e[1]].y); ctx.stroke();
+        });
+
+        // 1. Draw Floor Diagonal (Green)
+        ctx.setLineDash([]);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#28a745";
+        ctx.beginPath(); ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(p[2].x, p[2].y); ctx.stroke();
+
+        // 2. Draw Space Diagonal 'd' (Orange)
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#ff8c00";
+        ctx.beginPath(); ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(p[6].x, p[6].y); ctx.stroke();
+
+        // Label the critical corners for the student
+        ctx.fillStyle = "#0056b3";
+        ctx.font = "bold 16px Arial";
+        ctx.fillText("Start", p[0].x - 40, p[0].y + 10);
+        ctx.fillText("End (d)", p[6].x + 10, p[6].y - 10);
+
+        // Update Math Text in Sidebar
+        const b_sq = (xVal*xVal + zVal*zVal);
+        const d_final = Math.sqrt(b_sq + yVal*yVal).toFixed(1);
+        document.getElementById('calc-base').textContent = `${xVal}² + ${zVal}² = ${b_sq}`;
+        document.getElementById('final-result').textContent = `√(${b_sq} + ${yVal}²) ≈ ${d_final}`;
+    }
+
+    // Input Sync Logic
+    ['x', 'y', 'z'].forEach(dim => {
+        const s = document.getElementById('s' + dim);
+        const n = document.getElementById('n' + dim);
+        const update = (v) => {
+            let val = Math.min(220, Math.max(30, parseInt(v) || 30));
+            if(dim==='x') xVal = val; if(dim==='y') yVal = val; if(dim==='z') zVal = val;
+            s.value = val; n.value = val; draw();
+        };
+        s.oninput = (e) => update(e.target.value);
+        n.onchange = (e) => { update(e.target.value); notify("Variable Changed"); };
+    });
+
+    // Interaction Handlers
+    function start(e) { 
+        isDragging = true; 
+        const t = e.touches ? e.touches[0] : e;
+        lastX = t.clientX; lastY = t.clientY; 
+        notify("You moved the graph.");
+    }
+    function move(e) {
+        if(!isDragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        rotY += (t.clientX - lastX) * 0.007;
+        rotX += (t.clientY - lastY) * 0.007;
+        lastX = t.clientX; lastY = t.clientY;
+        draw();
+    }
+
+    canvas.addEventListener('mousedown', start);
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', () => isDragging = false);
+    canvas.addEventListener('touchstart', start);
+    window.addEventListener('touchmove', (e) => { if(isDragging) e.preventDefault(); move(e); }, {passive:false});
+    window.addEventListener('touchend', () => isDragging = false);
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+</body>
+</html>

@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scaling Law Lab | Grade 9 Math</title>
+    <style>
+        :root {
+            --brand-blue: #0056b3;
+            --brand-light: #e7f1ff;
+            --brand-white: #ffffff;
+            --accent-orange: #ff8c00;
+            --text-dark: #2c3e50;
+        }
+
+        /* Mobile-First Reset & Touch Optimizations */
+        * {
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background-color: #f4f7f9;
+            color: var(--text-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--brand-blue);
+            color: var(--brand-white);
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+
+        /* Real-Time Alert System */
+        #interaction-alert {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-orange);
+            color: var(--brand-white);
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-wrapper {
+            flex: 1;
+            background: var(--brand-white);
+            margin: 10px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #controls-panel {
+            background: var(--brand-white);
+            padding: 20px;
+            border-top: 4px solid var(--brand-blue);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: 50vh;
+        }
+
+        .formula-board {
+            background: var(--brand-light);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #b3d4ff;
+            text-align: left;
+        }
+
+        .formula-board h3 { margin: 0 0 10px 0; color: var(--brand-blue); text-align: center; }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px dashed #ccc;
+        }
+
+        .memorization-aid {
+            background: #fffceb;
+            border-left: 4px solid #f1c40f;
+            padding: 12px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #555;
+            border-radius: 4px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Fat-finger optimized slider */
+        input[type="range"] {
+            flex: 1;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        /* Number input field styling */
+        input[type="number"] {
+            width: 80px;
+            height: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid var(--brand-blue);
+            border-radius: 8px;
+            color: var(--brand-blue);
+            background: var(--brand-light);
+            outline: none;
+        }
+        
+        input[type="number"]:focus {
+            border-color: var(--accent-orange);
+            background: var(--brand-white);
+        }
+
+        /* Large touch buttons */
+        button {
+            background: var(--brand-blue);
+            color: var(--brand-white);
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        button:active {
+            transform: scale(0.97);
+            background: #004494;
+        }
+
+        .help-text {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: -5px;
+        }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #controls-panel { width: 380px; max-height: 100%; border-top: none; border-left: 4px solid var(--brand-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Similarity & Scaling Law Visualization</header>
+<div id="interaction-alert">Action Recorded</div>
+
+<main>
+    <div id="canvas-wrapper">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="controls-panel">
+        <div class="formula-board">
+            <h3>Scale Factor (k = <span id="k-display">1.0</span>)</h3>
+            <div class="stat-row">
+                <span>Side Length (1D):</span> 
+                <span id="l-val" style="color:var(--brand-blue)">1.0 L</span>
+            </div>
+            <div class="stat-row">
+                <span>Surface Area (2D):</span> 
+                <span id="a-val" style="color:#2ecc71">1.0 A</span>
+            </div>
+            <div class="stat-row">
+                <span>Total Volume (3D):</span> 
+                <span id="v-val" style="color:var(--accent-orange)">1.0 V</span>
+            </div>
+        </div>
+
+        <div class="memorization-aid">
+            <strong>Memorization Aid:</strong> When you scale a shape by a factor of <strong>k</strong>:<br>
+            • Lengths grow by <strong>k</strong>.<br>
+            • Areas grow by <strong>k²</strong>.<br>
+            • Volumes grow by <strong>k³</strong>.
+        </div>
+
+        <div class="control-group">
+            <label>Set Scale Factor (k)</label>
+            <div class="input-row">
+                <input type="range" id="k-slider" min="1" max="5" step="0.1" value="1.0">
+                <input type="number" id="k-input" min="1" max="5" step="0.1" value="1.0">
+            </div>
+        </div>
+
+        <button id="toggle-view">SWITCH TO 2D NET</button>
+        
+        <div class="help-text">Swipe or drag the canvas to rotate the 3D space!</div>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('interaction-alert');
+
+    // App State
+    let k = 1.0;
+    let baseSize = 40; // Smaller base to allow k=5 to fit on screen
+    let viewMode = '3D'; // '3D' or '2D'
+    let rotX = -0.5, rotY = 0.6;
+    let isDragging = false;
+    let lastX, lastY;
+
+    // Trigger Notification function
+    function showAlert(message) {
+        alertBox.textContent = message;
+        alertBox.style.display = 'block';
+        clearTimeout(window.alertTimer);
+        window.alertTimer = setTimeout(() => alertBox.style.display = 'none', 1500);
+    }
+
+    function resizeCanvas() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    // Basic 3D Projection
+    function project(x, y, z) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2 + (viewMode === '3D' ? 50 : 0);
+
+        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+        let tx = x * cosY - z * sinY;
+        let tz = x * sinY + z * cosY;
+        let ty = y * cosX - tz * sinX;
+        let finalZ = y * sinX + tz * cosX;
+
+        const scale = 700 / (700 + finalZ);
+        
+        return {
+            x: cx + tx * scale,
+            y: cy - ty * scale,
+            z: finalZ
+        };
+    }
+
+    function drawGrid() {
+        if(viewMode !== '3D') return;
+        const axisLen = 150;
+        const origin = project(0, 0, 0);
+        
+        ctx.lineWidth = 1;
+        let px = project(axisLen, 0, 0);
+        ctx.strokeStyle = '#ccc'; ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(px.x, px.y); ctx.stroke();
+        let py = project(0, -axisLen, 0);
+        ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(py.x, py.y); ctx.stroke();
+        let pz = project(0, 0, axisLen);
+        ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(pz.x, pz.y); ctx.stroke();
+    }
+
+    function draw3DCube(size, isOutline) {
+        const s = size / 2;
+        const vertices = [
+            [-s, -s, -s], [s, -s, -s], [s, s, -s], [-s, s, -s], 
+            [-s, -s, s],  [s, -s, s],  [s, s, s],  [-s, s, s]   
+        ].map(p => project(p[0], p[1], p[2]));
+
+        const edges = [
+            [0,1], [1,2], [2,3], [3,0], [4,5], [5,6], [6,7], [7,4], [0,4], [1,5], [2,6], [3,7]
+        ];
+
+        if (!isOutline) {
+            ctx.fillStyle = 'rgba(0, 86, 179, 0.15)'; 
+            const drawFace = (v1, v2, v3, v4) => {
+                ctx.beginPath();
+                ctx.moveTo(v1.x, v1.y); ctx.lineTo(v2.x, v2.y);
+                ctx.lineTo(v3.x, v3.y); ctx.lineTo(v4.x, v4.y);
+                ctx.closePath();
+                ctx.fill();
+            };
+            drawFace(vertices[0], vertices[1], vertices[2], vertices[3]); 
+            drawFace(vertices[1], vertices[5], vertices[6], vertices[2]); 
+            drawFace(vertices[3], vertices[2], vertices[6], vertices[7]); 
+        }
+
+        ctx.strokeStyle = isOutline ? '#999' : '#0056b3';
+        ctx.setLineDash(isOutline ? [4, 4] : []);
+        ctx.lineWidth = isOutline ? 1 : 2;
+
+        edges.forEach(([i, j]) => {
+            ctx.beginPath();
+            ctx.moveTo(vertices[i].x, vertices[i].y);
+            ctx.lineTo(vertices[j].x, vertices[j].y);
+            ctx.stroke();
+        });
+        ctx.setLineDash([]);
+    }
+
+    function draw2DNet(size) {
+        const s = size;
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        
+        ctx.fillStyle = 'rgba(0, 86, 179, 0.15)';
+        ctx.strokeStyle = '#0056b3';
+        ctx.lineWidth = 2;
+
+        const faces = [
+            {x: 0, y: 0}, {x: 0, y: -s}, {x: 0, y: s}, {x: 0, y: s*2}, {x: -s, y: 0}, {x: s, y: 0}
+        ];
+
+        faces.forEach(f => {
+            ctx.fillRect(cx + f.x - s/2, cy + f.y - s/2, s, s);
+            ctx.strokeRect(cx + f.x - s/2, cy + f.y - s/2, s, s);
+        });
+
+        if(Number.isInteger(parseFloat(k))) {
+            ctx.strokeStyle = 'rgba(0, 86, 179, 0.3)';
+            ctx.lineWidth = 1;
+            const subSize = s / k;
+            
+            faces.forEach(f => {
+                for(let i=1; i<k; i++) {
+                    let lx = cx + f.x - s/2 + (i*subSize);
+                    let ty = cy + f.y - s/2;
+                    ctx.beginPath(); ctx.moveTo(lx, ty); ctx.lineTo(lx, ty+s); ctx.stroke();
+                    let ly = cy + f.y - s/2 + (i*subSize);
+                    let tx = cx + f.x - s/2;
+                    ctx.beginPath(); ctx.moveTo(tx, ly); ctx.lineTo(tx+s, ly); ctx.stroke();
+                }
+            });
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+
+        if (viewMode === '3D') {
+            draw3DCube(baseSize, true);
+            draw3DCube(baseSize * k, false);
+        } else {
+            draw2DNet(baseSize * k);
+        }
+
+        document.getElementById('k-display').textContent = k.toFixed(1);
+        document.getElementById('l-val').textContent = k.toFixed(1) + " L";
+        document.getElementById('a-val').innerHTML = (k * k).toFixed(2) + " A";
+        document.getElementById('v-val').innerHTML = (k * k * k).toFixed(2) + " V";
+    }
+
+    // Sync Slider and Input Box
+    const slider = document.getElementById('k-slider');
+    const numInput = document.getElementById('k-input');
+
+    function updateScale(val) {
+        // Ensure the value stays within the 1.0 to 5.0 range
+        let newK = Math.max(1, Math.min(5, parseFloat(val) || 1));
+        k = newK;
+        
+        slider.value = k;
+        
+        // Only update the input text if it's not actively being typed in,
+        // or format it if it was updated via slider
+        if (document.activeElement !== numInput) {
+            numInput.value = k;
+        }
+        
+        draw();
+    }
+
+    slider.addEventListener('input', (e) => {
+        updateScale(e.target.value);
+        numInput.value = k; // Force sync text box while sliding
+    });
+    
+    slider.addEventListener('change', () => showAlert("Scale variable updated via slider."));
+
+    numInput.addEventListener('input', (e) => {
+        updateScale(e.target.value);
+    });
+
+    numInput.addEventListener('change', (e) => {
+        // When they hit enter or click away, format the number cleanly
+        numInput.value = k.toFixed(1);
+        showAlert(`Scale variable set to ${k}.`);
+    });
+
+    // --- Interaction Listeners (Touch & Mouse) ---
+    function startInteraction(x, y) {
+        isDragging = true; lastX = x; lastY = y;
+        showAlert("You interacted with the visualization.");
+    }
+
+    function moveInteraction(x, y) {
+        if (!isDragging || viewMode !== '3D') return;
+        let dx = x - lastX; let dy = y - lastY;
+        rotY += dx * 0.01; rotX += dy * 0.01;
+        lastX = x; lastY = y; draw();
+    }
+
+    canvas.addEventListener('touchstart', (e) => startInteraction(e.touches[0].clientX, e.touches[0].clientY), {passive: false});
+    window.addEventListener('touchmove', (e) => {
+        if(isDragging) e.preventDefault();
+        moveInteraction(e.touches[0].clientX, e.touches[0].clientY);
+    }, {passive: false});
+    window.addEventListener('touchend', () => isDragging = false);
+
+    canvas.addEventListener('mousedown', (e) => startInteraction(e.clientX, e.clientY));
+    window.addEventListener('mousemove', (e) => moveInteraction(e.clientX, e.clientY));
+    window.addEventListener('mouseup', () => isDragging = false);
+
+    const toggleBtn = document.getElementById('toggle-view');
+    toggleBtn.addEventListener('click', () => {
+        viewMode = viewMode === '3D' ? '2D' : '3D';
+        toggleBtn.textContent = viewMode === '3D' ? 'SWITCH TO 2D NET' : 'SWITCH TO 3D SOLID';
+        if(viewMode === '3D') { rotX = -0.5; rotY = 0.6; }
+        showAlert(`View switched to ${viewMode === '3D' ? 'Solid Cube' : 'Unfolded Net'}.`);
+        draw();
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+</script>
+</body>
+</html>

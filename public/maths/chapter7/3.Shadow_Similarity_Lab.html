@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Shadow Similarity Lab | Grade 9 Math</title>
+    <style>
+        :root {
+            --brand-blue: #0056b3;
+            --light-blue: #e7f1ff;
+            --accent-orange: #ff8c00;
+            --white: #ffffff;
+            --dark-text: #1a202c;
+        }
+
+        * { box-sizing: border-box; touch-action: none; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            background-color: #f1f5f9;
+            color: var(--dark-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--brand-blue);
+            color: var(--white);
+            padding: 1rem;
+            text-align: center;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        #notification {
+            position: fixed;
+            top: 4.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-orange);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        main { display: flex; flex: 1; flex-direction: column; overflow: hidden; }
+
+        #canvas-area {
+            flex: 1;
+            background: #ffffff;
+            position: relative;
+            margin: 10px;
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        #ui-panel {
+            background: var(--white);
+            padding: 20px;
+            border-top: 4px solid var(--brand-blue);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: 45vh;
+        }
+
+        .formula-box {
+            background: var(--light-blue);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #bdd7ff;
+            text-align: center;
+        }
+
+        .ratio-text {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--brand-blue);
+            font-size: 1.1rem;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] { width: 100%; height: 30px; cursor: pointer; }
+
+        .btn-toggle {
+            background: var(--brand-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #ui-panel { width: 350px; max-height: 100%; border-top: none; border-left: 4px solid var(--brand-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Similar Triangles & Shadow Projection</header>
+<div id="notification">Action Recorded</div>
+
+<main>
+    <div id="canvas-area">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="ui-panel">
+        <div class="formula-box">
+            <div style="font-size: 0.85rem; margin-bottom: 5px;">Similarity Ratio (Shadow / Object)</div>
+            <div class="ratio-text" id="ratio-display">k = 1.00</div>
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <span>Light Distance (Source)</span>
+                <span id="v-light">300</span>
+            </div>
+            <input type="range" id="lightRange" min="150" max="600" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <span>Object Distance</span>
+                <span id="v-obj">150</span>
+            </div>
+            <input type="range" id="objRange" min="50" max="250" value="150">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <span>Object Height</span>
+                <span id="v-height">80</span>
+            </div>
+            <input type="range" id="heightRange" min="40" max="150" value="80">
+        </div>
+
+        <button class="btn-toggle" id="resetBtn">Reset Perspective</button>
+        
+        <p style="font-size: 0.8rem; color: #666; line-height: 1.4;">
+            <b>Explanation:</b> Moving the light closer increases the shadow size, but the <b>angles</b> remain equal to the original triangle. This is the Angle-Angle (AA) similarity criterion.
+        </p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const note = document.getElementById('notification');
+
+    // App State
+    let lightDist = 300; // X position of light from "wall"
+    let objDist = 150;   // X position of object from "wall"
+    let objHeight = 80;  // Height of triangle
+    let isDragging = false;
+
+    function showNote(text) {
+        note.textContent = text;
+        note.style.display = 'block';
+        clearTimeout(window.noteTimer);
+        window.noteTimer = setTimeout(() => note.style.display = 'none', 1500);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const wallX = canvas.width - 60;
+        const groundY = canvas.height - 80;
+        const lightX = wallX - lightDist;
+        const lightY = groundY - 120; // Fixed light height
+        const triangleX = wallX - objDist;
+
+        // 1. Calculate Shadow Height using Similarity Ratios
+        // Ratio formula: ShadowHeight / objHeight = lightDist / (lightDist - objDist)
+        const ratio = lightDist / (lightDist - objDist);
+        const shadowHeight = objHeight * ratio;
+
+        // 2. Draw Ground and Wall
+        ctx.strokeStyle = '#cbd5e0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(50, groundY); ctx.lineTo(canvas.width - 20, groundY); // Ground
+        ctx.moveTo(wallX, groundY); ctx.lineTo(wallX, 50); // Wall
+        ctx.stroke();
+
+        // 3. Draw Shadow (on the wall)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.beginPath();
+        ctx.moveTo(wallX, groundY);
+        ctx.lineTo(wallX, groundY - shadowHeight);
+        ctx.lineTo(wallX - 20, groundY); // Tapered shadow base for 3D effect
+        ctx.fill();
+
+        // 4. Draw Light Rays (Dashed)
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#f6ad55';
+        ctx.beginPath();
+        ctx.moveTo(lightX, lightY);
+        ctx.lineTo(wallX, groundY - shadowHeight); // Top ray
+        ctx.moveTo(lightX, lightY);
+        ctx.lineTo(wallX, groundY); // Bottom ray
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 5. Draw the Light Source
+        ctx.fillStyle = '#ecc94b';
+        ctx.beginPath();
+        ctx.arc(lightX, lightY, 12, 0, Math.PI * 2);
+        ctx.fill();
+        // Light Glow
+        const gradient = ctx.createRadialGradient(lightX, lightY, 5, lightX, lightY, 30);
+        gradient.addColorStop(0, 'rgba(236, 201, 75, 0.4)');
+        gradient.addColorStop(1, 'rgba(236, 201, 75, 0)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(lightX, lightY, 30, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 6. Draw the Physical Triangle (The Object)
+        ctx.fillStyle = varToHex('--brand-blue');
+        ctx.beginPath();
+        ctx.moveTo(triangleX, groundY);
+        ctx.lineTo(triangleX, groundY - objHeight);
+        ctx.lineTo(triangleX + 30, groundY);
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 7. Update UI Labels
+        document.getElementById('ratio-display').textContent = `k = ${ratio.toFixed(2)}`;
+        document.getElementById('v-light').textContent = lightDist;
+        document.getElementById('v-obj').textContent = objDist;
+        document.getElementById('v-height').textContent = objHeight;
+    }
+
+    // Helper to get CSS variables in JS
+    function varToHex(varName) {
+        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    }
+
+    // Controls Logic
+    const lightRange = document.getElementById('lightRange');
+    const objRange = document.getElementById('objRange');
+    const heightRange = document.getElementById('heightRange');
+
+    lightRange.addEventListener('input', (e) => {
+        lightDist = parseInt(e.target.value);
+        if (objDist >= lightDist - 20) {
+            objDist = lightDist - 25;
+            objRange.value = objDist;
+        }
+        draw();
+    });
+    
+    lightRange.addEventListener('change', () => showNote("Light source moved."));
+
+    objRange.addEventListener('input', (e) => {
+        let val = parseInt(e.target.value);
+        if (val >= lightDist - 20) val = lightDist - 25;
+        objDist = val;
+        objRange.value = val;
+        draw();
+    });
+
+    objRange.addEventListener('change', () => showNote("Object position updated."));
+
+    heightRange.addEventListener('input', (e) => {
+        objHeight = parseInt(e.target.value);
+        draw();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        lightDist = 300; objDist = 150; objHeight = 80;
+        lightRange.value = 300; objRange.value = 150; heightRange.value = 80;
+        showNote("Perspective Reset.");
+        draw();
+    });
+
+    // Touch/Mouse Interaction on Canvas
+    function handleInteraction(e) {
+        const rect = canvas.getBoundingClientRect();
+        const touchX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+        const wallX = canvas.width - 60;
+        
+        // Simple drag to move object distance
+        let newDist = wallX - touchX;
+        if (newDist > 10 && newDist < lightDist - 20) {
+            objDist = newDist;
+            objRange.value = objDist;
+            draw();
+        }
+    }
+
+    canvas.addEventListener('mousedown', () => { isDragging = true; showNote("Dragging object..."); });
+    window.addEventListener('mousemove', (e) => { if(isDragging) handleInteraction(e); });
+    window.addEventListener('mouseup', () => isDragging = false);
+    
+    canvas.addEventListener('touchstart', (e) => { isDragging = true; handleInteraction(e); });
+    canvas.addEventListener('touchmove', (e) => { if(isDragging) { e.preventDefault(); handleInteraction(e); } });
+    canvas.addEventListener('touchend', () => isDragging = false);
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+</body>
+</html>

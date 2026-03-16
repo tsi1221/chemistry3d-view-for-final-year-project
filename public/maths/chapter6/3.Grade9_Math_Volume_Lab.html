@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Grade 9 Math Lab | Ethiopia</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --secondary: #00a8ff;
+            --accent: #ff8c00;
+            --bg: #f0f2f5;
+            --white: #ffffff;
+            --note-bg: #fffceb;
+        }
+
+        /* Essential for Mobile Stability */
+        * {
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background: var(--bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+
+        #alert-box {
+            position: fixed;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-wrap {
+            flex: 1;
+            background: white;
+            margin: 10px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        canvas { width: 100%; height: 100%; display: block; }
+
+        #controls {
+            background: white;
+            padding: 15px;
+            border-top: 4px solid var(--primary);
+            overflow-y: auto;
+            max-height: 45vh;
+        }
+
+        .formula-card {
+            background: #eef4ff;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            color: var(--primary);
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .memorize-note {
+            background: var(--note-bg);
+            border-left: 4px solid #f1c40f;
+            padding: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .slider-group { margin-bottom: 12px; }
+        .slider-label { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; }
+        
+        input[type="range"] { width: 100%; height: 30px; margin: 8px 0; }
+        
+        .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        button {
+            flex: 1;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:active { transform: scale(0.98); }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #controls { width: 350px; max-height: 100%; border-top: none; border-left: 4px solid var(--primary); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Grade 9 Digital Math Lab</header>
+<div id="alert-box">Update Applied</div>
+
+<main>
+    <div id="canvas-wrap">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="controls">
+        <div class="formula-card" id="formula">V = 1/3 πr²h</div>
+        
+        <div class="memorize-note" id="note">
+            <strong>Key Insight:</strong> It takes exactly three cones to fill a cylinder of the same size. Geometry is about relationships!
+        </div>
+
+        <div class="btn-row">
+            <button id="fillBtn">POUR CONE</button>
+            <button id="resetBtn" style="background:#6c757d">EMPTY</button>
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">Radius (r) <span id="rv">60</span></div>
+            <input type="range" id="rs" min="30" max="90" value="60">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-label">Height (h) <span id="hv">120</span></div>
+            <input type="range" id="hs" min="50" max="200" value="120">
+        </div>
+        
+        <p style="text-align:center; font-size: 0.8rem; color:#888;">Drag the screen to rotate in 3D</p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('alert-box');
+
+    // Variables
+    let r = 60, h = 120, fills = 0;
+    let rotX = -0.4, rotY = 0.5;
+    let isDragging = false, lastX, lastY;
+
+    function notify(msg) {
+        alertBox.textContent = msg;
+        alertBox.style.display = 'block';
+        clearTimeout(window.t);
+        window.t = setTimeout(() => alertBox.style.display='none', 1200);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    function project(x, y, z) {
+        let cx = canvas.width / 2, cy = canvas.height / 2 + 50;
+        let cY = Math.cos(rotY), sY = Math.sin(rotY);
+        let cX = Math.cos(rotX), sX = Math.sin(rotX);
+
+        let tx = x * cY - z * sY;
+        let tz = x * sY + z * cY;
+        let ty = y * cX - tz * sX;
+        const scale = 600 / (600 + (y * sX + tz * cX));
+        return { x: cx + tx * scale, y: cy - ty * scale };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Cylinder
+        ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2;
+        const segments = 20;
+        // Water Level
+        const waterH = h * (fills / 3);
+        
+        // Draw Cylinder Outline & Water
+        for(let i=0; i<segments; i++) {
+            let a1 = (i/segments) * Math.PI * 2;
+            let a2 = ((i+1)/segments) * Math.PI * 2;
+            
+            let p1 = project(r * Math.cos(a1), 0, r * Math.sin(a1));
+            let p2 = project(r * Math.cos(a2), 0, r * Math.sin(a2));
+            let p3 = project(r * Math.cos(a1), h, r * Math.sin(a1));
+            let p4 = project(r * Math.cos(a2), h, r * Math.sin(a2));
+
+            // Water
+            if(fills > 0) {
+                let w1 = project(r * Math.cos(a1), waterH, r * Math.sin(a1));
+                let w2 = project(r * Math.cos(a2), waterH, r * Math.sin(a2));
+                ctx.fillStyle = 'rgba(52, 152, 219, 0.6)';
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(w2.x, w2.y); ctx.lineTo(w1.x, w1.y);
+                ctx.fill();
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p3.x, p3.y);
+            ctx.stroke();
+        }
+        
+        document.getElementById('formula').innerText = `Volume: ${(Math.PI*r*r*h/3000).toFixed(1)} units³`;
+    }
+
+    // Interaction
+    function handleStart(e) { 
+        isDragging = true; 
+        const t = e.touches ? e.touches[0] : e;
+        lastX = t.clientX; lastY = t.clientY; 
+    }
+    function handleMove(e) {
+        if(!isDragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        rotY += (t.clientX - lastX) * 0.01;
+        rotX += (t.clientY - lastY) * 0.01;
+        lastX = t.clientX; lastY = t.clientY;
+        draw();
+    }
+
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', () => isDragging = false);
+    canvas.addEventListener('touchstart', handleStart);
+    window.addEventListener('touchmove', handleMove, {passive:false});
+    window.addEventListener('touchend', () => isDragging = false);
+
+    document.getElementById('fillBtn').onclick = () => {
+        if(fills < 3) { fills++; notify(`Poured cone #${fills}`); draw(); }
+        else { notify("Cylinder is FULL!"); }
+    };
+    document.getElementById('resetBtn').onclick = () => { fills = 0; notify("Emptied!"); draw(); };
+    
+    document.getElementById('rs').oninput = (e) => { 
+        r = e.target.value; document.getElementById('rv').innerText = r; draw(); 
+    };
+    document.getElementById('hs').oninput = (e) => { 
+        h = e.target.value; document.getElementById('hv').innerText = h; draw(); 
+    };
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+</body>
+</html>

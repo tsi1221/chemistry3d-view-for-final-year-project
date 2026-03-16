@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Quadratic Reflector Lab</title>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --white: #ffffff;
+            --accent: #ff8c00;
+            --bg-light: #f4f7fa;
+            --glass: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Mobile-First CSS & Touch Stability */
+        * {
+            box-sizing: border-box;
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background-color: var(--bg-light);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        #feedback-toast {
+            position: fixed;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-area {
+            flex: 1;
+            background: #ffffff;
+            margin: 10px;
+            border-radius: 20px;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+
+        canvas { width: 100%; height: 100%; display: block; border-radius: 20px; }
+
+        #ui-panel {
+            background: var(--glass);
+            padding: 20px;
+            border-top: 5px solid var(--primary);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .formula-card {
+            background: #e7f1ff;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--primary);
+            font-weight: bold;
+            border: 1px solid #b3d4ff;
+        }
+
+        .note-card {
+            background: #fff9e6;
+            border-left: 5px solid #ffcc00;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #444;
+        }
+
+        .slider-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 40px; /* Enhanced for finger-dragging */
+            cursor: pointer;
+        }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #ui-panel { width: 380px; border-top: none; border-left: 5px solid var(--primary); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Quadratic Lab: The 3D Paraboloid</header>
+<div id="feedback-toast">Equation Updated</div>
+
+<main>
+    <div id="canvas-area">
+        <canvas id="mainCanvas"></canvas>
+    </div>
+
+    <aside id="ui-panel">
+        <div class="formula-card" id="math-text">y = 0.05x²</div>
+
+        <div class="note-card">
+            <strong>Memorization Aid:</strong> In 3D, a quadratic equation creates a "dish" or surface. The variable <b>a</b> determines the focus. Higher <b>a</b> makes a deeper dish for gathering signals!
+        </div>
+
+        <div class="slider-wrap">
+            <div class="label-row">
+                <span>Coefficient (a)</span>
+                <span id="a-val">0.05</span>
+            </div>
+            <input type="range" id="a-slider" min="0.01" max="0.15" step="0.01" value="0.05">
+        </div>
+
+        <p style="text-align:center; font-size: 0.85rem; color: #666;">
+            <b>Interact:</b> Swipe the canvas to rotate the dish.
+        </p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const toast = document.getElementById('feedback-toast');
+
+    // State
+    let a = 0.05;
+    let rotX = -0.6, rotY = 0.7;
+    let isTouching = false;
+    let lastX, lastY;
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        clearTimeout(window.toastTimer);
+        window.toastTimer = setTimeout(() => toast.style.display = 'none', 1500);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        render();
+    }
+
+    // 3D Engine
+    function project(x, y, z) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2 + 100;
+        
+        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+        let tx = x * cosY - z * sinY;
+        let tz = x * sinY + z * cosY;
+        let ty = y * cosX - tz * sinX;
+        let finalZ = y * sinX + tz * cosX;
+
+        const perspective = 800 / (800 + finalZ);
+        return {
+            x: cx + tx * perspective,
+            y: cy - ty * perspective
+        };
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Coordinate Grid Floor
+        ctx.strokeStyle = '#eee';
+        ctx.lineWidth = 1;
+        for(let i = -200; i <= 200; i += 50) {
+            let p1 = project(i, 0, -200);
+            let p2 = project(i, 0, 200);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+            
+            p1 = project(-200, 0, i);
+            p2 = project(200, 0, i);
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+        }
+
+        // Draw Paraboloid Surface
+        ctx.strokeStyle = 'rgba(0, 86, 179, 0.4)';
+        ctx.fillStyle = 'rgba(0, 86, 179, 0.1)';
+        
+        const step = 20;
+        for (let x = -150; x < 150; x += step) {
+            for (let z = -150; z < 150; z += step) {
+                // y = a(x^2 + z^2) for a circular paraboloid
+                const getY = (px, pz) => a * (px*px + pz*pz);
+
+                let p1 = project(x, getY(x, z), z);
+                let p2 = project(x + step, getY(x + step, z), z);
+                let p3 = project(x + step, getY(x + step, z + step), z + step);
+                let p4 = project(x, getY(x, z + step), z + step);
+
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+        }
+
+        // Focus Point Visualization
+        const focusY = 1 / (4 * a);
+        const fPoint = project(0, focusY, 0);
+        ctx.fillStyle = '#ff8c00';
+        ctx.beginPath();
+        ctx.arc(fPoint.x, fPoint.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillText("Focus Point", fPoint.x + 10, fPoint.y);
+
+        document.getElementById('math-text').innerHTML = `y = ${a.toFixed(2)}x²`;
+    }
+
+    // Touch and Interaction Handlers
+    function startMove(e) {
+        isTouching = true;
+        const t = e.touches ? e.touches[0] : e;
+        lastX = t.clientX;
+        lastY = t.clientY;
+        showToast("You interacted with the visualization.");
+    }
+
+    function onMove(e) {
+        if (!isTouching) return;
+        if(e.touches) e.preventDefault(); 
+
+        const t = e.touches ? e.touches[0] : e;
+        rotY += (t.clientX - lastX) * 0.01;
+        rotX += (t.clientY - lastY) * 0.01;
+        lastX = t.clientX;
+        lastY = t.clientY;
+        render();
+    }
+
+    canvas.addEventListener('touchstart', startMove, {passive: false});
+    window.addEventListener('touchmove', onMove, {passive: false});
+    window.addEventListener('touchend', () => isTouching = false);
+
+    canvas.addEventListener('mousedown', startMove);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', () => isTouching = false);
+
+    document.getElementById('a-slider').oninput = (e) => {
+        a = parseFloat(e.target.value);
+        document.getElementById('a-val').textContent = a.toFixed(2);
+        render();
+    };
+
+    document.getElementById('a-slider').onchange = () => showToast("You changed a variable.");
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+
+</body>
+</html>

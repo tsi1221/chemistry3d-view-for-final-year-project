@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Pythagoras - Mobile Edition</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --white: #ffffff;
+            --accent: #ff8c00;
+        }
+
+        /* Prevent all default mobile behaviors like zooming or scrolling */
+        * {
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none; 
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background-color: #f4f7f9;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        #alert-box {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: none;
+            z-index: 1000;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-area {
+            flex: 1;
+            background: white;
+            position: relative;
+            margin: 10px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            background: white;
+            padding: 20px;
+            border-top: 2px solid var(--primary-blue);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .formula-display {
+            background: #e7f1ff;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--primary-blue);
+            font-weight: bold;
+        }
+
+        .slider-box {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 35px; /* Large touch target */
+        }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #controls { width: 320px; border-top: none; border-left: 2px solid var(--primary-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>3D Pythagoras: Space Diagonal</header>
+<div id="alert-box">Action Recorded</div>
+
+<main>
+    <div id="canvas-area">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="controls">
+        <div class="formula-display" id="result">
+            d² = a² + b² + c²
+        </div>
+
+        <div class="slider-box">
+            <label>Length (a): <span id="la">80</span></label>
+            <input type="range" id="sa" min="30" max="150" value="80">
+        </div>
+
+        <div class="slider-box">
+            <label>Width (b): <span id="lb">60</span></label>
+            <input type="range" id="sb" min="30" max="150" value="60">
+        </div>
+
+        <div class="slider-box">
+            <label>Height (c): <span id="lc">100</span></label>
+            <input type="range" id="sc" min="30" max="150" value="100">
+        </div>
+        
+        <p style="text-align: center; color: #666; font-size: 0.8rem;">
+            Touch the box and move your finger to rotate!
+        </p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('alert-box');
+
+    let a = 80, b = 60, c = 100;
+    let rotX = -0.5, rotY = 0.5;
+    let isTouching = false;
+    let lastX, lastY;
+
+    function notify(msg) {
+        alertBox.textContent = msg;
+        alertBox.style.display = 'block';
+        clearTimeout(window.timer);
+        window.timer = setTimeout(() => alertBox.style.display = 'none', 1200);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    function project(x, y, z) {
+        let cx = Math.cos(rotX), sx = Math.sin(rotX);
+        let cy = Math.cos(rotY), sy = Math.sin(rotY);
+
+        // Rotation
+        let dy = x * sy + z * cy;
+        let dx = x * cy - z * sy;
+        let dz = y * cx - dy * sx;
+        let df = y * sx + dy * cx;
+
+        const scale = 500 / (500 + df);
+        return {
+            x: canvas.width/2 + dx * scale,
+            y: canvas.height/2 - dz * scale
+        };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const w = a/2, h = c/2, d = b/2;
+        const pts = [
+            [-w,-h,-d], [w,-h,-d], [w,h,-d], [-w,h,-d],
+            [-w,-h,d], [w,-h,d], [w,h,d], [-w,h,d]
+        ].map(p => project(p[0], p[1], p[2]));
+
+        const edges = [
+            [0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]
+        ];
+
+        // Draw Box
+        ctx.strokeStyle = '#0056b3';
+        ctx.lineWidth = 1.5;
+        edges.forEach(e => {
+            ctx.beginPath();
+            ctx.moveTo(pts[e[0]].x, pts[e[0]].y);
+            ctx.lineTo(pts[e[1]].x, pts[e[1]].y);
+            ctx.stroke();
+        });
+
+        // Space Diagonal (The "d" line)
+        ctx.beginPath();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#ff8c00';
+        ctx.lineWidth = 3;
+        ctx.moveTo(pts[3].x, pts[3].y);
+        ctx.lineTo(pts[5].x, pts[5].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Update Formula UI
+        const dist = Math.sqrt(a*a + b*b + c*c).toFixed(1);
+        document.getElementById('result').innerHTML = `d = √(${a}² + ${b}² + ${c}²) = ${dist}`;
+    }
+
+    // --- FIXING TOUCH FOR MOBILE ---
+    function handleStart(e) {
+        isTouching = true;
+        const t = e.touches ? e.touches[0] : e;
+        lastX = t.clientX;
+        lastY = t.clientY;
+        notify("Rotating 3D Object");
+    }
+
+    function handleMove(e) {
+        if (!isTouching) return;
+        if (e.touches) e.preventDefault(); // CRITICAL: Stop mobile scroll
+
+        const t = e.touches ? e.touches[0] : e;
+        const dx = t.clientX - lastX;
+        const dy = t.clientY - lastY;
+
+        rotY += dx * 0.01;
+        rotX += dy * 0.01;
+        
+        lastX = t.clientX;
+        lastY = t.clientY;
+        draw();
+    }
+
+    // Modern Touch Listeners
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', () => isTouching = false);
+
+    // Mouse Listeners
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', () => isTouching = false);
+
+    // Slider Listeners
+    ['a','b','c'].forEach(id => {
+        const el = document.getElementById('s' + id);
+        el.oninput = (e) => {
+            if(id === 'a') a = e.target.value;
+            if(id === 'b') b = e.target.value;
+            if(id === 'c') c = e.target.value;
+            document.getElementById('l' + id).innerText = e.target.value;
+            draw();
+        };
+        el.onchange = () => notify(`Variable ${id.toUpperCase()} updated`);
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+
+</body>
+</html>

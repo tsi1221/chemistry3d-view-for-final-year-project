@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Quadratic Visualizer - Grade 9 Math</title>
+    <style>
+        :root {
+            --ethiopia-blue: #0056b3;
+            --white: #ffffff;
+            --bg-gray: #f8f9fa;
+            --accent: #ff8c00;
+        }
+
+        * {
+            box-sizing: border-box;
+            touch-action: none; /* Prevents mobile scroll while interacting */
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--bg-gray);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--ethiopia-blue);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #notification {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-container {
+            flex: 1;
+            background: white;
+            margin: 10px;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #control-panel {
+            background: white;
+            padding: 20px;
+            border-top: 3px solid var(--ethiopia-blue);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .formula-card {
+            background: #e7f1ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.4rem;
+            color: var(--ethiopia-blue);
+            font-weight: bold;
+            font-family: 'Cambria', serif;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label { font-weight: bold; font-size: 0.9rem; color: #444; }
+
+        input[type="range"] {
+            width: 100%;
+            height: 40px; /* Large for fingers */
+        }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #control-panel { width: 350px; border-top: none; border-left: 3px solid var(--ethiopia-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Quadratic Lab: Parabolic Reflectors</header>
+<div id="notification">Value Changed</div>
+
+<main>
+    <div id="canvas-container">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="control-panel">
+        <div class="formula-card" id="eqText">
+            y = 0.05x²
+        </div>
+
+        <div class="slider-group">
+            <label>Coefficient 'a' (Steepness): <span id="aVal">0.05</span></label>
+            <input type="range" id="aSlider" min="0.01" max="0.2" step="0.01" value="0.05">
+        </div>
+
+        <p style="font-size: 0.85rem; color: #666; text-align: center; line-height: 1.4;">
+            <strong>Real World:</strong> Satellite dishes use this shape to focus signals to a single point! 
+            <br><br>
+            <em>Touch the dish to rotate in 3D.</em>
+        </p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const note = document.getElementById('notification');
+    
+    // State
+    let a = 0.05;
+    let rotY = 0.8;
+    let rotX = 0.4;
+    let isDragging = false;
+    let lastX, lastY;
+
+    function showAlert(msg) {
+        note.textContent = msg;
+        note.style.display = 'block';
+        clearTimeout(window.timer);
+        window.timer = setTimeout(() => note.style.display = 'none', 1500);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    // Basic 3D Projection
+    function project(x, y, z) {
+        // Rotation Y
+        let nx = x * Math.cos(rotY) - z * Math.sin(rotY);
+        let nz = x * Math.sin(rotY) + z * Math.cos(rotY);
+        // Rotation X
+        let ny = y * Math.cos(rotX) - nz * Math.sin(rotX);
+        let finalZ = y * Math.sin(rotX) + nz * Math.cos(rotX);
+
+        const scale = 500 / (500 + finalZ);
+        return {
+            x: canvas.width / 2 + nx * scale,
+            y: canvas.height / 2 - ny * scale
+        };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Grid/Axes
+        ctx.strokeStyle = '#eee';
+        ctx.beginPath();
+        for(let i=-100; i<=100; i+=20) {
+            let p1 = project(i, 0, -100);
+            let p2 = project(i, 0, 100);
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+            let p3 = project(-100, 0, i);
+            let p4 = project(100, 0, i);
+            ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
+        }
+        ctx.stroke();
+
+        // Draw Paraboloid (Dish)
+        ctx.strokeStyle = varColor();
+        ctx.lineWidth = 1.5;
+        
+        // Concentric Circles
+        for(let r=0; r<=100; r+=20) {
+            ctx.beginPath();
+            for(let i=0; i<=Math.PI*2; i+=0.2) {
+                let x = r * Math.cos(i);
+                let z = r * Math.sin(i);
+                let y = a * (x*x + z*z); // Paraboloid formula
+                let p = project(x, y, z);
+                if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        // Radial Lines
+        for(let i=0; i<Math.PI*2; i+=Math.PI/4) {
+            ctx.beginPath();
+            for(let r=0; r<=100; r+=10) {
+                let x = r * Math.cos(i);
+                let z = r * Math.sin(i);
+                let y = a * (x*x + z*z);
+                let p = project(x, y, z);
+                if(r===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+            }
+            ctx.stroke();
+        }
+
+        // Draw Focus Point (approximation for demo)
+        const focusY = 1 / (4 * a);
+        if (focusY < 200) {
+            let fp = project(0, focusY, 0);
+            ctx.fillStyle = 'red';
+            ctx.beginPath();
+            ctx.arc(fp.x, fp.y, 5, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.fillText("FOCUS POINT", fp.x + 10, fp.y);
+        }
+    }
+
+    function varColor() {
+        return a > 0.1 ? '#d9534f' : '#0056b3';
+    }
+
+    // --- INTERACTION LOGIC ---
+
+    function handleStart(e) {
+        isDragging = true;
+        const t = e.touches ? e.touches[0] : e;
+        lastX = t.clientX;
+        lastY = t.clientY;
+        showAlert("Rotating 3D dish...");
+    }
+
+    function handleMove(e) {
+        if (!isDragging) return;
+        if(e.touches) e.preventDefault();
+
+        const t = e.touches ? e.touches[0] : e;
+        const dx = t.clientX - lastX;
+        const dy = t.clientY - lastY;
+
+        rotY += dx * 0.01;
+        rotX += dy * 0.01;
+        
+        lastX = t.clientX;
+        lastY = t.clientY;
+        draw();
+    }
+
+    canvas.addEventListener('touchstart', handleStart, {passive: false});
+    window.addEventListener('touchmove', handleMove, {passive: false});
+    window.addEventListener('touchend', () => isDragging = false);
+
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', () => isDragging = false);
+
+    document.getElementById('aSlider').oninput = (e) => {
+        a = parseFloat(e.target.value);
+        document.getElementById('aVal').textContent = a;
+        document.getElementById('eqText').textContent = `y = ${a}x²`;
+        draw();
+    };
+
+    document.getElementById('aSlider').onchange = () => showAlert("Coefficient 'a' updated!");
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+
+</body>
+</html>

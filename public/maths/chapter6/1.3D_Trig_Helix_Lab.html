@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Trigonometry - Grade 9 Math Lab</title>
+    <style>
+        :root {
+            --brand-blue: #0056b3;
+            --white: #ffffff;
+            --light-bg: #f8fbff;
+            --accent: #ff8c00;
+            --note-bg: #fffceb;
+        }
+
+        /* Prevent mobile interference */
+        * {
+            box-sizing: border-box;
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            background-color: var(--light-bg);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--brand-blue);
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        #feedback-toast {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #visual-area {
+            flex: 1.2;
+            background: white;
+            margin: 10px;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        #controls {
+            background: white;
+            padding: 20px;
+            border-top: 4px solid var(--brand-blue);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        .formula-display {
+            background: #eef4ff;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            color: var(--brand-blue);
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .memorize-note {
+            background: var(--note-bg);
+            border: 1px solid #f1e05a;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .slider-row label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 35px; /* Large touch area */
+        }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #controls { width: 350px; border-top: none; border-left: 4px solid var(--brand-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Unit Circle & Wave Helix Lab</header>
+<div id="feedback-toast">Updated</div>
+
+<main>
+    <div id="visual-area">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="controls">
+        <div class="formula-display" id="math-output">
+            sin(0°) = 0.00
+        </div>
+
+        <div class="memorize-note">
+            <strong>Memorization Aid:</strong>
+            Sine and Cosine waves are periodic because they repeat exactly every 360°. This lab shows how rotation in a circle creates a wave over time!
+        </div>
+
+        <div class="slider-row">
+            <label>Rotation Angle (θ): <span id="val-angle">0</span>°</label>
+            <input type="range" id="angleSlider" min="0" max="720" value="0">
+        </div>
+
+        <div class="slider-row">
+            <label>Amplitude: <span id="val-amp">60</span></label>
+            <input type="range" id="ampSlider" min="20" max="100" value="60">
+        </div>
+
+        <div class="slider-row">
+            <label>Frequency: <span id="val-freq">1.0</span></label>
+            <input type="range" id="freqSlider" min="0.5" max="3.0" step="0.1" value="1.0">
+        </div>
+
+        <p style="text-align:center; font-size: 0.8rem; color: #888;">
+            Drag your finger on the canvas to rotate the 3D view!
+        </p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const toast = document.getElementById('feedback-toast');
+
+    // State Variables
+    let angle = 0;
+    let amplitude = 60;
+    let frequency = 1.0;
+    let rotX = -0.4, rotY = 0.5;
+    let isTouching = false;
+    let lastX, lastY;
+
+    function notify(msg) {
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        clearTimeout(window.nTimer);
+        window.nTimer = setTimeout(() => toast.style.display = 'none', 1200);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    // 3D Projection Engine
+    function project(x, y, z) {
+        // Center the coordinate system
+        const cx = canvas.width / 3;
+        const cy = canvas.height / 2;
+
+        // Rotation Matrix logic
+        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+        let tx = x * cosY - z * sinY;
+        let tz = x * sinY + z * cosY;
+        let ty = y * cosX - tz * sinX;
+        let finalZ = y * sinX + tz * cosX;
+
+        const perspective = 700 / (700 + finalZ);
+        return {
+            x: cx + tx * perspective,
+            y: cy - ty * perspective,
+            z: finalZ
+        };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 1. Draw 3D Axes
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 1;
+        const axisSize = 150;
+        const origin = project(0,0,0);
+        const xAxis = project(axisSize, 0, 0);
+        const yAxis = project(0, axisSize, 0);
+        const zAxis = project(0, 0, axisSize * 4);
+
+        ctx.beginPath();
+        ctx.moveTo(origin.x, origin.y); ctx.lineTo(xAxis.x, xAxis.y);
+        ctx.moveTo(origin.x, origin.y); ctx.lineTo(yAxis.x, yAxis.y);
+        ctx.moveTo(origin.x, origin.y); ctx.lineTo(zAxis.x, zAxis.y);
+        ctx.stroke();
+
+        // 2. Draw the Unit Circle
+        ctx.strokeStyle = 'rgba(0, 86, 179, 0.2)';
+        ctx.beginPath();
+        for(let i=0; i<=Math.PI*2.1; i+=0.1) {
+            let p = project(amplitude * Math.cos(i), amplitude * Math.sin(i), 0);
+            if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+
+        // 3. Draw the Helix (Sine Wave in 3D)
+        ctx.strokeStyle = '#0056b3';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for(let i=0; i < angle; i+=2) {
+            let rad = (i * Math.PI) / 180;
+            let p = project(
+                amplitude * Math.cos(rad * frequency), 
+                amplitude * Math.sin(rad * frequency), 
+                i * 0.8 // Z-axis represents angle progression
+            );
+            if(i===0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+
+        // 4. Draw Current Point and Projections
+        let currentRad = (angle * Math.PI) / 180;
+        let sinVal = Math.sin(currentRad * frequency);
+        let cosVal = Math.cos(currentRad * frequency);
+        let head = project(amplitude * cosVal, amplitude * sinVal, angle * 0.8);
+
+        // Dot
+        ctx.fillStyle = '#ff8c00';
+        ctx.beginPath();
+        ctx.arc(head.x, head.y, 6, 0, Math.PI*2);
+        ctx.fill();
+
+        // Update Math Text
+        document.getElementById('math-output').innerText = `sin(${angle}°) = ${sinVal.toFixed(2)}`;
+    }
+
+    // --- MOBILE TOUCH LISTENERS ---
+    function handleStart(e) {
+        isTouching = true;
+        const t = e.touches ? e.touches[0] : e;
+        lastX = t.clientX;
+        lastY = t.clientY;
+        notify("Rotating Viewport");
+    }
+
+    function handleMove(e) {
+        if (!isTouching) return;
+        if(e.touches) e.preventDefault(); // Stop screen bounce
+
+        const t = e.touches ? e.touches[0] : e;
+        rotY += (t.clientX - lastX) * 0.01;
+        rotX += (t.clientY - lastY) * 0.01;
+        
+        lastX = t.clientX;
+        lastY = t.clientY;
+        draw();
+    }
+
+    canvas.addEventListener('touchstart', handleStart, {passive: false});
+    window.addEventListener('touchmove', handleMove, {passive: false});
+    window.addEventListener('touchend', () => isTouching = false);
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', () => isTouching = false);
+
+    // Slider Logic
+    document.getElementById('angleSlider').oninput = (e) => {
+        angle = parseInt(e.target.value);
+        document.getElementById('val-angle').innerText = angle;
+        draw();
+    };
+    document.getElementById('ampSlider').oninput = (e) => {
+        amplitude = parseInt(e.target.value);
+        document.getElementById('val-amp').innerText = amplitude;
+        draw();
+    };
+    document.getElementById('freqSlider').oninput = (e) => {
+        frequency = parseFloat(e.target.value);
+        document.getElementById('val-freq').innerText = frequency.toFixed(1);
+        draw();
+    };
+
+    // Notification on change end
+    document.querySelectorAll('input').forEach(i => {
+        i.onchange = () => notify("Variable Changed");
+    });
+
+    window.addEventListener('resize', resize);
+    resize();
+</script>
+</body>
+</html>

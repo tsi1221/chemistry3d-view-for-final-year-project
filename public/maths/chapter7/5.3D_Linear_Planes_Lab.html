@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Linear Equations Lab | Ethiopia Grade 9</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --light-blue: #e7f1ff;
+            --accent-orange: #ff8c00;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+        }
+
+        * { box-sizing: border-box; touch-action: none; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0; background-color: #f8fafc; color: var(--text-dark);
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-blue); color: var(--white);
+            padding: 15px; text-align: center; font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 100;
+        }
+
+        #alert-toast {
+            position: fixed; top: 75px; left: 50%; transform: translateX(-50%);
+            background: var(--accent-orange); color: white;
+            padding: 12px 24px; border-radius: 30px; font-weight: bold;
+            display: none; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        main { flex: 1; display: flex; flex-direction: column; }
+
+        #canvas-wrap {
+            flex: 1; background: var(--white); margin: 10px;
+            border-radius: 15px; position: relative;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        }
+
+        canvas { width: 100%; height: 100%; display: block; border-radius: 15px; }
+
+        #ui-panel {
+            background: var(--white); padding: 20px;
+            border-top: 5px solid var(--primary-blue);
+            display: flex; flex-direction: column; gap: 15px;
+            overflow-y: auto; max-height: 50vh;
+        }
+
+        .equation-display {
+            background: var(--light-blue); padding: 15px;
+            border-radius: 10px; border: 1px solid #b3d4ff;
+            text-align: center; font-size: 1.2rem;
+            color: var(--primary-blue); font-weight: bold;
+        }
+
+        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+
+        .label-row { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.85rem; }
+
+        input[type="range"] { width: 100%; height: 35px; cursor: pointer; }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #ui-panel { width: 380px; max-height: 100%; border-top: none; border-left: 5px solid var(--primary-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Linear Equations: 3D Surface Explorer</header>
+<div id="alert-toast">Interaction Recorded</div>
+
+<main>
+    <div id="canvas-wrap">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="ui-panel">
+        <div class="equation-display" id="eqn-text">
+            1x + 0y + 1z = 50
+        </div>
+
+        <div class="control-grid">
+            <div class="control-group">
+                <div class="label-row"><span>Coeff a (x)</span><span id="va">1.0</span></div>
+                <input type="range" id="ra" min="-2" max="2" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <div class="label-row"><span>Coeff b (y)</span><span id="vb">0.0</span></div>
+                <input type="range" id="rb" min="-2" max="2" step="0.1" value="0">
+            </div>
+            <div class="control-group">
+                <div class="label-row"><span>Coeff c (z)</span><span id="vc">1.0</span></div>
+                <input type="range" id="rc" min="-2" max="2" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <div class="label-row"><span>Constant d</span><span id="vd">50</span></div>
+                <input type="range" id="rd" min="-100" max="100" step="5" value="50">
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 5px 0;">
+        
+        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; margin: 0;">
+            <b>Concept:</b> In 3D space, a linear equation forms a <b>Plane</b>. 
+            Drag the canvas to rotate the 3D axes and see how the coefficients change the tilt.
+        </p>
+        
+        <button id="reset-view" style="background:var(--primary-blue); color:white; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;">Reset Camera</button>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const toast = document.getElementById('alert-toast');
+
+    // Coefficients for ax + by + cz = d
+    let a = 1.0, b = 0.0, c = 1.0, d = 50;
+    let rotX = -0.6, rotY = 0.6;
+    let isDragging = false, lastX, lastY;
+
+    function showAlert(msg) {
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        clearTimeout(window.tTimer);
+        window.tTimer = setTimeout(() => toast.style.display = 'none', 1500);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    function project(x, y, z) {
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
+        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
+
+        let tx = x * cosY - z * sinY;
+        let tz = x * sinY + z * cosY;
+        let ty = y * cosX - tz * sinX;
+        let finalZ = y * sinX + tz * cosX;
+
+        const p = 600 / (600 + finalZ);
+        return { x: cx + tx * p, y: cy - ty * p, z: finalZ };
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const size = 150;
+
+        // 1. Draw Axes
+        const origin = project(0, 0, 0);
+        const xAxis = project(size, 0, 0);
+        const yAxis = project(0, size, 0);
+        const zAxis = project(0, 0, size);
+
+        const drawAxis = (to, color, label) => {
+            ctx.strokeStyle = color; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(to.x, to.y); ctx.stroke();
+            ctx.fillStyle = color; ctx.fillText(label, to.x, to.y);
+        };
+        drawAxis(xAxis, '#e53e3e', 'X');
+        drawAxis(yAxis, '#38a169', 'Y');
+        drawAxis(zAxis, '#3182ce', 'Z');
+
+        // 2. Draw the Plane (Surface)
+        // Find points on the axes: (d/a, 0, 0), (0, d/b, 0), (0, 0, d/c)
+        // We use a grid of points to render a square patch of the plane
+        ctx.fillStyle = 'rgba(0, 86, 179, 0.4)';
+        ctx.strokeStyle = 'rgba(0, 86, 179, 0.8)';
+        ctx.lineWidth = 1;
+
+        const points = [];
+        const step = 40;
+        for (let i = -2; i <= 2; i++) {
+            for (let j = -2; j <= 2; j++) {
+                let px = i * step;
+                let pz = j * step;
+                // Solve for y: by = d - ax - cz => y = (d - ax - cz) / b
+                let py;
+                if (Math.abs(b) < 0.01) {
+                    // Vertical plane case (if b is 0, we swap logic to plot x or z)
+                    py = i * step; px = (d - c*pz)/a;
+                } else {
+                    py = (d - a*px - c*pz) / b;
+                }
+                points.push(project(px, py, pz));
+            }
+        }
+
+        // Draw the mesh grid
+        for(let i=0; i<4; i++){
+            for(let j=0; j<4; j++){
+                const p1 = points[i*5 + j];
+                const p2 = points[i*5 + (j+1)];
+                const p3 = points[(i+1)*5 + (j+1)];
+                const p4 = points[(i+1)*5 + j];
+                
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
+                ctx.closePath();
+                ctx.fill(); ctx.stroke();
+            }
+        }
+
+        // Update Formula Display
+        document.getElementById('eqn-text').innerHTML = 
+            `${a}x + ${b}y + ${c}z = ${d}`;
+    }
+
+    // Input Logic
+    const ids = ['a', 'b', 'c', 'd'];
+    ids.forEach(id => {
+        const slider = document.getElementById('r' + id);
+        slider.oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            if(id === 'a') a = val; if(id === 'b') b = val;
+            if(id === 'c') c = val; if(id === 'd') d = val;
+            document.getElementById('v' + id).textContent = val;
+            draw();
+        };
+        slider.onchange = () => showAlert("The equation has been updated.");
+    });
+
+    // Interaction
+    canvas.onpointerdown = (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; showAlert("You interacted with the visualization."); };
+    window.onpointermove = (e) => {
+        if (!isDragging) return;
+        rotY += (e.clientX - lastX) * 0.01;
+        rotX += (e.clientY - lastY) * 0.01;
+        lastX = e.clientX; lastY = e.clientY;
+        draw();
+    };
+    window.onpointerup = () => isDragging = false;
+
+    document.getElementById('reset-view').onclick = () => {
+        rotX = -0.6; rotY = 0.6; draw(); showAlert("Camera Reset.");
+    };
+
+    window.onresize = resize;
+    resize();
+</script>
+</body>
+</html>

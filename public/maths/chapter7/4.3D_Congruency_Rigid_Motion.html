@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Congruency & Rigid Motion Lab | Ethiopia Grade 9</title>
+    <style>
+        :root {
+            --primary-blue: #0056b3;
+            --light-blue: #e7f1ff;
+            --accent-orange: #ff8c00;
+            --success-green: #2ecc71;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+        }
+
+        * {
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            margin: 0;
+            background-color: #f0f4f8;
+            color: var(--text-dark);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-blue);
+            color: var(--white);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        /* Interaction Alert/Toast */
+        #alert-notification {
+            position: fixed;
+            top: 75px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-orange);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: bold;
+            display: none;
+            z-index: 2000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            min-width: 250px;
+        }
+
+        main {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        #canvas-wrap {
+            flex: 1;
+            background: var(--white);
+            margin: 10px;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            cursor: crosshair;
+        }
+
+        canvas { width: 100%; height: 100%; display: block; border-radius: 15px; }
+
+        #ui-panel {
+            background: var(--white);
+            padding: 20px;
+            border-top: 5px solid var(--primary-blue);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: 50vh;
+        }
+
+        .status-display {
+            background: var(--light-blue);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #b3d4ff;
+            text-align: center;
+        }
+
+        #match-label {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--primary-blue);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:active { opacity: 0.8; }
+        .btn-secondary { background: #64748b; }
+
+        @media (min-width: 768px) {
+            main { flex-direction: row; }
+            #ui-panel { width: 360px; max-height: 100%; border-top: none; border-left: 5px solid var(--primary-blue); }
+        }
+    </style>
+</head>
+<body>
+
+<header>Congruency: Rigid Motion Explorer</header>
+<div id="alert-notification">Feedback Message</div>
+
+<main>
+    <div id="canvas-wrap">
+        <canvas id="mathCanvas"></canvas>
+    </div>
+
+    <aside id="ui-panel">
+        <div class="status-display">
+            <span id="match-label">Status: Superimpose the triangles</span>
+            <small id="precision-text">Overlap distance: ---</small>
+        </div>
+
+        <div class="control-group">
+            <div class="label-row"><span>Translation (X)</span><span id="val-x">0</span></div>
+            <input type="range" id="range-x" min="-150" max="150" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row"><span>Translation (Y)</span><span id="val-y">0</span></div>
+            <input type="range" id="range-y" min="-150" max="150" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row"><span>Rotation (θ)</span><span id="val-r">0°</span></div>
+            <input type="range" id="range-r" min="0" max="360" value="0">
+        </div>
+
+        <div class="btn-row">
+            <button id="btn-new">New Triangle</button>
+            <button id="btn-reset" class="btn-secondary">Reset</button>
+        </div>
+
+        <p style="font-size: 0.8rem; color: #64748b; line-height: 1.4;">
+            <b>Math Tip:</b> Translation and Rotation are "Rigid Motions." They change position but <b>never</b> change the shape or size.
+        </p>
+    </aside>
+</main>
+
+<script>
+    const canvas = document.getElementById('mathCanvas');
+    const ctx = canvas.getContext('2d');
+    const alertBox = document.getElementById('alert-notification');
+
+    // App State
+    let target = { x: 80, y: -60, rot: 35 }; // Goal triangle
+    let player = { x: 0, y: 0, rot: 0 };    // User triangle
+    let isDragging = false;
+    let lastToastTime = 0;
+
+    // Triangle Geometry
+    const size = 60;
+    const shape = [
+        {x: 0, y: -size},
+        {x: -size/1.2, y: size/1.5},
+        {x: size/1.2, y: size/1.5}
+    ];
+
+    function showAlert(msg, color = 'var(--accent-orange)') {
+        alertBox.textContent = msg;
+        alertBox.style.background = color;
+        alertBox.style.display = 'block';
+        clearTimeout(window.alertTimer);
+        window.alertTimer = setTimeout(() => alertBox.style.display = 'none', 1500);
+    }
+
+    function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        draw();
+    }
+
+    function drawShape(state, color, isDashed) {
+        ctx.save();
+        ctx.translate(canvas.width/2 + state.x, canvas.height/2 + state.y);
+        ctx.rotate(state.rot * Math.PI / 180);
+        
+        ctx.beginPath();
+        if (isDashed) ctx.setLineDash([5, 5]);
+        ctx.moveTo(shape[0].x, shape[0].y);
+        ctx.lineTo(shape[1].x, shape[1].y);
+        ctx.lineTo(shape[2].x, shape[2].y);
+        ctx.closePath();
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        if (!isDashed) {
+            ctx.fillStyle = color + '22';
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Background Grid
+        ctx.strokeStyle = '#f1f5f9';
+        ctx.lineWidth = 1;
+        for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+        for(let i=0; i<canvas.height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
+
+        // Draw Target Triangle (Grey Outline)
+        drawShape(target, '#94a3b8', true);
+        
+        // Calculate Distance
+        const dist = Math.sqrt(Math.pow(player.x - target.x, 2) + Math.pow(player.y - target.y, 2));
+        const rotDiff = Math.abs((player.rot % 360) - (target.rot % 360));
+        const isMatched = dist < 12 && (rotDiff < 8 || rotDiff > 352);
+
+        // Draw Player Triangle
+        drawShape(player, isMatched ? 'var(--success-green)' : 'var(--primary-blue)', false);
+
+        // Update Labels
+        document.getElementById('precision-text').textContent = `Separation: ${Math.round(dist)} units`;
+        const label = document.getElementById('match-label');
+        if(isMatched) {
+            label.textContent = "STATUS: CONGRUENT!";
+            label.style.color = "var(--success-green)";
+            if(Date.now() - lastToastTime > 3000) {
+                showAlert("Success! They are Congruent.", 'var(--success-green)');
+                lastToastTime = Date.now();
+            }
+        } else {
+            label.textContent = "Status: Not Yet Aligned";
+            label.style.color = "var(--primary-blue)";
+        }
+    }
+
+    // Input Control Sync
+    const rx = document.getElementById('range-x');
+    const ry = document.getElementById('range-y');
+    const rr = document.getElementById('range-r');
+
+    function update() {
+        player.x = parseInt(rx.value);
+        player.y = parseInt(ry.value) * -1; // Screen Y is inverted
+        player.rot = parseInt(rr.value);
+        
+        document.getElementById('val-x').textContent = rx.value;
+        document.getElementById('val-y').textContent = ry.value;
+        document.getElementById('val-r').textContent = rr.value + "°";
+        draw();
+    }
+
+    rx.oninput = update;
+    ry.oninput = update;
+    rr.oninput = update;
+
+    // Alert triggers for controls
+    rx.onchange = () => showAlert("You moved the point on the graph.");
+    ry.onchange = () => showAlert("The Y-axis coordinate has been updated.");
+    rr.onchange = () => showAlert("You rotated the geometric shape.");
+
+    // Buttons
+    document.getElementById('btn-new').onclick = () => {
+        target.x = (Math.random() - 0.5) * 200;
+        target.y = (Math.random() - 0.5) * 200;
+        target.rot = Math.floor(Math.random() * 360);
+        showAlert("New challenge generated!");
+        draw();
+    };
+
+    document.getElementById('btn-reset').onclick = () => {
+        rx.value = 0; ry.value = 0; rr.value = 0;
+        showAlert("Visualization reset to center.");
+        update();
+    };
+
+    // Canvas Mouse/Touch Interaction
+    function handlePointer(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        
+        rx.value = (clientX - rect.left - canvas.width/2);
+        ry.value = (clientY - rect.top - canvas.height/2) * -1;
+        update();
+    }
+
+    canvas.onpointerdown = (e) => { 
+        isDragging = true; 
+        showAlert("You interacted with the visualization.");
+        handlePointer(e);
+    };
+    window.onpointermove = (e) => { if(isDragging) handlePointer(e); };
+    window.onpointerup = () => isDragging = false;
+
+    window.onresize = resize;
+    resize();
+</script>
+</body>
+</html>
