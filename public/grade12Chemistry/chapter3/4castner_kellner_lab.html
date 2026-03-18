@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin | Castner-Kellner Digital Interface</title>
+    <style>
+        :root {
+            --neon-blue: #00d2ff;
+            --neon-green: #39ff14;
+            --mercury: #e2e8f0;
+            --panel-bg: rgba(2, 6, 23, 0.85);
+        }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #020617; color: white; }
+
+        #overlay {
+            position: absolute; inset: 0; pointer-events: none;
+            display: flex; flex-direction: column; padding: 25px;
+        }
+
+        /* Glassmorphism Sidebar */
+        .glass-panel {
+            pointer-events: auto; background: var(--panel-bg);
+            backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; padding: 30px; width: 320px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        }
+
+        .header-group { border-left: 4px solid var(--neon-blue); padding-left: 15px; margin-bottom: 20px; }
+        h1 { margin: 0; font-size: 1.4rem; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .data-stream {
+            font-family: 'Courier New', monospace; font-size: 0.75rem;
+            color: var(--neon-green); background: rgba(0,0,0,0.4);
+            padding: 15px; border-radius: 12px; height: 120px;
+            overflow: hidden; margin-top: 15px; border: 1px solid rgba(57, 255, 20, 0.2);
+        }
+
+        .controls { margin-top: auto; align-self: center; width: 100%; max-width: 350px; }
+        
+        button {
+            pointer-events: auto; width: 100%; padding: 20px;
+            border-radius: 50px; border: none; font-weight: 800;
+            background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+            color: white; cursor: pointer; font-size: 1.1rem;
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.4);
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        button:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0, 210, 255, 0.6); }
+        button:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+<div id="overlay">
+    <div class="glass-panel">
+        <div class="header-group">
+            <h1>UNIT 04: C-K CELL</h1>
+            <small style="color: var(--neon-blue)">MERCURY CATHODE ELECTROLYSIS</small>
+        </div>
+
+        <div style="font-size: 0.85rem; line-height: 1.6; color: #94a3b8;">
+            Observe the <b>Sodium Amalgam (NaHg)</b> formation. The intermediate Mercury prevents $Cl_2$ from reacting with $NaOH$.
+        </div>
+
+        <div class="data-stream" id="log">
+            >> SYSTEM READY...<br>
+            >> AWAITING POWER...
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="toggleBtn">ENGAGE ELECTROLYSIS</button>
+    </div>
+</div>
+
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+    // --- Scene Engine ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    // Cinematic Lighting
+    const light1 = new THREE.PointLight(0x00d2ff, 1.5, 50);
+    light1.position.set(10, 10, 10);
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(light1, ambient);
+
+    camera.position.set(15, 12, 20);
+
+    // --- High-End Materials ---
+    const mercuryMat = new THREE.MeshStandardMaterial({ 
+        color: 0xffffff, metalness: 1, roughness: 0.05 
+    });
+    const tankMat = new THREE.MeshPhysicalMaterial({
+        color: 0x00d2ff, transmission: 0.95, thickness: 1, roughness: 0.1, transparent: true, opacity: 0.2
+    });
+
+    // --- Components ---
+    const tank = new THREE.Mesh(new THREE.BoxGeometry(22, 10, 10), tankMat);
+    scene.add(tank);
+
+    const hgFloor = new THREE.Mesh(new THREE.BoxGeometry(21.5, 1, 9.5), mercuryMat);
+    hgFloor.position.y = -4.5;
+    scene.add(hgFloor);
+
+    // Internal Partitions
+    const pGeo = new THREE.BoxGeometry(0.3, 9, 10);
+    const pMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, transparent: true, opacity: 0.8 });
+    const pLeft = new THREE.Mesh(pGeo, pMat); pLeft.position.x = -4.5;
+    const pRight = new THREE.Mesh(pGeo, pMat); pRight.position.x = 4.5;
+    scene.add(pLeft, pRight);
+
+    // --- Simulation Logic ---
+    let active = false;
+    const particles = [];
+    const log = document.getElementById('log');
+    const btn = document.getElementById('toggleBtn');
+
+    function updateLog(text) {
+        const time = new Date().toLocaleTimeString().split(' ')[0];
+        log.innerHTML = `[${time}] ${text}<br>` + log.innerHTML;
+    }
+
+    btn.onclick = () => {
+        active = !active;
+        btn.innerText = active ? "SHUTDOWN SYSTEM" : "ENGAGE ELECTROLYSIS";
+        btn.style.background = active ? "linear-gradient(90deg, #ff4b2b, #ff416c)" : "linear-gradient(90deg, #00d2ff, #3a7bd5)";
+        updateLog(active ? "ELECTROLYSIS ACTIVE" : "SYSTEM OFFLINE");
+    };
+
+    function spawnParticle(x, color, type) {
+        const mesh = new THREE.Mesh(
+            new THREE.SphereGeometry(type === 'gas' ? 0.2 : 0.1),
+            new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.5 })
+        );
+        mesh.position.set(x + (Math.random()-0.5)*5, -4, (Math.random()-0.5)*7);
+        scene.add(mesh);
+        particles.push({ mesh, type, speed: 0.04 + Math.random()*0.06 });
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (active) {
+            // Gas bubbles (Chlorine) at the sides
+            if (Math.random() < 0.15) { spawnParticle(-7.5, 0x39ff14, 'gas'); spawnParticle(7.5, 0x39ff14, 'gas'); }
+            // Sodium ions in Mercury
+            if (Math.random() < 0.1) spawnParticle(-8, 0xff4b2b, 'na');
+
+            particles.forEach((p, i) => {
+                if (p.type === 'gas') {
+                    p.mesh.position.y += p.speed;
+                    if (p.mesh.position.y > 4.5) { scene.remove(p.mesh); particles.splice(i, 1); }
+                } else {
+                    p.mesh.position.x += p.speed;
+                    // React with water in central chamber
+                    if (p.mesh.position.x > -2 && p.mesh.position.x < 2) {
+                        p.mesh.material.color.set(0x00d2ff); // Blue for NaOH
+                        if(Math.random() < 0.01) updateLog("NaOH FORMING...");
+                    }
+                    if (p.mesh.position.x > 10) { scene.remove(p.mesh); particles.splice(i, 1); }
+                }
+            });
+        }
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+</script>
+</body>
+</html>

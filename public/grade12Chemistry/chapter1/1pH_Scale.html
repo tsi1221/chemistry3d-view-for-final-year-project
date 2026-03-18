@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D pH Scale Visualizer</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #1a1a1a; color: white; }
+        #ui {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 12px;
+            width: 300px; border: 1px solid #444;
+        }
+        input[type=range] { width: 100%; cursor: pointer; }
+        .data-display { font-size: 24px; font-weight: bold; margin: 10px 0; }
+        .item-label { color: #aaa; font-style: italic; min-height: 1.2em; }
+        .legend { margin-top: 15px; font-size: 12px; opacity: 0.8; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h2>pH Visualizer</h2>
+        <div class="item-label" id="typeLabel">Neutral</div>
+        <div class="data-display" id="phVal">pH: 7.0</div>
+        <input type="range" id="phSlider" min="0" max="14" step="0.1" value="7">
+        <div class="item-label" id="itemLabel">Pure Water</div>
+        
+        <div class="legend">
+            <p><strong>Instructions:</strong> Drag the slider to see the molecular color change. Use your mouse to rotate the 3D "Liquid" cylinder.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+        import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+        // 1. Setup Scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 2. Data Mapping (pH to Color and Items)
+        const phData = [
+            { ph: 0, color: 0xff0000, label: "Strong Acid", item: "Battery Acid" },
+            { ph: 2, color: 0xff4500, label: "Strong Acid", item: "Lemon Juice" },
+            { ph: 4, color: 0xffa500, label: "Weak Acid", item: "Tomato Juice" },
+            { ph: 6, color: 0xffff00, label: "Weak Acid", item: "Milk" },
+            { ph: 7, color: 0x00ff00, label: "Neutral", item: "Pure Water" },
+            { ph: 8, color: 0x00ffff, label: "Weak Base", item: "Baking Soda" },
+            { ph: 10, color: 0x0000ff, label: "Strong Base", item: "Milk of Magnesia" },
+            { ph: 12, color: 0x4b0082, label: "Strong Base", item: "Bleach" },
+            { ph: 14, color: 0x8b00ff, label: "Strong Base", item: "Drain Cleaner" }
+        ];
+
+        function getInterpolatedColor(ph) {
+            for (let i = 0; i < phData.length - 1; i++) {
+                if (ph >= phData[i].ph && ph <= phData[i + 1].ph) {
+                    const t = (ph - phData[i].ph) / (phData[i+1].ph - phData[i].ph);
+                    const c1 = new THREE.Color(phData[i].color);
+                    const c2 = new THREE.Color(phData[i+1].color);
+                    return c1.lerp(c2, t);
+                }
+            }
+            return new THREE.Color(phData[phData.length-1].color);
+        }
+
+        // 3. Create 3D Objects
+        const geometry = new THREE.CylinderGeometry(2, 2, 6, 32);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0x00ff00, 
+            transparent: true, 
+            opacity: 0.8,
+            shininess: 100 
+        });
+        const cylinder = new THREE.Mesh(geometry, material);
+        scene.add(cylinder);
+
+        // Glass Shell
+        const shellGeo = new THREE.CylinderGeometry(2.2, 2.2, 6.2, 32);
+        const shellMat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, wireframe: false });
+        const shell = new THREE.Mesh(shellGeo, shellMat);
+        scene.add(shell);
+
+        // Lighting
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        camera.position.z = 10;
+
+        // 4. Interaction Logic
+        const slider = document.getElementById('phSlider');
+        const phValText = document.getElementById('phVal');
+        const typeLabel = document.getElementById('typeLabel');
+        const itemLabel = document.getElementById('itemLabel');
+
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            phValText.innerText = `pH: ${val.toFixed(1)}`;
+            
+            // Update Color
+            const newColor = getInterpolatedColor(val);
+            material.color.copy(newColor);
+
+            // Update Text Labels
+            let closest = phData.reduce((prev, curr) => 
+                Math.abs(curr.ph - val) < Math.abs(prev.ph - val) ? curr : prev
+            );
+            typeLabel.innerText = closest.label;
+            itemLabel.innerText = closest.item;
+        });
+
+        // 5. Controls & Animation
+        const controls = new OrbitControls(camera, renderer.domElement);
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            cylinder.rotation.y += 0.01;
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

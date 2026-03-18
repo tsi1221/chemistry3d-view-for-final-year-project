@@ -2,640 +2,276 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive 3D Atomic Model</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChemLab | Grade 12 Interactive Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        :root {
+            --primary: #2563eb;
+            --secondary: #3b82f6;
+            --bg-main: #ffffff;
+            --bg-soft: #eff6ff;
+            --glass: rgba(255, 255, 255, 0.7);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         }
-        #info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 25px;
-            border-radius: 30px;
-            backdrop-filter: blur(10px);
-            border: 1px solid #88aaff;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-soft); color: var(--primary); overflow-x: hidden; }
+
+        /* --- Layout --- */
+        .app-container { display: flex; min-height: 100vh; }
+        
+        .sidebar {
+            width: 260px;
+            background: var(--bg-main);
+            border-right: 1px solid rgba(37, 99, 235, 0.1);
+            padding: 2rem;
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            max-width: 600px;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: transform 0.3s ease;
         }
-        .atom-btn {
-            background: rgba(30, 30, 50, 0.8);
-            border: 2px solid #4a6fa5;
+
+        .main-content { flex: 1; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
+
+        /* --- UI Components --- */
+        .header-gradient {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            padding: 2rem;
+            border-radius: 20px;
             color: white;
-            padding: 8px 20px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            transition: all 0.3s;
-            backdrop-filter: blur(5px);
+            box-shadow: var(--shadow);
+            animation: gradientMove 6s infinite alternate;
         }
-        .atom-btn:hover {
-            background: #4a6fa5;
-            transform: scale(1.05);
-            box-shadow: 0 0 15px #4a6fa5;
+
+        @keyframes gradientMove { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
         }
-        .atom-btn.active {
-            background: #3498db;
-            border-color: #ffffff;
-            box-shadow: 0 0 20px #3498db;
+
+        .glass-card:hover { transform: translateY(-5px); }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--secondary);
+            background: var(--bg-main);
+            outline: none;
         }
-        #atom-detail {
-            position: absolute;
+
+        /* --- Canvas Section --- */
+        #canvas-container {
+            width: 100%;
+            height: 400px;
+            background: #fff;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+        }
+
+        canvas { width: 100%; height: 100%; touch-action: none; }
+
+        /* --- Custom Alert --- */
+        #alert-box {
+            position: fixed;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            border-left: 5px solid #3498db;
-            color: white;
-            max-width: 300px;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-        }
-        #atom-detail h2 {
-            margin: 0 0 8px 0;
-            color: #88aaff;
-        }
-        #atom-detail p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #ddd;
-        }
-        #control-panel {
-            position: absolute;
-            bottom: 30px;
-            left: 30px;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid #88aaff;
-            color: white;
-            width: 260px;
-            z-index: 100;
-        }
-        #control-panel h4 {
-            margin: 0 0 15px 0;
-            color: #88aaff;
-        }
-        .toggle-group {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        .toggle-btn {
-            background: transparent;
-            border: 1px solid #3498db;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-        .toggle-btn.active {
-            background: #3498db;
-            box-shadow: 0 0 10px #3498db;
-        }
-        .slider-container {
-            margin-bottom: 15px;
-        }
-        .slider-container label {
-            display: block;
-            font-size: 12px;
-            color: #aaa;
-            margin-bottom: 5px;
-        }
-        input[type=range] {
-            width: 100%;
-            height: 6px;
-            background: linear-gradient(90deg, #1e3c72, #3498db);
-            border-radius: 3px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: white;
-            border: 2px solid #3498db;
-            cursor: pointer;
-            box-shadow: 0 0 10px #3498db;
-        }
-        #selection-panel {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            background: rgba(30, 30, 50, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 5px solid #ffaa00;
-            color: white;
-            max-width: 250px;
-            z-index: 100;
-            display: none;
-        }
-        #selection-title {
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: #ffaa00;
-        }
-        #selection-content {
-            font-size: 14px;
-        }
-        #dismiss-btn {
-            margin-top: 10px;
-            background: transparent;
-            border: 1px solid #aaa;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        #dismiss-btn:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        #note {
-            position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid #88aaff;
-            color: #ccc;
-            font-size: 12px;
-            z-index: 100;
-        }
-        #loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #0a0a1a;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 24px;
             z-index: 1000;
-            transition: opacity 1s;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .alert-item {
+            background: var(--primary);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* --- Responsive Grid --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* --- Media Queries --- */
+        @media (max-width: 1024px) { .sidebar { width: 200px; } }
+        @media (max-width: 768px) {
+            .app-container { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; padding: 1rem; flex-direction: row; overflow-x: auto; }
+            .main-content { padding: 1rem; }
         }
     </style>
 </head>
 <body>
-    <div id="loading">Loading 3D Atomic Model...</div>
 
-    <!-- Atom selector -->
-    <div id="info">
-        <button class="atom-btn active" data-atom="hydrogen">H – Hydrogen</button>
-        <button class="atom-btn" data-atom="helium">He – Helium</button>
-        <button class="atom-btn" data-atom="carbon">C – Carbon</button>
-        <button class="atom-btn" data-atom="oxygen">O – Oxygen</button>
-        <button class="atom-btn" data-atom="neon">Ne – Neon</button>
+    <div id="alert-box"></div>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <h2 style="font-weight: 600;">ChemLab</h2>
+            <nav style="display: flex; flex-direction: column; gap: 10px;">
+                <p style="font-size: 0.8rem; opacity: 0.7;">CATEGORIES</p>
+                <button class="glass-card" onclick="setMode('atomic')" style="text-align: left; cursor: pointer;">Atomic Structure</button>
+                <button class="glass-card" onclick="setMode('bonding')" style="text-align: left; cursor: pointer;">Bonding</button>
+                <button class="glass-card" onclick="setMode('gas')" style="text-align: left; cursor: pointer;">Gas Laws</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="header-gradient">
+                <h1>Chemistry Simulation Lab</h1>
+                <p>Grade 12 Advanced Learning Platform</p>
+            </header>
+
+            <input type="text" class="search-bar" placeholder="Search experiments (e.g. Covalent Bonds)...">
+
+            <div id="canvas-container" class="glass-card">
+                <canvas id="chemCanvas"></canvas>
+            </div>
+
+            <div class="grid-container">
+                <div class="glass-card">
+                    <h3>Simulation Controls</h3>
+                    <p style="font-size: 0.9rem; margin: 10px 0;">Drag atoms to interact. Use mouse or touch.</p>
+                    <input type="range" style="width: 100%;" min="1" max="10" value="5">
+                </div>
+                <div class="glass-card">
+                    <h3>Observation Log</h3>
+                    <ul id="log" style="list-style: none; font-size: 0.85rem;">
+                        <li>• System Ready.</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
     </div>
-
-    <!-- Atom detail panel -->
-    <div id="atom-detail">
-        <h2 id="atom-name">Hydrogen (H)</h2>
-        <p id="atom-stats">1 proton, 0 neutrons, 1 electron</p>
-        <p id="atom-desc">The simplest atom. One proton, one electron. Most abundant element in the universe.</p>
-    </div>
-
-    <!-- Control panel -->
-    <div id="control-panel">
-        <h4>⚙️ Controls</h4>
-        <div class="toggle-group">
-            <button id="toggle-nucleus" class="toggle-btn active">⚛️ Nucleus</button>
-            <button id="toggle-electrons" class="toggle-btn active">⚡ Electrons</button>
-            <button id="toggle-shells" class="toggle-btn active">🌀 Shells</button>
-        </div>
-        <div class="slider-container">
-            <label>Shell Opacity <span id="shell-opacity-value">0.15</span></label>
-            <input type="range" id="shell-opacity" min="0" max="0.5" step="0.01" value="0.15">
-        </div>
-        <div class="slider-container">
-            <label>Electron Opacity <span id="electron-opacity-value">0.8</span></label>
-            <input type="range" id="electron-opacity" min="0.2" max="1" step="0.01" value="0.8">
-        </div>
-        <div class="slider-container">
-            <label>Animation Speed <span id="speed-value">1.0x</span></label>
-            <input type="range" id="animation-speed" min="0" max="3" step="0.1" value="1.0">
-        </div>
-    </div>
-
-    <!-- Selection info panel -->
-    <div id="selection-panel">
-        <div id="selection-title">ℹ️ Selected</div>
-        <div id="selection-content"></div>
-        <button id="dismiss-btn">Dismiss</button>
-    </div>
-
-    <!-- Note -->
-    <div id="note">⚠️ Scale exaggerated: nucleus is 100,000× smaller than atom</div>
-
-    <!-- Three.js canvas will be appended here -->
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
 
     <script>
-        (function() {
-            // ---------------------------------- Data ----------------------------------
-            const atoms = {
-                hydrogen: { name: 'Hydrogen', symbol: 'H', protons: 1, neutrons: 0, electrons: 1, mass: 1, desc: 'The simplest atom. One proton, one electron. Most abundant element in the universe.' },
-                helium:   { name: 'Helium', symbol: 'He', protons: 2, neutrons: 2, electrons: 2, mass: 4, desc: 'Two protons, two neutrons. Inert gas used in balloons and cooling.' },
-                carbon:   { name: 'Carbon', symbol: 'C', protons: 6, neutrons: 6, electrons: 6, mass: 12, desc: 'Foundation of organic chemistry. Six electrons in two shells.' },
-                oxygen:   { name: 'Oxygen', symbol: 'O', protons: 8, neutrons: 8, electrons: 8, mass: 16, desc: 'Essential for respiration. Two unpaired electrons make it reactive.' },
-                neon:     { name: 'Neon', symbol: 'Ne', protons: 10, neutrons: 10, electrons: 10, mass: 20, desc: 'Noble gas with full outer shell. Glows orange-red in discharge tubes.' }
-            };
+        // --- Core Application State ---
+        const canvas = document.getElementById('chemCanvas');
+        const ctx = canvas.getContext('2d');
+        const alertBox = document.getElementById('alert-box');
+        let atoms = [];
+        let isDragging = false;
+        let selectedAtom = null;
 
-            // Current atom key
-            let currentAtomKey = 'hydrogen';
+        // --- Alert System ---
+        function showAlert(message) {
+            const div = document.createElement('div');
+            div.className = 'alert-item';
+            div.innerText = message;
+            alertBox.appendChild(div);
+            setTimeout(() => {
+                div.style.opacity = '0';
+                setTimeout(() => div.remove(), 500);
+            }, 3000);
+        }
 
-            // Visibility flags
-            let showNucleus = true;
-            let showElectrons = true;
-            let showShells = true;
-            let shellOpacity = 0.15;
-            let electronOpacity = 0.8;
-            let animationSpeed = 1.0;
+        // --- Canvas Engine ---
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
 
-            // Selected object info
-            let selectedInfo = null;
+        class Atom {
+            constructor(x, y, radius, label) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.label = label;
+                this.angle = Math.random() * Math.PI * 2;
+            }
 
-            // Three.js variables
-            let scene, camera, renderer, labelRenderer, controls;
-            let nucleusGroup, shellMeshes = [], electronInstancedMesh;
-            let dummy = new THREE.Object3D();
-            let raycaster = new THREE.Raycaster();
-            let mouse = new THREE.Vector2();
+            draw() {
+                // Glow effect
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#3b82f6';
+                
+                // Nucleus
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#2563eb';
+                ctx.fill();
+                ctx.closePath();
 
-            // Atom building functions
-            function buildNucleus(protons, neutrons) {
-                if (nucleusGroup) scene.remove(nucleusGroup);
-                nucleusGroup = new THREE.Group();
+                // Electron Orbit
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius + 20, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(37, 99, 235, 0.2)';
+                ctx.stroke();
 
-                const protonGeo = new THREE.SphereGeometry(0.35, 16, 16);
-                const protonMat = new THREE.MeshStandardMaterial({ color: 0xff4444, emissive: 0x440000 });
-                const neutronGeo = new THREE.SphereGeometry(0.35, 16, 16);
-                const neutronMat = new THREE.MeshStandardMaterial({ color: 0x4444ff, emissive: 0x000044 });
+                // Label
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.label, this.x, this.y + 5);
+            }
+        }
 
-                const total = protons + neutrons;
-                for (let i = 0; i < total; i++) {
-                    // Random position in sphere
-                    const u = Math.random();
-                    const v = Math.random();
-                    const theta = 2 * Math.PI * u;
-                    const phi = Math.acos(2 * v - 1);
-                    const r = 0.8 + Math.random() * 0.3;
-                    const x = r * Math.sin(phi) * Math.cos(theta);
-                    const y = r * Math.sin(phi) * Math.sin(theta);
-                    const z = r * Math.cos(phi);
+        // Initialize Atoms
+        atoms.push(new Atom(100, 100, 20, 'H'));
+        atoms.push(new Atom(250, 200, 25, 'O'));
 
-                    const mesh = new THREE.Mesh(
-                        i < protons ? protonGeo : neutronGeo,
-                        i < protons ? protonMat : neutronMat
-                    );
-                    mesh.position.set(x, y, z);
-                    mesh.castShadow = true;
-                    mesh.receiveShadow = true;
-                    mesh.userData = { type: i < protons ? 'proton' : 'neutron' };
-                    nucleusGroup.add(mesh);
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            atoms.forEach(atom => atom.draw());
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- Interaction Logic (Pointer Events) ---
+        canvas.addEventListener('pointerdown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            atoms.forEach(atom => {
+                const dist = Math.hypot(atom.x - mouseX, atom.y - mouseY);
+                if (dist < atom.radius + 10) {
+                    selectedAtom = atom;
+                    isDragging = true;
+                    showAlert("Element selected: " + atom.label);
                 }
-
-                // Add glow sphere
-                const glowGeo = new THREE.SphereGeometry(1.2, 32, 32);
-                const glowMat = new THREE.MeshPhongMaterial({ color: 0x88aaff, emissive: 0x112233, transparent: true, opacity: 0.15, side: THREE.BackSide });
-                const glow = new THREE.Mesh(glowGeo, glowMat);
-                nucleusGroup.add(glow);
-
-                scene.add(nucleusGroup);
-                nucleusGroup.visible = showNucleus;
-            }
-
-            function buildElectrons(electronCount) {
-                // Remove old shells and electrons
-                shellMeshes.forEach(m => scene.remove(m));
-                if (electronInstancedMesh) scene.remove(electronInstancedMesh);
-                shellMeshes = [];
-
-                // Determine shell occupancy (simplified)
-                const shells = [];
-                let remaining = electronCount;
-                let shellIndex = 1;
-                while (remaining > 0 && shellIndex <= 4) {
-                    const capacity = shellIndex === 1 ? 2 : 8;
-                    const electronsInShell = Math.min(capacity, remaining);
-                    shells.push({
-                        electrons: electronsInShell,
-                        radius: shellIndex * 2.5,
-                        color: shellIndex === 1 ? 0xffff00 : shellIndex === 2 ? 0x00ff00 : shellIndex === 3 ? 0x00ffff : 0xff00ff
-                    });
-                    remaining -= electronsInShell;
-                    shellIndex++;
-                }
-
-                // Create shell spheres (wireframe)
-                shells.forEach((shell, idx) => {
-                    const geo = new THREE.SphereGeometry(shell.radius, 64, 64);
-                    const mat = new THREE.MeshPhongMaterial({
-                        color: shell.color,
-                        transparent: true,
-                        opacity: shellOpacity,
-                        wireframe: true,
-                        emissive: 0x000000
-                    });
-                    const mesh = new THREE.Mesh(geo, mat);
-                    mesh.userData = { type: 'shell', shell: idx + 1, radius: shell.radius };
-                    scene.add(mesh);
-                    shellMeshes.push(mesh);
-                    mesh.visible = showShells;
-                });
-
-                // Create instanced electrons
-                const electronGeo = new THREE.SphereGeometry(0.2, 8, 8);
-                const electronMat = new THREE.MeshStandardMaterial({ color: 0xffdd44, emissive: 0x442200, transparent: true, opacity: electronOpacity });
-                electronInstancedMesh = new THREE.InstancedMesh(electronGeo, electronMat, electronCount);
-                electronInstancedMesh.castShadow = true;
-                electronInstancedMesh.receiveShadow = true;
-
-                let instanceIndex = 0;
-                shells.forEach(shell => {
-                    for (let i = 0; i < shell.electrons; i++) {
-                        // Random position on sphere surface
-                        const theta = Math.random() * Math.PI * 2;
-                        const phi = Math.acos(2 * Math.random() - 1);
-                        const x = shell.radius * Math.sin(phi) * Math.cos(theta);
-                        const y = shell.radius * Math.sin(phi) * Math.sin(theta);
-                        const z = shell.radius * Math.cos(phi);
-
-                        dummy.position.set(x, y, z);
-                        dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-                        dummy.scale.set(1, 1, 1);
-                        dummy.updateMatrix();
-                        electronInstancedMesh.setMatrixAt(instanceIndex, dummy.matrix);
-                        electronInstancedMesh.setColorAt(instanceIndex, new THREE.Color(shell.color));
-
-                        // Store data for animation
-                        if (!electronInstancedMesh.userData) electronInstancedMesh.userData = {};
-                        electronInstancedMesh.userData[`electron_${instanceIndex}`] = {
-                            shell: shell,
-                            speed: 0.5 + Math.random() * 0.5,
-                            offset: Math.random() * Math.PI * 2
-                        };
-
-                        instanceIndex++;
-                    }
-                });
-                electronInstancedMesh.instanceMatrix.needsUpdate = true;
-                scene.add(electronInstancedMesh);
-                electronInstancedMesh.visible = showElectrons;
-            }
-
-            // Update atom display
-            function updateAtom(atomKey) {
-                const atom = atoms[atomKey];
-                document.getElementById('atom-name').innerText = `${atom.name} (${atom.symbol})`;
-                document.getElementById('atom-stats').innerText = `${atom.protons} protons, ${atom.neutrons} neutrons, ${atom.electrons} electrons • Mass: ~${atom.mass} amu`;
-                document.getElementById('atom-desc').innerText = atom.desc;
-
-                buildNucleus(atom.protons, atom.neutrons);
-                buildElectrons(atom.electrons);
-            }
-
-            // UI binding
-            function initUI() {
-                // Atom buttons
-                document.querySelectorAll('.atom-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('.atom-btn').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        currentAtomKey = btn.dataset.atom;
-                        updateAtom(currentAtomKey);
-                    });
-                });
-
-                // Toggles
-                document.getElementById('toggle-nucleus').addEventListener('click', function() {
-                    showNucleus = !showNucleus;
-                    this.classList.toggle('active', showNucleus);
-                    if (nucleusGroup) nucleusGroup.visible = showNucleus;
-                });
-                document.getElementById('toggle-electrons').addEventListener('click', function() {
-                    showElectrons = !showElectrons;
-                    this.classList.toggle('active', showElectrons);
-                    if (electronInstancedMesh) electronInstancedMesh.visible = showElectrons;
-                });
-                document.getElementById('toggle-shells').addEventListener('click', function() {
-                    showShells = !showShells;
-                    this.classList.toggle('active', showShells);
-                    shellMeshes.forEach(m => m.visible = showShells);
-                });
-
-                // Sliders
-                document.getElementById('shell-opacity').addEventListener('input', e => {
-                    shellOpacity = parseFloat(e.target.value);
-                    document.getElementById('shell-opacity-value').innerText = shellOpacity.toFixed(2);
-                    shellMeshes.forEach(m => m.material.opacity = shellOpacity);
-                });
-                document.getElementById('electron-opacity').addEventListener('input', e => {
-                    electronOpacity = parseFloat(e.target.value);
-                    document.getElementById('electron-opacity-value').innerText = electronOpacity.toFixed(2);
-                    if (electronInstancedMesh) electronInstancedMesh.material.opacity = electronOpacity;
-                });
-                document.getElementById('animation-speed').addEventListener('input', e => {
-                    animationSpeed = parseFloat(e.target.value);
-                    document.getElementById('speed-value').innerText = animationSpeed.toFixed(1) + 'x';
-                });
-
-                // Dismiss selection
-                document.getElementById('dismiss-btn').addEventListener('click', () => {
-                    selectedInfo = null;
-                    document.getElementById('selection-panel').style.display = 'none';
-                });
-            }
-
-            // Three.js initialization
-            function initThree() {
-                scene = new THREE.Scene();
-                scene.background = new THREE.Color(0x0a0a1a);
-
-                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-                camera.position.set(10, 5, 15);
-
-                renderer = new THREE.WebGLRenderer({ antialias: true });
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.shadowMap.enabled = true;
-                document.body.appendChild(renderer.domElement);
-
-                labelRenderer = new THREE.CSS2DRenderer();
-                labelRenderer.setSize(window.innerWidth, window.innerHeight);
-                labelRenderer.domElement.style.position = 'absolute';
-                labelRenderer.domElement.style.top = '0px';
-                labelRenderer.domElement.style.left = '0px';
-                labelRenderer.domElement.style.pointerEvents = 'none';
-                document.body.appendChild(labelRenderer.domElement);
-
-                controls = new THREE.OrbitControls(camera, renderer.domElement);
-                controls.enableDamping = true;
-                controls.dampingFactor = 0.05;
-                controls.autoRotate = true;
-                controls.autoRotateSpeed = 1;
-                controls.maxPolarAngle = Math.PI / 2;
-
-                // Lights
-                const ambient = new THREE.AmbientLight(0x404060);
-                scene.add(ambient);
-                const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-                dirLight.position.set(5, 10, 7);
-                dirLight.castShadow = true;
-                scene.add(dirLight);
-                const pointLight = new THREE.PointLight(0x4466aa, 0.5, 50);
-                pointLight.position.set(-3, 5, 5);
-                scene.add(pointLight);
-
-                // Grid
-                const gridHelper = new THREE.GridHelper(20, 20, 0x88aaff, 0x335577);
-                gridHelper.position.y = -3;
-                scene.add(gridHelper);
-
-                // Stars
-                const starsGeo = new THREE.BufferGeometry();
-                const starsCount = 1000;
-                const starsPos = new Float32Array(starsCount * 3);
-                for (let i = 0; i < starsCount; i++) {
-                    starsPos[i*3] = (Math.random() - 0.5) * 200;
-                    starsPos[i*3+1] = (Math.random() - 0.5) * 200;
-                    starsPos[i*3+2] = (Math.random() - 0.5) * 200 - 50;
-                }
-                starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
-                const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1 });
-                const stars = new THREE.Points(starsGeo, starsMat);
-                scene.add(stars);
-
-                // Start with hydrogen
-                updateAtom('hydrogen');
-
-                // Hide loading
-                setTimeout(() => {
-                    document.getElementById('loading').style.opacity = '0';
-                    setTimeout(() => document.getElementById('loading').style.display = 'none', 1000);
-                }, 500);
-            }
-
-            // Raycasting and selection
-            function setupRaycaster() {
-                window.addEventListener('mousemove', (e) => {
-                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-                });
-
-                renderer.domElement.addEventListener('click', () => {
-                    if (!scene || !camera) return;
-                    raycaster.setFromCamera(mouse, camera);
-                    const objects = [];
-                    if (nucleusGroup) objects.push(...nucleusGroup.children.filter(c => c.type === 'Mesh' && c.geometry.type === 'SphereGeometry'));
-                    objects.push(...shellMeshes);
-                    if (electronInstancedMesh) objects.push(electronInstancedMesh);
-
-                    const intersects = raycaster.intersectObjects(objects);
-                    let info = null;
-                    if (intersects.length > 0) {
-                        const hit = intersects[0].object;
-                        if (hit.userData.type === 'proton') {
-                            info = 'Proton: Positive charge, mass ≈ 1 amu. Located in nucleus.';
-                        } else if (hit.userData.type === 'neutron') {
-                            info = 'Neutron: Neutral charge, mass ≈ 1 amu. Located in nucleus.';
-                        } else if (hit.userData.type === 'shell') {
-                            const shellNum = hit.userData.shell;
-                            const capacity = shellNum === 1 ? 2 : 8;
-                            info = `Electron Shell ${shellNum}: Can hold up to ${capacity} electrons. Electrons occupy orbitals in this region.`;
-                        } else if (hit === electronInstancedMesh) {
-                            info = 'Electron: Negative charge, negligible mass. Occupies probability cloud around nucleus.';
-                        }
-                    }
-                    if (info) {
-                        selectedInfo = info;
-                        document.getElementById('selection-content').innerText = info;
-                        document.getElementById('selection-panel').style.display = 'block';
-                    } else {
-                        selectedInfo = null;
-                        document.getElementById('selection-panel').style.display = 'none';
-                    }
-                });
-            }
-
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-
-                // Electron animation (instanced)
-                if (electronInstancedMesh && electronInstancedMesh.visible) {
-                    const time = performance.now() * 0.001 * animationSpeed;
-                    for (let i = 0; i < electronInstancedMesh.count; i++) {
-                        const data = electronInstancedMesh.userData[`electron_${i}`];
-                        if (!data) continue;
-                        const shell = data.shell;
-                        const speed = data.speed;
-                        const offset = data.offset;
-
-                        const angle1 = time * speed + offset;
-                        const angle2 = time * 0.7 * speed + offset * 2;
-                        const angle3 = time * 0.3 * speed + offset * 3;
-
-                        const x = shell.radius * Math.sin(angle1) * Math.cos(angle2);
-                        const y = shell.radius * Math.sin(angle2) * Math.cos(angle3);
-                        const z = shell.radius * Math.cos(angle1) * Math.sin(angle3);
-
-                        dummy.position.set(x, y, z);
-                        dummy.rotation.set(angle1, angle2, angle3);
-                        dummy.updateMatrix();
-                        electronInstancedMesh.setMatrixAt(i, dummy.matrix);
-                    }
-                    electronInstancedMesh.instanceMatrix.needsUpdate = true;
-                }
-
-                controls.update();
-                renderer.render(scene, camera);
-                labelRenderer.render(scene, camera);
-            }
-
-            // Resize handler
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                labelRenderer.setSize(window.innerWidth, window.innerHeight);
             });
+        });
 
-            // Start everything
-            initThree();
-            initUI();
-            setupRaycaster();
-            animate();
-        })();
+        window.addEventListener('pointermove', (e) => {
+            if (isDragging && selectedAtom) {
+                const rect = canvas.getBoundingClientRect();
+                selectedAtom.x = e.clientX - rect.left;
+                selectedAtom.y = e.clientY - rect.top;
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (isDragging) {
+                showAlert("Atom moved successfully");
+                isDragging = false;
+                selectedAtom = null;
+            }
+        });
+
+        function setMode(mode) {
+            showAlert("Switched to " + mode + " simulation");
+        }
     </script>
 </body>
 </html>

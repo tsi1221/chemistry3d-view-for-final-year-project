@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D PEM Fuel Cell - Full Educational Lab</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: rgba(15, 23, 42, 0.9);
+            --accent: #38bdf8;
+            --text: #f8fafc;
+        }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); }
+        
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column; padding: 25px; box-sizing: border-box;
+        }
+
+        .glass-card {
+            pointer-events: auto; background: var(--panel);
+            backdrop-filter: blur(12px); padding: 20px; border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 1px solid #1e293b; width: 360px;
+        }
+
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; margin-top: 10px; background: #1e293b; color: #94a3b8; }
+        .status-badge.active { background: #064e3b; color: #4ade80; }
+
+        .edu-box {
+            margin-top: 15px; padding: 12px; border-radius: 8px;
+            background: rgba(56, 189, 248, 0.1); border-left: 4px solid var(--accent);
+            font-size: 0.85rem; line-height: 1.5; color: #cbd5e1;
+        }
+
+        .controls { margin-top: auto; align-self: center; width: 100%; max-width: 320px; }
+        
+        button {
+            pointer-events: auto; background: var(--accent); color: #020617; border: none;
+            width: 100%; padding: 16px; border-radius: 12px; font-weight: 800;
+            cursor: pointer; font-size: 1rem; transition: all 0.2s;
+            box-shadow: 0 4px 0 #0284c7;
+        }
+        button:hover { background: #7dd3fc; transform: translateY(-1px); }
+        button:active { transform: translateY(2px); box-shadow: 0 0 0 #0284c7; }
+
+        /* Label styling for overlay text */
+        .formula { font-family: 'Courier New', monospace; color: var(--accent); margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div class="glass-card">
+        <h2 style="margin:0; letter-spacing: -0.5px;">PEM Fuel Cell</h2>
+        <div id="status" class="status-badge">Standby</div>
+        
+        <div class="formula">
+            H₂ → 2H⁺ + 2e⁻ (Anode)<br>
+            O₂ + 4H⁺ + 4e⁻ → 2H₂O (Cathode)
+        </div>
+
+        <div id="edu-text" class="edu-box">
+            The <b>PEM (Proton Exchange Membrane)</b> acts as a chemical gatekeeper. It allows protons to pass but blocks electrons.
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="mainBtn">START REACTION</button>
+    </div>
+</div>
+
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+    // --- Scene Setup ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const pLight = new THREE.PointLight(0x38bdf8, 1);
+    pLight.position.set(5, 5, 5);
+    scene.add(pLight);
+
+    camera.position.set(15, 10, 20);
+
+    // --- The Fuel Cell "Sandwich" ---
+    const layerGeo = new THREE.BoxGeometry(1, 10, 8);
+    
+    // Anode (-)
+    const anode = new THREE.Mesh(layerGeo, new THREE.MeshStandardMaterial({color: 0x334155, metalness: 0.7}));
+    anode.position.x = -4;
+    
+    // PEM Membrane
+    const pem = new THREE.Mesh(layerGeo, new THREE.MeshStandardMaterial({
+        color: 0x0ea5e9, transparent: true, opacity: 0.4, roughness: 0
+    }));
+    
+    // Cathode (+)
+    const cathode = new THREE.Mesh(layerGeo, new THREE.MeshStandardMaterial({color: 0x334155, metalness: 0.7}));
+    cathode.position.x = 4;
+    
+    scene.add(anode, pem, cathode);
+
+    // --- 3D Floating Labels ---
+    function create3DLabel(text, xPos) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 512; canvas.height = 128;
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 60px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, 256, 80);
+        
+        const tex = new THREE.CanvasTexture(canvas);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+        sprite.position.set(xPos, 6.5, 0);
+        sprite.scale.set(6, 1.5, 1);
+        scene.add(sprite);
+    }
+    create3DLabel("ANODE (-)", -4);
+    create3DLabel("PEM MEMBRANE", 0);
+    create3DLabel("CATHODE (+)", 4);
+
+    // --- External Circuit (The Wire) ---
+    const wirePath = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-4, 5, 0),
+        new THREE.Vector3(-4, 8, 0),
+        new THREE.Vector3(0, 9, 0),
+        new THREE.Vector3(4, 8, 0),
+        new THREE.Vector3(4, 5, 0)
+    ]);
+    const wireGeo = new THREE.TubeGeometry(wirePath, 64, 0.1, 8, false);
+    const wire = new THREE.Mesh(wireGeo, new THREE.MeshBasicMaterial({color: 0x1e293b}));
+    scene.add(wire);
+
+    // --- Simulation Logic ---
+    let isRunning = false;
+    const protons = [];
+    const electrons = [];
+    const waterParticles = [];
+
+    const btn = document.getElementById('mainBtn');
+    const statusTag = document.getElementById('status');
+    const eduText = document.getElementById('edu-text');
+
+    btn.addEventListener('click', () => {
+        isRunning = !isRunning;
+        btn.innerText = isRunning ? "STOP REACTION" : "START REACTION";
+        statusTag.innerText = isRunning ? "Producing Electricity" : "Standby";
+        statusTag.className = isRunning ? "status-badge active" : "status-badge";
+        eduText.innerHTML = isRunning ? 
+            "<b>Observe:</b> Protons ($H^+$) move through the membrane, while Electrons ($e^-$) travel through the wire to power the load!" : 
+            "The PEM only allows positive ions to pass. This forces electrons to take the 'long way' through a circuit.";
+    });
+
+    function spawnProton() {
+        const p = new THREE.Mesh(new THREE.SphereGeometry(0.12), new THREE.MeshBasicMaterial({color: 0x7dd3fc}));
+        p.position.set(-4, (Math.random()-0.5)*8, (Math.random()-0.5)*6);
+        scene.add(p);
+        protons.push(p);
+    }
+
+    function spawnElectron() {
+        const e = new THREE.Mesh(new THREE.SphereGeometry(0.08), new THREE.MeshBasicMaterial({color: 0xfacc15}));
+        scene.add(e);
+        electrons.push({ mesh: e, t: 0 });
+    }
+
+    function spawnWater(y, z) {
+        const w = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: 0.6}));
+        w.position.set(4.5, y, z);
+        scene.add(w);
+        waterParticles.push(w);
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        if (isRunning) {
+            if (Math.random() < 0.15) spawnProton();
+            if (Math.random() < 0.15) spawnElectron();
+
+            // Animate Protons (through membrane)
+            protons.forEach((p, i) => {
+                p.position.x += 0.08;
+                if (p.position.x >= 4) {
+                    spawnWater(p.position.y, p.position.z);
+                    scene.remove(p);
+                    protons.splice(i, 1);
+                }
+            });
+
+            // Animate Electrons (through wire)
+            electrons.forEach((e, i) => {
+                e.t += 0.01;
+                const pos = wirePath.getPointAt(e.t % 1);
+                e.mesh.position.copy(pos);
+                if (e.t >= 1) {
+                    scene.remove(e.mesh);
+                    electrons.splice(i, 1);
+                }
+            });
+
+            // Animate Water Vapor
+            waterParticles.forEach((w, i) => {
+                w.position.x += 0.04;
+                w.position.y += 0.02;
+                w.material.opacity -= 0.01;
+                if (w.material.opacity <= 0) {
+                    scene.remove(w);
+                    waterParticles.splice(i, 1);
+                }
+            });
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>

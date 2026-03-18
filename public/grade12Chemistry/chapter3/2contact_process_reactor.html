@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Contact Process Visualizer</title>
+    <style>
+        :root { --v2o5: #facc15; --so2: #94a3b8; --so3: #f87171; --bg: #0f172a; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: var(--bg); }
+        
+        #ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box;
+        }
+
+        .glass-card {
+            pointer-events: auto; background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(10px); padding: 15px; border-radius: 12px;
+            border: 1px solid #334155; color: white; width: 100%; max-width: 340px;
+        }
+
+        h2 { margin: 0; font-size: 1.2rem; color: var(--v2o5); }
+        .formula { font-family: monospace; color: #fbbf24; margin: 8px 0; font-size: 0.95rem; }
+        .desc { font-size: 0.8rem; line-height: 1.4; color: #cbd5e1; }
+
+        .controls { margin-top: auto; align-self: center; width: 100%; max-width: 280px; padding-bottom: 30px; }
+        
+        button {
+            pointer-events: auto; background: #e879f9; color: white; border: none;
+            width: 100%; padding: 16px; border-radius: 12px; font-weight: bold;
+            cursor: pointer; font-size: 1rem; box-shadow: 0 4px 0 #a21caf;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 0px 0 #a21caf; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <div class="glass-card">
+        <h2>The Converter</h2>
+        <div class="formula">2SO₂ + O₂ ⇌ 2SO₃</div>
+        <div class="desc">
+            Sulphur Dioxide (Grey) reacts with Oxygen on <b>Vanadium(V) Oxide</b> trays to form Sulphur Trioxide (Red).
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="startBtn">Inject Reactants</button>
+    </div>
+</div>
+
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+    // --- Scene Setup ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const light = new THREE.DirectionalLight(0xffffff, 0.8);
+    light.position.set(5, 10, 7);
+    scene.add(light);
+
+    // Responsive Camera
+    function adjustCam() {
+        camera.position.set(0, 8, window.innerWidth < 600 ? 28 : 20);
+    }
+    adjustCam();
+
+    // --- Reactor Tower & Catalyst Trays ---
+    const towerGeo = new THREE.CylinderGeometry(5, 5, 16, 32, 1, true);
+    const towerMat = new THREE.MeshPhongMaterial({ color: 0x64748b, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
+    scene.add(new THREE.Mesh(towerGeo, towerMat));
+
+    const trayGeo = new THREE.CylinderGeometry(4.8, 4.8, 0.5, 32);
+    const trayMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.5, roughness: 0.2 });
+    
+    const trayLevels = [2, -2, -6];
+    trayLevels.forEach(y => {
+        const tray = new THREE.Mesh(trayGeo, trayMat);
+        tray.position.y = y;
+        scene.add(tray);
+        
+        // Label for Tray
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 256; canvas.height = 64;
+        ctx.fillStyle = '#facc15'; ctx.font = 'bold 35px Arial';
+        ctx.textAlign = 'center'; ctx.fillText("V₂O₅ CATALYST", 128, 45);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+        sprite.position.set(0, y + 0.8, 5.5);
+        sprite.scale.set(4, 1, 1);
+        scene.add(sprite);
+    });
+
+    // --- Particle Logic ---
+    let active = false;
+    const molecules = [];
+
+    function createLabelTexture(text, color) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 128; canvas.height = 128;
+        ctx.fillStyle = color; ctx.font = 'bold 70px Arial';
+        ctx.textAlign = 'center'; ctx.fillText(text, 64, 80);
+        return new THREE.CanvasTexture(canvas);
+    }
+
+    function spawnSO2() {
+        const group = new THREE.Group();
+        // SO2: 1 Yellow (S), 2 Grey (O)
+        const s = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshPhongMaterial({color: 0xfacc15}));
+        const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshPhongMaterial({color: 0x94a3b8}));
+        const o2 = o1.clone(); 
+        o1.position.set(0.3, -0.2, 0); o2.position.set(-0.3, -0.2, 0);
+        
+        const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: createLabelTexture("SO₂", "#94a3b8") }));
+        label.position.y = 0.8; label.scale.set(1.5, 1.5, 1);
+        
+        group.add(s, o1, o2, label);
+        group.position.set((Math.random()-0.5)*7, 9, (Math.random()-0.5)*7);
+        scene.add(group);
+        molecules.push({ mesh: group, type: 'SO2' });
+    }
+
+    function convertToSO3(pos) {
+        const group = new THREE.Group();
+        const s = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshPhongMaterial({color: 0xfacc15}));
+        for(let i=0; i<3; i++) {
+            const o = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshPhongMaterial({color: 0xf87171}));
+            o.position.set(Math.cos(i*2)*0.35, 0.2, Math.sin(i*2)*0.35);
+            group.add(o);
+        }
+        group.add(s);
+        
+        const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: createLabelTexture("SO₃", "#f87171") }));
+        label.position.y = 0.8; label.scale.set(1.5, 1.5, 1);
+        
+        group.add(label);
+        group.position.copy(pos);
+        scene.add(group);
+        molecules.push({ mesh: group, type: 'SO3' });
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    document.getElementById('startBtn').onclick = () => { active = !active; };
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if(active && Math.random() < 0.15) spawnSO2();
+
+        for(let i=molecules.length-1; i>=0; i--) {
+            const m = molecules[i];
+            m.mesh.position.y -= 0.07;
+
+            // Check Catalyst Trays
+            if(m.type === 'SO2') {
+                trayLevels.forEach(ty => {
+                    if(Math.abs(m.mesh.position.y - ty) < 0.3 && Math.random() < 0.05) {
+                        convertToSO3(m.mesh.position);
+                        scene.remove(m.mesh);
+                        molecules.splice(i, 1);
+                    }
+                });
+            }
+
+            if(m.mesh.position.y < -10) {
+                scene.remove(m.mesh);
+                molecules.splice(i, 1);
+            }
+        }
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        adjustCam();
+    });
+</script>
+</body>
+</html>

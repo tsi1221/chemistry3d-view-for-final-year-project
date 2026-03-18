@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTwin | Polymer Architecture 3D</title>
+    <style>
+        :root {
+            --carbon: #334155;
+            --hydrogen: #f8fafc;
+            --link: #38bdf8;
+            --glass: rgba(15, 23, 24, 0.85);
+        }
+        body { margin: 0; overflow: hidden; font-family: 'Inter', sans-serif; background: #020617; color: white; display: flex; }
+
+        #ui-layer {
+            position: absolute; inset: 0; pointer-events: none;
+            display: flex; flex-direction: column; padding: 25px;
+        }
+
+        .glass-panel {
+            pointer-events: auto; background: var(--glass);
+            backdrop-filter: blur(12px); padding: 25px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1); width: 340px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
+        .stat-card { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center; }
+        .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; }
+        .stat-value { font-weight: bold; color: var(--link); }
+
+        .controls { margin-top: auto; align-self: center; display: flex; gap: 10px; pointer-events: auto; }
+        
+        button {
+            padding: 14px 24px; border-radius: 12px; border: none; font-weight: 700;
+            background: #1e293b; color: white; cursor: pointer; transition: 0.2s;
+        }
+        button.active { background: var(--link); color: #020617; box-shadow: 0 0 15px var(--link); }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div class="glass-panel">
+        <h2 style="margin:0; color:var(--link);">Polymer Configurator</h2>
+        <p style="font-size: 0.85rem; color: #94a3b8;">Observe how molecular arrangement dictates material strength.</p>
+        
+        <div class="stat-grid">
+            <div class="stat-card">
+                <div class="stat-label">Type</div>
+                <div class="stat-value" id="type-display">Linear</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Density</div>
+                <div class="stat-value" id="density-display">High</div>
+            </div>
+        </div>
+
+        <div style="background: rgba(56, 189, 248, 0.1); padding: 12px; border-radius: 8px; font-size: 0.8rem;">
+            <b>Exam Tip:</b> Cross-linking (like in Vulcanized Rubber) creates "bridges" between chains, preventing them from sliding past each other.
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="setStructure('linear')" id="btn-linear" class="active">Linear</button>
+        <button onclick="setStructure('branched')" id="btn-branched">Branched</button>
+        <button onclick="setStructure('cross')" id="btn-cross">Cross-Linked</button>
+    </div>
+</div>
+
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    camera.position.set(0, 5, 15);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const pointLight = new THREE.PointLight(0x38bdf8, 1, 100);
+    pointLight.position.set(5, 5, 5);
+    scene.add(pointLight);
+
+    let currentAtoms = [];
+    const carbonGeo = new THREE.SphereGeometry(0.4, 32, 32);
+    const carbonMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3 });
+    const linkMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.2 });
+
+    function createMonomer(x, y, z) {
+        const group = new THREE.Group();
+        const carbon = new THREE.Mesh(carbonGeo, carbonMat);
+        group.add(carbon);
+        group.position.set(x, y, z);
+        scene.add(group);
+        currentAtoms.push(group);
+        return group;
+    }
+
+    function createBond(start, end) {
+        const distance = start.distanceTo(end);
+        const geo = new THREE.CylinderGeometry(0.1, 0.1, distance, 8);
+        const bond = new THREE.Mesh(geo, linkMat);
+        
+        bond.position.copy(start);
+        bond.position.lerp(end, 0.5);
+        bond.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.clone().sub(start).normalize());
+        
+        scene.add(bond);
+        currentAtoms.push(bond);
+    }
+
+    window.setStructure = (type) => {
+        // Cleanup
+        currentAtoms.forEach(obj => scene.remove(obj));
+        currentAtoms = [];
+        
+        // Update UI
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${type}`).classList.add('active');
+        document.getElementById('type-display').innerText = type.charAt(0).toUpperCase() + type.slice(1);
+        document.getElementById('density-display').innerText = type === 'linear' ? "High" : "Low/Variable";
+
+        // Build Logic
+        if (type === 'linear') {
+            for(let i = -6; i < 6; i++) {
+                const m1 = createMonomer(i * 1.2, 0, 0);
+                if(i > -6) createBond(new THREE.Vector3((i-1)*1.2, 0, 0), new THREE.Vector3(i*1.2, 0, 0));
+            }
+        } else if (type === 'branched') {
+            for(let i = -5; i < 5; i++) {
+                createMonomer(i * 1.5, 0, 0);
+                if(i > -5) createBond(new THREE.Vector3((i-1)*1.5, 0, 0), new THREE.Vector3(i*1.5, 0, 0));
+                if(i % 3 === 0) {
+                    createMonomer(i * 1.5, 1.5, 0);
+                    createBond(new THREE.Vector3(i*1.5, 0, 0), new THREE.Vector3(i*1.5, 1.5, 0));
+                }
+            }
+        } else if (type === 'cross') {
+            for(let row = -1; row <= 1; row++) {
+                for(let i = -4; i <= 4; i++) {
+                    createMonomer(i * 1.5, row * 2, 0);
+                    if(i > -4) createBond(new THREE.Vector3((i-1)*1.5, row*2, 0), new THREE.Vector3(i*1.5, row*2, 0));
+                    if(i === 0) createBond(new THREE.Vector3(0, (row-1)*2, 0), new THREE.Vector3(0, row*2, 0));
+                }
+            }
+        }
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    setStructure('linear');
+    animate();
+
+    window.onresize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+</script>
+</body>
+</html>

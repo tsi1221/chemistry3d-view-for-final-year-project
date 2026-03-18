@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Proton Transfer Visualizer</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%); 
+        }
+        #ui {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            background: rgba(255, 255, 255, 0.9); padding: 20px; 
+            border-radius: 12px; width: 340px; box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid #bae6fd;
+        }
+        .equation { font-size: 1.2rem; font-weight: bold; color: #0369a1; margin: 10px 0; text-align: center;}
+        .instruction { font-size: 0.9rem; color: #64748b; line-height: 1.4; }
+        .status { font-weight: bold; color: #0284c7; margin-top: 10px; display: block;}
+        #resetBtn { 
+            margin-top: 15px; padding: 8px 15px; background: #0ea5e9; 
+            color: white; border: none; border-radius: 5px; cursor: pointer; 
+        }
+        #resetBtn:hover { background: #0284c7; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h2>Brønsted-Lowry Transfer</h2>
+        <div class="equation" id="chemEq">HCl + H₂O → Cl⁻ + H₃O⁺</div>
+        <p class="instruction">
+            <strong>Task:</strong> Drag the <span style="color:#00ffff; font-weight:bold;">glowing Proton (H⁺)</span> from the Hydrochloric Acid molecule to the Water molecule.
+        </p>
+        <span class="status" id="statusLabel">State: Before Reaction</span>
+        <button id="resetBtn">Reset Experiment</button>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+        import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+        import { DragControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/DragControls.js';
+
+        // 1. Scene Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8fafc);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 10, 10);
+        scene.add(light, new THREE.AmbientLight(0xffffff, 0.7));
+
+        camera.position.z = 8;
+
+        // 2. Molecule Construction
+        const molecules = new THREE.Group();
+        scene.add(molecules);
+
+        // --- HCl Molecule ---
+        const clGeo = new THREE.SphereGeometry(1.2, 32, 32);
+        const clMat = new THREE.MeshStandardMaterial({ color: 0x84cc16 }); // Greenish Cl
+        const chlorine = new THREE.Mesh(clGeo, clMat);
+        chlorine.position.set(-4, 0, 0);
+        molecules.add(chlorine);
+
+        // The Transferable Proton (H+)
+        const hGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const hMat = new THREE.MeshStandardMaterial({ 
+            color: 0x00ffff, 
+            emissive: 0x00ffff, 
+            emissiveIntensity: 0.5 
+        });
+        const proton = new THREE.Mesh(hGeo, hMat);
+        proton.position.set(-2.6, 0, 0);
+        molecules.add(proton);
+
+        // --- H2O Molecule ---
+        const oGeo = new THREE.SphereGeometry(1, 32, 32);
+        const oMat = new THREE.MeshStandardMaterial({ color: 0xef4444 }); // Red Oxygen
+        const oxygen = new THREE.Mesh(oGeo, oMat);
+        oxygen.position.set(4, 0, 0);
+        molecules.add(oxygen);
+
+        const hFixed1 = new THREE.Mesh(hGeo, new THREE.MeshStandardMaterial({color: 0xffffff}));
+        const hFixed2 = new THREE.Mesh(hGeo, new THREE.MeshStandardMaterial({color: 0xffffff}));
+        hFixed1.position.set(4.8, 0.8, 0);
+        hFixed2.position.set(4.8, -0.8, 0);
+        molecules.add(hFixed1, hFixed2);
+
+        // 3. Interaction Logic
+        const controls = new OrbitControls(camera, renderer.domElement);
+        const dragControls = new DragControls([proton], camera, renderer.domElement);
+
+        let reacted = false;
+        const statusLabel = document.getElementById('statusLabel');
+        const chemEq = document.getElementById('chemEq');
+
+        dragControls.addEventListener('dragstart', () => controls.enabled = false);
+        dragControls.addEventListener('dragend', () => {
+            controls.enabled = true;
+            
+            // Check distance to Oxygen
+            const dist = proton.position.distanceTo(oxygen.position);
+            if (dist < 2.0) {
+                // Snap to Oxygen (Form H3O+)
+                proton.position.set(3.2, 0, 0.8);
+                triggerReaction();
+            }
+        });
+
+        function triggerReaction() {
+            if (reacted) return;
+            reacted = true;
+            statusLabel.innerText = "State: Reaction Complete!";
+            statusLabel.style.color = "#16a34a";
+            chemEq.innerHTML = "<small>Conjugate Base</small> Cl⁻ + H₃O⁺ <small>Conjugate Acid</small>";
+            
+            // Visual feedback: Chlorine dims slightly as it loses H+
+            chlorine.material.opacity = 0.7;
+            chlorine.material.transparent = true;
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            proton.position.set(-2.6, 0, 0);
+            reacted = false;
+            statusLabel.innerText = "State: Before Reaction";
+            statusLabel.style.color = "#0284c7";
+            chemEq.innerText = "HCl + H₂O → Cl⁻ + H₃O⁺";
+            chlorine.material.opacity = 1.0;
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(!reacted) {
+                // Subtle hover animation for molecules
+                chlorine.position.y = Math.sin(Date.now() * 0.002) * 0.1;
+                oxygen.position.y = Math.cos(Date.now() * 0.002) * 0.1;
+                hFixed1.position.y = 0.8 + Math.cos(Date.now() * 0.002) * 0.1;
+                hFixed2.position.y = -0.8 + Math.cos(Date.now() * 0.002) * 0.1;
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

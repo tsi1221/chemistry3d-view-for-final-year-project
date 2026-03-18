@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Water Ionization with Labels</title>
+    <style>
+        body { 
+            margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; 
+            background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%); 
+        }
+        #ui {
+            position: absolute; top: 20px; left: 20px; z-index: 10;
+            background: rgba(255, 255, 255, 0.9); padding: 25px; 
+            border-radius: 16px; width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 1px solid #bae6fd;
+        }
+        .kw-display { font-size: 1.5rem; font-weight: bold; color: #0369a1; margin: 10px 0; }
+        .equation { font-size: 1.1rem; color: #0284c7; background: #f0f9ff; padding: 10px; border-radius: 8px; text-align: center;}
+        input[type=range] { width: 100%; accent-color: #0ea5e9; cursor: pointer; }
+        #insightCard {
+            position: absolute; bottom: 20px; right: 20px; 
+            background: #0369a1; color: white; padding: 15px; 
+            border-radius: 12px; width: 280px; display: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-action {
+            margin-top: 15px; width: 100%; padding: 12px; 
+            background: #0ea5e9; color: white; border: none; 
+            border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <h2 style="margin:0; color:#0369a1;">Water Equilibrium</h2>
+        <div class="kw-display" id="kwVal">Kw: 1.00 × 10⁻¹⁴</div>
+        <div class="equation">2H₂O ⇌ H₃O⁺ + OH⁻</div>
+        
+        <p style="font-size: 0.9rem; color: #64748b;">Adjust Temperature (°C):</p>
+        <input type="range" id="tempSlider" min="0" max="100" value="25">
+        <div style="text-align: center; font-weight: bold;" id="tempText">25°C</div>
+
+        <button class="btn-action" id="collideBtn">Simulate Collision</button>
+    </div>
+
+    <div id="insightCard">
+        <strong>Gain: Proton Transfer</strong><br>
+        <small>Molecules collide! One H₂O loses an H⁺ (becoming OH⁻) and the other gains it (becoming H₃O⁺).</small>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+        import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+        // 1. Basic Scene Setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8fafc);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6), new THREE.DirectionalLight(0xffffff, 0.8));
+        camera.position.z = 12;
+
+        // 2. Function to create Text Labels
+        function createLabel(text, color = 'black') {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 128;
+            canvas.height = 128;
+            ctx.fillStyle = color;
+            ctx.font = 'Bold 80px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 64, 80);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(1.5, 1.5, 1);
+            return sprite;
+        }
+
+        // 3. Molecular Assets
+        function createH2O(xPos, name) {
+            const group = new THREE.Group();
+            
+            // Oxygen
+            const o = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), new THREE.MeshStandardMaterial({color: 0xef4444}));
+            const oLabel = createLabel('O', '#ffffff');
+            oLabel.position.y = 1.2;
+            group.add(o, oLabel);
+
+            // Hydrogen 1
+            const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 24, 24), new THREE.MeshStandardMaterial({color: 0xffffff}));
+            h1.position.set(0.8, 0.8, 0);
+            const h1Label = createLabel('H', '#333');
+            h1Label.position.set(0, 0.6, 0);
+            h1.add(h1Label);
+
+            // Hydrogen 2
+            const h2 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 24, 24), new THREE.MeshStandardMaterial({color: 0xffffff}));
+            h2.position.set(-0.8, 0.8, 0);
+            const h2Label = createLabel('H', '#333');
+            h2Label.position.set(0, 0.6, 0);
+            h2.add(h2Label);
+
+            group.add(h1, h2);
+            group.position.x = xPos;
+            return { group, h1, h2, o };
+        }
+
+        const molA = createH2O(-4, "Water A");
+        const molB = createH2O(4, "Water B");
+        scene.add(molA.group, molB.group);
+
+        // 4. Interaction
+        let temp = 25;
+        let isReacted = false;
+        const kwEl = document.getElementById('kwVal');
+        const tempSlider = document.getElementById('tempSlider');
+        const tempText = document.getElementById('tempText');
+
+        tempSlider.addEventListener('input', (e) => {
+            temp = e.target.value;
+            tempText.innerText = `${temp}°C`;
+            let kwPower = 14.94 - (0.04 * temp) + (0.0001 * temp * temp);
+            let kwVal = Math.pow(10, -kwPower).toExponential(2);
+            kwEl.innerText = `Kw: ${kwVal.replace('e', ' × 10')}`;
+        });
+
+        document.getElementById('collideBtn').addEventListener('click', () => {
+            if (isReacted) return;
+            isReacted = true;
+            animateTransfer();
+        });
+
+        function animateTransfer() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 0.02;
+                if(progress < 1) {
+                    molA.group.position.x = -4 + (progress * 3.2);
+                    molB.group.position.x = 4 - (progress * 3.2);
+                } else if(progress < 1.5) {
+                    // The "Gain": Show the proton jumping
+                    molA.h1.position.x += 0.15;
+                    molA.h1.material.emissive = new THREE.Color(0x00ffff);
+                    molA.h1.material.emissiveIntensity = 2;
+                } else if(progress < 2.5) {
+                    // Rebound as Ions
+                    molA.group.position.x -= 0.05;
+                    molB.group.position.x += 0.05;
+                    document.getElementById('insightCard').style.display = 'block';
+                } else {
+                    clearInterval(interval);
+                }
+            }, 20);
+        }
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        function animate() {
+            requestAnimationFrame(animate);
+            const jiggle = temp / 800;
+            molA.group.position.y += (Math.random() - 0.5) * jiggle;
+            molB.group.position.y += (Math.random() - 0.5) * jiggle;
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

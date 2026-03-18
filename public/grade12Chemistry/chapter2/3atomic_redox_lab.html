@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Molecular Redox View</title>
+    <style>
+        :root { --mg-color: #94a3b8; --h-color: #0ea5e9; --e-color: #facc15; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; }
+        
+        #ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 20px; box-sizing: border-box;
+        }
+
+        .glass-panel {
+            pointer-events: auto; background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px); padding: 15px; border-radius: 12px;
+            border: 1px solid #334155; width: 100%; max-width: 350px;
+        }
+
+        .mnemonic-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 3rem; font-weight: 900; opacity: 0; transition: opacity 0.5s;
+            text-shadow: 0 0 20px var(--e-color); pointer-events: none;
+        }
+
+        .controls { align-self: center; width: 100%; max-width: 300px; text-align: center; }
+        
+        button {
+            pointer-events: auto; background: #3b82f6; color: white; border: none;
+            width: 100%; padding: 15px; border-radius: 10px; font-weight: bold;
+            cursor: pointer; font-size: 1.1rem; box-shadow: 0 4px 0 #1d4ed8;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #1d4ed8; }
+
+        .label-3d { font-weight: bold; font-size: 1.2rem; position: absolute; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <div class="glass-panel">
+        <h2 style="margin:0; color:#60a5fa;">Atomic Redox View</h2>
+        <p id="subtext" style="font-size: 0.9rem; color: #94a3b8;">Watch the electron transfer.</p>
+        <div id="equation" style="margin-top:10px; font-family: monospace; color: #38bdf8;">Mg + 2H⁺ ➔ Mg²⁺ + H₂</div>
+    </div>
+
+    <div id="mnemonic" class="mnemonic-box">LEO says GER</div>
+
+    <div class="controls">
+        <button id="redoxBtn">Transfer Electrons</button>
+    </div>
+</div>
+
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+    const light = new THREE.PointLight(0xffffff, 1, 100);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    camera.position.set(0, 0, 15);
+
+    // --- Assets ---
+    // Magnesium Atom
+    const mgGeo = new THREE.SphereGeometry(2, 32, 32);
+    const mgMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+    const mg = new THREE.Mesh(mgGeo, mgMat);
+    mg.position.x = -4;
+    scene.add(mg);
+
+    // Hydrogen Ions (2)
+    const hMat = new THREE.MeshStandardMaterial({ color: 0x0ea5e9, emissive: 0x075985 });
+    const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 24), hMat);
+    const h2 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 24, 24), hMat);
+    h1.position.set(4, 1.5, 0);
+    h2.position.set(4, -1.5, 0);
+    scene.add(h1, h2);
+
+    // Electrons
+    function makeElectron() {
+        return new THREE.Mesh(
+            new THREE.SphereGeometry(0.15),
+            new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+        );
+    }
+    const e1 = makeElectron();
+    const e2 = makeElectron();
+    e1.visible = e2.visible = false;
+    scene.add(e1, e2);
+
+    // Labels
+    function createTextLabel(text, color) {
+        const div = document.createElement('div');
+        div.className = 'label-3d';
+        div.style.color = color;
+        div.innerHTML = text;
+        document.body.appendChild(div);
+        return div;
+    }
+    const mgLabel = createTextLabel("Mg⁰", "#cbd5e1");
+    const hLabel1 = createTextLabel("H⁺", "#38bdf8");
+    const hLabel2 = createTextLabel("H⁺", "#38bdf8");
+
+    // --- Animation Logic ---
+    let phase = 0; // 0: Idle, 1: Redox happening, 2: Done
+    const btn = document.getElementById('redoxBtn');
+    const mnemonic = document.getElementById('mnemonic');
+
+    btn.addEventListener('click', () => {
+        if(phase !== 0) return;
+        phase = 1;
+        startRedox();
+    });
+
+    function startRedox() {
+        btn.disabled = true;
+        mnemonic.style.opacity = "1";
+        e1.visible = e2.visible = true;
+        
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 0.01;
+            
+            // Electrons move Mg -> H
+            e1.position.lerpVectors(new THREE.Vector3(-4, 0.5, 0), new THREE.Vector3(4, 1.5, 0), progress);
+            e2.position.lerpVectors(new THREE.Vector3(-4, -0.5, 0), new THREE.Vector3(4, -1.5, 0), progress);
+
+            // Mg Shrinks (Oxidation)
+            const scale = 1 - (progress * 0.4);
+            mg.scale.set(scale, scale, scale);
+            mgLabel.innerHTML = progress > 0.5 ? "Mg²⁺" : "Mg⁰";
+            mg.material.color.lerp(new THREE.Color(0x60a5fa), 0.01);
+
+            // H Atoms Move Together (H2 Formation)
+            if(progress > 0.8) {
+                h1.position.y -= 0.05;
+                h2.position.y += 0.05;
+                hLabel1.innerHTML = ""; hLabel2.innerHTML = "H₂";
+            }
+
+            if(progress >= 1) {
+                clearInterval(interval);
+                e1.visible = e2.visible = false;
+                mnemonic.style.opacity = "0";
+                document.getElementById('subtext').innerText = "Magnesium was Oxidized (Lost e-). Hydrogen was Reduced (Gained e-).";
+            }
+        }, 20);
+    }
+
+    // --- Helper Functions ---
+    function updateLabels() {
+        const mgPos = mg.position.clone().project(camera);
+        mgLabel.style.left = (mgPos.x + 1) * window.innerWidth / 2 + 'px';
+        mgLabel.style.top = -(mgPos.y - 1) * window.innerHeight / 2 - 50 + 'px';
+
+        const hPos1 = h1.position.clone().project(camera);
+        hLabel1.style.left = (hPos1.x + 1) * window.innerWidth / 2 + 'px';
+        hLabel1.style.top = -(hPos1.y - 1) * window.innerHeight / 2 - 30 + 'px';
+
+        const hPos2 = h2.position.clone().project(camera);
+        hLabel2.style.left = (hPos2.x + 1) * window.innerWidth / 2 + 'px';
+        hLabel2.style.top = -(hPos2.y - 1) * window.innerHeight / 2 - 30 + 'px';
+    }
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    function animate() {
+        requestAnimationFrame(animate);
+        updateLabels();
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+</script>
+</body>
+</html>

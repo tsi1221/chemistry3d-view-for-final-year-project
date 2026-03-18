@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Responsive Acid-Metal Lab</title>
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --accent: #f59e0b;
+        }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: #fdfdfd; }
+        
+        /* Main UI Container */
+        #ui-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            justify-content: space-between; padding: 15px; box-sizing: border-box;
+            z-index: 10;
+        }
+
+        .glass-panel {
+            pointer-events: auto; background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px); padding: 12px 20px; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        /* Top Header */
+        .header { align-self: center; max-width: 400px; }
+        .header h2 { margin: 0; font-size: 1.2rem; color: #1e293b; }
+
+        /* Bottom Controls */
+        .controls-container { align-self: center; width: 100%; max-width: 500px; }
+        .slider-wrap { display: flex; flex-direction: column; gap: 8px; }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: var(--accent); }
+
+        /* Sidebar Notes - Hidden on small screens */
+        .learning-notes {
+            position: absolute; top: 80px; right: 20px; width: 220px;
+            display: block; pointer-events: auto;
+        }
+
+        @media (max-width: 900px) {
+            .learning-notes { display: none; } /* Hide notes on tablets/phones to clear the view */
+            .header h2 { font-size: 1rem; }
+        }
+
+        @media (max-width: 480px) {
+            .glass-panel { padding: 8px 15px; }
+            .controls-container { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui-overlay">
+    <!-- Header -->
+    <div class="glass-panel header">
+        <h2>Acid Dissociation & Metal Reaction</h2>
+        <div style="font-size: 0.8rem; color: #64748b;">Comparing Strong vs. Weak Acids</div>
+    </div>
+
+    <!-- Right Notes (Desktop Only) -->
+    <div class="glass-panel learning-notes">
+        <h4 style="margin: 0 0 8px 0; color: var(--primary);">📝 Observe:</h4>
+        <ul style="padding-left: 18px; margin: 0; font-size: 0.8rem; text-align: left; line-height: 1.4;">
+            <li><b>Yellow:</b> $H^+$ Ions</li>
+            <li><b>Blue:</b> Acid Anion ($A^-$)</li>
+            <li><b>Grey:</b> Magnesium ($Mg$)</li>
+        </ul>
+        <p style="font-size: 0.75rem; margin-top: 10px; color: #64748b;">
+            Higher $K_a$ = more free Yellow ions to react with Metal.
+        </p>
+    </div>
+
+    <!-- Bottom Slider -->
+    <div class="controls-container">
+        <div class="glass-panel slider-wrap">
+            <div style="font-weight: bold; font-size: 0.9rem;">
+                Weak Acid Strength ($K_a$): <span id="kaVal">0.15</span>
+            </div>
+            <input type="range" id="kaSlider" min="5" max="95" value="15">
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+    // --- Scene Setup ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf8fafc);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+    const light = new THREE.DirectionalLight(0xffffff, 0.5);
+    light.position.set(5, 10, 7);
+    scene.add(light);
+
+    // Dynamic Camera Distance
+    function adjustCamera() {
+        const aspect = window.innerWidth / window.innerHeight;
+        if (aspect < 1) { // Portrait (Mobile)
+            camera.position.set(0, 8, 30);
+        } else { // Landscape (Desktop)
+            camera.position.set(0, 4, 20);
+        }
+        camera.lookAt(0,0,0);
+    }
+    adjustCamera();
+
+    // --- Asset Creation ---
+    function createLabel(text, color) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 256; canvas.height = 64;
+        ctx.fillStyle = color;
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(text, 128, 40);
+        const tex = new THREE.CanvasTexture(canvas);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+        sprite.scale.set(6, 1.5, 1);
+        return sprite;
+    }
+
+    function makeBeaker(x, labelText) {
+        const group = new THREE.Group();
+        // Glass Mesh
+        const glass = new THREE.Mesh(
+            new THREE.CylinderGeometry(4.5, 4.5, 9, 32, 1, true),
+            new THREE.MeshPhongMaterial({ color: 0xcccccc, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+        );
+        // Liquid
+        const liquid = new THREE.Mesh(
+            new THREE.CylinderGeometry(4.4, 4.4, 6, 32),
+            new THREE.MeshPhongMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.4 })
+        );
+        liquid.position.y = -1.5;
+        // Metal Atoms
+        const mgGroup = new THREE.Group();
+        const mgMat = new THREE.MeshStandardMaterial({ color: 0xa1a1aa, metalness: 0.7, roughness: 0.2 });
+        for(let i=0; i<3; i++) {
+            for(let j=0; j<5; j++) {
+                const atom = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), mgMat);
+                atom.position.set(j*0.8 - 1.6, -4, i*0.8 - 0.8);
+                mgGroup.add(atom);
+            }
+        }
+        
+        const label = createLabel(labelText, '#475569');
+        label.position.y = 6.5;
+
+        group.add(glass, liquid, mgGroup, label);
+        group.position.x = x;
+        scene.add(group);
+        return group;
+    }
+
+    const weakBeaker = makeBeaker(-6, "Weak Acid");
+    const strongBeaker = makeBeaker(6, "Strong Acid");
+
+    // --- Particle Logic ---
+    const weakMols = [];
+    const strongMols = [];
+
+    function spawn(x) {
+        const g = new THREE.Group();
+        const anion = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({color: 0x0ea5e9}));
+        const proton = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshStandardMaterial({color: 0xf59e0b}));
+        g.add(anion, proton);
+        g.position.set(x + (Math.random()-0.5)*5, (Math.random()-0.5)*4 - 1, (Math.random()-0.5)*3);
+        scene.add(g);
+        return { g, anion, proton, v: new THREE.Vector3((Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02) };
+    }
+
+    for(let i=0; i<15; i++) {
+        weakMols.push(spawn(-6));
+        strongMols.push(spawn(6));
+    }
+
+    // --- Animation & Resize ---
+    let ka = 0.15;
+    const slider = document.getElementById('kaSlider');
+    const kaDisplay = document.getElementById('kaVal');
+    slider.addEventListener('input', (e) => {
+        ka = e.target.value / 100;
+        kaDisplay.innerText = (ka * 0.01).toExponential(2);
+    });
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.enableZoom = false;
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const t = Date.now() * 0.0015;
+
+        weakMols.forEach((m, i) => {
+            const isSplit = ka > (i / weakMols.length);
+            if(isSplit) {
+                m.proton.position.set(Math.sin(t+i)*1.5, Math.cos(t+i)*1.5, 0);
+            } else {
+                m.proton.position.set(0.6, 0, 0);
+            }
+            m.g.position.add(m.v);
+            if(Math.abs(m.g.position.x + 6) > 2.5) m.v.x *= -1;
+            if(Math.abs(m.g.position.y + 1.5) > 2.5) m.v.y *= -1;
+        });
+
+        strongMols.forEach((m, i) => {
+            m.proton.position.set(Math.sin(t+i)*1.8, Math.cos(t+i)*1.8, Math.sin(t*0.5)*1.8);
+            m.g.position.add(m.v);
+            if(Math.abs(m.g.position.x - 6) > 2.5) m.v.x *= -1;
+            if(Math.abs(m.g.position.y + 1.5) > 2.5) m.v.y *= -1;
+        });
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        adjustCamera();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Haber-Bosch 3D</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --accent: #10b981;
+            --glass: rgba(30, 41, 59, 0.85);
+        }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); }
+        
+        #ui {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; flex-direction: column;
+            padding: 15px; box-sizing: border-box;
+        }
+
+        .glass-card {
+            pointer-events: auto; background: var(--glass);
+            backdrop-filter: blur(10px); padding: 15px; border-radius: 12px;
+            border: 1px solid #334155; color: white;
+            width: 100%; max-width: 320px; /* Responsive width */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        h2 { margin: 0 0 8px 0; font-size: 1.2rem; color: var(--accent); }
+        .equation { font-family: monospace; font-size: 0.9rem; margin-bottom: 8px; color: #94a3b8; }
+        .note { font-size: 0.8rem; line-height: 1.4; color: #cbd5e1; }
+
+        .controls { 
+            margin-top: auto; align-self: center; width: 100%; 
+            max-width: 280px; padding-bottom: 20px;
+        }
+        
+        button {
+            pointer-events: auto; background: var(--accent); color: white;
+            border: none; width: 100%; padding: 15px; border-radius: 10px;
+            font-weight: bold; cursor: pointer; font-size: 1rem;
+            box-shadow: 0 4px 0 #059669; transition: transform 0.1s;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 2px 0 #059669; }
+
+        /* Mobile specific tweaks */
+        @media (max-width: 480px) {
+            .glass-card { max-width: 100%; }
+            h2 { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <div class="glass-card">
+        <h2>Ammonia Synthesis</h2>
+        <div class="equation">N₂ + 3H₂ ⇌ 2NH₃</div>
+        <div class="note">
+            Watch <b>N₂ (Blue)</b> and <b>H₂ (White)</b> react on the catalyst to form <b>NH₃ (Green)</b>.
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="pumpBtn">START REACTION</button>
+    </div>
+</div>
+
+<script type="module">
+    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
+
+    // --- Scene & Responsive Camera ---
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    
+    // Set initial camera distance based on screen width
+    const isMobile = window.innerWidth < 600;
+    camera.position.set(0, 5, isMobile ? 25 : 18);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit for performance
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Lights
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const light = new THREE.PointLight(0xffffff, 1);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    // --- Reactor Components ---
+    const vessel = new THREE.Mesh(
+        new THREE.CylinderGeometry(5, 5, 12, 32, 1, true),
+        new THREE.MeshPhongMaterial({ color: 0x64748b, transparent: true, opacity: 0.15, side: THREE.DoubleSide })
+    );
+    scene.add(vessel);
+
+    const catalyst = new THREE.Mesh(
+        new THREE.CylinderGeometry(4.8, 4.8, 1.5, 32),
+        new THREE.MeshStandardMaterial({color: 0x334155})
+    );
+    catalyst.position.y = -2;
+    scene.add(catalyst);
+
+    // --- Label Creator ---
+    function createLabel(text, color) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 128; canvas.height = 128;
+        ctx.fillStyle = color; ctx.font = 'bold 70px Arial';
+        ctx.textAlign = 'center'; ctx.fillText(text, 64, 80);
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
+        sprite.scale.set(1.5, 1.5, 1);
+        sprite.position.y = 0.7;
+        return sprite;
+    }
+
+    // --- Particles ---
+    let active = false;
+    const molecules = [];
+
+    function spawn() {
+        const isN2 = Math.random() > 0.7;
+        const group = new THREE.Group();
+        if(isN2) {
+            const n1 = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshPhongMaterial({color: 0x2563eb}));
+            const n2 = n1.clone(); n2.position.x = 0.4;
+            group.add(n1, n2, createLabel("N₂", "#60a5fa"));
+            group.userData = { type: 'N2' };
+        } else {
+            const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshPhongMaterial({color: 0xffffff}));
+            const h2 = h1.clone(); h2.position.x = 0.3;
+            group.add(h1, h2, createLabel("H₂", "#fff"));
+            group.userData = { type: 'H2' };
+        }
+        group.position.set((Math.random()-0.5)*7, 7, (Math.random()-0.5)*7);
+        scene.add(group);
+        molecules.push(group);
+    }
+
+    function convert(pos) {
+        const nh3 = new THREE.Group();
+        const center = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshPhongMaterial({color: 0x10b981}));
+        nh3.add(center);
+        for(let i=0; i<3; i++){
+            const h = new THREE.Mesh(new THREE.SphereGeometry(0.12), new THREE.MeshPhongMaterial({color: 0xffffff}));
+            h.position.set(Math.cos(i*2)*0.4, -0.2, Math.sin(i*2)*0.4);
+            nh3.add(h);
+        }
+        nh3.add(createLabel("NH₃", "#10b981"));
+        nh3.position.copy(pos);
+        scene.add(nh3);
+        molecules.push(nh3);
+        nh3.userData = { type: 'NH3' };
+    }
+
+    // --- Controls & Resize ---
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    window.addEventListener('resize', () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        camera.aspect = width / height;
+        // Adjust zoom level dynamically on resize
+        camera.position.z = width < 600 ? 25 : 18;
+        camera.updateProjectionMatrix();
+        
+        renderer.setSize(width, height);
+    });
+
+    document.getElementById('pumpBtn').onclick = () => { active = !active; };
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if(active && Math.random() < 0.2) spawn();
+
+        for(let i=molecules.length-1; i>=0; i--) {
+            const m = molecules[i];
+            m.position.y -= (m.userData.type === 'NH3') ? 0.04 : 0.08;
+            
+            if(m.userData.type !== 'NH3' && m.position.y < -1.8 && m.position.y > -2.2) {
+                if(Math.random() < 0.1) {
+                    convert(m.position);
+                    scene.remove(m);
+                    molecules.splice(i,1);
+                    continue;
+                }
+            }
+            if(m.position.y < -7) {
+                scene.remove(m);
+                molecules.splice(i,1);
+            }
+        }
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+</script>
+</body>
+</html>
