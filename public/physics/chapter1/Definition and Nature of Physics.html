@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics: Wind Power Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        canvas {
+            border: 3px solid #2c3e50;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            cursor: grab;
+        }
+        canvas:active { cursor: grabbing; }
+        .label-box { text-align: center; margin-bottom: 15px; max-width: 700px; }
+    </style>
+</head>
+<body>
+
+    <div class="label-box">
+        <h2>Physics Lab: Wind Energy Conversion</h2>
+        <p><b>Instructions:</b> Drag the <b>Wind Cloud</b> closer to the fan. The kinetic energy of the wind will power the circuit and light the bulb!</p>
+    </div>
+
+    <canvas id="physicsCanvas" width="800" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById('physicsCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+        const groundY = height - 60;
+
+        // --- State Variables ---
+        const windCloud = { x: 100, y: 150, r: 35, isDragging: false };
+        const fan = { x: 500, y: 180, angle: 0, speed: 0 };
+        const bulb = { x: 700, y: 180 };
+        const obeliskX = 150;
+
+        // --- Interaction Logic ---
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            const dist = Math.sqrt((mx - windCloud.x)**2 + (my - windCloud.y)**2);
+            if (dist < windCloud.r) windCloud.isDragging = true;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (windCloud.isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                windCloud.x = e.clientX - rect.left;
+                windCloud.y = e.clientY - rect.top;
+            }
+        });
+
+        window.addEventListener('mouseup', () => windCloud.isDragging = false);
+
+        function drawScene() {
+            ctx.clearRect(0, 0, width, height);
+
+            // 1. Draw Ground & Obelisk (Heritage)
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(0, groundY, width, 60);
+            
+            ctx.fillStyle = "#95a5a6";
+            ctx.beginPath();
+            ctx.moveTo(obeliskX - 30, groundY);
+            ctx.lineTo(obeliskX + 30, groundY);
+            ctx.lineTo(obeliskX + 15, groundY - 200);
+            ctx.lineTo(obeliskX, groundY - 220);
+            ctx.lineTo(obeliskX - 15, groundY - 200);
+            ctx.fill();
+            ctx.fillStyle = "#2c3e50";
+            ctx.font = "14px Arial";
+            ctx.fillText("Axum (Statics)", obeliskX - 45, groundY + 25);
+
+            // 2. Physics Calculation: Distance between Wind and Fan
+            const dist = Math.sqrt((windCloud.x - fan.x)**2 + (windCloud.y - fan.y)**2);
+            const effectRadius = 250;
+            if (dist < effectRadius) {
+                fan.speed = (1 - (dist / effectRadius)) * 0.4;
+            } else {
+                fan.speed *= 0.95; // Friction slows it down
+            }
+            fan.angle += fan.speed;
+
+            // 3. Draw Circuit Wires
+            ctx.strokeStyle = "#34495e";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(fan.x, fan.y); 
+            ctx.lineTo(fan.x, groundY - 20); 
+            ctx.lineTo(bulb.x, groundY - 20);
+            ctx.lineTo(bulb.x, bulb.y + 30);
+            ctx.stroke();
+
+            // 4. Draw Fan (The Generator)
+            ctx.save();
+            ctx.translate(fan.x, fan.y);
+            ctx.rotate(fan.angle);
+            ctx.fillStyle = "#3498db";
+            for(let i=0; i<3; i++) {
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 10, 60, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.rotate((Math.PI * 2) / 3);
+            }
+            ctx.restore();
+            // Fan Hub
+            ctx.fillStyle = "#2c3e50";
+            ctx.beginPath(); ctx.arc(fan.x, fan.y, 10, 0, Math.PI*2); ctx.fill();
+
+            // 5. Draw Light Bulb (Classic Shape)
+            const brightness = fan.speed * 5; // Direct physics link: Speed = Light
+            ctx.save();
+            ctx.translate(bulb.x, bulb.y);
+            
+            // Glow effect
+            if (brightness > 0.05) {
+                const glow = ctx.createRadialGradient(0, 0, 5, 0, 0, 40 * brightness);
+                glow.addColorStop(0, `rgba(255, 255, 0, ${brightness})`);
+                glow.addColorStop(1, "rgba(255, 255, 0, 0)");
+                ctx.fillStyle = glow;
+                ctx.beginPath(); ctx.arc(0, 0, 50 * brightness, 0, Math.PI*2); ctx.fill();
+            }
+
+            // Bulb Glass
+            ctx.strokeStyle = "#333";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, 25, 0.7 * Math.PI, 0.3 * Math.PI, true);
+            ctx.lineTo(10, 30);
+            ctx.lineTo(-10, 30);
+            ctx.closePath();
+            ctx.fillStyle = brightness > 0.1 ? "#f1c40f" : "#ecf0f1";
+            ctx.fill();
+            ctx.stroke();
+            
+            // Filament
+            if (brightness > 0.1) {
+                ctx.strokeStyle = "white";
+                ctx.beginPath(); ctx.moveTo(-10, 5); ctx.lineTo(0, -10); ctx.lineTo(10, 5); ctx.stroke();
+            }
+            ctx.restore();
+
+            // 6. Draw Wind Cloud
+            ctx.fillStyle = "#aed6f1";
+            ctx.beginPath();
+            ctx.arc(windCloud.x, windCloud.y, windCloud.r, 0, Math.PI*2);
+            ctx.arc(windCloud.x - 20, windCloud.y + 10, windCloud.r * 0.7, 0, Math.PI*2);
+            ctx.arc(windCloud.x + 20, windCloud.y + 10, windCloud.r * 0.7, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#2c3e50";
+            ctx.font = "bold 12px Arial";
+            ctx.fillText("WIND", windCloud.x - 17, windCloud.y + 5);
+
+            // Labels
+            ctx.fillStyle = "#7f8c8d";
+            ctx.font = "14px Arial";
+            ctx.fillText("Kinetic Energy (Wind)", 250, 100);
+            ctx.fillText("➞ Electrical Energy (Wire)", 480, groundY - 30);
+            
+            requestAnimationFrame(drawScene);
+        }
+
+        drawScene();
+    </script>
+</body>
+</html>
