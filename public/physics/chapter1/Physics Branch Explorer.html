@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Physics Hub</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background: #fdfdfd; 
+            color: #333; 
+            margin: 0; 
+            padding: 20px;
+        }
+        canvas { 
+            background: #ffffff; 
+            border: 2px solid #e0e6ed; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+        }
+        .ui-panel { 
+            margin: 10px 0 20px 0; 
+            text-align: center; 
+            max-width: 700px; 
+            background: #fff; 
+            padding: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        h2 { margin: 0 0 10px 0; color: #2c3e50; }
+        h3 { color: #e74c3c; margin: 10px 0 5px 0; transition: color 0.3s;}
+        p { margin: 5px 0; line-height: 1.5; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+
+    <div class="ui-panel">
+        <h2>Physics Branch Explorer</h2>
+        <p>A "Solar System" of Physics. Orbits are static. Click a planet to bring its animation to life in the center!</p>
+        <h3 id="branchTitle">Active Branch: Core</h3>
+        <p id="branchDesc">Click any orbiting planet to explore.</p>
+    </div>
+
+    <canvas id="branchCanvas" width="900" height="550"></canvas>
+
+    <script>
+        const canvas = document.getElementById('branchCanvas');
+        const ctx = canvas.getContext('2d');
+        const titleEl = document.getElementById('branchTitle');
+        const descEl = document.getElementById('branchDesc');
+
+        let selectedBranch = null;
+        let time = 0;
+
+        const branches = [
+            { name: "Classical Mechanics", color: "#3498db", symbol: "ball", desc: "The motion of large objects and forces." },
+            { name: "Acoustics", color: "#f1c40f", symbol: "wave", desc: "The production and transmission of sound." },
+            { name: "Electro-Optics", color: "#9b59b6", symbol: "light", desc: "Behavior, propagation, properties of light; refraction and reflection." },
+            { name: "Thermodynamics", color: "#e67e22", symbol: "heat", desc: "Study of thermal energy, heat transfer, and Entropy (disorder)." },
+            { name: "Electromagnetism", color: "#2ecc71", symbol: "magnet", desc: "Electricity, magnetism, and electromagnetic fields." },
+            { name: "Nuclear Physics", color: "#e74c3c", symbol: "atom", desc: "The structure and properties of the atomic nucleus." },
+            { name: "Astrophysics", color: "#1abc9c", symbol: "star", desc: "Physics applied to stars, space, and galaxies; specialized telescopes." }
+        ];
+
+        // Drawing function with an added "isActive" parameter
+        function drawPlanetIcon(ctx, branch, size, t, isActive = false) {
+            ctx.strokeStyle = branch.color;
+            ctx.fillStyle = branch.color + "11"; // Very light fill
+            ctx.lineWidth = 2.5;
+            
+            // If NOT active, use a fixed time to make it static
+            const fixedTime = 0.5; // Example fixed time to keep icons distinct
+            const currentT = isActive ? t : fixedTime;
+
+            switch(branch.symbol) {
+                case "ball": // Classical Mechanics
+                    ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    let ballY = Math.sin(currentT * 4) * (size - 8);
+                    ctx.fillStyle = branch.color; ctx.beginPath(); ctx.arc(0, ballY, size/2.5, 0, Math.PI*2); ctx.fill();
+                    break;
+                case "wave": // Acoustics
+                    for(let i=0; i<3; i++) {
+                        ctx.beginPath(); ctx.arc(0,0, ((currentT*15 + i*8)%size), 0, Math.PI*2); ctx.stroke();
+                    }
+                    ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke();
+                    break;
+                case "light": // Electro-Optics (Refraction and Reflection)
+                    ctx.lineWidth = 2;
+
+                    // 1. Refraction (Top-Left)
+                    const lensX = -size / 2; const lensY = -size / 3;
+                    ctx.fillStyle = branch.color + "22";
+                    ctx.beginPath(); ctx.arc(lensX, lensY, size/2, -0.6, 0.6); ctx.arc(lensX - size/2, lensY, size/2, 0.6, -0.6, true); ctx.closePath(); ctx.fill(); ctx.stroke();
+                    ctx.strokeStyle = isActive ? (time % 1.5 > 0.75 ? "orange" : branch.color) : branch.color;
+                    ctx.beginPath(); ctx.moveTo(lensX - size, lensY - 10); ctx.lineTo(lensX, lensY); ctx.lineTo(lensX + size/1.5, lensY + 15); ctx.stroke();
+
+                    // 2. Reflection (Bottom-Right)
+                    const mirX = size / 2.5; const mirY = size / 3;
+                    ctx.strokeStyle = branch.color; ctx.fillStyle = "silver";
+                    ctx.beginPath(); ctx.rect(mirX - 5, mirY - 15, 10, 30); ctx.fill(); ctx.stroke();
+                    ctx.strokeStyle = isActive ? (time % 1.5 < 0.75 ? "red" : branch.color) : branch.color;
+                    ctx.beginPath(); ctx.moveTo(mirX - size/1.5, mirY - 20); ctx.lineTo(mirX, mirY); ctx.lineTo(mirX - size/1.5, mirY + 20); ctx.stroke();
+                    
+                    ctx.strokeStyle = branch.color; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke();
+                    break;
+                case "heat": // Thermodynamics (Visualize ENTROPY)
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = branch.color;
+                    ctx.lineWidth = 3;
+
+                    // The 'box' or system boundary
+                    ctx.strokeRect(-size, -size/2, size*2, size);
+
+                    // Visualize Disorder vs. Order
+                    if (isActive) {
+                        // Entropy animation (Divider dissolves, energy spreads)
+                        const totalParticles = 60;
+                        const tCycle = (time % 12); // Slow down the cycle
+                        let order = 1;
+                        if (tCycle > 4) order = Math.max(0, 1 - (tCycle - 4) / 5);
+
+                        for (let p = 0; p < totalParticles; p++) {
+                            // Order factor makes them stick left, Disorder spreads them out
+                            let spreadX = (Math.random() - 0.5) * size * 1.8;
+                            let px = (-size/1.5 * order) + (spreadX * (1 - order));
+                            let py = (Math.random() - 0.5) * size * 0.8;
+                            
+                            // Visualizing hot (spread out) energy
+                            ctx.fillStyle = isActive ? (p % 2 === 0 ? "orange" : "red") : branch.color;
+                            ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2); ctx.fill();
+                        }
+                        
+                        // Vertical divider line (melts)
+                        ctx.save();
+                        ctx.globalAlpha = order;
+                        ctx.beginPath(); ctx.moveTo(0, -size/2); ctx.lineTo(0, size/2); ctx.stroke();
+                        ctx.restore();
+                        
+                        ctx.fillStyle = "#333"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center";
+                        ctx.fillText(order > 0.5 ? "Order (Low Entropy)" : "Disorder (High Entropy)", 0, size/2 + 20);
+
+                    } else {
+                        // Static representation (simple disorganized dots)
+                        for (let p = 0; p < 20; p++) {
+                            let px = (Math.random() - 0.5) * size * 1.6;
+                            let py = (Math.random() - 0.5) * size * 0.7;
+                            ctx.fillStyle = branch.color;
+                            ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI*2); ctx.fill();
+                        }
+                    }
+
+                    // Original symbol (optional to keep for identification)
+                    // ctx.font = `${size*1.5}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    // ctx.fillText("♨", Math.sin(fixedTime*2)*5, 0);
+
+                    ctx.strokeStyle = branch.color; ctx.beginPath(); ctx.arc(0,0, size+5, 0, Math.PI*2); ctx.lineWidth = 2.5; ctx.stroke();
+                    break;
+                case "magnet": // Electromagnetism
+                    if(isActive) ctx.rotate(t); else ctx.rotate(fixedTime);
+                    ctx.strokeRect(-size/2, -size/5, size, size/2.5);
+                    ctx.fillStyle = branch.color; ctx.font = `${size*0.8}px Arial`;
+                    ctx.fillText("N", -size/4, 0); ctx.fillText("S", size/4, 0);
+                    ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke();
+                    break;
+                case "atom": // Nuclear
+                    ctx.beginPath(); ctx.arc(0,0, size/2.5, 0, Math.PI*2); ctx.fillStyle = "#ffcccc"; ctx.fill(); ctx.stroke();
+                    const orbitRotation = isActive ? t*2 : fixedTime*2;
+                    for(let i=0; i<2; i++) {
+                        ctx.save();
+                        ctx.rotate(Math.PI/2 + (i*0.5));
+                        ctx.beginPath(); ctx.ellipse(0,0, size*0.9, size/2, orbitRotation, 0, Math.PI*2); ctx.stroke();
+                        ctx.restore();
+                    }
+                    break;
+                case "star": // Astrophysics (Reflecting telescope)
+                    ctx.lineWidth = 2; ctx.strokeStyle = branch.color;
+                    const teleW = size * 1.5; const teleH = size / 1.8;
+                    ctx.strokeRect(-teleW/2, -teleH/2, teleW, teleH);
+                    // Mirrors
+                    ctx.fillStyle = branch.color + "22";
+                    ctx.beginPath(); ctx.arc(teleW/2 - 5, 0, size/2.5, -Math.PI/2, Math.PI/2); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(-teleW/2 + 25, -10); ctx.lineTo(-teleW/2 + 25, 10); ctx.stroke();
+                    // Light path
+                    if(isActive){
+                        ctx.lineWidth = 1.5; ctx.strokeStyle = "red";
+                        ctx.beginPath(); ctx.moveTo(-teleW/2 - 10, -10); ctx.lineTo(teleW/2 - 10, -10);
+                        ctx.moveTo(-teleW/2 - 10, 10); ctx.lineTo(teleW/2 - 10, 10);
+                        ctx.lineTo(-teleW/2 + 25, 0); ctx.lineTo(-teleW/2 + 15, teleH/2 + 5);
+                        ctx.stroke();
+                    }
+                    ctx.beginPath(); ctx.arc(0,0, size+5, 0, Math.PI*2); ctx.lineWidth = 2.5; ctx.stroke();
+                    break;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            time += 0.02;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const orbitRadius = 220;
+
+            // Draw central display background (Sun)
+            const sunGlow = ctx.createRadialGradient(centerX, centerY, 30, centerX, centerY, 120);
+            sunGlow.addColorStop(0, '#fef9e7');
+            sunGlow.addColorStop(1, '#ffffff');
+            ctx.fillStyle = sunGlow;
+            ctx.beginPath(); ctx.arc(centerX, centerY, 120, 0, Math.PI * 2); ctx.fill();
+
+            // Draw orbits (dotted for subtle effect)
+            ctx.strokeStyle = "#e1e8ed"; ctx.lineWidth = 1; ctx.setLineDash([5, 8]);
+            ctx.beginPath(); ctx.arc(centerX, centerY, orbitRadius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+
+            // --- Draw Center Focus Area (ACTIVE) ---
+            if (selectedBranch) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                // Draw a larger version of the selected icon, ACTIVE
+                drawPlanetIcon(ctx, selectedBranch, 70, time, true);
+                
+                // Pulsing glow for selection
+                ctx.shadowBlur = 15 + Math.sin(time*3)*8; ctx.shadowColor = selectedBranch.color;
+                ctx.beginPath(); ctx.arc(0,0, 110, 0, Math.PI*2); ctx.stroke();
+                
+                ctx.restore();
+            } else {
+                // Default: Central Core
+                ctx.fillStyle = '#f1c40f'; // Knowledge Yellow
+                ctx.beginPath(); ctx.arc(centerX, centerY, 40, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#333'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText("PHYSICS", centerX, centerY);
+            }
+
+            // --- Draw Orbiting Planets (The Branches, STATIC ICONS) ---
+            branches.forEach((b, i) => {
+                const orbitSpeed = 0.1;
+                const currentAngle = (i / branches.length) * Math.PI * 2 + (time * orbitSpeed);
+                const planetX = centerX + Math.cos(currentAngle) * orbitRadius;
+                const planetY = centerY + Math.sin(currentAngle) * orbitRadius;
+                
+                b.currentX = planetX; b.currentY = planetY; // Store for click detection
+
+                ctx.save();
+                ctx.translate(planetX, planetY);
+                
+                // Draw smaller version of the icon, STATIC
+                drawPlanetIcon(ctx, b, 25, time, false);
+                
+                // Draw Name Label
+                ctx.fillStyle = "#2c3e50";
+                ctx.font = "bold 13px Segoe UI"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+                ctx.fillText(b.name, 0, 45); // Label below
+                
+                ctx.restore();
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            branches.forEach(b => {
+                const dist = Math.sqrt((mx - b.currentX)**2 + (my - b.currentY)**2);
+                if (dist < 40) { // Large click radius
+                    selectedBranch = b;
+                    titleEl.innerText = "Active Branch: " + b.name;
+                    titleEl.style.color = b.color;
+                    descEl.innerText = b.desc;
+                }
+            });
+        });
+
+        // Initialize default UI display
+        descEl.innerText = "Click any orbiting planet to beam its active animation to the central Sun!";
+
+        draw();
+    </script>
+</body>
+</html>
