@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Physics Thought Experiments</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #fdfdfd; color: #333; margin: 0; padding: 20px; }
+        .container { background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-width: 900px; width: 100%; text-align: center; }
+        .tab-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .tab-btn { padding: 12px 20px; border: none; background: #e9ecef; border-radius: 30px; cursor: pointer; font-weight: bold; transition: 0.3s; color: #495057; }
+        .tab-btn.active { background: #2c3e50; color: white; }
+        canvas { border: 2px solid #f1f3f5; border-radius: 12px; background: #ffffff; margin-bottom: 20px; cursor: grab; }
+        canvas:active { cursor: grabbing; }
+        .controls { margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 10px; display: none; }
+        .info-box { text-align: left; padding: 20px; background: #f8f9fa; border-left: 5px solid #2c3e50; border-radius: 0 10px 10px 0; width: 100%; box-sizing: border-box; }
+        h2 { margin: 0 0 10px 0; color: #2c3e50; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tab-bar" id="tab-bar"></div>
+
+    <div id="display-area">
+        <div id="newton-controls" class="controls">
+            Launch Velocity: <input type="range" id="v-slider" min="2" max="8" step="0.1" value="3">
+            <button onclick="resetNewton()">Fire Cannon!</button>
+        </div>
+        <div id="curie-controls" class="controls">
+            <button onclick="setCurie('Polonium')">Polonium (High Energy)</button>
+            <button onclick="setCurie('Radium')">Radium (Classic Glow)</button>
+        </div>
+
+        <canvas id="mainCanvas" width="750" height="450"></canvas>
+
+        <div class="info-box">
+            <h2 id="sci-name">Loading...</h2>
+            <p id="sci-desc"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const nameEl = document.getElementById('sci-name');
+    const descEl = document.getElementById('sci-desc');
+    const tabBar = document.getElementById('tab-bar');
+
+    let time = 0;
+    let activeTab = 0;
+    const mouse = { x: 375, y: 225, isDown: false, lastX: 375, target: null };
+
+    // --- SHARED DRAWING HELPERS (FARADAY) ---
+    function drawBulb3D(x, y, intensity) {
+        ctx.save();
+        ctx.translate(x, y);
+        if (intensity > 0.05) {
+            const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, 70 * intensity);
+            grad.addColorStop(0, `rgba(255, 240, 150, ${intensity})`);
+            grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(0, 0, 80 * intensity, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.strokeStyle = "#333"; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-15, 30); ctx.bezierCurveTo(-45, 10, -45, -50, 0, -60);
+        ctx.bezierCurveTo(45, -50, 45, 10, 15, 30); ctx.stroke();
+        ctx.strokeStyle = intensity > 0.2 ? "#f1c40f" : "#bbb";
+        ctx.lineWidth = intensity > 0.3 ? 3 : 2;
+        ctx.beginPath(); ctx.moveTo(-10, 10); ctx.lineTo(-5, -15); ctx.lineTo(5, -15); ctx.lineTo(10, 10); ctx.stroke();
+        ctx.fillStyle = "#bdc3c7"; ctx.fillRect(-18, 30, 36, 15);
+        ctx.restore();
+    }
+
+    function drawCoilPart(isFront, bulbGlow) {
+        const coil = { x: 350, y: 225, loops: 12, width: 220, radius: 50 };
+        const spacing = coil.width / coil.loops;
+        ctx.lineWidth = 6;
+        for(let i = 0; i < coil.loops; i++) {
+            const lx = (coil.x - coil.width/2) + (i * spacing);
+            const r = Math.floor(184 + (46 - 184) * Math.min(1, bulbGlow));
+            const g = Math.floor(115 + (204 - 115) * Math.min(1, bulbGlow));
+            const b = Math.floor(51 + (113 - 51) * Math.min(1, bulbGlow));
+            ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.beginPath();
+            if (isFront) ctx.ellipse(lx, coil.y, 12, coil.radius, 0, -Math.PI/2, Math.PI/2);
+            else ctx.ellipse(lx, coil.y, 12, coil.radius, 0, Math.PI/2, 3 * Math.PI/2);
+            ctx.stroke();
+        }
+    }
+
+    // --- EXPERIMENT STATES ---
+    const state = {
+        newton: { ballX: 0, ballY: 0, vx: 0, vy: 0, path: [], active: false },
+        faraday: { magX: 120, brightness: 0 },
+        joule: { angle: 0, throttle: 0.4, carX: 50, lever: { x: 600, y: 280, h: 180, handleR: 12 } },
+        curie: { mode: 'Radium', particles: [] },
+        einstein: { massX: 375, massY: 225 }
+    };
+
+    const experiments = [
+        {
+            name: "Isaac Newton", desc: "The Cannonball Orbit: Increase velocity until the ball falls 'around' the Earth.",
+            draw: () => {
+                ctx.translate(375, 225);
+                ctx.fillStyle = "#3498db"; ctx.beginPath(); ctx.arc(0,0, 60, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#333"; ctx.fillRect(-10, -75, 20, 15);
+                if (state.newton.active) {
+                    let s = state.newton;
+                    let distSq = s.ballX*s.ballX + s.ballY*s.ballY;
+                    let force = 1500 / distSq;
+                    let angle = Math.atan2(s.ballY, s.ballX);
+                    s.vx -= Math.cos(angle) * force; s.vy -= Math.sin(angle) * force;
+                    s.ballX += s.vx; s.ballY += s.vy;
+                    s.path.push({x: s.ballX, y: s.ballY});
+                    if (s.path.length > 100) s.path.shift();
+                    ctx.strokeStyle = "rgba(0,0,0,0.2)"; ctx.beginPath();
+                    s.path.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+                    ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(s.ballX, s.ballY, 4, 0, Math.PI*2); ctx.fill();
+                    if (Math.sqrt(distSq) < 60) s.active = false;
+                }
+            }
+        },
+        {
+            name: "Michael Faraday", desc: "3D Electromagnetic Induction: Drag the magnet through the coil. Motion creates current!",
+            draw: () => {
+                let s = state.faraday;
+                const coilX = 350, coilY = 225, coilW = 220;
+                ctx.strokeStyle = "#ccc"; ctx.lineWidth = 3;
+                if(s.brightness > 0.1) ctx.strokeStyle = `rgba(100,100,100,${0.3 + s.brightness})`;
+                ctx.beginPath();
+                ctx.moveTo(coilX + coilW/2, coilY); ctx.lineTo(600, coilY); ctx.lineTo(600, 150);
+                ctx.moveTo(coilX - coilW/2, coilY); ctx.lineTo(150, coilY); ctx.lineTo(150, 400); ctx.lineTo(600, 400); ctx.lineTo(600, 195);
+                ctx.stroke();
+                drawCoilPart(false, s.brightness);
+                const w = 130, h = 45;
+                const mx = s.magX - w/2, my = coilY - h/2;
+                ctx.fillStyle = "#c0392b"; ctx.fillRect(mx, my, w/2, h);
+                ctx.fillStyle = "#2c3e50"; ctx.fillRect(mx+w/2, my, w/2, h);
+                ctx.fillStyle = "white"; ctx.font = "bold 18px Arial"; ctx.textAlign = "center";
+                ctx.fillText("N", mx + 32, my + 28); ctx.fillText("S", mx + 98, my + 28);
+                drawCoilPart(true, s.brightness);
+                const dist = Math.abs(s.magX - coilX);
+                const prox = Math.max(0, 1.3 - (dist / 200));
+                const speed = Math.abs(s.magX - mouse.lastX);
+                if (mouse.isDown && activeTab === 1) s.brightness += (speed * 0.07) * prox;
+                s.brightness *= 0.93; 
+                if (s.brightness > 1.2) s.brightness = 1.2;
+                drawBulb3D(600, 150, s.brightness);
+            }
+        },
+        {
+            name: "James Joule", desc: "Heat to Motion: Drag the red throttle to inject heat. The 'Power Stroke' turns the motor to move the car.",
+            draw: () => {
+                let s = state.joule;
+                const ex = 220, ey = 320, crankR = 40, rodL = 130;
+                const speed = 0.02 + (s.throttle * 0.18);
+                s.angle += speed;
+                s.carX += speed * 35;
+                if(s.carX > canvas.width + 50) s.carX = -50;
+
+                // Ground
+                ctx.strokeStyle = "#eee"; ctx.beginPath(); ctx.moveTo(0, 125); ctx.lineTo(750, 125); ctx.stroke();
+                
+                // --- DRAW CAR ---
+                ctx.save(); ctx.translate(s.carX, 90);
+                ctx.fillStyle = "#3498db"; ctx.beginPath(); ctx.roundRect(-45, 0, 90, 25, 8); ctx.fill();
+                ctx.fillStyle = "rgba(52,152,219,0.5)"; ctx.beginPath(); ctx.roundRect(-25, -15, 45, 20, 4); ctx.fill();
+                const wheelRot = s.angle * 2.5;
+                const drawW = (wx) => {
+                    ctx.save(); ctx.translate(wx, 25); ctx.rotate(wheelRot);
+                    ctx.fillStyle = "#333"; ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill();
+                    ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(8,0); ctx.stroke();
+                    ctx.restore();
+                }
+                drawW(-30); drawW(25); ctx.restore();
+
+                // --- DRAW THROTTLE ---
+                ctx.save(); ctx.translate(s.lever.x, s.lever.y);
+                ctx.strokeStyle="#ddd"; ctx.lineWidth=8; ctx.lineCap="round";
+                ctx.beginPath(); ctx.moveTo(0, -s.lever.h/2); ctx.lineTo(0, s.lever.h/2); ctx.stroke();
+                const hY = (s.lever.h/2) - (s.throttle * s.lever.h);
+                s.lever.curH = hY + s.lever.y;
+                ctx.strokeStyle="#333"; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,hY); ctx.lineTo(-20,hY); ctx.stroke();
+                ctx.fillStyle="#e74c3c"; ctx.beginPath(); ctx.arc(-20,hY,s.lever.handleR,0,Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle="#7f8c8d"; ctx.font="bold 11px Arial"; ctx.fillText("MAX HEAT", 15, -s.lever.h/2 + 5);
+                ctx.fillText("IDLE", 15, s.lever.h/2 + 5); ctx.restore();
+
+                // --- DRAW ENGINE ---
+                ctx.save(); ctx.translate(ex, ey);
+                const phase = s.angle % (Math.PI * 4);
+                let fill = "rgba(255,255,255,0)", spark = false;
+                if(phase < Math.PI) fill = `rgba(52,152,219,${0.1+s.throttle*0.3})`;
+                else if(phase < Math.PI*2) fill = `rgba(52,152,219,${0.4+s.throttle*0.4})`;
+                else if(phase < Math.PI*3) {
+                    const p = (phase-Math.PI*2)/Math.PI; fill = `rgba(231,76,60,${0.8-p*0.5})`;
+                    if(phase < Math.PI*2.3) spark = true;
+                } else fill = "rgba(150,150,150,0.3)";
+                
+                ctx.strokeStyle="#333"; ctx.lineWidth=4; ctx.strokeRect(-45, -180, 90, 120);
+                const pY = (Math.sin(s.angle)*crankR) - Math.sqrt(rodL**2 - (Math.cos(s.angle)*crankR)**2);
+                ctx.fillStyle = fill; ctx.fillRect(-43, -178, 86, pY + 178);
+                if(spark) { ctx.fillStyle="yellow"; ctx.beginPath(); ctx.arc(0,-175,10,0,Math.PI*2); ctx.fill(); }
+                ctx.strokeStyle="#7f8c8d"; ctx.lineWidth=6; ctx.beginPath(); ctx.moveTo(0, pY+15); ctx.lineTo(Math.cos(s.angle)*crankR, Math.sin(s.angle)*crankR); ctx.stroke();
+                ctx.fillStyle="#2c3e50"; ctx.fillRect(-40, pY, 80, 25);
+                ctx.beginPath(); ctx.arc(0,0,55,0,Math.PI*2); ctx.strokeStyle="#bdc3c7"; ctx.lineWidth=10; ctx.stroke();
+                for(let i=0; i<4; i++) {
+                    const a = s.angle + (i*Math.PI/2); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*50, Math.sin(a)*50); ctx.stroke();
+                }
+                ctx.restore();
+            }
+        },
+        {
+            name: "Marie Curie", desc: "Radioactive Decay: Observe Alpha particles being emitted as the nucleus breaks down.",
+            draw: () => {
+                ctx.translate(375, 225);
+                let s = state.curie;
+                let glow = (s.mode === 'Polonium') ? "rgba(0, 255, 255, 0.3)" : "rgba(0, 255, 0, 0.2)";
+                ctx.shadowBlur = 30; ctx.shadowColor = glow;
+                ctx.fillStyle = (s.mode === 'Polonium') ? "#00ced1" : "#32cd32";
+                ctx.beginPath(); ctx.arc(0,0, 30, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+                if (Math.random() < (s.mode === 'Polonium' ? 0.1 : 0.04)) {
+                    s.particles.push({x:0, y:0, ang: Math.random()*Math.PI*2, life: 1});
+                }
+                s.particles.forEach((p, i) => {
+                    p.x += Math.cos(p.ang) * 5; p.y += Math.sin(p.ang) * 5; p.life -= 0.02;
+                    ctx.fillStyle = `rgba(255,0,0,${p.life})`;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI*2); ctx.fill();
+                    if(p.life <= 0) s.particles.splice(i, 1);
+                });
+            }
+        },
+        {
+            name: "Albert Einstein", desc: "Warped Spacetime: Move your mouse to see how mass bends the grid of the universe.",
+            draw: () => {
+                ctx.strokeStyle = "rgba(155, 89, 182, 0.2)";
+                for(let i=0; i<canvas.width; i+=25) {
+                    ctx.beginPath();
+                    for(let j=0; j<canvas.height; j+=10) {
+                        let dx = i - mouse.x; let dy = j - mouse.y;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        let pull = Math.max(0, 150 - dist) * 0.5;
+                        let ang = Math.atan2(dy, dx);
+                        ctx.lineTo(i - Math.cos(ang)*pull, j - Math.sin(ang)*pull);
+                    }
+                    ctx.stroke();
+                }
+                ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 20, 0, Math.PI*2); ctx.fill();
+            }
+        }
+    ];
+
+    function init() {
+        experiments.forEach((ex, i) => {
+            const btn = document.createElement('button');
+            btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+            btn.innerText = ex.name.split(" ")[1];
+            btn.onclick = () => setTab(i);
+            tabBar.appendChild(btn);
+        });
+        setTab(0);
+        animate();
+    }
+
+    function setTab(i) {
+        activeTab = i;
+        document.querySelectorAll('.tab-btn').forEach((b, idx) => b.className = 'tab-btn' + (idx === i ? ' active' : ''));
+        document.querySelectorAll('.controls').forEach(c => c.style.display = 'none');
+        nameEl.innerText = experiments[i].name;
+        descEl.innerText = experiments[i].desc;
+        if(i === 0) document.getElementById('newton-controls').style.display = 'block';
+        if(i === 3) document.getElementById('curie-controls').style.display = 'block';
+    }
+
+    function resetNewton() {
+        let v = parseFloat(document.getElementById('v-slider').value);
+        state.newton = { ballX: 0, ballY: -75, vx: v, vy: 0, path: [], active: true };
+    }
+
+    function setCurie(m) { state.curie.mode = m; state.curie.particles = []; }
+
+    canvas.onmousedown = (e) => {
+        mouse.isDown = true;
+        if (activeTab === 2) {
+            const dH = Math.sqrt((mouse.x - (state.joule.lever.x - 20))**2 + (mouse.y - state.joule.lever.curH)**2);
+            if (dH < state.joule.lever.handleR + 10) mouse.target = 'lever';
+        }
+    }
+    window.onmouseup = () => { mouse.isDown = false; mouse.target = null; };
+    
+    canvas.onmousemove = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const lastX = mouse.x;
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+        
+        if (activeTab === 1 && mouse.isDown) state.faraday.magX = mouse.x;
+        if (activeTab === 2 && mouse.isDown && mouse.target === 'lever') {
+            const s = state.joule;
+            const top = s.lever.y - s.lever.h/2;
+            const bot = s.lever.y + s.lever.h/2;
+            let nY = Math.max(top, Math.min(bot, mouse.y));
+            s.throttle = (bot - nY) / s.lever.h;
+        }
+        mouse.lastX = lastX;
+    };
+
+    function animate() {
+        ctx.clearRect(0,0,750,450); time += 0.03;
+        ctx.save(); experiments[activeTab].draw(); ctx.restore();
+        requestAnimationFrame(animate);
+    }
+
+    init();
+</script>
+
+</body>
+</html>
