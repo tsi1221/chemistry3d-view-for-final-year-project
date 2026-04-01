@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Local vs. Standard Measurement Lab</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; margin: 0; }
+        .lab-card { background: white; width: 900px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 30px; text-align: center; }
+        .tab-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 25px; border: 2px solid #3498db; background: transparent; color: #3498db; border-radius: 30px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: #3498db; color: white; }
+        canvas { background: #fff; border: 1px solid #eee; border-radius: 10px; cursor: pointer; }
+        .readout { display: flex; justify-content: space-between; margin-top: 15px; font-family: monospace; font-size: 1.1rem; }
+        .local-box { color: #e67e22; border-left: 4px solid #e67e22; padding: 10px; background: #fff5eb; text-align: left; flex: 1; margin-right: 10px; }
+        .standard-box { color: #2ecc71; border-left: 4px solid #2ecc71; padding: 10px; background: #ebfaf0; text-align: left; flex: 1; }
+        .lesson-note { margin-top: 20px; font-style: italic; color: #7f8c8d; font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<div class="lab-card">
+    <h2>Local vs. Standardized Measurement</h2>
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="setMode('length', this)">Length (Hand-span vs Meter)</button>
+        <button class="tab-btn" onclick="setMode('mass', this)">Mass (Stone vs Kilogram)</button>
+    </div>
+
+    <canvas id="conversionCanvas" width="840" height="300"></canvas>
+
+    <div class="readout">
+        <div class="local-box">
+            <strong>Local Measure:</strong> <span id="local-val">--</span>
+            <div style="font-size: 0.8rem; margin-top: 5px;">(Varies by person/object)</div>
+        </div>
+        <div class="standard-box">
+            <strong>Standard (SI):</strong> <span id="standard-val">--</span>
+            <div style="font-size: 0.8rem; margin-top: 5px;">(Identical worldwide)</div>
+        </div>
+    </div>
+
+    <p class="lesson-note">
+        "While local measures vary, the <strong>Basic Quantity</strong> remains the same constant across the world."
+    </p>
+</div>
+
+<script>
+    const canvas = document.getElementById('conversionCanvas');
+    const ctx = canvas.getContext('2d');
+    const localEl = document.getElementById('local-val');
+    const standardEl = document.getElementById('standard-val');
+
+    let mode = 'length';
+    let inputVal = 0.5; // Normalized 0 to 1
+    let isDragging = false;
+
+    function setMode(m, btn) {
+        mode = m;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const midX = canvas.width / 2;
+
+        // Draw Divider
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "#ccc";
+        ctx.beginPath(); ctx.moveTo(midX, 20); ctx.lineTo(midX, 280); ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (mode === 'length') {
+            drawLength(20, 150, midX - 40, inputVal);
+        } else {
+            drawMass(20, 150, midX - 40, inputVal);
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    function drawLength(x, y, w, pct) {
+        const itemW = w * pct;
+        
+        // Local Side: Hand Spans
+        ctx.fillStyle = "#e67e22";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText("TRADITIONAL (HAND-SPAN)", x, y - 60);
+        
+        // Draw hands
+        const handSize = 40;
+        const handsNeeded = Math.ceil(itemW / handSize);
+        for(let i=0; i<handsNeeded; i++) {
+            ctx.fillText("🖐️", x + (i * handSize), y);
+        }
+        localEl.innerText = `${(itemW / handSize).toFixed(1)} Hand-spans`;
+
+        // Standard Side: Ruler
+        const stX = canvas.width/2 + 20;
+        ctx.fillStyle = "#2ecc71";
+        ctx.fillText("STANDARD (SI METER)", stX, y - 60);
+        
+        ctx.fillStyle = "#f1c40f";
+        ctx.fillRect(stX, y - 10, itemW, 20);
+        ctx.strokeStyle = "#000";
+        for(let i=0; i<=itemW; i+=10) {
+            ctx.beginPath();
+            ctx.moveTo(stX + i, y - 10);
+            ctx.lineTo(stX + i, y + (i % 50 === 0 ? 10 : 0));
+            ctx.stroke();
+        }
+        standardEl.innerText = `${(itemW / 100).toFixed(2)} Meters`;
+    }
+
+    function drawMass(x, y, w, pct) {
+        const weight = pct * 100;
+        
+        // Local Side: Stones
+        ctx.fillStyle = "#e67e22";
+        ctx.fillText("TRADITIONAL (STONES)", x, y - 60);
+        const stones = Math.ceil(weight / 15);
+        for(let i=0; i<stones; i++) {
+            ctx.beginPath();
+            ctx.arc(x + 30 + (i*35 % 150), y + (Math.floor(i/5)*30), 12, 0, Math.PI*2);
+            ctx.fill();
+        }
+        localEl.innerText = `${(weight / 15).toFixed(1)} Local Stones`;
+
+        // Standard Side: Digital Scale
+        const stX = canvas.width/2 + 20;
+        ctx.fillStyle = "#2ecc71";
+        ctx.fillText("STANDARD (KILOGRAMS)", stX, y - 60);
+        
+        ctx.fillStyle = "#34495e";
+        ctx.fillRect(stX + 50, y, 100, 20);
+        ctx.fillRect(stX + 20, y+20, 160, 10);
+        
+        ctx.fillStyle = "#000";
+        ctx.font = "20px Courier New";
+        ctx.fillText(`${weight.toFixed(1)} kg`, stX + 65, y + 50);
+        standardEl.innerText = `${weight.toFixed(2)} Kilograms`;
+    }
+
+    canvas.onmousedown = (e) => { isDragging = true; updateVal(e); };
+    window.onmouseup = () => isDragging = false;
+    canvas.onmousemove = (e) => { if(isDragging) updateVal(e); };
+
+    function updateVal(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        inputVal = Math.max(0.1, Math.min(1, x / canvas.width));
+    }
+
+    draw();
+</script>
+</body>
+</html>
