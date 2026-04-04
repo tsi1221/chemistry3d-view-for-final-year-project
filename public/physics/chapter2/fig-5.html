@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Sig Fig Process Lab</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .lab-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); max-width: 1100px; width: 100%; border: 1px solid #eee; }
+        
+        .split-view { display: flex; gap: 30px; margin-top: 20px; }
+        .pane { flex: 1; background: #ffffff; border-radius: 15px; padding: 20px; border: 1px solid #eef0f2; position: relative; }
+        
+        h3 { color: #2c3e50; margin-top: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
+        .icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.9rem; }
+        
+        canvas { background: #fff; border-radius: 8px; width: 100%; height: 400px; cursor: pointer; }
+        
+        .controls { margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; background: #f1f3f5; padding: 15px; border-radius: 12px; }
+        input { border: 2px solid #dee2e6; padding: 8px; border-radius: 6px; width: 100px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 1.1rem; }
+        input:focus { border-color: #3498db; outline: none; }
+        
+        .step-msg { font-size: 0.9rem; font-weight: 600; color: #7f8c8d; margin-top: 10px; min-height: 40px; }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <h2>The Process: How Uncertainty is Filtered</h2>
+    
+    <div class="controls">
+        <div><span class="label">Value A:</span> <input type="text" id="valA" value="12.52" oninput="runProcess()"></div>
+        <div><span class="label">Value B:</span> <input type="text" id="valB" value="3.1" oninput="runProcess()"></div>
+    </div>
+
+    <div class="split-view">
+        <div class="pane">
+            <h3><div class="icon" style="background:#e74c3c">|</div> Addition (Decimal Places)</h3>
+            <div id="msgAdd" class="step-msg">Aligning decimals...</div>
+            <canvas id="addCanvas" width="500" height="400"></canvas>
+        </div>
+
+        <div class="pane">
+            <h3><div class="icon" style="background:#e67e22">⎔</div> Multiplication (Sig Fig Count)</h3>
+            <div id="msgMul" class="step-msg">Counting significant figures...</div>
+            <canvas id="mulCanvas" width="500" height="400"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const addCanvas = document.getElementById('addCanvas');
+    const mulCanvas = document.getElementById('mulCanvas');
+    const msgAdd = document.getElementById('msgAdd');
+    const msgMul = document.getElementById('msgMul');
+
+    function runProcess() {
+        const a = document.getElementById('valA').value;
+        const b = document.getElementById('valB').value;
+        
+        drawAddition(a, b);
+        drawMultiplication(a, b);
+    }
+
+    function getDecimals(s) { return s.includes('.') ? s.length - s.indexOf('.') - 1 : 0; }
+    function getSigFigs(s) { return s.replace('.', '').replace(/^0+/, '').length; }
+
+    function drawAddition(v1, v2) {
+        const ctx = addCanvas.getContext('2d');
+        ctx.clearRect(0, 0, addCanvas.width, addCanvas.height);
+        
+        const d1 = getDecimals(v1);
+        const d2 = getDecimals(v2);
+        const limit = Math.min(d1, d2);
+        const sum = (parseFloat(v1) + parseFloat(v2)).toFixed(4);
+
+        const centerX = 250;
+        const charW = 35;
+        
+        ctx.font = "bold 45px 'Courier New'";
+        ctx.textAlign = "right";
+
+        // Draw decimals aligned vertically
+        ctx.fillStyle = "#34495e";
+        ctx.fillText(v1, centerX + (d1 * charW), 100);
+        ctx.fillText("+ " + v2, centerX + (d2 * charW), 160);
+        
+        // Draw Addition Line
+        ctx.strokeStyle = "#dee2e6"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(50, 185); ctx.lineTo(450, 185); ctx.stroke();
+
+        // The Wall Logic
+        const wallX = centerX + (limit * charW) + 5;
+        ctx.setLineDash([5, 5]); ctx.strokeStyle = "#e74c3c"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(wallX, 50); ctx.lineTo(wallX, 350); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Result
+        ctx.fillStyle = "#2ecc71";
+        ctx.fillText(sum, centerX + (Math.max(d1, d2) * charW), 250);
+
+        // Blurring the uncertain part
+        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+        ctx.fillRect(wallX + 2, 210, 200, 60);
+        
+        msgAdd.innerHTML = `Limiting to <b>${limit}</b> decimal place(s) because of "${limit === d1 ? v1 : v2}".`;
+    }
+
+    function drawMultiplication(v1, v2) {
+        const ctx = mulCanvas.getContext('2d');
+        ctx.clearRect(0, 0, mulCanvas.width, mulCanvas.height);
+        
+        const s1 = getSigFigs(v1);
+        const s2 = getSigFigs(v2);
+        const limit = Math.min(s1, s2);
+        const prod = (parseFloat(v1) * parseFloat(v2)).toString();
+
+        // Input Boxes
+        ctx.textAlign = "center";
+        ctx.font = "bold 30px 'Courier New'";
+        
+        // Box 1
+        ctx.strokeStyle = "#3498db"; ctx.strokeRect(100, 60, 300, 60);
+        ctx.fillStyle = "#34495e"; ctx.fillText(v1, 250, 100);
+        ctx.font = "12px sans-serif"; ctx.fillText(s1 + " SIG FIGS", 250, 50);
+
+        // Box 2
+        ctx.font = "bold 30px 'Courier New'";
+        ctx.strokeStyle = "#3498db"; ctx.strokeRect(100, 140, 300, 60);
+        ctx.fillText(v2, 250, 180);
+        ctx.font = "12px sans-serif"; ctx.fillText(s2 + " SIG FIGS", 250, 135);
+
+        // Raw Product
+        ctx.font = "bold 40px 'Courier New'";
+        ctx.fillStyle = "#bdc3c7"; 
+        ctx.fillText(prod, 250, 280);
+
+        // The "Crop" Chisel
+        const cropW = limit * 45; // Visual width
+        ctx.strokeStyle = "#e67e22"; ctx.lineWidth = 5;
+        ctx.strokeRect(250 - (prod.length * 22.5) / 2 - 10, 240, cropW, 60);
+        
+        ctx.fillStyle = "#e67e22"; ctx.font = "bold 14px sans-serif";
+        ctx.fillText("CHISEL TO " + limit + " SIG FIGS", 250, 330);
+        
+        msgMul.innerHTML = `The "weakest link" has <b>${limit}</b> sig figs. Result must be cropped.`;
+    }
+
+    runProcess();
+</script>
+</body>
+</html>
