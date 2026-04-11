@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mechanical vs. EM Waves: The Vacuum Test</title>
+    <style>
+        :root {
+            --bg-lab: #0f172a; /* Dark slate */
+            --bg-panel: #1e293b;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            
+            --color-mech: #22c55e; /* Green for Particles/Nature */
+            --color-em-e: #ef4444;   /* Red for Electric Field */
+            --color-em-b: #3b82f6;   /* Blue for Magnetic Field */
+            --color-vacuum: #f59e0b; /* Orange for the Test */
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg-lab);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .lab-layout {
+            display: flex;
+            flex-direction: column;
+            width: 900px;
+            height: 650px;
+            background: var(--bg-panel);
+            border-radius: 24px;
+            border: 2px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* --- Header & Vacuum Controls --- */
+        .lab-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 2px solid var(--border);
+            background: rgba(0,0,0,0.2);
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; font-weight: 800; }
+        p.subtitle { margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.9rem; }
+
+        .vacuum-btn {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vacuum-btn:hover { background: var(--color-vacuum); color: #fff; }
+        .vacuum-btn.active { background: var(--color-vacuum); color: #fff; box-shadow: 0 0 20px var(--color-vacuum); }
+
+        /* --- Split Canvas Area --- */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* --- HUD Data Overlays --- */
+        .hud {
+            position: absolute;
+            top: 15px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+        .hud-mech { left: 20px; border-left: 4px solid var(--color-mech); }
+        .hud-em { right: 20px; border-left: 4px solid var(--color-em-e); }
+        .hud-title { font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;}
+        .hud-status { color: var(--color-mech); font-weight: 800;}
+
+        /* --- Footer Insight --- */
+        .lab-footer {
+            padding: 20px 30px;
+            background: rgba(0,0,0,0.2);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-main);
+        }
+        b { color: #fff; }
+        .highlight-mech { color: var(--color-mech); font-weight: bold; }
+        .highlight-em { color: var(--accent); font-weight: bold; }
+
+    </style>
+</head>
+<body>
+
+    <div class="lab-layout">
+        <div class="lab-header">
+            <div>
+                <h1>The Wave Medium Lab</h1>
+                <p class="subtitle">Mechanical vs. Electromagnetic (EM) Energy Propagation</p>
+            </div>
+            <button class="vacuum-btn" id="vacuumBtn" onclick="toggleVacuum()">
+                <span id="pumpIcon">💨</span> ENGAGE VACUUM PUMP
+            </button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="waveCanvas" width="900" height="400"></canvas>
+            
+            <div class="hud hud-mech">
+                <div class="hud-title">1. Mechanical Wave</div>
+                <div>Status: <span class="hud-status" id="statusMech">NORMAL MEDIUM</span></div>
+                <div style="color:var(--text-muted)">Requires: <span style="color:#fff">Matter (Water/Air)</span></div>
+            </div>
+            <div class="hud hud-em">
+                <div class="hud-title">2. Electromagnetic Wave</div>
+                <div>Status: <span class="hud-status" id="statusEm" style="color:#fff">ALWAYS ACTIVE</span></div>
+                <div style="color:var(--text-muted)">Requires: <span style="color:#fff">Self-Propagating Fields</span></div>
+            </div>
+        </div>
+
+        <div class="lab-footer">
+            <b>Informative Insight:</b> When the Vacuum is engaged, the <span class="highlight-mech">Mechanical Wave</span> dies instantly because its energy cannot "jump" across empty space without particles to vibrate. The <span class="highlight-em">EM Wave</span> continues perfectly because it consists of interlocking <span style="color:var(--color-em-e)">Electric</span> and <span style="color:var(--color-em-b)">Magnetic</span> fields that "grow" and "shrink" even in a total void.
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    const vacuumBtn = document.getElementById('vacuumBtn');
+    const statusMech = document.getElementById('statusMech');
+    const pumpIcon = document.getElementById('pumpIcon');
+
+    let time = 0;
+    let isVacuumActive = false;
+    let mechWaveAlpha = 1.0; // For fade out/in effect
+
+    // Particle Grid Constants (Mechanical Medium)
+    const ROWS = 15;
+    const COLS = 45;
+    const SPACING = 20;
+    const START_X = 20;
+    const START_Y = 20; // Top half of canvas
+
+    function toggleVacuum() {
+        isVacuumActive = !isVacuumActive;
+        vacuumBtn.classList.toggle('active');
+        vacuumBtn.innerHTML = isVacuumActive ? "🛑 STOP VACUUM PUMP" : "💨 ENGAGE VACUUM PUMP";
+        
+        if (isVacuumActive) {
+            statusMech.innerText = "VACUUM VOID";
+            statusMech.style.color = "var(--color-vacuum)";
+        } else {
+            statusMech.innerText = "NORMAL MEDIUM";
+            statusMech.style.color = "var(--color-mech)";
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 1. Draw Lab Split Line
+        ctx.strokeStyle = varColor('--border');
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height / 2);
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+
+        // --- SECTION 1: MECHANICAL WAVE (TOP HALF) ---
+        drawMechanicalWave(time);
+
+        // --- SECTION 2: EM WAVE (BOTTOM HALF) ---
+        drawEMWave(time);
+
+        time += isVacuumActive ? 0.02 : 0.05; // Slower in vacuum simulation
+        requestAnimationFrame(draw);
+    }
+
+    // Visualization 1: The Particle Dance (Mechanical)
+    function drawMechanicalWave(t) {
+        const centerY = canvas.height / 4;
+        const wavelength = 200;
+        const amplitude = 30;
+
+        // Animate medium state (particles fade out in vacuum)
+        if (isVacuumActive && mechWaveAlpha > 0) mechWaveAlpha -= 0.05;
+        if (!isVacuumActive && mechWaveAlpha < 1.0) mechWaveAlpha += 0.05;
+
+        // The medium still "exists" mathematically, but its visibility fades
+        ctx.globalAlpha = mechWaveAlpha;
+
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const restX = START_X + (c * SPACING);
+                const restY = centerY - (ROWS * SPACING / 2) + (r * SPACING);
+                
+                // Displacement equation (Longitudinal visualization using transverse Math)
+                const displacement = amplitude * Math.sin((restX / wavelength) * Math.PI * 2 - t);
+                
+                // Transverse visualization: particles move up and down
+                const currentX = restX;
+                const currentY = restY + displacement;
+
+                // Energy Highlight: Color one specific particle Red
+                if (r === 7 && c === 22) {
+                    // This particle only dances up and down, proving it doesn't travel horizontally
+                    ctx.fillStyle = "#fff"; ctx.shadowBlur = 10; ctx.shadowColor = "#fff";
+                    ctx.beginPath(); ctx.arc(currentX, currentY, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.shadowBlur = 0;
+                    
+                    // Optional: Trace its local path
+                    ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(restX, restY - amplitude); ctx.lineTo(restX, restY + amplitude); ctx.stroke();
+                } else {
+                    ctx.fillStyle = varColor('--color-mech');
+                    ctx.beginPath(); ctx.arc(currentX, currentY, 1.5, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+        }
+        ctx.globalAlpha = 1.0; // Reset
+    }
+
+    // Visualization 2: The Field Ripple (EM Wave)
+    function drawEMWave(t) {
+        const centerY = 3 * canvas.height / 4;
+        const wavelength = 250;
+        const amplitude = 60;
+        const startX = 50;
+        const endX = canvas.width - 50;
+
+        // Baseline (The axis of propagation)
+        ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.lineWidth = 1; ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(startX, centerY); ctx.lineTo(endX, centerY); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // EM waves are constant, regardless of vacuum
+        
+        // 1. Draw Electric Field (Red, Vertical)
+        ctx.strokeStyle = varColor('--color-em-e'); ctx.lineWidth = 4;
+        ctx.beginPath();
+        for (let x = startX; x < endX; x++) {
+            const eField = amplitude * Math.sin((x / wavelength) * Math.PI * 2 - t);
+            if (x === startX) ctx.moveTo(x, centerY + eField);
+            else ctx.lineTo(x, centerY + eField);
+        }
+        ctx.stroke();
+
+        // 2. Draw Magnetic Field (Blue, Perpendicular, offset)
+        // For a perfect visualization, we'd use 3D perspective, but interlocking sines work for logic
+        ctx.strokeStyle = varColor('--color-em-b'); ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let x = startX; x < endX; x++) {
+            // Magnetic field is in phase but perpendicular. We offset it mathematically
+            const bField = amplitude * Math.sin((x / wavelength) * Math.PI * 2 - t - (Math.PI/2));
+            if (x === startX) ctx.moveTo(x + 10, centerY + (bField*0.7)); // offset x and scale y for perspective
+            else ctx.lineTo(x + 10, centerY + (bField*0.7));
+        }
+        ctx.stroke();
+
+        // 3. Labels (Fields "Grow" and "Shrink")
+        ctx.fillStyle = varColor('--color-em-e'); ctx.font = "bold 12px Inter";
+        ctx.fillText("Electric Field (E)", startX, centerY - amplitude - 10);
+        ctx.fillStyle = varColor('--color-em-b');
+        ctx.fillText("Magnetic Field (B)", startX + 15, centerY + amplitude + 10);
+    }
+
+    // Helper to get CSS variables
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
+    draw();
+</script>
+</body>
+</html>

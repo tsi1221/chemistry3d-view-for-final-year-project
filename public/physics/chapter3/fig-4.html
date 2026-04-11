@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Horizontal Kinematic Stack</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #fdfdfd; display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
+        .lab-container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 30px rgba(0,0,0,0.05); width: 98%; max-width: 1100px; border: 1px solid #eef2f6; }
+        
+        .car-track { background: #0f172a; height: 60px; border-radius: 12px; position: relative; margin-bottom: 20px; border-bottom: 4px solid #1e293b; }
+        #car { width: 34px; height: 18px; background: #3b82f6; position: absolute; bottom: 8px; border-radius: 4px; border: 2px solid white; }
+        
+        /* The horizontal layout for the three canvases */
+        .graph-row { display: flex; gap: 15px; justify-content: space-between; width: 100%; }
+        .graph-box { flex: 1; text-align: center; }
+        canvas { background: #ffffff; border-radius: 12px; border: 1px solid #f1f5f9; width: 100%; height: 250px; }
+        
+        .controls { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+        button { padding: 14px 28px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 1rem; }
+        .btn-gas { background: #3b82f6; }
+        .btn-brake { background: #ef4444; }
+        .btn-reset { background: #64748b; }
+        
+        .label-box { font-weight: bold; margin-bottom: 8px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <div class="car-track">
+        <div id="car"></div>
+    </div>
+
+    <div class="graph-row">
+        <div class="graph-box">
+            <div class="label-box" style="color: #8b5cf6;">Position ($x$)</div>
+            <canvas id="canvasX"></canvas>
+        </div>
+        <div class="graph-box">
+            <div class="label-box" style="color: #10b981;">Velocity ($v$)</div>
+            <canvas id="canvasV"></canvas>
+        </div>
+        <div class="graph-box">
+            <div class="label-box" style="color: #3b82f6;">Acceleration ($a$)</div>
+            <canvas id="canvasA"></canvas>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-gas" onmousedown="applyAccel(0.25)" onmouseup="applyAccel(0)">APPLY GAS</button>
+        <button class="btn-brake" onmousedown="applyAccel(-0.25)" onmouseup="applyAccel(0)">APPLY BRAKE</button>
+        <button class="btn-reset" onclick="resetSim()">RESET LAB</button>
+    </div>
+</div>
+
+<script>
+    const carEl = document.getElementById('car');
+    const canvases = {
+        x: document.getElementById('canvasX'),
+        v: document.getElementById('canvasV'),
+        a: document.getElementById('canvasA')
+    };
+    const ctxs = {
+        x: canvases.x.getContext('2d'),
+        v: canvases.v.getContext('2d'),
+        a: canvases.a.getContext('2d')
+    };
+
+    let state = { x: 50, v: 0, a: 0 };
+    let history = []; 
+    const maxHistory = 200; // Shorter window for horizontal clarity
+
+    function applyAccel(val) { state.a = val; }
+
+    function resetSim() {
+        state = { x: 50, v: 0, a: 0 };
+        history = [];
+        // Clear canvases
+        Object.values(canvases).forEach(c => c.width = c.clientWidth);
+    }
+
+    function drawSingleGraph(key, color, dataKey, scale) {
+        const ctx = ctxs[key];
+        const c = canvases[key];
+        const h = c.height;
+        const w = c.width;
+
+        ctx.clearRect(0, 0, w, h);
+        
+        // Zero Line
+        ctx.strokeStyle = "#f1f5f9"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+
+        // Data Plot
+        ctx.strokeStyle = color; ctx.lineWidth = 3;
+        ctx.beginPath();
+        for(let i = 0; i < history.length; i++) {
+            const xPos = (i / maxHistory) * w;
+            const val = history[i][dataKey];
+            const yPos = (h/2) - (val * scale);
+            if(i === 0) ctx.moveTo(xPos, yPos);
+            else ctx.lineTo(xPos, yPos);
+        }
+        ctx.stroke();
+    }
+
+    function loop() {
+        // Simple Physics
+        state.v += state.a;
+        state.x += state.v;
+        state.v *= 0.97; // Passive friction
+
+        // Canvas Boundaries
+        if(state.x < 0) { state.x = 0; state.v = 0; }
+        if(state.x > 1050) { state.x = 1050; state.v = 0; }
+
+        carEl.style.left = (state.x / 1050 * 95) + "%";
+
+        history.push({...state});
+        if(history.length > maxHistory) history.shift();
+
+        // Horizontal Scaling: Adjusted for side-by-side boxes
+        drawSingleGraph('x', '#8b5cf6', 'x', 0.1);
+        drawSingleGraph('v', '#10b981', 'v', 4);
+        drawSingleGraph('a', '#3b82f6', 'a', 150);
+
+        requestAnimationFrame(loop);
+    }
+
+    // Initialize canvas sizes
+    Object.values(canvases).forEach(c => {
+        c.width = c.clientWidth;
+        c.height = c.clientHeight;
+    });
+
+    loop();
+</script>
+</body>
+</html>

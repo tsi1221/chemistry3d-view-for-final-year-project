@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friction Laboratory: Static vs Kinetic</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #f1f5f9;
+        }
+        .tabs {
+            display: flex;
+            background: #1e293b;
+            padding: 10px 10px 0 10px;
+            gap: 5px;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: #334155;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #fcfcfd;
+            color: #1e293b;
+        }
+        .tab-content {
+            flex-grow: 1;
+            display: none;
+            border: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab(event, 'staticTab')">1. Static Friction</button>
+        <button class="tab-btn" onclick="openTab(event, 'kineticTab')">2. Kinetic Friction</button>
+    </div>
+
+    <div id="staticTab" class="tab-content active">
+        <iframe srcdoc='
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>The Microscopic Teeth: Static Friction</title>
+                <style>
+                    :root {
+                        --bg-main: #fcfcfd;
+                        --surface-block: #3b82f6;
+                        --surface-floor: #a1a1aa;
+                        --teeth-stress: #ef4444; /* Red for stress */
+                        --teeth-normal: #1e293b;
+                        --text-primary: #1a202c;
+                        --border: #e2e8f0;
+                    }
+
+                    body {
+                        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+                        background-color: var(--bg-main);
+                        color: var(--text-primary);
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        overflow: hidden;
+                        user-select: none;
+                    }
+
+                    .lab-bench {
+                        background: white;
+                        padding: 25px;
+                        border-radius: 20px;
+                        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+                        border: 1px solid var(--border);
+                        text-align: center;
+                        width: 700px;
+                    }
+
+                    h1 { margin: 0 0 10px 0; font-size: 1.6rem; font-weight: 800; }
+                    
+                    .force-display {
+                        background: #f1f5f9;
+                        padding: 10px 20px;
+                        border-radius: 12px;
+                        margin: 15px 0;
+                        border: 1px solid var(--border);
+                    }
+
+                    .equation {
+                        font-family: "Courier New", Courier, monospace;
+                        font-size: 1.2rem;
+                        margin-bottom: 5px;
+                    }
+
+                    .status {
+                        font-weight: bold;
+                        font-size: 1rem;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
+                    }
+
+                    #frictionCanvas {
+                        border-radius: 16px;
+                        cursor: crosshair;
+                    }
+
+                    .instruction-tag {
+                        background: rgba(255, 255, 255, 0.9);
+                        padding: 8px 16px;
+                        border-radius: 8px;
+                        font-size: 0.9rem;
+                        color: #718096;
+                        border: 1px solid var(--border);
+                        margin-top: 15px;
+                    }
+                </style>
+            </head>
+            <body>
+
+                <div class="lab-bench">
+                    <h1>Static Friction Laboratory</h1>
+                    <p style="margin: 0; color: #718096;">Zoom into the microscopic "teeth" holding the block at rest.</p>
+                    
+                    <div class="force-display">
+                        <div class="equation">F<sub>Pull</sub> vs. F<sub>Static Friction</sub></div>
+                        <div class="status" id="frictionStatus">STATUS: <span style="color:var(--surface-floor)">STATIC</span></div>
+                    </div>
+
+                    <canvas id="frictionCanvas" width="650" height="400"></canvas>
+                    
+                    <div class="instruction-tag">
+                        <b>Click and drag</b> the block (blue) to pull it. Feel the resistance of the interlocked teeth!
+                    </div>
+                </div>
+
+            <script>
+                const canvas = document.getElementById("frictionCanvas");
+                const ctx = canvas.getContext("2d");
+                const statusText = document.getElementById("frictionStatus");
+
+                // --- Core Constants ---
+                const CONFIG = {
+                    blockX: 50,
+                    blockY: 150,
+                    blockW: 200,
+                    blockH: 100,
+                    floorY: 250,
+                    breakPointForce: 250, 
+                    teethCount: 40
+                };
+
+                let block = { x: CONFIG.blockX, isDragging: false };
+                let mouse = { startX: 0, currentX: 0 };
+                let pullForce = 0; 
+                let frictionActive = true; 
+                let blockOffset = 0; 
+                let teethBendingForce = 0; 
+
+                let floorTeeth = [];
+                let blockTeeth = [];
+                const toothSpacing = CONFIG.blockW / CONFIG.teethCount;
+                const toothHeight = 15;
+
+                for (let i = 0; i < CONFIG.teethCount; i++) {
+                    floorTeeth.push({ x: i * toothSpacing, height: (Math.random() * toothHeight) + 5 });
+                    blockTeeth.push({ x: i * toothSpacing, height: (Math.random() * toothHeight) + 5 });
+                }
+
+                function update() {
+                    if (block.isDragging) {
+                        pullForce = Math.max(0, mouse.currentX - mouse.startX);
+                        
+                        if (frictionActive) {
+                            teethBendingForce = Math.min(1, pullForce / CONFIG.breakPointForce);
+                            blockOffset = teethBendingForce * (toothSpacing * 0.9);
+                            
+                            if (pullForce > CONFIG.breakPointForce) {
+                                frictionActive = false; 
+                                blockOffset = 0; 
+                                pullForce = 0; 
+                            }
+                        } else {
+                            block.x = Math.max(CONFIG.blockX, (mouse.currentX - mouse.startX) + CONFIG.blockX - CONFIG.breakPointForce);
+                        }
+                    } else {
+                        pullForce = 0;
+                        blockOffset = 0;
+                        teethBendingForce = 0;
+                        frictionActive = true;
+                        block.x = CONFIG.blockX;
+                    }
+                    statusText.innerHTML = frictionActive ? `STATUS: <span style="color:var(--surface-floor)">STATIC</span>` : `STATUS: <span style="color:var(--teeth-stress)">BREAKING MOTION</span>`;
+                }
+
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = varColor("--surface-floor");
+                    ctx.fillRect(0, CONFIG.floorY, canvas.width, canvas.height - CONFIG.floorY);
+                    
+                    ctx.fillStyle = varColor("--surface-block");
+                    ctx.strokeStyle = "#1d4ed8";
+                    ctx.lineWidth = 2;
+                    ctx.fillRect(block.x + blockOffset, CONFIG.blockY, CONFIG.blockW, CONFIG.blockH);
+                    ctx.strokeRect(block.x + blockOffset, CONFIG.blockY, CONFIG.blockW, CONFIG.blockH);
+
+                    const centerY = CONFIG.blockY + CONFIG.blockH / 2;
+                    if (pullForce > 10) {
+                        drawVector(block.x + CONFIG.blockW + blockOffset, centerY, pullForce, "#ef4444", "PULL");
+                        drawVector(block.x + blockOffset, centerY, frictionActive ? -pullForce : 0, "#718096", "FRICTION");
+                    }
+
+                    const zoomRadius = 130;
+                    const zoomX = canvas.width - zoomRadius - 20;
+                    const zoomY = zoomRadius + 20;
+
+                    ctx.strokeStyle = "#e2e8f0";
+                    ctx.lineWidth = 15;
+                    ctx.beginPath(); ctx.arc(zoomX, zoomY, zoomRadius, 0, Math.PI * 2); ctx.stroke();
+                    
+                    ctx.save();
+                    ctx.beginPath(); ctx.arc(zoomX, zoomY, zoomRadius, 0, Math.PI * 2); ctx.clip();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(zoomX - zoomRadius, zoomY - zoomRadius, zoomRadius * 2, zoomRadius * 2);
+
+                    const zoomOffset = blockOffset * 3;
+
+                    floorTeeth.forEach((tooth, i) => {
+                        ctx.fillStyle = varColor("--teeth-normal");
+                        ctx.beginPath();
+                        ctx.moveTo(zoomX - zoomRadius + tooth.x, zoomY);
+                        ctx.lineTo(zoomX - zoomRadius + tooth.x + toothSpacing / 2, zoomY - tooth.height);
+                        ctx.lineTo(zoomX - zoomRadius + tooth.x + toothSpacing, zoomY);
+                        ctx.fill();
+
+                        const stressColor = interpolateColor("#1e293b", "#ef4444", teethBendingForce);
+                        ctx.fillStyle = stressColor;
+                        const shear = (teethBendingForce * 10) * (i / CONFIG.teethCount * 0.1);
+
+                        ctx.beginPath();
+                        ctx.moveTo(zoomX - zoomRadius + blockTeeth[i].x + zoomOffset, zoomY - zoomRadius);
+                        ctx.lineTo(zoomX - zoomRadius + blockTeeth[i].x + toothSpacing / 2 + zoomOffset + shear, zoomY - (toothHeight + 5) * (1-teethBendingForce));
+                        ctx.lineTo(zoomX - zoomRadius + blockTeeth[i].x + toothSpacing + zoomOffset, zoomY - zoomRadius);
+                        ctx.fill();
+                    });
+
+                    if (frictionActive && teethBendingForce > 0.5) {
+                        ctx.shadowBlur = 10 * teethBendingForce;
+                        ctx.shadowColor = "rgba(239, 68, 68, 0.5)";
+                        ctx.strokeStyle = "#ef4444";
+                        ctx.lineWidth = 5 * teethBendingForce;
+                        ctx.beginPath(); ctx.arc(zoomX, zoomY, zoomRadius, 0, Math.PI * 2); ctx.stroke();
+                        ctx.shadowBlur = 0;
+                    }
+                    ctx.restore();
+
+                    ctx.fillStyle = varColor("--surface-floor");
+                    ctx.font = "bold 12px sans-serif";
+                    ctx.fillText("MICROSCOPIC INTERLOCKS", zoomX - 70, zoomY + zoomRadius + 20);
+                }
+
+                function drawVector(x, y, length, color, label) {
+                    ctx.strokeStyle = color;
+                    ctx.fillStyle = color;
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = "round";
+                    const endX = x + length * 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                    ctx.lineTo(endX, y);
+                    ctx.stroke();
+                    const headSize = 10;
+                    const direction = length > 0 ? 1 : -1;
+                    ctx.beginPath();
+                    ctx.moveTo(endX, y);
+                    ctx.lineTo(endX - headSize * direction, y - headSize / 2);
+                    ctx.lineTo(endX - headSize * direction, y + headSize / 2);
+                    ctx.fill();
+                    ctx.fillStyle = varColor("--text-primary");
+                    ctx.font = "bold 10px sans-serif";
+                    ctx.fillText(`${label} ${Math.abs(length).toFixed(0)}N`, x + (length > 0 ? 10 : -70), y - 10);
+                }
+
+                function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+                canvas.addEventListener("mousedown", (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+                    if (mx > block.x && mx < block.x + CONFIG.blockW && my > CONFIG.blockY && my < CONFIG.blockY + CONFIG.blockH) {
+                        block.isDragging = true;
+                        mouse.startX = mx;
+                        mouse.currentX = mx;
+                    }
+                });
+
+                window.addEventListener("mousemove", (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    mouse.currentX = e.clientX - rect.left;
+                });
+
+                window.addEventListener("mouseup", () => {
+                    block.isDragging = false;
+                    frictionActive = true;
+                });
+
+                function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+                function interpolateColor(color1, color2, factor) {
+                    const r1 = parseInt(color1.substring(1,3), 16);
+                    const g1 = parseInt(color1.substring(3,5), 16);
+                    const b1 = parseInt(color1.substring(5,7), 16);
+                    const r2 = parseInt(color2.substring(1,3), 16);
+                    const g2 = parseInt(color2.substring(3,5), 16);
+                    const b2 = parseInt(color2.substring(5,7), 16);
+                    const r = Math.round(r1 + factor * (r2 - r1)).toString(16).padStart(2, "0");
+                    const g = Math.round(g1 + factor * (g2 - g1)).toString(16).padStart(2, "0");
+                    const b = Math.round(b1 + factor * (b2 - b1)).toString(16).padStart(2, "0");
+                    return `#${r}${g}${b}`;
+                }
+                loop();
+            </script>
+            </body>
+            </html>
+            '></iframe>
+    </div>
+
+    <div id="kineticTab" class="tab-content">
+        <iframe srcdoc='
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>The Hill & Valley Slide: Kinetic Friction</title>
+                <style>
+                    :root {
+                        --bg-main: #f8fafc;
+                        --surface-block: #3b82f6; 
+                        --surface-floor: #94a3b8; 
+                        --teeth-static: #1e293b; 
+                        --teeth-kinetic: #f59e0b; 
+                        --text-primary: #1a202c;
+                        --border: #e2e8f0;
+                    }
+
+                    body {
+                        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+                        background-color: var(--bg-main);
+                        color: var(--text-primary);
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        overflow: hidden;
+                        user-select: none;
+                    }
+
+                    .lab-bench {
+                        background: white;
+                        padding: 30px;
+                        border-radius: 24px;
+                        box-shadow: 0 15px 35px -5px rgba(0,0,0,0.05);
+                        border: 1px solid var(--border);
+                        text-align: center;
+                        width: 750px;
+                    }
+
+                    h1 { margin: 0 0 10px 0; font-size: 1.8rem; font-weight: 800; }
+                    
+                    .friction-hud {
+                        display: flex;
+                        justify-content: space-around;
+                        background: #f1f5f9;
+                        padding: 15px;
+                        border-radius: 12px;
+                        margin: 20px 0;
+                        border: 1px solid var(--border);
+                        font-family: "Courier New", Courier, monospace;
+                        font-size: 1.1rem;
+                    }
+
+                    .stat-group { display: flex; flex-direction: column; align-items: center; }
+                    .label { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+                    .value { font-weight: bold; font-size: 1.4rem; }
+
+                    #frictionCanvas {
+                        border-radius: 16px;
+                        cursor: pointer;
+                        background: #ffffff;
+                    }
+
+                    .instruction-tag {
+                        background: rgba(255, 255, 255, 0.9);
+                        padding: 10px 20px;
+                        border-radius: 10px;
+                        font-size: 1rem;
+                        color: #475569;
+                        border: 1px solid var(--border);
+                        margin-top: 20px;
+                    }
+                </style>
+            </head>
+            <body>
+
+                <div class="lab-bench">
+                    <h1>Kinetic Friction: The "Hill & Valley" Slide</h1>
+                    
+                    <div class="friction-hud">
+                        <div class="stat-group">
+                            <div class="label">Status</div>
+                            <div class="value" id="statusVal" style="color:var(--surface-floor)">AT REST</div>
+                        </div>
+                        <div class="stat-group">
+                            <div class="label">Friction Type</div>
+                            <div class="value" id="typeVal">STATIC (f<sub>s</sub>)</div>
+                        </div>
+                        <div class="stat-group">
+                            <div class="label">Retarding Force</div>
+                            <div class="value" id="forceVal">200N</div>
+                        </div>
+                    </div>
+
+                    <canvas id="frictionCanvas" width="700" height="400"></canvas>
+                    
+                    <div class="instruction-tag">
+                        <b>Click the block</b> to apply force. Notice how the resistance drops once the "teeth" begin to bounce!
+                    </div>
+                </div>
+
+            <script>
+                const canvas = document.getElementById("frictionCanvas");
+                const ctx = canvas.getContext("2d");
+                const statusVal = document.getElementById("statusVal");
+                const typeVal = document.getElementById("typeVal");
+                const forceVal = document.getElementById("forceVal");
+
+                const CONFIG = {
+                    blockX: 70, blockY: 150, blockW: 250, blockH: 120, floorY: 270,
+                    staticFriction: 200, kineticFriction: 120, kickForce: 350,
+                    teethCount: 50, toothSpacing: 5, maxToothHeight: 18, zoomRadius: 140
+                };
+
+                let block = { x: CONFIG.blockX, vx: 0, ax: 0 };
+                let frictionState = "STATIC";
+                let isMoving = false;
+                let pushActive = false;
+                let pushFrame = 0;
+
+                let floorTeeth = [];
+                for (let i = 0; i < CONFIG.teethCount * 4; i++) {
+                    floorTeeth.push({ height: (Math.random() * CONFIG.maxToothHeight) + 4 });
+                }
+
+                function update() {
+                    if (pushActive) {
+                        pushFrame++;
+                        if (frictionState === "STATIC") {
+                            if (CONFIG.kickForce > CONFIG.staticFriction) {
+                                frictionState = "BREAKING";
+                                block.ax = (CONFIG.kickForce - CONFIG.staticFriction) / 10;
+                            }
+                        } else {
+                            block.ax = (CONFIG.kickForce - CONFIG.kineticFriction) / 10;
+                        }
+                        if (pushFrame > 20) pushActive = false;
+                    } else if (isMoving) {
+                        block.ax = -CONFIG.kineticFriction / 15;
+                    } else {
+                        block.ax = 0; block.vx = 0;
+                    }
+                    block.vx += block.ax;
+                    block.vx = Math.max(0, block.vx);
+                    block.x += block.vx;
+                    if (block.vx > 0.2) { frictionState = "KINETIC"; isMoving = true; }
+                    else if (isMoving && block.vx <= 0.2) { isMoving = false; frictionState = "STATIC"; block.vx = 0; }
+                    if (block.x > canvas.width) block.x = -CONFIG.blockW;
+                    updateHUD();
+                }
+
+                function updateHUD() {
+                    if (frictionState === "STATIC") {
+                        statusVal.innerText = "AT REST"; statusVal.style.color = "#94a3b8";
+                        typeVal.innerHTML = "STATIC (f<sub>s</sub>)"; forceVal.innerText = CONFIG.staticFriction + "N (max)";
+                    } else {
+                        statusVal.innerText = "IN MOTION"; statusVal.style.color = "#f59e0b";
+                        typeVal.innerHTML = "KINETIC (f<sub>k</sub>)"; forceVal.innerText = CONFIG.kineticFriction + "N";
+                    }
+                }
+
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "#94a3b8"; ctx.fillRect(0, CONFIG.floorY, canvas.width, 130);
+                    ctx.fillStyle = "#3b82f6"; ctx.fillRect(block.x, CONFIG.blockY, CONFIG.blockW, CONFIG.blockH);
+                    const zoomX = canvas.width - CONFIG.zoomRadius - 30;
+                    const zoomY = CONFIG.zoomRadius + 30;
+                    ctx.save();
+                    ctx.beginPath(); ctx.arc(zoomX, zoomY, CONFIG.zoomRadius, 0, Math.PI * 2); ctx.clip();
+                    ctx.fillStyle = "white"; ctx.fillRect(zoomX - CONFIG.zoomRadius, zoomY - CONFIG.zoomRadius, CONFIG.zoomRadius*2, CONFIG.zoomRadius*2);
+                    const viewScale = 4;
+                    const lift = frictionState === "KINETIC" ? 12 : 0;
+                    const blur = frictionState === "KINETIC" ? Math.min(block.vx, 8) : 0;
+                    if (blur > 0) ctx.filter = `blur(${blur}px)`;
+                    for (let i = 0; i < 60; i++) {
+                        let tx = (zoomX - 200) + (i * CONFIG.toothSpacing * viewScale) - (block.vx * viewScale * 2 % 1000);
+                        ctx.fillStyle = "#cbd5e0"; ctx.beginPath(); ctx.moveTo(tx, zoomY + 40); ctx.lineTo(tx + 10, zoomY + 10); ctx.lineTo(tx + 20, zoomY + 40); ctx.fill();
+                        ctx.fillStyle = frictionState === "KINETIC" ? "#f59e0b" : "#1e293b";
+                        ctx.beginPath(); ctx.moveTo(tx, zoomY + 10 - lift); ctx.lineTo(tx + 10, zoomY + 40 - lift); ctx.lineTo(tx + 20, zoomY + 10 - lift); ctx.fill();
+                    }
+                    ctx.filter = "none"; ctx.restore();
+                    ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(zoomX, zoomY, CONFIG.zoomRadius, 0, Math.PI * 2); ctx.stroke();
+                }
+
+                function loop() { update(); draw(); requestAnimationFrame(loop); }
+                canvas.addEventListener("mousedown", () => { if (!isMoving) pushActive = true; });
+                loop();
+            </script>
+            </body>
+            </html>
+            '></iframe>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+</body>
+</html>

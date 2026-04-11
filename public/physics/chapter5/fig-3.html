@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Ultimate Lever Lab: 3 Classes of FLE</title>
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --bar: #1e293b;
+            --effort: #22c55e; /* Green */
+            --load: #3b82f6;   /* Blue */
+            --fulcrum: #f59e0b; /* Orange */
+            --glass: rgba(255,255,255,0.7);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .lab-bench {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 32px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.06);
+            width: 900px;
+            text-align: center;
+            border: 2px solid #fff;
+        }
+
+        h1 { margin: 0; font-size: 2.2rem; font-weight: 900; color: var(--bar); }
+        .mnemonic-sub { margin: 0 0 20px 0; font-size: 1.1rem; color: #64748b; font-weight: bold;}
+
+        .class-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 15px 30px;
+            border-radius: 50px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #64748b;
+        }
+
+        button.active {
+            border-color: var(--bar);
+            background: var(--bar);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        button:not(.active):hover { border-color: var(--bar); color: var(--bar); }
+
+        .dashboard {
+            display: flex;
+            justify-content: space-around;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stat { display: flex; flex-direction: column; align-items: center; }
+        .stat label { font-size: 0.75rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px;}
+        .stat span { font-size: 1.8rem; font-weight: 900; font-family: monospace; }
+        
+        .effort-gauge { 
+            width: 100px; height: 10px; background: #e2e8f0; border-radius: 5px; 
+            margin-top: 10px; overflow: hidden;
+        }
+        .gauge-fill { width: 0%; height: 100%; background: var(--effort); transition: width 0.1s; }
+
+        canvas {
+            border-radius: 20px;
+            background: #ffffff;
+            border: 1px solid #f1f5f9;
+            cursor: move;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        .instruction-bar {
+            margin-top: 20px;
+            padding: 10px;
+            color: #475569;
+            font-weight: bold;
+        }
+        b { color: var(--bar); }
+    </style>
+</head>
+<body>
+
+    <div class="lab-bench">
+        <h1>Lever Dynamics Lab</h1>
+        <p class="mnemonic-sub">Remember <b>FLE 1-2-3</b>: The Middle Component Defines the Class.</p>
+        
+        <div class="class-selector">
+            <button id="btn1" onclick="setClass(1)" class="active">Class 1: F in Center</button>
+            <button id="btn2" onclick="setClass(2)">Class 2: L in Center</button>
+            <button id="btn3" onclick="setClass(3)">Class 3: E in Center</button>
+        </div>
+
+        <div class="dashboard">
+            <div class="stat">
+                <label>Effort Ratio (MA)</label>
+                <span id="stat-ma" style="color:var(--effort)">1.0</span>
+                <div class="effort-gauge"><div class="gauge-fill" id="ma-gauge"></div></div>
+            </div>
+            <div class="stat">
+                <label>Velocity Ratio (VR)</label>
+                <span id="stat-vr" style="color:var(--load)">1.0</span>
+                <p style="margin:5px 0 0 0; font-size:0.7rem; color:#94a3b8">(Distance Trade)</p>
+            </div>
+            <div class="stat">
+                <label>Lab Classification</label>
+                <span id="stat-type">Balanced Machine</span>
+            </div>
+        </div>
+
+        <canvas id="leverCanvas" width="850" height="350"></canvas>
+
+        <div class="instruction-bar">
+            <b>DRAG YOUR HAND</b> vertically to apply force to the lever!
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('leverCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let currentClass = 1;
+    let leverAngle = 0;
+    let isInteracting = false;
+    
+    // Abstracted Positions (Normalized 0 to 100)
+    let fPos = 50, ePos = 10, lPos = 90;
+    let handX, handY; // Screen coords for hand visual
+
+    function setClass(c) {
+        currentClass = c;
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn' + c).classList.add('active');
+        
+        // Setup scenarios with "character" loads
+        if (c === 1) { // F in center (Balanced Machine)
+            fPos = 50; lPos = 20; ePos = 85;
+        } else if (c === 2) { // L in center (Nutcracker)
+            fPos = 10; lPos = 50; ePos = 90;
+        } else if (c === 3) { // E in center (Tweezer)
+            fPos = 10; ePos = 40; lPos = 90;
+        }
+        leverAngle = 0;
+    }
+
+    canvas.addEventListener('mousedown', () => isInteracting = true);
+    window.addEventListener('mouseup', () => { isInteracting = false; leverAngle = 0; });
+    window.addEventListener('mousemove', (e) => {
+        if (isInteracting) {
+            const rect = canvas.getBoundingClientRect();
+            const my = e.clientY - rect.top;
+            // Map mouse Y to lever rotation (normalized physics effort)
+            leverAngle = (my - 175) / 200;
+            leverAngle = Math.max(-0.25, Math.min(0.25, leverAngle)); // Clamp
+        }
+    });
+
+    // Helper Functions
+    function p2s(p) { return 100 + p * 6.5; } // Convert percentage position to screen X
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const centerY = 175, barW = 650;
+
+        // --- 1. Physics Calculations (Law of Moments) ---
+        const d_effort_m = Math.abs(ePos - fPos);
+        const d_load_m = Math.abs(lPos - fPos);
+        const MA = d_effort_m / d_load_m;
+        const VR = d_effort_m / d_load_m; // VR is geometrically MA for an ideal lever
+
+        // --- Update HUD Data ---
+        document.getElementById('stat-ma').innerText = MA.toFixed(2);
+        document.getElementById('stat-vr').innerText = VR.toFixed(2);
+        
+        // MA Gauge (Pulsing high force indicator)
+        let ma_fill = Math.min(1, MA / 2); // 2.0 MA is 100% full
+        document.getElementById('ma-gauge').style.width = (ma_fill * 100) + "%";
+        document.getElementById('ma-gauge').style.background = MA > 1.0 ? varColor('--effort') : varColor('--fulcrum');
+
+        let typeText = "Balanced Machine";
+        if (MA > 1.05) typeText = "Force Multiplier (x" + MA.toFixed(1) + ")";
+        if (MA < 0.95) typeText = "Speed Multiplier";
+        document.getElementById('stat-type').innerText = typeText;
+
+
+        // --- 2. Render Environment ---
+        // Ground Shadow
+        ctx.fillStyle = "rgba(0,0,0,0.03)";
+        ctx.fillRect(80, centerY + 80, 700, 30);
+        ctx.strokeStyle = "#e2e8f0"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(80, centerY + 80); ctx.lineTo(770, centerY + 80); ctx.stroke();
+
+        // --- 3. Render Lever Bar (The Machine) ---
+        const fulcrumX = p2s(fPos);
+        
+        ctx.save();
+        ctx.translate(fulcrumX, centerY);
+        ctx.rotate(leverAngle); // The interaction happens here!
+        
+        // The Slate Bar (Depth)
+        ctx.fillStyle = "#334155";
+        ctx.fillRect(-fulcrumX + 100, -8, barW, 16);
+        ctx.fillStyle = "#1e293b"; // Bar top face
+        ctx.fillRect(-fulcrumX + 100, -8, barW, 6);
+
+        // --- 4. Render Load (Character) ---
+        const lx_on_bar = p2s(lPos) - fulcrumX;
+        drawLoad(lx_on_bar, -8, currentClass, MA);
+        
+        // --- 5. Render Effort (Hand Interaction) ---
+        const ex_on_bar = p2s(ePos) - fulcrumX;
+        drawHand(ex_on_bar, 0, isInteracting);
+
+        // --- 6. Dynamic Vectors (F=ma logic) ---
+        // Load Vector (Gravity - Constant Blue Down)
+        drawVector(lx_on_bar, 20, 70, varColor('--load'), "100N Load", true);
+
+        // Effort Vector (Input - Green - Directional)
+        if (isInteracting && leverAngle != 0) {
+            // High MA = Tiny arrow. Low MA = Huge Arrow.
+            const effortVisSize = Math.max(10, 70 / MA);
+            const effortLabel = Math.round(100 / MA) + "N Input";
+            drawVector(ex_on_bar, 20, effortVisSize, varColor('--effort'), effortLabel, leverAngle < 0);
+        }
+
+        ctx.restore(); // Clear rotation for Fulcrum rendering
+
+
+        // --- 7. Render Fulcrum (The Pivot) ---
+        ctx.fillStyle = "#f59e0b"; ctx.shadowBlur = 10; ctx.shadowColor = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.moveTo(fulcrumX, centerY); ctx.lineTo(fulcrumX - 25, centerY + 60); ctx.lineTo(fulcrumX + 25, centerY + 60); ctx.fill();
+        ctx.shadowBlur = 0; // Clear shadow
+
+        requestAnimationFrame(draw);
+    }
+
+    // Advanced Rendering Helpers
+
+    function drawLoad(x, y, cls, MA) {
+        ctx.save(); ctx.translate(x, y);
+        ctx.font = "30px sans-serif"; ctx.textAlign="center";
+        
+        // Character Loads make the physics intuitive
+        if (cls === 1) { ctx.fillText("📦", 0, -20); } // Package (General)
+        if (cls === 2) { ctx.fillText("🪨", 0, -20); } // Rock (MA always > 1, needs multiplier)
+        if (cls === 3) { ctx.fillText("🪶", 0, -20); } // Feather (MA always < 1, gain distance/speed)
+
+        ctx.fillStyle = "#fff"; ctx.font = "bold 10px sans-serif";
+        ctx.fillText("LOAD", 0, -50);
+        ctx.restore();
+    }
+
+    function drawHand(x, y, active) {
+        ctx.save(); ctx.translate(x, y);
+        ctx.font = active ? "40px sans-serif" : "32px sans-serif";
+        ctx.fillText(active ? "✊" : "✋", -20, active ? 50 : 40);
+        ctx.fillStyle = active ? "#fff" : varColor('--effort'); ctx.font = "bold 10px sans-serif";
+        ctx.textAlign="center"; ctx.fillText(active ? "PUSH!" : "DRAG", 0, active ? 10 : -10);
+        ctx.restore();
+    }
+
+    function drawVector(x, y, len, col, label, isDown) {
+        ctx.strokeStyle = col; ctx.fillStyle = col; 
+        // Force Multiplication Proof: Higher force = Thicker Arrow
+        ctx.lineWidth = label.includes('100') ? 8 : 3;
+        if (label.includes('Load')) ctx.lineWidth = 6;
+
+        const dir = isDown ? 1 : -1;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + (len * dir)); ctx.stroke();
+        
+        // Head
+        const hSize = ctx.lineWidth > 5 ? 12 : 8;
+        ctx.beginPath(); ctx.moveTo(x, y + (len * dir));
+        ctx.lineTo(x - hSize/2, y + (len * dir) - (hSize * dir));
+        ctx.lineTo(x + hSize/2, y + (len * dir) - (hSize * dir));
+        ctx.fill();
+
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(label, x + 18, y + (len * dir) / 2);
+    }
+
+    setClass(1);
+    draw();
+</script>
+</body>
+</html>

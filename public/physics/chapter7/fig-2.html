@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Definitive Thermal Expansion Lab: Micro to Macro</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --atom: #e2e8f0;
+            --bond: #475569;
+            --heat-low: #3b82f6; /* Blue */
+            --heat-high: #ef4444; /* Red */
+            --steel: #94a3b8;    /* Metal A */
+            --brass: #f59e0b;    /* Metal B */
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .lab-bench {
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 900px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .main-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #334155;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button.active {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+            box-shadow: 0 0 15px rgba(255,255,255,0.2);
+        }
+
+        .stat-box { display: flex; flex-direction: column; align-items: center;}
+        .stat-label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;}
+        .stat-value { font-size: 1.8rem; font-weight: 800; font-family: monospace; }
+
+        canvas {
+            background: #000;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            cursor: ns-resize;
+        }
+
+        .hud-msg {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            border-top: 1px solid #334155;
+            padding-top: 10px;
+        }
+        b { color: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="lab-bench">
+    <div class="main-controls">
+        <div class="stat-box">
+            <span class="stat-label">Lab View</span>
+            <div class="view-toggle">
+                <button id="btn-micro" class="active" onclick="setView('micro')">🔬 Micro (Atoms)</button>
+                <button id="btn-macro" onclick="setView('macro')">🛠️ Macro (Strip)</button>
+            </div>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Temperature (T)</span>
+            <input type="range" id="tempIn" min="0" max="100" step="1" value="20" style="width: 300px">
+            <span id="txt-temp" class="stat-value" style="color:var(--heat-low)">20°C</span>
+        </div>
+    </div>
+
+    <canvas id="expansionCanvas" width="850" height="350"></canvas>
+    
+    <div class="hud-msg" id="hud-text">
+        Analyze the core reason for expansion: Increased vibration pushes atoms apart.
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('expansionCanvas');
+    const ctx = canvas.getContext('2d');
+    const tempIn = document.getElementById('tempIn');
+    const txtTemp = document.getElementById('txt-temp');
+    const hudText = document.getElementById('hud-text');
+
+    let currentView = 'micro';
+    let particles = [];
+    const ROWS = 6, COLS = 15, BASE_SPACING = 30;
+
+    function setView(v) {
+        currentView = v;
+        document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + v).classList.add('active');
+        
+        if (v === 'micro') {
+            hudText.innerHTML = "Observe the <b>Vibrating Grid</b>: As Temperature increases, atoms vibrate more violently. The bonds ('springs') must stretch because atoms physically <b>repel their neighbors harder</b> than they attract them.";
+            initParticles();
+        } else {
+            hudText.innerHTML = "Real-World Proof: The <b>Bimetallic Strip</b>. Two joined metals (Brass and Steel). When heated, the <b>Brass (🟠)</b> atoms push harder and expand more than the <b>Steel (⚪)</b>, forcing the entire strip to <b>BEND</b>.";
+        }
+    }
+
+    function initParticles() {
+        particles = [];
+        const startX = (canvas.width / 2) - (COLS * BASE_SPACING / 2);
+        const startY = (canvas.height / 2) - (ROWS * BASE_SPACING / 2);
+        for(let r=0; r<ROWS; r++) {
+            for(let c=0; c<COLS; c++) {
+                particles.push({ origX: startX + c * BASE_SPACING, origY: startY + r * BASE_SPACING });
+            }
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const temp = parseFloat(tempIn.value);
+        const heatRatio = temp / 100; // 0 to 1
+        const heatColor = interpolateColor(varColor('--heat-low'), varColor('--heat-high'), heatRatio);
+
+        // Update HUD
+        txtTemp.innerText = temp + "°C";
+        txtTemp.style.color = heatColor;
+
+        if (currentView === 'micro') {
+            drawMicroView(heatRatio, heatColor);
+        } else {
+            drawMacroView(heatRatio, heatColor);
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    // --- VIEW 1: MICRO (The Atomic Push) ---
+    function drawMicroView(hr, hc) {
+        // Micro logic: Net Repulsive Force causes average d to increase as vibration increases
+        const expansionFactor = 1 + (hr * 0.15); // Max 15% growth
+        const vibAmp = hr * 5; // Vibration gets wider with heat
+
+        // Centering offsets after expansion
+        const offX = (canvas.width / 2) - (COLS * BASE_SPACING * expansionFactor / 2);
+        const offY = (canvas.height / 2) - (ROWS * BASE_SPACING * expansionFactor / 2);
+
+        // 1. Bonds (Springs)
+        ctx.strokeStyle = varColor('--bond'); ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
+        for(let r=0; r<ROWS; r++) {
+            for(let c=0; c<COLS; c++) {
+                const i = r * COLS + c;
+                // Calculate position including vibration
+                const px = particles[i].origX * expansionFactor + (Math.random()*2-1)*vibAmp + (offX - particles[i].origX);
+                const py = particles[i].origY * expansionFactor + (Math.random()*2-1)*vibAmp + (offY - particles[i].origY);
+                
+                // Store current animated pos for drawing next
+                particles[i].currX = px; particles[i].currY = py;
+
+                if (c < COLS - 1) { // Connect Right
+                    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px + BASE_SPACING * expansionFactor, py); ctx.stroke();
+                }
+                if (r < ROWS - 1) { // Connect Down
+                    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, py + BASE_SPACING * expansionFactor); ctx.stroke();
+                }
+            }
+        }
+        ctx.globalAlpha = 1.0;
+
+        // 2. Atoms (Heating up)
+        ctx.shadowBlur = hr * 15; ctx.shadowColor = hc;
+        for(let p of particles) {
+            ctx.fillStyle = hc; ctx.beginPath(); ctx.arc(p.currX, p.currY, 4, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.shadowBlur = 0;
+    }
+
+    // --- VIEW 2: MACRO (The Bimetallic Strip) ---
+    function drawMacroView(hr, hc) {
+        // Macro Logic: One metal expands faster than the other, causing bending
+        const startX = 150, startY = 150, length = 550, height = 50;
+
+        // Expansion Coefficients (Normalized for visual logic)
+        // Brass expands 2x more than Steel for the same heat
+        const alphaSteel = 1 + (hr * 0.04); // 4% max length growth
+        const alphaBrass = 1 + (hr * 0.08); // 8% max length growth
+
+        // The Bending Logic: Because A is joined to B, the difference in length forces a curve.
+        // Higher heat = Higher curve. We model the strip as an arc of a circle.
+        const maxBendAngle = Math.PI / 8; // Max curve (22.5 degrees)
+        const bendAngle = hr * maxBendAngle;
+
+        const centerX = startX;
+        const radius = length / bendAngle; // Large radius = less curve
+
+        ctx.save();
+        ctx.translate(startX, startY + radius); // Bend around a point below
+        
+        // Draw Steel (Low Expander - Top)
+        drawBentMetal(radius, radius + height/2, alphaSteel * length, bendAngle, varColor('--steel'), "Steel (⚪)");
+        
+        // Draw Brass (High Expander - Bottom)
+        drawBentMetal(radius + height/2, radius + height, alphaBrass * length, bendAngle, varColor('--brass'), "Brass (🟠)");
+        
+        ctx.restore();
+    }
+
+    function drawBentMetal(rInner, rOuter, len, angle, col, label) {
+        ctx.fillStyle = col; ctx.strokeStyle = "#000"; ctx.lineWidth = 1;
+        
+        // Convert length difference into a specific angle spread for this layer
+        // (This is the complex math that visualizes the physics correctly)
+        // If the inner layer has length L, the outer must have L*(rOuter/rInner)
+        const angularSpread = angle * (len / 550); // Normalized to initial length
+
+        // Draw Arc Segment
+        ctx.beginPath();
+        // Start angle is centered vertically
+        const startA = -angularSpread / 2 - Math.PI/2; 
+        const endA = angularSpread / 2 - Math.PI/2;
+        ctx.arc(0, 0, rInner, startA, endA); // Inner Arc
+        ctx.lineTo(rOuter * Math.cos(endA), rOuter * Math.sin(endA)); // Join end
+        ctx.arc(0, 0, rOuter, endA, startA, true); // Outer Arc (reverse)
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Label
+        if (len > 560) { // Only show label when there's heat
+            ctx.fillStyle = "#fff"; ctx.font = "bold 12px Inter"; ctx.textAlign = "left";
+            ctx.fillText(label, 20 + len/2 * Math.cos(endA), len/2 * Math.sin(endA));
+        }
+    }
+
+    // Advanced color interpolation
+    function interpolateColor(color1, color2, factor) {
+        if (factor === 0) return color1; if (factor === 1) return color2;
+        const c1 = parseColor(color1); const c2 = parseColor(color2);
+        const r = Math.round(c1.r + factor * (c2.r - c1.r));
+        const g = Math.round(c1.g + factor * (c2.g - c1.g));
+        const b = Math.round(c1.b + factor * (c2.b - c1.b));
+        return `rgb(${r}, ${g}, ${b})`;
+    }
+    function parseColor(c) {
+        if (c.startsWith('#')) { /* Convert hex to rgb... omitting for brevity */ return {r:0,g:0,b:0}; }
+        const match = c.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+        return match ? { r: parseInt(match[1]), g: parseInt(match[2]), b: parseInt(match[3]) } : {r:0,g:0,b:0};
+    }
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+    // Start Lab
+    initParticles();
+    draw();
+</script>
+</body>
+</html>

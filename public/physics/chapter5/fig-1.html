@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Labs Portal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #cbd5e1;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .tabs-header {
+            display: flex;
+            background: #1e293b;
+            padding: 10px 20px 0 20px;
+            gap: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: #334155;
+            color: #94a3b8;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: #475569;
+            color: white;
+        }
+
+        .tab-btn.active {
+            background: #eef2f7;
+            color: #1e293b;
+        }
+
+        .tab-content {
+            display: none;
+            flex-grow: 1;
+            width: 100%;
+            border: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tabs-header">
+        <button class="tab-btn active" onclick="openTab(event, 'lab1')">Flagpole Pulley</button>
+        <button class="tab-btn" onclick="openTab(event, 'lab2')">Mechanical Advantage</button>
+        <button class="tab-btn" onclick="openTab(event, 'lab3')">Master Lever</button>
+    </div>
+
+    <div id="lab1" class="tab-content active">
+        <iframe srcdoc='
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>The Flagpole Pulley Lab</title>
+                <style>
+                    :root {
+                        --bg: #eef2f7;
+                        --rope: #854d0e;
+                        --effort: #ef4444;
+                        --load: #3b82f6;
+                        --metal: #334155;
+                    }
+
+                    body {
+                        font-family: "Segoe UI", system-ui, sans-serif;
+                        background: var(--bg);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        margin: 0;
+                        overflow: hidden;
+                        user-select: none;
+                    }
+
+                    .lab-card {
+                        background: white;
+                        padding: 40px;
+                        border-radius: 32px;
+                        box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+                        text-align: center;
+                        border: 2px solid #fff;
+                    }
+
+                    .hud {
+                        display: flex;
+                        justify-content: space-around;
+                        margin-bottom: 25px;
+                        background: #f8fafc;
+                        padding: 15px;
+                        border-radius: 20px;
+                        border: 1px solid #e2e8f0;
+                    }
+
+                    .stat { display: flex; flex-direction: column; }
+                    .stat label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+                    .stat span { font-size: 1.5rem; font-weight: 900; font-family: monospace; }
+
+                    canvas {
+                        background: #ffffff;
+                        border-radius: 20px;
+                        cursor: ns-resize;
+                        box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);
+                    }
+
+                    .hint {
+                        margin-top: 20px;
+                        color: #64748b;
+                        font-size: 0.9rem;
+                        animation: bounce 2s infinite;
+                    }
+
+                    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+                </style>
+            </head>
+            <body>
+
+                <div class="lab-card">
+                    <h1 style="margin: 0 0 5px 0; font-size: 1.8rem; color: #1e293b;">Fixed Pulley Vector Lab</h1>
+                    <p style="margin: 0 0 20px 0; color: #64748b;">Changing direction: Effort <b>Down</b>, Load <b>Up</b>.</p>
+
+                    <div class="hud">
+                        <div class="stat">
+                            <label>Effort Vector</label>
+                            <span id="effort-dir" style="color:var(--effort)">- -</span>
+                        </div>
+                        <div class="stat">
+                            <label>Load Vector</label>
+                            <span id="load-dir" style="color:var(--load)">- -</span>
+                        </div>
+                    </div>
+
+                    <canvas id="pulleyCanvas" width="500" height="400"></canvas>
+
+                    <div class="hint"><b>DRAG THE RED HANDLE</b> down to lift the bucket!</div>
+                </div>
+
+            <script>
+                const canvas = document.getElementById("pulleyCanvas");
+                const ctx = canvas.getContext("2d");
+
+                let ropeOffset = 50; 
+                let isDragging = false;
+                let lastY = 0;
+                let targetOffset = 50;
+                let slosh = 0;
+
+                canvas.addEventListener("mousedown", e => {
+                    const rect = canvas.getBoundingClientRect();
+                    const my = e.clientY - rect.top;
+                    if (my > 150 + ropeOffset - 30) {
+                        isDragging = true;
+                        lastY = e.clientY;
+                    }
+                });
+
+                window.addEventListener("mousemove", e => {
+                    if (isDragging) {
+                        let delta = e.clientY - lastY;
+                        targetOffset += delta;
+                        targetOffset = Math.max(0, Math.min(220, targetOffset));
+                        lastY = e.clientY;
+                        slosh = delta * 0.5; 
+                    }
+                });
+
+                window.addEventListener("mouseup", () => isDragging = false);
+
+                function draw() {
+                    ropeOffset += (targetOffset - ropeOffset) * 0.1;
+                    slosh *= 0.9;
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const PX = 250, PY = 80, R = 35;
+
+                    ctx.fillStyle = "#334155";
+                    ctx.beginPath(); ctx.arc(PX, PY, R, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = "#94a3b8";
+                    ctx.beginPath(); ctx.arc(PX, PY, R - 10, 0, Math.PI * 2); ctx.fill();
+                    
+                    ctx.strokeStyle = "#475569"; ctx.lineWidth = 4;
+                    for(let i=0; i<4; i++) {
+                        ctx.save(); ctx.translate(PX, PY); ctx.rotate((ropeOffset/20) + (i * Math.PI/2));
+                        ctx.beginPath(); ctx.moveTo(0,-R); ctx.lineTo(0,R); ctx.stroke(); ctx.restore();
+                    }
+
+                    ctx.strokeStyle = "#854d0e"; ctx.lineWidth = 6;
+                    let vib = isDragging ? Math.sin(Date.now()*0.1)*2 : 0;
+
+                    ctx.beginPath(); ctx.moveTo(PX - R, PY);
+                    ctx.lineTo(PX - R + vib, 250 - ropeOffset); ctx.stroke();
+                    
+                    ctx.beginPath(); ctx.moveTo(PX + R, PY);
+                    ctx.lineTo(PX + R + vib, 150 + ropeOffset); ctx.stroke();
+
+                    ctx.save();
+                    ctx.translate(PX - R, 250 - ropeOffset);
+                    ctx.rotate(slosh * 0.02);
+                    ctx.fillStyle = "#3b82f6"; ctx.fillRect(-25, 0, 50, 60);
+                    ctx.strokeStyle = "#1d4ed8"; ctx.lineWidth = 3; ctx.strokeRect(-25, 0, 50, 60);
+                    ctx.fillStyle = "#93c5fd"; ctx.fillRect(-22, 5, 44, 10);
+                    ctx.restore();
+
+                    ctx.shadowBlur = isDragging ? 20 : 0; ctx.shadowColor = "#ef4444";
+                    ctx.fillStyle = "#ef4444";
+                    ctx.beginPath(); ctx.arc(PX + R, 150 + ropeOffset, 20, 0, Math.PI*2); ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    if (isDragging) {
+                        drawVector(PX + R + 50, 150 + ropeOffset, 60, "#ef4444", "DOWN");
+                        drawVector(PX - R - 60, 250 - ropeOffset + 30, -60, "#3b82f6", "UP");
+                        document.getElementById("effort-dir").innerText = "DOWN ↓";
+                        document.getElementById("load-dir").innerText = "UP ↑";
+                    } else {
+                        document.getElementById("effort-dir").innerText = "- -";
+                        document.getElementById("load-dir").innerText = "- -";
+                    }
+
+                    requestAnimationFrame(draw);
+                }
+
+                function drawVector(x, y, len, col, lab) {
+                    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 5;
+                    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + len); ctx.stroke();
+                    let head = len > 0 ? 12 : -12;
+                    ctx.beginPath(); ctx.moveTo(x, y+len); ctx.lineTo(x-8, y+len-head); ctx.lineTo(x+8, y+len-head); ctx.fill();
+                }
+
+                draw();
+            </script>
+            </body>
+            </html>
+        '></iframe>
+    </div>
+
+    <div id="lab2" class="tab-content">
+        <iframe srcdoc='
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>The Mechanical Advantage Dynamometer (F vs d)</title>
+                <style>
+                    :root {
+                        --bg: #f8fafc;
+                        --box: #92400e; 
+                        --lift-force: #ef4444; 
+                        --ramp-force: #22c55e; 
+                        --crank-metal: #475569;
+                        --text-main: #1e293b;
+                        --border: #e2e8f0;
+                    }
+
+                    body {
+                        font-family: "Segoe UI", system-ui, sans-serif;
+                        background-color: var(--bg);
+                        color: var(--text-main);
+                        margin: 0;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        overflow: hidden;
+                        user-select: none;
+                    }
+
+                    .lab-bench {
+                        background: white;
+                        padding: 30px;
+                        border-radius: 24px;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+                        border: 2px solid #fff;
+                        text-align: center;
+                        width: 800px;
+                    }
+
+                    h1 { margin: 0 0 10px 0; font-size: 1.8rem; font-weight: 900; color: #1e293b; }
+                    
+                    .hud-display {
+                        display: flex;
+                        justify-content: space-around;
+                        background: #f1f5f9;
+                        padding: 15px;
+                        border-radius: 20px;
+                        margin-bottom: 25px;
+                        border: 1px solid var(--border);
+                    }
+
+                    .stat-group { display: flex; flex-direction: column; align-items: center; }
+                    .label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; font-weight: bold;}
+                    .value { font-weight: bold; font-size: 1.7rem; font-family: "Courier New", monospace; }
+
+                    #labCanvas {
+                        background: #ffffff;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        box-shadow: inset 0 2px 15px rgba(0,0,0,0.03);
+                        border: 1px solid var(--border);
+                    }
+
+                    .instruction-tag {
+                        background: rgba(255, 255, 255, 0.9);
+                        padding: 12px 24px;
+                        border-radius: 50px;
+                        font-size: 1rem;
+                        color: #475569;
+                        border: 1px solid var(--border);
+                        margin-top: 25px;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+                    }
+                    b { color: #1e293b; }
+                </style>
+            </head>
+            <body>
+
+                <div class="lab-bench">
+                    <h1>Mechanical Advantage: Direct Proof</h1>
+                    <p style="margin:0 0 15px 0; color:#64748b;">Work = Force x distance. The Machine trades F for d.</p>
+                    
+                    <div class="hud-display">
+                        <div class="stat-group">
+                            <div class="label">Lift Height (h)</div>
+                            <div class="value">2.0<small>m</small></div>
+                        </div>
+                        <div class="stat-group" style="border-left: 2px solid #e2e8f0; padding-left: 15px;">
+                            <div class="label" style="color:var(--lift-force)">Direct Force A (fs)</div>
+                            <div class="value" style="color:var(--lift-force)" id="forceALabel">0<small>N</small></div>
+                        </div>
+                        <div class="stat-group">
+                            <div class="label" style="color:var(--ramp-force)">Ramp Force B (fk)</div>
+                            <div class="value" style="color:var(--ramp-force)" id="forceBLabel">0<small>N</small></div>
+                        </div>
+                        <div class="stat-group" style="border-left: 2px solid #e2e8f0; padding-left: 15px;">
+                            <label class="label">Total Work (W)</label>
+                            <span class="value" id="workLabel">0.0<small>J</small></span>
+                        </div>
+                    </div>
+
+                    <canvas id="labCanvas" width="750" height="350"></canvas>
+                    
+                    <div class="instruction-tag">
+                        <b>CLICK AND ROTATE THE CRANK</b> vertically to apply force to both crates.
+                    </div>
+                </div>
+
+            <script>
+                const canvas = document.getElementById("labCanvas");
+                const ctx = canvas.getContext("2d");
+
+                const CONFIG = {
+                    h: 2.0, m: 10, g: 10, ramp_L: 8.0, crateSize: 60, groundY: 300, truckY: 100, startBoxX: 50, truckX: 650
+                };
+
+                const StaticFriction_A = CONFIG.m * CONFIG.g; 
+                const Force_A_Kinetic = StaticFriction_A * 0.9; 
+                const MA = CONFIG.ramp_L / CONFIG.h; 
+                const Force_B_Kinetic = Force_A_Kinetic / MA; 
+                
+                let crateA = { x: CONFIG.truckX + 20, y: CONFIG.groundY - CONFIG.crateSize }; 
+                let crateB = { x: CONFIG.startBoxX, y: CONFIG.groundY - CONFIG.crateSize }; 
+                let isCranking = false;
+                let lastCrankY = 0;
+                let crankRotation = 0; 
+                let totalWorkAccum = 0;
+
+                canvas.addEventListener("mousedown", (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+                    if (mx > canvas.width - 100 && mx < canvas.width && my > CONFIG.groundY - 100 && my < CONFIG.groundY + 100) {
+                        isCranking = true;
+                        lastCrankY = e.clientY;
+                    }
+                });
+
+                window.addEventListener("mousemove", (e) => {
+                    if (isCranking) {
+                        let deltaY = e.clientY - lastCrankY;
+                        if (deltaY > 0) { 
+                            crankRotation += deltaY; 
+                            let moveScale = 0.5; 
+                            let dx = deltaY * moveScale;
+
+                            if (crateA.y > CONFIG.truckY) {
+                                crateA.y -= dx * (Force_A_Kinetic / 100); 
+                                document.getElementById("forceALabel").innerText = `${Force_A_Kinetic.toFixed(0)}N (fk)`;
+                                document.getElementById("forceBLabel").innerText = `${Force_B_Kinetic.toFixed(0)}N`;
+                                totalWorkAccum += Force_A_Kinetic * (dx * (Force_A_Kinetic / 100)) / 50;
+                            } else {
+                                crateA.y = CONFIG.truckY;
+                            }
+
+                            const rampWidth = CONFIG.truckX - (CONFIG.startBoxX + CONFIG.crateSize);
+                            if (crateB.x < CONFIG.truckX - CONFIG.crateSize) {
+                                crateB.x += dx * MA * (Force_B_Kinetic / 100);
+                                const slope = (CONFIG.groundY - CONFIG.crateSize - CONFIG.truckY) / rampWidth;
+                                crateB.y = (CONFIG.groundY - CONFIG.crateSize) - ((crateB.x - CONFIG.startBoxX) * slope);
+                            } else {
+                                crateB.x = CONFIG.truckX - CONFIG.crateSize;
+                                crateB.y = CONFIG.truckY; 
+                            }
+                        }
+                        lastCrankY = e.clientY;
+                    }
+                });
+
+                window.addEventListener("mouseup", () => { isCranking = false; });
+
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = "#e2e8f0";
+                    ctx.fillRect(0, CONFIG.groundY, canvas.width, canvas.height - CONFIG.groundY);
+                    ctx.fillStyle = "#cbd5e0";
+                    ctx.fillRect(0, CONFIG.truckY - 10, canvas.width, 10);
+                    ctx.fillStyle = "#94a3b8";
+                    ctx.fillRect(CONFIG.truckX, CONFIG.truckY, canvas.width - CONFIG.truckX, CONFIG.groundY - CONFIG.truckY);
+                    ctx.fillStyle = "#cbd5e0"; ctx.lineWidth = 10;
+                    ctx.beginPath(); ctx.moveTo(CONFIG.truckX, CONFIG.truckY); ctx.lineTo(CONFIG.truckX, CONFIG.groundY); ctx.stroke();
+                    ctx.fillStyle = "#64748b"; ctx.font = "bold 12px sans-serif"; ctx.fillText("TRUCK BED (h=2m)", CONFIG.truckX + 20, CONFIG.truckY + 20);
+
+                    ctx.strokeStyle = "#cbd5e0"; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.moveTo(CONFIG.startBoxX + CONFIG.crateSize, CONFIG.groundY);
+                    ctx.lineTo(CONFIG.truckX - CONFIG.crateSize, CONFIG.truckY); ctx.stroke();
+
+                    if (isCranking) {
+                        drawArrow(crateA.x + 30, crateA.y + 10, Force_A_Kinetic, varColor("--lift-force"), `${Force_A_Kinetic.toFixed(0)}N (fk)`, "down");
+                        const angle = Math.atan2(CONFIG.groundY - CONFIG.crateSize - CONFIG.truckY, CONFIG.truckX - (CONFIG.startBoxX + CONFIG.crateSize));
+                        drawArrow(crateB.x - 30, crateB.y + 40, Force_B_Kinetic, varColor("--ramp-force"), `${Force_B_Kinetic.toFixed(0)}N (fk)`, "diag", angle);
+                        
+                        ctx.setLineDash([5, 5]); ctx.strokeStyle = "#64748b"; ctx.lineWidth = 2;
+                        ctx.beginPath(); ctx.moveTo(crateA.x + CONFIG.crateSize + 10, CONFIG.groundY);
+                        ctx.lineTo(crateA.x + CONFIG.crateSize + 10, crateA.y); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(CONFIG.startBoxX + CONFIG.crateSize - 10, CONFIG.groundY - 10);
+                        ctx.lineTo(crateB.x - 10, crateB.y - 10); ctx.stroke();
+                        ctx.setLineDash([]); ctx.fillStyle = "#64748b"; ctx.font = "bold 10px sans-serif";
+                        ctx.fillText("d = 2m", crateA.x + CONFIG.crateSize + 15, CONFIG.groundY - 10);
+                        ctx.fillText("d = 8m", (CONFIG.startBoxX + crateB.x)/2 - 20, (CONFIG.groundY + crateB.y)/2 - 15);
+                    }
+
+                    ctx.fillStyle = varColor("--box");
+                    ctx.fillRect(crateA.x, crateA.y, CONFIG.crateSize, CONFIG.crateSize);
+                    ctx.strokeStyle = "#78350f"; ctx.lineWidth = 3;
+                    ctx.strokeRect(crateA.x, crateA.y, CONFIG.crateSize, CONFIG.crateSize);
+                    ctx.fillStyle = varColor("--box");
+                    ctx.fillRect(crateB.x, crateB.y, CONFIG.crateSize, CONFIG.crateSize);
+                    ctx.strokeRect(crateB.x, crateB.y, CONFIG.crateSize, CONFIG.crateSize);
+
+                    const crankX = canvas.width - 50, crankY = CONFIG.groundY - 10;
+                    ctx.fillStyle = varColor("--crank-metal");
+                    ctx.beginPath(); ctx.arc(crankX, crankY, 15, 0, Math.PI * 2); ctx.fill(); 
+                    ctx.save(); ctx.translate(crankX, crankY); ctx.rotate(crankRotation * Math.PI / 180);
+                    ctx.fillStyle = "#1e293b"; ctx.fillRect(-5, -5, 60, 10); 
+                    ctx.fillStyle = "#334155"; ctx.beginPath(); ctx.arc(55, 0, 10, 0, Math.PI * 2); ctx.fill(); 
+                    ctx.restore();
+
+                    document.getElementById("workLabel").innerText = Math.min(200, totalWorkAccum).toFixed(1) + "J";
+                }
+
+                function drawArrow(x, y, length, color, label, direction = "down", angle = 0) {
+                    ctx.strokeStyle = color; ctx.fillStyle = color;
+                    ctx.lineWidth = length > 50 ? 8 : 2; 
+                    ctx.beginPath(); ctx.moveTo(x, y);
+                    if (direction === "down") ctx.lineTo(x, y + length);
+                    else if (direction === "up") ctx.lineTo(x, y - length);
+                    else if (direction === "diag") ctx.lineTo(x + Math.cos(angle) * length, y - Math.sin(angle) * length);
+                    ctx.stroke();
+
+                    let headX, headY;
+                    if (direction === "down") { headX = x; headY = y + length; }
+                    else if (direction === "up") { headX = x; headY = y - length; }
+                    else if (direction === "diag") { headX = x + Math.cos(angle) * length; headY = y - Math.sin(angle) * length; }
+                    
+                    const headSize = length > 50 ? 14 : 8;
+                    ctx.beginPath(); ctx.moveTo(headX, headY);
+                    if (direction === "up") { ctx.lineTo(headX - headSize / 2, headY + headSize); ctx.lineTo(headX + headSize / 2, headY + headSize); }
+                    else if (direction === "down") { ctx.lineTo(headX - headSize / 2, headY - headSize); ctx.lineTo(headX + headSize / 2, headY - headSize); }
+                    else if (direction === "diag") { ctx.save(); ctx.translate(headX, headY); ctx.rotate(angle); ctx.moveTo(0,0); ctx.lineTo(-headSize, -headSize/2); ctx.lineTo(-headSize, headSize/2); ctx.restore(); }
+                    ctx.fill();
+                    ctx.font = "bold 12px sans-serif"; if (direction === "down") ctx.fillText(label, x + 15, y + (length / 2));
+                }
+
+                function loop() { draw(); requestAnimationFrame(loop); }
+                function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+                loop();
+            </script>
+            </body>
+            </html>
+        '></iframe>
+    </div>
+
+    <div id="lab3" class="tab-content">
+        <iframe srcdoc='
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>The Master Lever: Force vs. Distance</title>
+                <style>
+                    :root {
+                        --bg: #f0f4f8;
+                        --opener: #334155;
+                        --effort: #ef4444; 
+                        --load: #22c55e;   
+                    }
+
+                    body {
+                        font-family: "Segoe UI", system-ui, sans-serif;
+                        background: var(--bg);
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        margin: 0;
+                        user-select: none;
+                    }
+
+                    .lab-bench {
+                        background: white;
+                        padding: 30px;
+                        border-radius: 30px;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                        width: 750px;
+                        border: 2px solid #fff;
+                    }
+
+                    .hud {
+                        display: flex;
+                        justify-content: space-between;
+                        margin-bottom: 20px;
+                        background: #f8fafc;
+                        padding: 20px;
+                        border-radius: 20px;
+                        border: 1px solid #e2e8f0;
+                    }
+
+                    .stat { text-align: center; flex: 1; }
+                    .stat label { display: block; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 5px;}
+                    .stat span { font-size: 1.6rem; font-weight: 900; font-family: monospace; }
+
+                    canvas {
+                        background: #ffffff;
+                        border-radius: 20px;
+                        cursor: ns-resize;
+                        border: 1px solid #f1f5f9;
+                    }
+
+                    .logic-card {
+                        margin-top: 20px;
+                        padding: 15px;
+                        background: #fff;
+                        border-left: 5px solid var(--effort);
+                        border-radius: 10px;
+                        font-size: 0.95rem;
+                        color: #475569;
+                        text-align: left;
+                    }
+                </style>
+            </head>
+            <body>
+
+                <div class="lab-bench">
+                    <h2 style="margin: 0 0 15px 0; color: #1e293b;">The Lever: Force-Distance Trade</h2>
+                    
+                    <div class="hud">
+                        <div class="stat">
+                            <label>Hand Distance (d1)</label>
+                            <span id="dist-effort" style="color:var(--effort)">0.0<small>cm</small></span>
+                        </div>
+                        <div class="stat" style="border-right: 2px solid #e2e8f0; border-left: 2px solid #e2e8f0;">
+                            <label>Cap Force (F2)</label>
+                            <span id="force-load" style="color:var(--load)">0<small>N</small></span>
+                        </div>
+                        <div class="stat">
+                            <label>Cap Distance (d2)</label>
+                            <span id="dist-load" style="color:var(--load)">0.0<small>cm</small></span>
+                        </div>
+                    </div>
+
+                    <canvas id="leverCanvas" width="700" height="350"></canvas>
+
+                    <div class="logic-card">
+                        <b>Informative Insight:</b> Notice the <b>MA of 5</b>. To move the cap <b>1cm</b>, your hand must travel <b>5cm</b>. This "Distance Penalty" is what buys you the "Force Bonus."
+                    </div>
+                    <button onclick="location.reload()" style="margin-top:15px; padding:10px 20px; border-radius:50px; border:none; background:#1e293b; color:white; cursor:pointer; font-weight:bold;">RESET LAB</button>
+                </div>
+
+            <script>
+                const canvas = document.getElementById("leverCanvas");
+                const ctx = canvas.getContext("2d");
+
+                const FULCRUM_X = 450, EFFORT_ARM = 200, LOAD_ARM = 40, MA = EFFORT_ARM / LOAD_ARM; 
+
+                let angle = 0, isDragging = false, lastY = 0, capPopped = false;
+
+                canvas.addEventListener("mousedown", e => { isDragging = true; lastY = e.clientY; });
+                window.addEventListener("mouseup", () => isDragging = false);
+                window.addEventListener("mousemove", e => {
+                    if (isDragging && !capPopped) {
+                        let dy = e.clientY - lastY;
+                        angle += dy * 0.005;
+                        if (angle < 0) angle = 0;
+                        if (angle > 0.4) capPopped = true;
+                        lastY = e.clientY;
+                    }
+                });
+
+                function draw() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const pivotY = 200;
+
+                    ctx.fillStyle = "#166534";
+                    ctx.fillRect(FULCRUM_X - LOAD_ARM - 20, pivotY, 40, 150);
+                    
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeStyle = "rgba(239, 68, 68, 0.3)";
+                    ctx.beginPath(); ctx.arc(FULCRUM_X, pivotY, EFFORT_ARM, 0, angle); ctx.stroke();
+                    ctx.strokeStyle = "rgba(34, 197, 94, 0.3)";
+                    ctx.beginPath(); ctx.arc(FULCRUM_X, pivotY, LOAD_ARM, Math.PI, Math.PI + angle); ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    ctx.save();
+                    ctx.translate(FULCRUM_X, pivotY);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = "#334155";
+                    ctx.fillRect(-LOAD_ARM, -5, LOAD_ARM + EFFORT_ARM, 10); 
+                    ctx.fillRect(-LOAD_ARM, 0, 8, 15); 
+
+                    if (isDragging) drawArrow(EFFORT_ARM - 10, 10, 40, "var(--effort)", "Effort (10N)");
+                    ctx.restore();
+
+                    if (!capPopped) {
+                        ctx.fillStyle = "#94a3b8";
+                        let capY = pivotY - (Math.sin(angle) * LOAD_ARM) - 10;
+                        ctx.fillRect(FULCRUM_X - LOAD_ARM - 22, capY, 44, 12);
+                        if (isDragging && angle > 0.02) drawArrow(FULCRUM_X - LOAD_ARM, capY, -100, "var(--load)", "Load (50N!)");
+                    } else {
+                        ctx.fillStyle = "#94a3b8"; ctx.fillText("✨ POPPED!", FULCRUM_X - LOAD_ARM - 30, pivotY - 60);
+                    }
+
+                    document.getElementById("dist-effort").innerHTML = (angle * EFFORT_ARM / 10).toFixed(1) + "<small>cm</small>";
+                    document.getElementById("dist-load").innerHTML = (angle * LOAD_ARM / 10).toFixed(1) + "<small>cm</small>";
+                    document.getElementById("force-load").innerHTML = (isDragging ? 50 : 0) + "<small>N</small>";
+
+                    requestAnimationFrame(draw);
+                }
+
+                function drawArrow(x, y, len, col, txt) {
+                    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue(col.replace("var(","").replace(")","")).trim();
+                    ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = Math.abs(len) > 50 ? 6 : 2;
+                    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + len); ctx.stroke();
+                    ctx.font = "bold 12px sans-serif"; ctx.fillText(txt, x + 10, y + len/2);
+                }
+                draw();
+            </script>
+            </body>
+            </html>
+        '></iframe>
+    </div>
+
+    <script>
+        function openTab(evt, labName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(labName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Slow-Motion Wave Lab</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --panel: #1e293b;
+            --wave: #38bdf8;
+            --rest: #475569;
+            --accent: #f43f5e;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .lab-bench {
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 850px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat { display: flex; flex-direction: column; }
+        .label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 1.4rem; font-weight: 800; font-family: 'Courier New', monospace; color: var(--wave); }
+
+        canvas {
+            background: #000;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            cursor: crosshair;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        input[type=range] { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="lab-bench">
+    <h1 style="margin-top:0; font-size: 1.5rem;">Wave Anatomy: Temporal Study</h1>
+    
+    <div class="hud">
+        <div class="stat">
+            <span class="label">Frequency (f)</span>
+            <span id="txt-f" class="value">0.3 Hz</span>
+        </div>
+        <div class="stat">
+            <span class="label">Period (T)</span>
+            <span id="txt-t" class="value">3.3 s</span>
+        </div>
+        <div class="stat">
+            <span class="label">Wavelength (λ)</span>
+            <span id="txt-l" class="value">400m</span>
+        </div>
+    </div>
+
+    <canvas id="c" width="800" height="300"></canvas>
+
+    <div class="controls">
+        <div>
+            <span class="label">Wave Speed</span>
+            <input type="range" id="speed" min="0.01" max="0.1" step="0.01" value="0.03">
+        </div>
+        <div>
+            <span class="label">Amplitude</span>
+            <input type="range" id="amp" min="10" max="100" step="5" value="60">
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const speedIn = document.getElementById('speed');
+    const ampIn = document.getElementById('amp');
+
+    let time = 0;
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerY = canvas.height / 2;
+        const amplitude = parseFloat(ampIn.value);
+        const frequency = 0.3; // Fixed for clear labeling
+        const wavelength = 300;
+        const moveSpeed = parseFloat(speedIn.value);
+
+        // Update HUD
+        document.getElementById('txt-f').innerText = frequency.toFixed(1) + " Hz";
+        document.getElementById('txt-t').innerText = (1/frequency).toFixed(1) + " s";
+        document.getElementById('txt-l').innerText = wavelength + "m";
+
+        // 1. Rest Position
+        ctx.setLineDash([5, 8]);
+        ctx.strokeStyle = '#475569';
+        ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(canvas.width, centerY); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 2. Transverse Wave
+        ctx.beginPath();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#38bdf8';
+        for (let x = 0; x < canvas.width; x++) {
+            const y = centerY + amplitude * Math.sin((x / wavelength) * Math.PI * 2 - time);
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // 3. Labels (Moving with the wave)
+        const crestX = ( (time / (Math.PI*2)) * wavelength + wavelength/4 ) % wavelength + wavelength;
+        
+        // Crest Marker
+        drawMarker(crestX, centerY - amplitude, "CREST");
+        // Trough Marker
+        drawMarker(crestX + wavelength/2, centerY + amplitude, "TROUGH");
+        
+        // Amplitude measurement line
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(crestX + 20, centerY);
+        ctx.lineTo(crestX + 20, centerY - amplitude);
+        ctx.stroke();
+        ctx.fillStyle = '#f43f5e';
+        ctx.font = 'bold 10px Inter';
+        ctx.fillText("AMPLITUDE (A)", crestX + 25, centerY - amplitude/2);
+
+        // Wavelength measurement line
+        ctx.strokeStyle = '#fbbf24';
+        ctx.beginPath();
+        ctx.moveTo(crestX, centerY - amplitude - 20);
+        ctx.lineTo(crestX + wavelength, centerY - amplitude - 20);
+        ctx.stroke();
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText("WAVELENGTH (λ)", crestX + wavelength/3, centerY - amplitude - 30);
+
+        time += moveSpeed;
+        requestAnimationFrame(draw);
+    }
+
+    function drawMarker(x, y, text) {
+        ctx.fillStyle = "white";
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2); ctx.fill();
+        ctx.font = "bold 11px Inter";
+        ctx.fillText(text, x - 20, y > 150 ? y + 25 : y - 15);
+    }
+
+    draw();
+</script>
+</body>
+</html>

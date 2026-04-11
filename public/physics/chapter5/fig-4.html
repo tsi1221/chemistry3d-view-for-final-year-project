@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Slope Trio: Interactive Logic Lab</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+            --input-color: #22c55e; /* Green for Effort */
+            --output-color: #f43f5e; /* Red for Load/Output */
+            --handle-color: #f59e0b; /* Orange for interaction */
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .container {
+            background: var(--panel);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            text-align: center;
+            border: 1px solid #334155;
+            width: 800px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            border: none;
+            background: #334155;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button.active {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        canvas {
+            background: #020617;
+            border-radius: 1rem;
+            border: 1px solid #334155;
+            cursor: pointer;
+        }
+
+        .info-card {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0.75rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            border-left: 4px solid var(--handle-color);
+        }
+
+        b { color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="margin-top:0; font-weight: 900;">Slope Machines Lab</h1>
+    
+    <div class="controls">
+        <button id="btn-ramp" class="active" onclick="setView('ramp')">1. Inclined Plane (Push)</button>
+        <button id="btn-wedge" onclick="setView('wedge')">2. Wedge (Split)</button>
+        <button id="btn-screw" onclick="setView('screw')">3. Screw (Rotate)</button>
+    </div>
+
+    <canvas id="mainCanvas" width="750" height="400"></canvas>
+
+    <div class="info-card" id="info-text">
+        </div>
+    
+</div>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const infoText = document.getElementById('info-text');
+
+    let currentView = 'ramp';
+    let progress = 0; // 0 to 1
+    let appliedForce = 0; // State for ramp pumping
+
+    // Input state
+    let isMouseDown = false;
+    let lastMouseX = 0;
+    let dragDistance = 0;
+
+    function setView(view) {
+        currentView = view;
+        progress = 0;
+        appliedForce = 0;
+        dragDistance = 0;
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${view}`).classList.add('active');
+        
+        const info = {
+            ramp: "<b>Inclined Plane:</b> Don't drag the box! <b>PUMP YOUR CLICK</b> to overcome friction and push the crate $5\text{m}$ along the shallow slope. Feel the 'effort' needed for a $100\text{N}$ lift.",
+            wedge: "<b>Wedge:</b> <b>CLICK/TAP TO SWING THE HAMMER.</b> Each impact converts a vertical input (your dynamic swing) into an immense horizontal splitting force ($F_{output}$). The sharpness of the wedge multiplies your power.",
+            screw: "<b>Screw:</b> <b>ROTATE YOUR MOUSE IN A CIRCLE</b> like using a screwdriver. Notice you must make 4 full rotations just to lift the 1-ton block $1\text{cm}$. Distance trade-off!",
+        };
+        infoText.innerHTML = info[view];
+    }
+
+    // --- Interaction Handlers ---
+    canvas.addEventListener('mousedown', (e) => {
+        isMouseDown = true;
+        const rect = canvas.getBoundingClientRect();
+        lastMouseX = e.clientX - rect.left;
+
+        if (currentView === 'ramp') {
+            // Pumping action adds burst of force
+            appliedForce = 2.5; 
+        } else if (currentView === 'wedge') {
+            // Hammer swing impact (instant deep drive)
+            progress += 0.15;
+            progress = Math.min(1, progress);
+        }
+    });
+
+    window.addEventListener('mouseup', () => {
+        isMouseDown = false;
+        dragDistance = 0;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isMouseDown) {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            let dx = mx - lastMouseX;
+            dragDistance += dx;
+
+            if (currentView === 'screw') {
+                // Rotational dragging increases progress
+                // Imagine a screwdriver circumference (2*PI*R) = 400px drag
+                const dragNeeded = 400; // pixels of drag per rotation
+                const MA_FACTOR = 4; // 4 rotations = full lift
+                
+                // Check if user is "cranking" forward
+                if (Math.abs(dragDistance) > 10) {
+                    progress += Math.abs(dx) / (dragNeeded * MA_FACTOR);
+                    progress = Math.min(1, progress);
+                    dragDistance = 0; // Reset "chunk"
+                }
+            }
+            lastMouseX = mx;
+        }
+    });
+
+    // Main Update Loop
+    function update() {
+        if (currentView === 'ramp') {
+            // Decaying force simulation (must keep pumping)
+            appliedForce *= 0.96; // constant decay (friction)
+            if (appliedForce > 0.05) {
+                progress += appliedForce * 0.005; // Force drives movement
+                progress = Math.min(1, progress);
+            }
+        }
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    // Dynamic Arrow Renderer
+    function drawArrow(x, y, dx, dy, color, label) {
+        if (Math.abs(dx) + Math.abs(dy) < 5) return;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = label.includes('Output') ? 8 : 3; // Strength = thickness
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + dx, y + dy);
+        ctx.stroke();
+        
+        // Arrowhead
+        const angle = Math.atan2(dy, dx);
+        ctx.beginPath();
+        ctx.moveTo(x + dx, y + dy);
+        ctx.lineTo(x + dx - 10 * Math.cos(angle - Math.PI / 6), y + dy - 10 * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(x + dx - 10 * Math.cos(angle + Math.PI / 6), y + dy - 10 * Math.sin(angle + Math.PI / 6));
+        ctx.fill();
+
+        ctx.font = "bold 12px Inter";
+        ctx.fillText(label, x + dx/2 + 10, y + dy/2 - 10);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        const GROUND_Y = 350;
+
+        if (currentView === 'ramp') {
+            // Draw Ramp (H=2, L=5 => slope angle)
+            ctx.strokeStyle = "#475569"; ctx.lineWidth = 5;
+            ctx.fillStyle = "#1e293b";
+            ctx.beginPath(); ctx.moveTo(100, GROUND_Y); ctx.lineTo(600, GROUND_Y); ctx.lineTo(600, 150); ctx.closePath();
+            ctx.fill(); ctx.stroke();
+
+            // Draw Box
+            const rampW = 500, rampH = 200;
+            const boxX = 100 + (progress * rampW);
+            const boxY = GROUND_Y - (progress * rampH);
+            
+            ctx.save();
+            ctx.translate(boxX, boxY);
+            ctx.rotate(Math.atan2(-rampH, rampW));
+            
+            // Draw Push Handle visual (The user is pushing, not dragging)
+            ctx.fillStyle = "#fbbf24"; ctx.fillRect(-25, -50, 50, 50);
+            ctx.restore();
+
+            // PUMP Interaction Hint
+            if (appliedForce > 0.1) {
+                ctx.fillStyle = "rgba(255,255,255,0.1)";
+                ctx.beginPath(); ctx.arc(boxX, boxY-25, 40 * appliedForce, 0, Math.PI*2); ctx.fill();
+            } else if (!isMouseDown && progress === 0) {
+                ctx.fillStyle = varColor('--handle-color'); ctx.font = "bold 16px sans-serif";
+                ctx.fillText("PUMP TO PUSH", 280, 240);
+            }
+
+            // Force Vectors
+            if (appliedForce > 0.05) {
+                // Effort Vector (Green - Low Force along slope)
+                let effortVisSize = Math.max(10, appliedForce * 25);
+                drawArrow(boxX - 40, boxY - 30, effortVisSize, -effortVisSize * 0.4, varColor('--input-color'), `${Math.round(20 * appliedEffort_scaled())}N Effort`);
+            }
+            // Load Height (Red - Constant Output)
+            drawArrow(620, GROUND_Y, 0, -200, varColor('--output-color'), "Lift H=2m (100N)");
+
+        } else if (currentView === 'wedge') {
+            const wedgeH = 120, wedgeW = 70;
+            // Progressive deepening of wedge based on hammer strikes
+            const wedgeY = 50 + (progress * 130);
+            const splitAmount = progress * 60;
+            
+            // Draw Log halves
+            ctx.fillStyle = "#78350f";
+            ctx.fillRect(375 - 100 - splitAmount, 180, 100, 170);
+            ctx.fillRect(375 + splitAmount, 180, 100, 170);
+
+            // Draw Wedge
+            ctx.fillStyle = "#94a3b8";
+            ctx.beginPath(); ctx.moveTo(375 - wedgeW/2, wedgeY); ctx.lineTo(375 + wedgeW/2, wedgeY); ctx.lineTo(375, wedgeY + wedgeH); ctx.closePath(); ctx.fill();
+
+            // Interative Hint: Hammer
+            if (!isMouseDown) {
+                ctx.fillStyle = varColor('--handle-color'); ctx.font = "30px sans-serif";
+                ctx.fillText("🔨 CLICK TO SWING", 220, 120);
+            }
+
+            // Vectors (Converted at impact point)
+            const convertY = wedgeY + wedgeH/2;
+            if (progress > 0.02) {
+                // Input = The Swing (Vertical down)
+                drawArrow(375, convertY - 40, 0, 30, varColor('--input-color'), "Input Swing (d)");
+                // Output = The Split (sideways)
+                let splitForceVis = progress * 100;
+                drawArrow(375 + wedgeW/2 + splitAmount, convertY, splitForceVis, 0, varColor('--output-color'), `Output Split (Force)`);
+                drawArrow(375 - wedgeW/2 - splitAmount, convertY, -splitForceVis, 0, varColor('--output-color'), "");
+            }
+
+        } else if (currentView === 'screw') {
+            const pitch = 15; // Vertical distance per rotation
+            const fullLift_m = 1.0; // Total height 1m
+            // 4 full rotations (360 * 4) cover 1m
+            const totalRotations = 4;
+            
+            const currentCrankRotation = progress * Math.PI * 2 * totalRotations;
+            // Vertical movement: h = (progress * mgh)
+            const currentHeightPixels = progress * 150; // Total vertical display is 150px
+            const screwY = 300 - currentHeightPixels;
+
+            // Draw Fixed Support / Nut (The Machine)
+            ctx.fillStyle = "#334155"; ctx.fillRect(250, 150, 200, 200);
+
+            // Draw Screw Threads (Wrapped Inclined Plane)
+            ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 4;
+            const threadCount = 15;
+            for(let i=0; i<threadCount; i++) {
+                // Pitch * Total Rotations maps progress to the thread wrap logic
+                const ty = screwY + (i * pitch);
+                if (ty > 150 && ty < 350) {
+                    ctx.beginPath();
+                    // We model the spiral wrap logic using sinusoids of the cumulative rotation
+                    ctx.ellipse(350, ty, 30, 8, Math.sin(currentCrankRotation + i), 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+            }
+
+            // Draw Screw Head
+            ctx.fillStyle = "#cbd5e0"; ctx.fillRect(310, screwY - 40, 80, 40);
+
+            // --- Draw THE CRANK (Interactivity Anchor) ---
+            const crankX = canvas.width - 100, crankY = GROUND_Y - 50;
+            // Interactive visual: rotating crank
+            ctx.fillStyle = "#1e293b"; ctx.beginPath(); ctx.arc(crankX, crankY, 20, 0, Math.PI*2); ctx.fill();
+            ctx.save(); ctx.translate(crankX, crankY); ctx.rotate(currentCrankRotation);
+            ctx.fillStyle = varColor('--handle-color'); ctx.fillRect(-5, -5, 80, 10);
+            ctx.fillRect(70, -10, 20, 20); // Knob
+            ctx.restore();
+
+            // Label
+            if (!isMouseDown) {
+                ctx.fillStyle = varColor('--handle-color'); ctx.font = "bold 12px sans-serif";
+                ctx.fillText("ROTATE CRANK 🟠", crankX - 60, crankY - 40);
+            }
+
+            // --- Vectors ---
+            // Effort (Circular / Rotational Input)
+            if (isMouseDown) {
+                // Wide circle = huge distance. Use a placeholder large distance arrow.
+                drawArrow(crankX + 40, crankY + 20, 80, 0, varColor('--input-color'), "Huge Input (d) - Rotational");
+            }
+            // Load Lift (Linear / Vertical Output)
+            drawArrow(350, screwY + 20, 0, -40, varColor('--output-color'), "Linear Lift (Force) - 1Ton!");
+        }
+    }
+
+    // Helper to calculate MA based on progress state
+    function appliedEffort_scaled() { return isMouseDown ? appliedForce : 0; }
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+    // Start
+    setView('ramp');
+    update();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Temperature Lab</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --celsius: #ef4444;
+            --fahrenheit: #3b82f6;
+            --kelvin: #fbbf24;
+            --line: #475569;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .lab-bench {
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 800px;
+            border: 1px solid var(--line);
+            text-align: center;
+        }
+
+        .thermometer-row {
+            display: flex;
+            justify-content: space-around;
+            position: relative;
+            padding: 40px 0;
+            margin-bottom: 20px;
+        }
+
+        .thermometer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 120px;
+        }
+
+        .tube-outer {
+            width: 24px;
+            height: 350px;
+            background: #020617;
+            border-radius: 12px;
+            border: 2px solid var(--line);
+            position: relative;
+            display: flex;
+            flex-direction: column-reverse; /* Fill from bottom */
+            margin-bottom: 15px;
+        }
+
+        .liquid {
+            width: 100%;
+            border-radius: 10px;
+            transition: height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .input-box {
+            background: transparent;
+            border: 2px solid var(--line);
+            border-radius: 8px;
+            color: white;
+            padding: 8px;
+            width: 80px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .input-box:focus {
+            outline: none;
+            border-color: #fff;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .fixed-point-marker {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+
+        .marker-text {
+            position: absolute;
+            left: -80px;
+            font-size: 0.6rem;
+            color: var(--line);
+        }
+    </style>
+</head>
+<body>
+
+<div class="lab-bench">
+    <h2 style="margin-top:0">Real-Time Thermal Alignment</h2>
+    <p style="font-size: 0.8rem; color: #94a3b8;">Enter a value in any box to update the lab</p>
+
+    <div class="thermometer-row">
+        <div class="fixed-point-marker" style="bottom: 80%;"><span class="marker-text">BOILING</span></div>
+        <div class="fixed-point-marker" style="bottom: 54%;"><span class="marker-text">FREEZING</span></div>
+        <div class="fixed-point-marker" style="bottom: 18%;"><span class="marker-text">ABS. ZERO</span></div>
+
+        <div class="thermometer">
+            <span class="label" style="color:var(--celsius)">Celsius (°C)</span>
+            <div class="tube-outer">
+                <div id="liquid-c" class="liquid" style="background: var(--celsius);"></div>
+            </div>
+            <input type="number" id="in-c" class="input-box" step="0.1" value="25">
+        </div>
+
+        <div class="thermometer">
+            <span class="label" style="color:var(--fahrenheit)">Fahrenheit (°F)</span>
+            <div class="tube-outer">
+                <div id="liquid-f" class="liquid" style="background: var(--fahrenheit);"></div>
+            </div>
+            <input type="number" id="in-f" class="input-box" step="0.1">
+        </div>
+
+        <div class="thermometer">
+            <span class="label" style="color:var(--kelvin)">Kelvin (K)</span>
+            <div class="tube-outer">
+                <div id="liquid-k" class="liquid" style="background: var(--kelvin);"></div>
+            </div>
+            <input type="number" id="in-k" class="input-box" step="0.1">
+        </div>
+    </div>
+
+    <div style="font-size: 0.75rem; color: #64748b;">
+        Math Bridge: <span id="formula">K = °C + 273.15</span>
+    </div>
+</div>
+
+<script>
+    const inC = document.getElementById('in-c');
+    const inF = document.getElementById('in-f');
+    const inK = document.getElementById('in-k');
+
+    const liqC = document.getElementById('liquid-c');
+    const liqF = document.getElementById('liquid-f');
+    const liqK = document.getElementById('liquid-k');
+
+    function updateVisuals(c) {
+        // Map -273.15 to 18% and 100 to 80%
+        let percent = ((c + 273.15) / (100 + 273.15)) * 62 + 18;
+        percent = Math.max(2, Math.min(98, percent)); // Constrain
+        
+        liqC.style.height = percent + '%';
+        liqF.style.height = percent + '%';
+        liqK.style.height = percent + '%';
+    }
+
+    inC.addEventListener('input', () => {
+        let val = parseFloat(inC.value);
+        if (isNaN(val)) return;
+        inF.value = ((val * 9/5) + 32).toFixed(1);
+        inK.value = (val + 273.15).toFixed(2);
+        updateVisuals(val);
+    });
+
+    inF.addEventListener('input', () => {
+        let val = parseFloat(inF.value);
+        if (isNaN(val)) return;
+        let c = (val - 32) * 5/9;
+        inC.value = c.toFixed(1);
+        inK.value = (c + 273.15).toFixed(2);
+        updateVisuals(c);
+    });
+
+    inK.addEventListener('input', () => {
+        let val = parseFloat(inK.value);
+        if (isNaN(val)) return;
+        let c = val - 273.15;
+        inC.value = c.toFixed(1);
+        inF.value = ((c * 9/5) + 32).toFixed(1);
+        updateVisuals(c);
+    });
+
+    // Initialize at Room Temp
+    updateVisuals(25);
+    inF.value = 77;
+    inK.value = 298.15;
+</script>
+</body>
+</html>

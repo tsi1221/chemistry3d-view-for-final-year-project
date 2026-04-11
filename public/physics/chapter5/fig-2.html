@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Sculptable Ramp: AMA vs. TMA Lab</title>
+    <style>
+        :root {
+            --bg-lab: #f1f5f9; /* Light, clean gray */
+            --bg-panel: #ffffff;
+            --text-main: #1e293b;
+            --border: #cbd5e0;
+            
+            --color-input: #10b981; /* Green for Effort */
+            --color-output: #3b82f6; /* Blue for Load */
+            --color-friction: #ef4444; /* Red for Loss */
+            --color-handle: #f59e0b; /* Orange Handle */
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-lab);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .lab-layout {
+            display: flex;
+            width: 1000px;
+            height: 620px;
+            background: var(--bg-panel);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        /* --- Left Data & Math Panel --- */
+        .data-panel {
+            width: 320px;
+            padding: 35px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #f8fafc;
+        }
+
+        h1 { margin: 0; font-size: 1.6rem; font-weight: 900; color: #1e293b; }
+        p.subtitle { margin: 0 0 10px 0; color: #64748b; font-size: 0.9rem; }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat-label { font-size: 0.7rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-weight: 900; font-size: 1.6rem; font-family: monospace; }
+
+        .efficiency-viz {
+            margin-top: auto;
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        .eff-chart-title { font-size: 0.8rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 15px;}
+
+        /* --- Right Interactive Canvas --- */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            cursor: pointer;
+        }
+
+        .sculpt-hint {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            color: var(--color-handle);
+            border: 1px solid var(--border);
+            pointer-events: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lab-layout">
+        <div class="data-panel">
+            <h1>Sculptable Ramp Lab</h1>
+            <p class="subtitle">Drag the orange handle to build the ramp. Crate mass is fixed at $20\text{kg}$. Friction μ is $0.20$.</p>
+            
+            <div class="stat-card">
+                <div class="stat-label">Ramp Length (L)</div>
+                <span class="stat-value" id="valL">--m</span>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Lift Height (H)</div>
+                <span class="stat-value" id="valH">--m</span>
+            </div>
+            
+            <div class="stat-card" style="background:var(--color-input); color:white;">
+                <div class="stat-label" style="color:rgba(255,255,255,0.7)">Input Force (Fi)</div>
+                <span class="stat-value" id="resFi">--N</span>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Mechanical Advantage (AMA)</div>
+                <span class="stat-value" id="resMa">--</span>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-label">Velocity Ratio (VR)</div>
+                <span class="stat-value" id="resVr">--</span>
+            </div>
+
+            <div class="efficiency-viz">
+                <div class="eff-chart-title">Efficiency (η = AMA/VR)</div>
+                <canvas id="effCanvas" width="240" height="80"></canvas>
+                <span class="stat-value" id="resEff" style="color:var(--color-friction); font-size: 2rem;">--%</span>
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="rampCanvas" width="680" height="620"></canvas>
+            <div class="sculpt-hint">DRAG HANDLE 🟠 TO SCULPT</div>
+        </div>
+    </div>
+
+<script>
+    const canvas = document.getElementById('rampCanvas');
+    const ctx = canvas.getContext('2d');
+    const effCanvas = document.getElementById('effCanvas');
+    const effCtx = effCanvas.getContext('effCanvas'); // Wait, typo fixed below
+
+    // UI Data Display
+    const valL = document.getElementById('valL');
+    const valH = document.getElementById('valH');
+    const resFi = document.getElementById('resFi');
+    const resMa = document.getElementById('resMa');
+    const resVr = document.getElementById('resVr');
+    const resEff = document.getElementById('resEff');
+
+    // --- Core Constants (F=ma Parameters) ---
+    const CONFIG = {
+        m: 20,              // Mass of crates (kg)
+        g: 10,              // g = 10 m/s^2 for simplicity
+        mu: 0.20,           // coefficient of friction
+        crateSize: 50,
+        groundY: 550,
+        startBoxX: 50,
+        px_per_m: 50        // 1 meter = 50 pixels
+    };
+
+    // --- Live State (The variables the user sculpts) ---
+    let rampL = 8.0; // meters (Length)
+    let rampH = 2.0; // meters (Height)
+    let handleX, handleY; // Control handle position
+
+    // Interaction State
+    let dragTarget = null;
+    let lastX, lastY;
+
+    // Derived Physics Values
+    let forceInput, velocityRatio, mechanicalAdvantage, efficiencyPercent;
+    let theta;
+
+    function resetHandlePos() {
+        // Position handle at the top-edge of the ramp geometry
+        const rampBaseW_m = Math.sqrt(rampL * rampL - rampH * rampH);
+        handleX = CONFIG.startBoxX + (rampBaseW_m * CONFIG.px_per_m);
+        handleY = CONFIG.groundY - (rampH * CONFIG.px_per_m);
+    }
+
+    function updatePhysicsFromHandle() {
+        // 1. Calculate geometry from handle position
+        const dy_m = (CONFIG.groundY - handleY) / CONFIG.px_per_m; // Current Height
+        const dx_m = (handleX - CONFIG.startBoxX) / CONFIG.px_per_m; // Current Base Width
+        
+        rampH = Math.max(1.0, dy_m); // Minimum height constraint
+        rampL = Math.sqrt(dx_m * dx_m + rampH * rampH); // Length is derived
+
+        // Clamp values for visual limits
+        if (rampL > 12) rampL = 12; // Maximum length
+
+        // 2. Math & MA calculation
+        theta = Math.asin(rampH / rampL); // angle
+        let sinTheta = Math.sin(theta);
+        let cosTheta = Math.cos(theta);
+
+        // AMA (Real World): F_Input = F_gravity_parallel + F_friction
+        let load_N = CONFIG.m * CONFIG.g; // 200N Load
+        let f_gravity = load_N * sinTheta;
+        let f_friction = CONFIG.mu * load_N * cosTheta;
+        forceInput = f_gravity + f_friction;
+
+        // AMA = Load / Input
+        mechanicalAdvantage = load_N / forceInput;
+
+        // 3. VR (TMA - The "Cost"): Ideal multiplication factor
+        // VR = Distance Input / Distance Output = L / H
+        velocityRatio = rampL / rampH;
+
+        // 4. Efficiency (η)
+        // η = AMA / VR * 100%
+        efficiencyPercent = (mechanicalAdvantage / velocityRatio) * 100;
+
+        // --- Update UI Text ---
+        valL.innerText = rampL.toFixed(1) + "m";
+        valH.innerText = rampH.toFixed(1) + "m";
+        resFi.innerText = forceInput.toFixed(1) + "N";
+        resVr.innerText = velocityRatio.toFixed(2);
+        resMa.innerText = mechanicalAdvantage.toFixed(2);
+        resEff.innerText = efficiencyPercent.toFixed(0) + "%";
+    }
+
+    // --- Direct Interaction Handlers (Sculpting) ---
+    canvas.addEventListener('mousedown', e => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        // Detect click on the ORANGE SCULPT HANDLE
+        if (Math.abs(mx - handleX) < 25 && Math.abs(my - handleY) < 25) {
+            dragTarget = 'handle';
+            lastX = mx; lastY = my;
+        }
+    });
+
+    window.addEventListener('mousemove', e => {
+        if (dragTarget === 'handle') {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            
+            // Constrain handle movement to logical lab bounds
+            handleX = Math.max(CONFIG.startBoxX + 100, Math.min(canvas.width - 20, mx));
+            handleY = Math.max(100, Math.min(CONFIG.groundY - 50, my));
+
+            updatePhysicsFromHandle();
+            lastX = mx; lastY = my;
+        }
+    });
+
+    window.addEventListener('mouseup', () => dragTarget = null);
+
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 1. Scene (Ground and Environment)
+        ctx.fillStyle = "#cbd5e0"; // Soft gray ground
+        ctx.fillRect(0, CONFIG.groundY, canvas.width, canvas.height - CONFIG.groundY);
+        // Truck body (simplified)
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillRect(handleX, handleY, 120, CONFIG.groundY - handleY);
+        ctx.fillStyle = "#64748b"; // Bed
+        ctx.fillRect(handleX, handleY - 10, 120, 10);
+        
+        ctx.fillStyle = '#1e293b'; ctx.font = 'bold 12px sans-serif'; ctx.fillText("TRUCK", handleX + 35, handleY + 20);
+
+        // 2. The Ramp (The Machine)
+        ctx.strokeStyle = varColor('--color-ramp');
+        ctx.lineWidth = 10; ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(CONFIG.startBoxX, CONFIG.groundY);
+        ctx.lineTo(handleX, handleY);
+        ctx.stroke();
+
+        // 3. The Crate (Load) at rest at bottom
+        drawCrate(CONFIG.startBoxX + CONFIG.crateSize/2, CONFIG.groundY - CONFIG.crateSize/2);
+
+        // --- Core Visualizations (Head-to-Head Comparison) ---
+
+        // A. Mechanical Advantage Vectors (Force Multiplication)
+        if (isDraggingHandle() || appliedEffort() > 0.05) {
+            // Path A: The Direct Lift (At rest reference)
+            // L_O Vector (Gravity - Blue - Straight Down)
+            drawArrow(CONFIG.startBoxX + CONFIG.crateSize + 30, CONFIG.groundY - CONFIG.crateSize/2, 200, varColor('--color-output'), `Load 200N`, 'down');
+
+            // Path B: The Ramp Force (Green - Sloped)
+            // AMA proof: Green vector must be thinner and shorter than Blue.
+            ctx.save(); ctx.translate(CONFIG.startBoxX, CONFIG.groundY - CONFIG.crateSize/2); ctx.rotate(-theta);
+            let arrowLenFi = forceInput;
+            drawArrow(0, -CONFIG.crateSize/2, arrowLenFi, varColor('--color-input'), `Effort ${forceInput.toFixed(0)}N`, 'up');
+            ctx.restore();
+            
+            // Highlight the angle theta
+            ctx.fillStyle = "#cbd5e0"; ctx.beginPath(); ctx.moveTo(CONFIG.startBoxX + 120, CONFIG.groundY); ctx.arc(CONFIG.startBoxX, CONFIG.groundY, 120, 0, -theta, true); ctx.fill();
+            ctx.fillStyle = "#1e293b"; ctx.fillText(`θ=${(theta * 180 / Math.PI).toFixed(0)}°`, CONFIG.startBoxX + 50, CONFIG.groundY - 15);
+        }
+
+        // 4. Draw The Sculpt Handle (The 🟠)
+        ctx.fillStyle = varColor('--color-handle');
+        ctx.shadowBlur = dragTarget === 'handle' ? 20 : 5; ctx.shadowColor = 'rgba(0,0,0,0.2)';
+        ctx.beginPath(); ctx.arc(handleX, handleY, dragTarget === 'handle' ? 18 : 12, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; // Clear shadow
+        
+        drawEfficiencyChart();
+        requestAnimationFrame(draw);
+    }
+
+    function drawCrate(x, y) {
+        ctx.fillStyle = varColor('--box');
+        ctx.fillRect(x - CONFIG.crateSize/2, y - CONFIG.crateSize/2, CONFIG.crateSize, CONFIG.crateSize);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x - CONFIG.crateSize/2, y - CONFIG.crateSize/2, CONFIG.crateSize, CONFIG.crateSize);
+        // Label
+        ctx.fillStyle = "#fff"; ctx.font = "bold 12px sans-serif"; ctx.textAlign="center";
+        ctx.fillText("20kg", x, y + 4);
+    }
+
+    // Dynamic Arrow Renderer
+    function drawArrow(x, y, length, color, label, direction = 'down') {
+        if (Math.abs(length) < 5) return;
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        
+        // Mechanical Advantage proof: Thicker arrow = Higher Force
+        ctx.lineWidth = label.includes('200N') ? 10 : 3; 
+        const headSize = label.includes('200N') ? 16 : 9;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        if (direction === 'up') {
+            ctx.lineTo(x, y - length);
+        } else {
+            ctx.lineTo(x, y + length);
+        }
+        ctx.stroke();
+
+        // arrowhead
+        let headX = x, headY;
+        if (direction === 'down') { headY = y + length; }
+        else if (direction === 'up') { headY = y - length; }
+        
+        ctx.beginPath();
+        ctx.moveTo(headX, headY);
+        if (direction === 'down') {
+            ctx.lineTo(headX - headSize / 2, headY - headSize); ctx.lineTo(headX + headSize / 2, headY - headSize);
+        } else if (direction === 'up') {
+            ctx.lineTo(headX - headSize / 2, headY + headSize); ctx.lineTo(headX + headSize / 2, headY + headSize);
+        }
+        ctx.fill();
+
+        // label
+        ctx.fillStyle = label.includes('200N') ? color : '#64748b';
+        ctx.font = 'bold 12px sans-serif';
+        if (direction === 'down') ctx.fillText(label, x + 20, y + (length / 2));
+        if (direction === 'up') ctx.fillText(label, x + 20, y - (length / 2));
+    }
+
+    // The Small Efficiency Visualization Chart (Work In vs Out)
+    function drawEfficiencyChart() {
+        // Need to fix the typo from before
+        const effCtxFix = document.getElementById('effCanvas').getContext('2d');
+        effCtxFix.clearRect(0, 0, effCanvas.width, effCanvas.height);
+        
+        const bW = 80, bH = 60, bX = 10, bY = 10;
+        const usefulFillPercent = efficiencyPercent / 100;
+
+        // Battery 1: Work In (Always 100% full)
+        effCtxFix.fillStyle = "rgba(0,0,0,0.05)"; effCtxFix.fillRect(bX, bY, bW, bH);
+        effCtxFix.fillStyle = varColor('--color-input'); effCtxFix.fillRect(bX, bY, bW, bH);
+        
+        // Battery 2: Usefull Work Out (Scaled by η)
+        const b2X = bX + bW + 20;
+        effCtxFix.fillStyle = "rgba(0,0,0,0.05)"; effCtxFix.fillRect(b2X, bY, bW, bH);
+        effCtxFix.fillStyle = varColor('--color-output'); effCtxFix.fillRect(b2X, bY + (bH - usefulFillPercent*bH), bW, usefulFillPercent*bH);
+
+        // Gap Monster/Loss
+        effCtxFix.fillStyle = varColor('--color-friction'); effCtxFix.fillRect(b2X, bY, bW, (1-usefulFillPercent)*bH);
+
+        // labels
+        effCtxFix.fillStyle = '#94a3b8'; effCtxFix.font = "bold 9px sans-serif"; effCtxFix.textAlign="center";
+        effCtxFix.fillText("TOTAL IN", bX + bW/2, bY + bH + 10);
+        effCtxFix.fillText("USEFUL OUT", b2X + bW/2, bY + bH + 10);
+    }
+
+    function isDraggingHandle() { return dragTarget === 'handle'; }
+    function appliedEffort() { return 0; } // Place holder for previous version
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name); }
+
+    resetHandlePos();
+    updatePhysicsFromHandle();
+    draw();
+
+</script>
+</body>
+</html>

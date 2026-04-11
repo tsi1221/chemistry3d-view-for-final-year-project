@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Standard Motion Tracer (x-t Graph)</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #fdfdfd; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .lab-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; max-width: 950px; width: 100%; border: 1px solid #eee; }
+        
+        .tab-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border: 2px solid #ddd; background: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .tab-btn.active { background: #3498db; color: white; border-color: #3498db; }
+        
+        canvas { border-radius: 12px; cursor: crosshair; background: #ffffff; margin-bottom: 15px; border: 1px solid #eee; }
+        
+        .control-group { margin-bottom: 10px; display: flex; justify-content: center; gap: 15px; background: #f1f3f5; padding: 15px; border-radius: 12px; }
+        .sim-btn { padding: 10px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
+        .start-btn { background: #2ecc71; color: white; }
+        .reset-btn { background: #95a5a6; color: white; }
+        
+        .label-group { font-size: 0.9rem; font-weight: bold; color: #7f8c8d; text-transform: uppercase; }
+        .hint { color: #7f8c8d; max-width: 750px; margin: 15px auto 0; font-size: 0.9rem; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <h2>The Standard Position-Time Tracer</h2>
+    
+    <div class="tab-bar">
+        <button id="btn-const" class="tab-btn active" onclick="setMode('const')">Constant Velocity (Diagonal)</button>
+        <button id="btn-accel" class="tab-btn" onclick="setMode('accel')">Braking (Stop -> Curve)</button>
+    </div>
+
+    <canvas id="motionCanvas" width="900" height="480"></canvas>
+
+    <div class="control-group">
+        <button id="start-btn" class="sim-btn start-btn" onclick="startSim()">Start Simulation</button>
+        <button class="sim-btn reset-btn" onclick="resetSim()">Reset</button>
+    </div>
+    
+    <p class="hint">
+        <b>Standard View:</b> The top track ($x$-axis) and bottom graph ($x$-axis) are equal size. 
+        Time ($t$) runs **UPWARD**. Watch how stopping creates a perfectly **Vertical Trace** (Position doesn't change as time passes).
+    </p>
+</div>
+
+<script>
+    const canvas = document.getElementById('motionCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let mode = 'const';
+    let isRunning = false;
+    let time = 0;
+    
+    // Equal Dimensions Config
+    const margin = 100; // Left/Right margin
+    const startX = margin;
+    const endX = canvas.width - margin;
+    const trackWidth = endX - startX;
+    
+    // Top Track Config
+    const trackY = 80;
+    
+    // Bottom Graph Config
+    const graphStartY = 160;
+    const graphH = 300; 
+    const graphBaselineY = graphStartY + graphH; // Bottom of graph area
+    const scaleT = 0.6; // Time scaling (pixels per step)
+
+    // Rider & Trace State
+    let riderX = startX;
+    let riderV = 0; 
+    let riderA = 0; 
+    let tracePoints = []; // Stores {x, y} coordinates of the trace
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btn-const').className = (m === 'const' ? 'tab-btn active' : 'tab-btn');
+        document.getElementById('btn-accel').className = (m === 'accel' ? 'tab-btn active' : 'tab-btn');
+        resetSim();
+    }
+
+    function startSim() {
+        if (!isRunning) {
+            isRunning = true;
+            if(mode === 'const') {
+                riderV = 3.5; // pixels per frame
+                riderA = 0;
+            } else if(mode === 'accel') {
+                riderV = 8;
+                riderA = -0.05; // Gentle Braking
+            }
+            document.getElementById('start-btn').innerText = "Running...";
+        }
+    }
+
+    function resetSim() {
+        isRunning = false;
+        time = 0;
+        riderX = startX;
+        riderV = 0;
+        riderA = 0;
+        tracePoints = [];
+        document.getElementById('start-btn').innerText = "Start Simulation";
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // --- 1. Draw Physical Track (TOP) ---
+        ctx.fillStyle = "#fafafa"; ctx.fillRect(startX, trackY - 25, trackWidth, 50);
+        ctx.strokeStyle = "#dee2e6"; ctx.lineWidth = 1; ctx.strokeRect(startX, trackY - 25, trackWidth, 50);
+        
+        // Track Labels
+        ctx.fillStyle = "#7f8c8d"; ctx.font = "bold 13px Arial"; ctx.textAlign = "left";
+        ctx.fillText("PHYSICAL TRACK (1D Motion)", startX, trackY - 35);
+        ctx.textAlign = "center";
+        ctx.fillText("0 m", startX, trackY + 45);
+        ctx.fillText("700 m", endX, trackY + 45);
+
+        // Draw Rider (The cyan circle)
+        ctx.fillStyle = "#3498db";
+        ctx.beginPath(); ctx.arc(riderX, trackY, 18, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = "white"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.fillText("Rider", riderX, trackY + 5);
+
+        // --- 2. Draw Graph Area (BOTTOM, Standard Orientation) ---
+        ctx.font = "bold 13px Arial"; ctx.fillStyle = "#34495e"; ctx.textAlign = "left";
+        ctx.fillText("Position-Time (x-t) Graph (Standard Physics View)", startX, graphStartY - 10);
+        
+        // --- AXIS DEFINITION ---
+        // Y-Axis (Time, pointing UP)
+        ctx.strokeStyle = "#aaa"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(startX, graphBaselineY); ctx.lineTo(startX, graphStartY); ctx.stroke();
+        
+        ctx.fillStyle = "#7f8c8d"; ctx.save(); ctx.translate(startX - 15, graphStartY + graphH / 2); ctx.rotate(-Math.PI/2); ctx.textAlign="center"; ctx.fillText("Time (t) → UP", 0, 0); ctx.restore();
+
+        // X-Axis (Position, Baseline)
+        ctx.beginPath(); ctx.moveTo(startX, graphBaselineY); ctx.lineTo(endX, graphBaselineY); ctx.stroke();
+        ctx.textAlign = "center"; ctx.fillText("Position (x)", startX + trackWidth / 2, graphBaselineY + 20);
+        ctx.fillText("0 m", startX, graphBaselineY + 20);
+        ctx.fillText("700 m", endX, graphBaselineY + 20);
+
+        // --- 3. Run Simulation Logic ---
+        if (isRunning) {
+            time++;
+            
+            // Physics Update (x = x0 + v0*t + 0.5*a*t^2)
+            riderV += riderA;
+            riderV = Math.max(0, riderV); // Cannot go backward
+            riderX += riderV;
+            riderX = Math.max(startX, Math.min(endX, riderX)); // Clamp to track bounds
+            
+            // "Record" current state (Standard mapping: Time maps to Y increasing upward)
+            // traceY starts at graphBaselineY and moves toward graphStartY as time increases
+            const traceY = graphBaselineY - (time * scaleT);
+            tracePoints.push({ x: riderX, y: traceY });
+            
+            // End simulation conditions
+            if (riderX >= endX || (riderV === 0 && mode === 'accel') || traceY <= graphStartY) isRunning = false;
+        }
+
+        // --- 4. Draw Trace & Synchronized Projection ---
+        if (tracePoints.length > 1) {
+            // Draw standard x-t trace (red line)
+            ctx.strokeStyle = "#e74c3c"; ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(tracePoints[0].x, tracePoints[0].y);
+            for(let i = 1; i < tracePoints.length; i++) {
+                ctx.lineTo(tracePoints[i].x, tracePoints[i].y);
+            }
+            ctx.stroke();
+            
+            // Current "Recording Pen" (The active data point)
+            const lastP = tracePoints[tracePoints.length - 1];
+            ctx.fillStyle = "#e74c3c";
+            ctx.beginPath(); ctx.arc(lastP.x, lastP.y, 6, 0, Math.PI*2); ctx.fill();
+            
+            // --- The "Process Link" (Projection Line) ---
+            // Draw vertical dashed line linking rider to data point, confirming direct mapping
+            ctx.setLineDash([5, 5]); ctx.strokeStyle = "rgba(231, 76, 60, 0.4)"; ctx.lineWidth=1;
+            ctx.beginPath(); ctx.moveTo(riderX, trackY); ctx.lineTo(lastP.x, lastP.y); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    resetSim();
+    draw();
+</script>
+
+</body>
+</html>

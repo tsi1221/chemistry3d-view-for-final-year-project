@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Simulation Suite</title>
+    <style>
+        /* Tab System Styles */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f1f5f9;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .tab-container {
+            width: 100%;
+            max-width: 1000px;
+            margin: 20px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: #e2e8f0;
+            padding: 5px;
+            gap: 5px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            color: #3b82f6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            min-height: 600px;
+            position: relative;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Scoped styles for the simulations to prevent bleed-through */
+        .lab-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="tab-container">
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="openTab(event, 'inertia')">1. Inertia Lab</button>
+        <button class="tab-btn" onclick="openTab(event, 'fma')">2. F=ma Lab</button>
+        <button class="tab-btn" onclick="openTab(event, 'newton3')">3. Third Law Lab</button>
+    </div>
+
+    <div id="inertia" class="tab-content active">
+        <div class="lab-wrapper">
+            <style>
+                #inertia :root {
+                    --bg-main: #fcfcfd;
+                    --rink-clean: #ffffff;
+                    --rink-rough: #bf9b30;
+                    --rink-border: #e2e8f0;
+                    --text-primary: #1a202c;
+                    --text-secondary: #718096;
+                    --block-color: #3b82f6;
+                    --vector-color: #ef4444;
+                    --accent: #10b981;
+                }
+                #inertia #container { position: relative; display: flex; flex-direction: column; align-items: center; }
+                #inertia #ui-overlay {
+                    position: absolute; top: 20px; background: rgba(255, 255, 255, 0.95);
+                    backdrop-filter: blur(5px); padding: 20px 30px; border-radius: 16px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+                    text-align: center; transition: opacity 0.5s ease, transform 0.5s ease; z-index: 10;
+                }
+                #inertia #info-bar {
+                    width: 100%; max-width: 800px; display: flex; justify-content: space-between;
+                    margin-top: 15px; padding: 0 10px; font-family: monospace; color: #718096;
+                }
+                #inertia canvas { border-radius: 20px; background: #fff; border: 1px solid #e2e8f0; cursor: crosshair; }
+                #inertia strong { color: #10b981; }
+            </style>
+            <div id="container">
+                <canvas id="mainCanvas"></canvas>
+                <div id="info-bar">
+                    <div><span id="velDisplay">VELOCITY: 0.00</span></div>
+                    <div><span id="fricDisplay">SURFACE: CLEAN (0.00)</span></div>
+                </div>
+                <div id="ui-overlay">
+                    <h1 style="margin:0">The Inertia Lab</h1>
+                    <p>1. <strong>Click & Drag</strong> the blue block. <br>
+                       2. <strong>Throw it</strong> to start motion. <br>
+                       3. <strong>Click the Ice</strong> to add rough patches.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fma" class="tab-content">
+        <div class="lab-wrapper">
+            <style>
+                #fma .lab-bench { display: flex; gap: 30px; padding: 20px; }
+                #fma .lane { 
+                    display: flex; flex-direction: column; align-items: center; background: white;
+                    padding: 20px; border-radius: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+                    border: 1px solid #e2e8f0;
+                }
+                #fma canvas { background: #f1f5f9; border-radius: 12px; margin-bottom: 15px; }
+                #fma .controls { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+                #fma .math-display {
+                    font-family: monospace; font-weight: bold; font-size: 1.1rem;
+                    text-align: center; padding: 10px; background: #f8fafc; border-radius: 8px; color: #475569;
+                }
+                #fma button {
+                    margin-top: 20px; padding: 15px 40px; font-size: 1.2rem; font-weight: bold;
+                    color: white; background: #ef4444; border: none; border-radius: 50px;
+                    cursor: pointer; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+                }
+            </style>
+            <div class="header" style="text-align:center">
+                <h1>F=ma Interactive Lab</h1>
+                <p>Adjust mass ($m$) and observe how it resists the Force ($F$).</p>
+            </div>
+            <div class="lab-bench">
+                <div class="lane">
+                    <canvas id="canvasA" width="400" height="150"></canvas>
+                    <div class="controls">
+                        <label>Mass ($m$): <b id="massTextA">10</b>kg</label>
+                        <input type="range" id="massA" min="5" max="100" value="10">
+                        <div class="math-display">a = 100 / <span id="mA">10</span> = <span id="accA" style="color:#3b82f6">10.0</span></div>
+                    </div>
+                </div>
+                <div class="lane">
+                    <canvas id="canvasB" width="400" height="150"></canvas>
+                    <div class="controls">
+                        <label>Mass ($m$): <b id="massTextB">50</b>kg</label>
+                        <input type="range" id="massB" min="5" max="100" value="50">
+                        <div class="math-display">a = 100 / <span id="mB">50</span> = <span id="accB" style="color:#3b82f6">2.0</span></div>
+                    </div>
+                </div>
+            </div>
+            <button id="launchBtn">APPLY FORCE (100N)</button>
+        </div>
+    </div>
+
+    <div id="newton3" class="tab-content">
+        <div class="lab-wrapper">
+            <style>
+                #newton3 .math-box {
+                    background: #fff; padding: 15px 30px; border-radius: 50px;
+                    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;
+                    margin: 10px 0 20px 0; font-family: serif; font-size: 1.4rem; font-style: italic;
+                }
+                #newton3 canvas { background: white; border-radius: 24px; border: 1px solid #e2e8f0; cursor: crosshair; }
+            </style>
+            <div class="header" style="text-align:center">
+                <h1>Newton's Third Law</h1>
+                <div class="math-box">
+                    <span style="color:#3b82f6">F<sub>A→B</sub></span> = <span style="color:#ef4444">—</span> <span style="color:#f59e0b">F<sub>B→A</sub></span>
+                </div>
+            </div>
+            <canvas id="recoilCanvas" width="800" height="350"></canvas>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 15px;"><b>Drag up/down</b> on orange to change mass. <b>Click center</b> to push.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // TAB CONTROLLER
+    function openTab(evt, tabName) {
+        let i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) tabcontent[i].classList.remove("active");
+        tablinks = document.getElementsByClassName("tab-btn");
+        for (i = 0; i < tablinks.length; i++) tablinks[i].classList.remove("active");
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    // --- SCRIPT 1: INERTIA LAB ---
+    (function() {
+        const CONFIG = { width: 800, height: 400, blockSize: 70, maxFrictionForce: 0.15, kickMultiplier: 1.2, smoothingFactor: 0.2, vThreshold: 0.01 };
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('ui-overlay');
+        const velDisplay = document.getElementById('velDisplay');
+        const fricDisplay = document.getElementById('fricDisplay');
+        canvas.width = CONFIG.width; canvas.height = CONFIG.height;
+        let block = { x: (CONFIG.width / 2) - (CONFIG.blockSize / 2), y: (CONFIG.height / 2) - (CONFIG.blockSize / 2), w: CONFIG.blockSize, h: CONFIG.blockSize, vx: 0, isGrabbed: false, grabOffsetX: 0, targetX: 0 };
+        let frictionZones = new Array(100).fill(0); 
+        let mouse = { x: 0, isDown: false, hasInteracted: false };
+        let recentMousePositions = [];
+
+        function update() {
+            if (!block.isGrabbed) {
+                let zoneIndex = Math.max(0, Math.min(Math.floor((block.x + block.w / 2) / (CONFIG.width / 100)), 99));
+                let currentLocalFriction = frictionZones[zoneIndex] || 0;
+                if (Math.abs(block.vx) > CONFIG.vThreshold) {
+                    let deceleration = currentLocalFriction * CONFIG.maxFrictionForce;
+                    if (block.vx > 0) block.vx -= deceleration; else block.vx += deceleration;
+                } else { block.vx = 0; }
+                block.x += block.vx;
+                if (block.x <= 0) { block.x = 0; block.vx *= -0.4; } 
+                else if (block.x + block.w >= CONFIG.width) { block.x = CONFIG.width - block.w; block.vx *= -0.4; }
+            } else {
+                let desiredX = mouse.x - block.grabOffsetX;
+                block.targetX = desiredX;
+                block.x += (block.targetX - block.x) * CONFIG.smoothingFactor;
+                recentMousePositions.push({x: mouse.x, time: Date.now()});
+                if (recentMousePositions.length > 5) recentMousePositions.shift();
+            }
+            if (mouse.hasInteracted && overlay.style.opacity !== '0') {
+                overlay.style.opacity = '0';
+                overlay.style.transform = 'translateY(-20px)';
+                setTimeout(() => overlay.style.display = 'none', 500);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            let zoneWidth = CONFIG.width / 100;
+            for (let i = 0; i < 100; i++) {
+                if (frictionZones[i] > 0) {
+                    ctx.fillStyle = `rgba(191, 155, 48, ${frictionZones[i] * 0.6})`;
+                    ctx.fillRect(i * zoneWidth, 0, zoneWidth + 1, canvas.height);
+                }
+            }
+            ctx.strokeStyle = '#f1f5f9';
+            for (let i = 0; i < CONFIG.width; i += 50) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, CONFIG.height); ctx.stroke();
+            }
+            ctx.save();
+            ctx.fillStyle = block.isGrabbed ? '#1e40af' : '#3b82f6';
+            ctx.shadowBlur = block.isGrabbed ? 20 : 5;
+            ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            ctx.shadowOffsetY = block.isGrabbed ? 10 : 3;
+            ctx.fillRect(block.x, block.y, block.w, block.h);
+            ctx.restore();
+            if (Math.abs(block.vx) > 0.1) {
+                ctx.beginPath(); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
+                let headX = block.x + block.w / 2 + (block.vx * 15);
+                let headY = block.y + block.h / 2;
+                ctx.moveTo(block.x + block.w / 2, headY); ctx.lineTo(headX, headY);
+                let angle = Math.atan2(0, block.vx) + Math.PI;
+                ctx.lineTo(headX + 10 * Math.cos(angle + 0.5), headY + 10 * Math.sin(angle + 0.5));
+                ctx.moveTo(headX, headY); ctx.lineTo(headX + 10 * Math.cos(angle - 0.5), headY + 10 * Math.sin(angle - 0.5));
+                ctx.stroke();
+            }
+            velDisplay.innerText = `VELOCITY: ${Math.abs(block.vx).toFixed(2)}`;
+            let zi = Math.max(0, Math.min(Math.floor((block.x + block.w/2) / zoneWidth), 99));
+            let fv = frictionZones[zi];
+            fricDisplay.innerHTML = fv > 0 ? `SURFACE: <strong>ROUGH (${fv.toFixed(2)})</strong>` : `SURFACE: CLEAN (0.00)`;
+        }
+
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+        function getX(e) { const rect = canvas.getBoundingClientRect(); return e.clientX - rect.left; }
+
+        canvas.addEventListener('mousedown', (e) => {
+            let mx = getX(e); let my = e.clientY - canvas.getBoundingClientRect().top;
+            mouse.hasInteracted = true; mouse.isDown = true;
+            if (mx > block.x && mx < block.x + block.w && my > block.y && my < block.y + block.h) {
+                block.isGrabbed = true; block.vx = 0; block.grabOffsetX = mx - block.x;
+                block.targetX = block.x; recentMousePositions = [];
+            }
+        });
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = getX(e);
+            if (mouse.isDown && !block.isGrabbed) {
+                let zi = Math.floor(mouse.x / (CONFIG.width / 100));
+                for (let i = -1; i <= 1; i++) if (frictionZones[zi + i] !== undefined) frictionZones[zi + i] = 0.1;
+            }
+        });
+        window.addEventListener('mouseup', () => {
+            mouse.isDown = false;
+            if (block.isGrabbed) {
+                block.isGrabbed = false;
+                if (recentMousePositions.length > 2) {
+                    let first = recentMousePositions[0], last = recentMousePositions[recentMousePositions.length - 1];
+                    let td = (last.time - first.time) / 1000;
+                    if (td > 0) block.vx = ((last.x - first.x) / (td * 60)) * CONFIG.kickMultiplier;
+                }
+            }
+        });
+        canvas.addEventListener('dblclick', () => frictionZones.fill(0));
+        loop();
+    })();
+
+    // --- SCRIPT 2: F=MA LAB ---
+    (function() {
+        const force = 100; let isMoving = false; let frame = 0;
+        const items = [
+            { canvas: document.getElementById('canvasA'), ctx: document.getElementById('canvasA').getContext('2d'), slider: document.getElementById('massA'), massLabel: document.getElementById('massTextA'), mathM: document.getElementById('mA'), mathA: document.getElementById('accA'), x: 60, v: 0, history: [] },
+            { canvas: document.getElementById('canvasB'), ctx: document.getElementById('canvasB').getContext('2d'), slider: document.getElementById('massB'), massLabel: document.getElementById('massTextB'), mathM: document.getElementById('mB'), mathA: document.getElementById('accB'), x: 60, v: 0, history: [] }
+        ];
+        function updateMath() {
+            items.forEach(item => {
+                const m = parseFloat(item.slider.value);
+                item.massLabel.innerText = m; item.mathM.innerText = m;
+                item.mathA.innerText = (force / m).toFixed(1);
+            });
+        }
+        function draw(item) {
+            const ctx = item.ctx; ctx.clearRect(0, 0, item.canvas.width, item.canvas.height);
+            ctx.strokeStyle = '#cbd5e0'; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(60, 0); ctx.lineTo(60, 150); ctx.stroke(); ctx.setLineDash([]);
+            item.history.forEach((hx, i) => { ctx.fillStyle = `rgba(59, 130, 246, ${i / 20})`; ctx.beginPath(); ctx.arc(hx, 75, 5, 0, Math.PI*2); ctx.fill(); });
+            ctx.fillStyle = '#94a3b8'; let pistonPos = isMoving && frame < 10 ? 60 + (frame * 5) : 60;
+            ctx.fillRect(0, 65, pistonPos - 10, 20); ctx.fillStyle = '#475569'; ctx.fillRect(pistonPos - 10, 45, 10, 60);
+            if (isMoving && frame < 10) { ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(pistonPos, 75); ctx.lineTo(pistonPos + 30, 75); ctx.stroke(); }
+            const m = parseFloat(item.slider.value); const size = 15 + (m / 100) * 30;
+            ctx.fillStyle = '#3b82f6'; ctx.beginPath(); ctx.roundRect(item.x, 75 - size/2, size, size, 5); ctx.fill(); ctx.stroke();
+        }
+        function animate() {
+            if (!isMoving) return; frame++;
+            items.forEach(item => {
+                const m = parseFloat(item.slider.value); const a = force / m;
+                if (frame < 10) item.v += a * 0.1;
+                item.x += item.v;
+                if (frame % 3 === 0) item.history.push(item.x);
+                if (item.history.length > 20) item.history.shift();
+            });
+            items.forEach(draw);
+            if (items[0].x > 450 && items[1].x > 450) { isMoving = false; document.getElementById('launchBtn').innerText = "RESET LAB"; }
+            else requestAnimationFrame(animate);
+        }
+        document.getElementById('launchBtn').addEventListener('click', () => {
+            if (isMoving) return;
+            if (document.getElementById('launchBtn').innerText === "RESET LAB") {
+                items.forEach(item => { item.x = 60; item.v = 0; item.history = []; });
+                frame = 0; document.getElementById('launchBtn').innerText = "APPLY FORCE (100N)";
+                items.forEach(draw); return;
+            }
+            isMoving = true; animate();
+        });
+        items.forEach(item => item.slider.addEventListener('input', () => { updateMath(); draw(item); }));
+        updateMath(); items.forEach(draw);
+    })();
+
+    // --- SCRIPT 3: THIRD LAW ---
+    (function() {
+        const canvas = document.getElementById('recoilCanvas'), ctx = canvas.getContext('2d');
+        const PUSH_FORCE = 400, CENTER_X = canvas.width / 2, GROUND_Y = 180;
+        let isMoving = false, pushFrame = 0, isDraggingMass = false, lastMouseY = 0;
+        let astroA = { x: CENTER_X - 60, y: GROUND_Y, v: 0, w: 50, h: 80, mass: 50, color: '#3b82f6' };
+        let astroB = { x: CENTER_X + 10, y: GROUND_Y, v: 0, w: 50, h: 80, mass: 50, color: '#f59e0b' };
+
+        function drawAstro(obj) {
+            ctx.save(); ctx.translate(obj.x, obj.y);
+            ctx.fillStyle = 'rgba(0,0,0,0.05)'; ctx.beginPath(); ctx.ellipse(obj.w/2, obj.h + 20, obj.w/2, 10, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = obj.color; ctx.beginPath(); ctx.roundRect(0, 0, obj.w, obj.h, 12); ctx.fill();
+            ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(obj === astroA ? 30 : 5, 15, 15, 20, 4); ctx.fill();
+            ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(`${Math.round(obj.mass)}kg`, obj.w/2, obj.h/2 + 5);
+            ctx.restore();
+        }
+        function drawForceVector(x, direction) {
+            const length = 120, y = GROUND_Y + 40;
+            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (length * direction), y); ctx.stroke();
+            const headSize = 12, endX = x + (length * direction);
+            ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(endX, y); ctx.lineTo(endX - headSize * direction, y - headSize/2); ctx.lineTo(endX - headSize * direction, y + headSize/2); ctx.fill();
+        }
+        function update() {
+            if (isMoving) {
+                pushFrame++;
+                if (pushFrame < 20) { astroA.v -= (PUSH_FORCE / astroA.mass) * 0.05; astroB.v += (PUSH_FORCE / astroB.mass) * 0.05; }
+                astroA.x += astroA.v; astroB.x += astroB.v;
+                if (astroA.x < -200 || astroB.x > canvas.width + 200) {
+                    isMoving = false; pushFrame = 0; astroA.x = CENTER_X - 60; astroA.v = 0; astroB.x = CENTER_X + 10; astroB.v = 0;
+                }
+            }
+        }
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#f1f5f9'; for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+            drawAstro(astroA); drawAstro(astroB);
+            if (isMoving && pushFrame < 20) { drawForceVector(CENTER_X - 10, -1); drawForceVector(CENTER_X + 10, 1); }
+            else if (!isMoving) { ctx.fillStyle = 'rgba(239, 68, 68, 0.1)'; ctx.beginPath(); ctx.arc(CENTER_X, GROUND_Y + 40, 25, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#ef4444'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('PUSH', CENTER_X, GROUND_Y + 44); }
+        }
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+        canvas.addEventListener('mousedown', e => {
+            const rect = canvas.getBoundingClientRect(); const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
+            if (!isMoving && Math.abs(mx - CENTER_X) < 30) isMoving = true;
+            if (!isMoving && mx > astroB.x && mx < astroB.x + astroB.w) { isDraggingMass = true; lastMouseY = my; }
+        });
+        window.addEventListener('mousemove', e => {
+            if (isDraggingMass) {
+                const rect = canvas.getBoundingClientRect(); const my = e.clientY - rect.top;
+                astroB.mass = Math.max(10, Math.min(300, astroB.mass + (lastMouseY - my)));
+                astroB.w = 50 + (astroB.mass - 50) * 0.2; astroB.h = 80 + (astroB.mass - 50) * 0.2;
+                astroB.y = GROUND_Y - (astroB.h - 80); lastMouseY = my;
+            }
+        });
+        window.addEventListener('mouseup', () => isDraggingMass = false);
+        loop();
+    })();
+</script>
+
+</body>
+</html>

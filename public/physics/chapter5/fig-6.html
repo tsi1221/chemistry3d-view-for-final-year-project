@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Industrial Pulley Lab</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --rope: #94a3b8;
+            --pulley: #cbd5e0;
+            --effort: #22c55e;
+            --load: #3b82f6;
+            --accent: #38bdf8;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .lab-bench {
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 850px;
+            text-align: center;
+            border: 1px solid #334155;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border-radius: 12px;
+            border: 1px solid #475569;
+            background: #334155;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+
+        .stat { display: flex; flex-direction: column; }
+        .label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .value { font-size: 1.6rem; font-weight: 900; font-family: monospace; }
+
+        canvas {
+            background: #020617;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            cursor: ns-resize;
+        }
+
+        .instruction {
+            margin-top: 15px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lab-bench">
+        <h1 style="margin-top:0; font-size: 1.8rem;">Pulley Physics: Rope Logic</h1>
+        
+        <div class="controls">
+            <button id="btn1" class="active" onclick="setMode(1)">Fixed (MA: 1)</button>
+            <button id="btn2" onclick="setMode(2)">Movable (MA: 2)</button>
+            <button id="btn4" onclick="setMode(4)">Block & Tackle (MA: 4)</button>
+        </div>
+
+        <div class="hud">
+            <div class="stat">
+                <span class="label">Input Force</span>
+                <span id="stat-force" class="value" style="color:var(--effort)">100N</span>
+            </div>
+            <div class="stat">
+                <span class="label">Rope Pulled</span>
+                <span id="stat-dist" class="value">0.0m</span>
+            </div>
+            <div class="stat">
+                <span class="label">Load Lifted</span>
+                <span id="stat-lift" class="value" style="color:var(--load)">0.0m</span>
+            </div>
+        </div>
+
+        <canvas id="pulleyCanvas" width="800" height="400"></canvas>
+        <p class="instruction"><b>DRAG THE GLOVE 🧤</b> down to pull the rope.</p>
+    </div>
+
+<script>
+    const canvas = document.getElementById('pulleyCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let mode = 1; 
+    let pullY = 0; // The actual distance the hand travels
+    let isDragging = false;
+
+    function setMode(m) {
+        mode = m;
+        pullY = 0;
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn' + m).classList.add('active');
+    }
+
+    canvas.addEventListener('mousedown', () => isDragging = true);
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const rect = canvas.getBoundingClientRect();
+            const mouseCoordY = e.clientY - rect.top;
+            // Hand starts at Y=100. Let's track the pull.
+            pullY = Math.max(0, Math.min(250, mouseCoordY - 100));
+        }
+    });
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        const centerX = 400;
+        const beamY = 40;
+        const loadLift = pullY / mode;
+        const loadY = 320 - loadLift;
+        const handY = 100 + pullY;
+
+        // Update HUD
+        document.getElementById('stat-force').innerText = (100 / mode).toFixed(0) + "N";
+        document.getElementById('stat-dist').innerText = (pullY / 50).toFixed(1) + "m";
+        document.getElementById('stat-lift').innerText = (loadLift / 50).toFixed(1) + "m";
+
+        // 1. Draw Support Beam
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(100, beamY - 10, 600, 15);
+        ctx.strokeStyle = "#475569"; ctx.lineWidth = 2;
+        ctx.strokeRect(100, beamY - 10, 600, 15);
+
+        // 2. Rope & Pulley Logic
+        ctx.strokeStyle = "#94a3b8";
+        ctx.lineWidth = 4;
+        ctx.lineJoin = "round";
+
+        if (mode === 1) {
+            // FIXED PULLEY
+            drawPulley(centerX, beamY + 30);
+            ctx.beginPath();
+            ctx.moveTo(centerX - 15, loadY); // Up to pulley
+            ctx.lineTo(centerX - 15, beamY + 30);
+            ctx.arc(centerX, beamY + 30, 15, Math.PI, 0);
+            ctx.lineTo(centerX + 15, handY); // Down to hand
+            ctx.stroke();
+            drawWeight(centerX - 15, loadY);
+        } 
+        else if (mode === 2) {
+            // MOVABLE PULLEY (Fixed end at beam)
+            drawPulley(centerX, loadY - 30);
+            ctx.beginPath();
+            ctx.moveTo(centerX - 40, beamY + 5); // Anchor
+            ctx.lineTo(centerX - 15, loadY - 30); // Down to movable wheel
+            ctx.arc(centerX, loadY - 30, 15, Math.PI, 0);
+            ctx.lineTo(centerX + 15, handY); // Up to hand (usually redirected, but simplified for logic)
+            ctx.stroke();
+            drawWeight(centerX, loadY);
+        }
+        else if (mode === 4) {
+            // BLOCK & TACKLE (Complex Rope Paths)
+            drawPulley(centerX, beamY + 30, true); // Double Top
+            drawPulley(centerX, loadY - 30, true); // Double Bottom
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX - 8, beamY + 5); // Anchor top
+            ctx.lineTo(centerX - 8, loadY - 30); // 1st leg down
+            ctx.arc(centerX, loadY - 30, 8, Math.PI, 0);
+            ctx.lineTo(centerX + 8, beamY + 30); // 2nd leg up
+            ctx.arc(centerX, beamY + 30, 8, 0, Math.PI, true);
+            ctx.lineTo(centerX - 15, loadY - 30); // 3rd leg down
+            ctx.arc(centerX, loadY - 30, 15, Math.PI, 0);
+            ctx.lineTo(centerX + 15, handY); // 4th leg (Effort)
+            ctx.stroke();
+            drawWeight(centerX, loadY);
+        }
+
+        drawHand(centerX + 15, handY);
+        requestAnimationFrame(draw);
+    }
+
+    function drawPulley(x, y, double = false) {
+        ctx.fillStyle = "#cbd5e0";
+        ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#475569"; ctx.lineWidth = 2; ctx.stroke();
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawWeight(x, y) {
+        ctx.fillStyle = varColor('--load');
+        ctx.shadowBlur = 15; ctx.shadowColor = "rgba(59, 130, 246, 0.5)";
+        ctx.fillRect(x - 25, y, 50, 50);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "white"; ctx.font = "bold 12px Inter";
+        ctx.textAlign = "center";
+        ctx.fillText("100N", x, y + 30);
+    }
+
+    function drawHand(x, y) {
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("🧤", x, y + 20);
+    }
+
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+    draw();
+</script>
+</body>
+</html>

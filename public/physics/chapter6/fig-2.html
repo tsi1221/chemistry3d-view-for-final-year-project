@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Oscillator Lab</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --ke: #10b981; /* Kinetic Green */
+            --pe: #3b82f6; /* Potential Blue */
+            --string: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: #f1f5f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .lab-container {
+            background: var(--panel);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            width: 800px;
+            text-align: center;
+        }
+
+        .modes { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #475569;
+            background: #334155;
+            color: white;
+            cursor: pointer;
+        }
+        button.active { background: #38bdf8; color: #0f172a; font-weight: bold; }
+
+        canvas {
+            background: #020617;
+            border-radius: 1rem;
+            border: 1px solid #334155;
+            cursor: crosshair;
+        }
+
+        .energy-bar-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .bar-wrap { width: 150px; text-align: left; }
+        .bar-bg { background: #000; height: 10px; border-radius: 5px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.05s; }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <div class="modes">
+        <button id="btn-pend" class="active" onclick="setMode('pendulum')">Pendulum</button>
+        <button id="btn-spring" onclick="setMode('spring')">Mass-Spring</button>
+    </div>
+
+    <canvas id="oscCanvas" width="700" height="350"></canvas>
+
+    <div class="energy-bar-container">
+        <div class="bar-wrap">
+            <span style="font-size: 0.7rem; color: var(--pe)">POTENTIAL ENERGY</span>
+            <div class="bar-bg"><div id="pe-fill" class="bar-fill" style="background: var(--pe)"></div></div>
+        </div>
+        <div class="bar-wrap">
+            <span style="font-size: 0.7rem; color: var(--ke)">KINETIC ENERGY</span>
+            <div class="bar-bg"><div id="ke-fill" class="bar-fill" style="background: var(--ke)"></div></div>
+        </div>
+    </div>
+    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 15px;">Drag the object to start oscillation</p>
+</div>
+
+<script>
+    const canvas = document.getElementById('oscCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let mode = 'pendulum';
+    let angle = 0.5; // Radians for pendulum
+    let angleV = 0;
+    let angleA = 0;
+    
+    let springY = 200; // Position for spring
+    let springV = 0;
+    
+    let isDragging = false;
+
+    function setMode(m) {
+        mode = m;
+        angleV = 0; springV = 0;
+        document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + (m === 'pendulum' ? 'pend' : 'spring')).classList.add('active');
+    }
+
+    canvas.addEventListener('mousedown', () => isDragging = true);
+    window.addEventListener('mouseup', () => isDragging = false);
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const rect = canvas.getBoundingClientRect();
+            if (mode === 'pendulum') {
+                angle = Math.atan2(e.clientX - rect.left - 350, e.clientY - rect.top - 50);
+                angleV = 0;
+            } else {
+                springY = e.clientY - rect.top;
+                springV = 0;
+            }
+        }
+    });
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const cx = 350, cy = 50;
+
+        let ke = 0, pe = 0;
+
+        if (mode === 'pendulum') {
+            const len = 200;
+            if (!isDragging) {
+                // Physics: gravity = -g/L * sin(theta)
+                angleA = (-0.01 * Math.sin(angle));
+                angleV += angleA;
+                angleV *= 0.995; // Friction
+                angle += angleV;
+            }
+            
+            const bobX = cx + len * Math.sin(angle);
+            const bobY = cy + len * Math.cos(angle);
+
+            // Rest Position line
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = "#475569";
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + len); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // String & Bob
+            ctx.strokeStyle = varColor('--string');
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(bobX, bobY); ctx.stroke();
+            
+            ctx.fillStyle = (Math.abs(angleV) < 0.02) ? varColor('--pe') : "#fff";
+            ctx.beginPath(); ctx.arc(bobX, bobY, 20, 0, Math.PI*2); ctx.fill();
+
+            // Energy calcs
+            pe = Math.abs(angle) / 1.5;
+            ke = Math.abs(angleV) * 15;
+
+        } else {
+            const restY = 200;
+            if (!isDragging) {
+                // Physics: F = -kx
+                let force = -0.05 * (springY - restY);
+                springV += force;
+                springV *= 0.98;
+                springY += springV;
+            }
+
+            // Draw Spring (Zig-zag)
+            ctx.strokeStyle = varColor('--string'); ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            for(let i=0; i<20; i++) {
+                const ty = cy + (i * (springY - cy) / 20);
+                const tx = cx + (i % 2 === 0 ? 20 : -20);
+                ctx.lineTo(tx, ty);
+            }
+            ctx.lineTo(cx, springY);
+            ctx.stroke();
+
+            // Block
+            ctx.fillStyle = (Math.abs(springV) < 1) ? varColor('--pe') : varColor('--ke');
+            ctx.fillRect(cx - 30, springY, 60, 60);
+
+            pe = Math.abs(springY - restY) / 100;
+            ke = Math.abs(springV) / 10;
+        }
+
+        document.getElementById('pe-fill').style.width = Math.min(100, pe * 100) + "%";
+        document.getElementById('ke-fill').style.width = Math.min(100, ke * 100) + "%";
+
+        requestAnimationFrame(draw);
+    }
+
+    function varColor(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    draw();
+</script>
+</body>
+</html>
