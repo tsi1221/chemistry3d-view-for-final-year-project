@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Measurement Lab: Subjective vs. Objective</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #f9f9f9; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); max-width: 900px; width: 100%; text-align: center; }
+        .tab-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 10px 20px; border: 2px solid #3498db; background: white; color: #3498db; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .tab-btn.active { background: #3498db; color: white; }
+        canvas { border: 1px solid #ddd; background: #fff; border-radius: 8px; cursor: pointer; }
+        .readout-area { display: flex; justify-content: space-around; margin-top: 20px; gap: 15px; }
+        .card { flex: 1; padding: 15px; border-radius: 8px; text-align: left; font-size: 0.9rem; }
+        .local-card { background: #fff5eb; border-left: 5px solid #e67e22; }
+        .standard-card { background: #ebfaf0; border-left: 5px solid #2ecc71; }
+        .val { display: block; font-family: monospace; font-size: 1.4rem; font-weight: bold; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Subjective vs. Objective Measurement</h2>
+    <div class="tab-bar">
+        <button id="btn-length" class="tab-btn active" onclick="setMode('length')">Length (Hands)</button>
+        <button id="btn-mass" class="tab-btn" onclick="setMode('mass')">Mass (Stones)</button>
+    </div>
+
+    <canvas id="conversionCanvas" width="840" height="350"></canvas>
+    
+    <div class="readout-area">
+        <div class="card local-card">
+            <strong>Traditional Count:</strong>
+            <span id="local-count" class="val">1 Units</span>
+            <small>Click empty space to add, click object to remove.</small>
+        </div>
+        <div class="card standard-card">
+            <strong>Standard SI Value:</strong>
+            <span id="standard-val" class="val">0.45 Units</span>
+            <small>The physical quantity remains constant.</small>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('conversionCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let mode = 'length';
+    let items = [{ x: 100, y: 150 }]; // Initial item
+
+    function setMode(m) {
+        mode = m;
+        items = [{ x: 100, y: 150 }]; // Reset with one item
+        document.getElementById('btn-length').className = (m === 'length' ? 'tab-btn active' : 'tab-btn');
+        document.getElementById('btn-mass').className = (m === 'mass' ? 'tab-btn active' : 'tab-btn');
+    }
+
+    // Drawing a realistic hand
+    function drawHand(x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.fillStyle = "#f5cbad";
+        ctx.strokeStyle = "#d49a7a";
+        ctx.lineWidth = 1.5;
+        
+        // Palm
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.bezierCurveTo(0, -30, 60, -30, 60, 0);
+        ctx.lineTo(60, 50);
+        ctx.lineTo(0, 50);
+        ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // Fingers
+        for(let i=0; i<4; i++) {
+            ctx.beginPath();
+            ctx.roundRect(i*15, 50, 12, 40, 5);
+            ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    // Drawing a realistic stone
+    function drawStone(x, y) {
+        ctx.save();
+        ctx.translate(x, y);
+        const grad = ctx.createRadialGradient(-5, -5, 2, 0, 0, 25);
+        grad.addColorStop(0, "#bdc3c7");
+        grad.addColorStop(1, "#2c3e50");
+        ctx.fillStyle = grad;
+        
+        ctx.beginPath();
+        ctx.moveTo(25, 0);
+        ctx.bezierCurveTo(25, 15, 15, 25, 0, 25);
+        ctx.bezierCurveTo(-15, 25, -25, 15, -25, 0);
+        ctx.bezierCurveTo(-25, -15, -15, -25, 0, -25);
+        ctx.bezierCurveTo(15, -25, 25, -15, 25, 0);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawScale(val, unit) {
+        ctx.fillStyle = "#333";
+        ctx.fillRect(450, 150, 350, 60);
+        ctx.fillStyle = "#00cec9";
+        ctx.font = "24px Courier New";
+        ctx.fillText(`${val.toFixed(2)} ${unit}`, 470, 190);
+        
+        ctx.fillStyle = "#2ecc71";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText("STANDARD SI CONVERSION", 450, 140);
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Split line
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "#ccc";
+        ctx.beginPath(); ctx.moveTo(420, 20); ctx.lineTo(420, 330); ctx.stroke();
+        ctx.setLineDash([]);
+
+        items.forEach(item => {
+            if(mode === 'length') drawHand(item.x, item.y);
+            else drawStone(item.x, item.y);
+        });
+
+        const multiplier = (mode === 'length' ? 0.45 : 7.2);
+        const total = items.length * multiplier;
+        const unit = (mode === 'length' ? 'm' : 'kg');
+        
+        drawScale(total, unit);
+        document.getElementById('local-count').innerText = `${items.length} ${mode === 'length' ? 'Hands' : 'Stones'}`;
+        document.getElementById('standard-val').innerText = `${total.toFixed(2)} ${unit}`;
+
+        requestAnimationFrame(animate);
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        if (mx > 420) return; // Only click left side
+
+        // Check if clicking existing
+        const hitIndex = items.findIndex(item => {
+            const dx = mx - item.x;
+            const dy = my - item.y;
+            return (dx > -20 && dx < 60 && dy > -20 && dy < 80);
+        });
+
+        if (hitIndex !== -1) {
+            items.splice(hitIndex, 1);
+        } else {
+            if(items.length < 12) items.push({ x: mx - 20, y: my - 30 });
+        }
+    });
+
+    animate();
+</script>
+
+</body>
+</html>

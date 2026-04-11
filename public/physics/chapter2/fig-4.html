@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Perfected Scientific Notation Slider</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #fdfdfd; padding: 20px; color: #333; }
+        .lab-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; max-width: 900px; width: 100%; }
+        .tab-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 8px 16px; border: 1px solid #ddd; background: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .tab-btn.active { background: #3498db; color: white; border-color: #3498db; }
+        canvas { border: 1px solid #eee; border-radius: 12px; cursor: grab; background: #fff; margin-bottom: 10px; }
+        canvas:active { cursor: grabbing; }
+        .equation-readout { font-family: 'Courier New', monospace; font-weight: bold; font-size: 2rem; color: #34495e; margin: 15px 0; padding: 15px; background: #ecf0f1; border-radius: 8px; min-height: 50px; }
+        .exponent-count { font-size: 1.1rem; color: #e67e22; height: 30px; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <h2>Scientific Notation: Moving the Point</h2>
+    
+    <div class="tab-bar">
+        <button id="btn-pos" class="tab-btn active" onclick="setMode('pos')">Large Number (29970)</button>
+        <button id="btn-neg" class="tab-btn" onclick="setMode('neg')">Small Number (0.00042)</button>
+    </div>
+
+    <div class="equation-readout" id="equation-display">--</div>
+    <div class="exponent-count" id="move-count">Moves (n): 0</div>
+    
+    <canvas id="notationCanvas" width="850" height="280"></canvas>
+    
+    <p style="color: #7f8c8d; max-width: 700px; line-height: 1.5; font-size: 0.9rem;">
+        <b>Logic:</b> The digits stay the same. Dragging the <b>Red Decimal</b> simply changes its position. 
+        $n$ counts how many steps you moved from the start!
+    </p>
+</div>
+
+<script>
+    const canvas = document.getElementById('notationCanvas');
+    const ctx = canvas.getContext('2d');
+    const eqDisplay = document.getElementById('equation-display');
+    const moveDisplay = document.getElementById('move-count');
+
+    // Configuration
+    let mode = 'pos';
+    let digits = "29970";
+    let startX = 180;
+    let spacing = 100;
+    
+    let homeIdx = 5; // Original decimal index
+    let decX = 0;    // Pixel position
+    let isDragging = false;
+    const baseLineY = 150;
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btn-pos').className = (m === 'pos' ? 'tab-btn active' : 'tab-btn');
+        document.getElementById('btn-neg').className = (m === 'neg' ? 'tab-btn active' : 'tab-btn');
+        
+        if(m === 'pos') {
+            digits = "29970";
+            homeIdx = 5;
+        } else {
+            digits = "00042"; 
+            homeIdx = 1; // Represents 0.00042
+        }
+        decX = startX + (homeIdx * spacing) - (spacing/2);
+    }
+
+    function update() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Calculate Current "Slot" Index (Smooth for visual, Rounded for math)
+        let currentSlotFloat = (decX - startX + (spacing/2)) / spacing;
+        let currentSlotInt = Math.round(currentSlotFloat);
+        
+        // 2. Calculate n (Integer jumps from Home)
+        let n = homeIdx - currentSlotInt;
+
+        // 3. String-based Coefficient Calculation
+        // Insert a "." at the currentSlotInt position in the digits string
+        let coeffStr = digits.slice(0, currentSlotInt) + "." + digits.slice(currentSlotInt);
+        let dValue = parseFloat(coeffStr);
+
+        // 4. Update UI
+        const isProper = (Math.abs(dValue) >= 1 && Math.abs(dValue) < 10);
+        eqDisplay.innerHTML = `${dValue} × 10<sup>${n}</sup>`;
+        eqDisplay.style.color = isProper ? "#2ecc71" : "#34495e";
+        moveDisplay.innerText = `Decimal Jumps (n): ${n}`;
+
+        // 5. Draw the Digits
+        ctx.font = "bold 75px 'Courier New'";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#333";
+        for(let i = 0; i < digits.length; i++) {
+            ctx.fillText(digits[i], startX + (i * spacing), baseLineY + 25);
+        }
+
+        // 6. Draw the Decimal Handle (The Slider)
+        const handleY = baseLineY + 15;
+        if (isProper) {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "rgba(46, 204, 113, 0.6)";
+        }
+
+        ctx.fillStyle = "#e74c3c";
+        ctx.beginPath();
+        ctx.arc(decX, handleY, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.strokeStyle = "#e74c3c";
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(decX, handleY - 10); ctx.lineTo(decX, handleY - 70); ctx.stroke();
+        ctx.beginPath(); ctx.arc(decX, handleY - 85, 20, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "bold 22px Arial"; ctx.fillText("↔", decX, handleY - 77);
+
+        requestAnimationFrame(update);
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        if (Math.abs((e.clientX - rect.left) - decX) < 40) isDragging = true;
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const rect = canvas.getBoundingClientRect();
+            decX = Math.max(startX - (spacing/2), Math.min(startX + (digits.length * spacing) - (spacing/2), e.clientX - rect.left));
+        }
+    });
+
+    setMode('pos');
+    update();
+</script>
+</body>
+</html>

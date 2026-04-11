@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Precision & Mark Density Lab</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #fdfdfd; padding: 20px; color: #333; }
+        .lab-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; max-width: 900px; }
+        canvas { border: 1px solid #eee; border-radius: 12px; cursor: grab; background: #fff; margin-bottom: 10px; }
+        canvas:active { cursor: grabbing; }
+        .info-panel { display: flex; justify-content: space-around; margin-top: 20px; gap: 20px; }
+        .card { flex: 1; padding: 15px; border-radius: 10px; background: #f8f9fa; border-left: 5px solid #3498db; text-align: left; }
+        .card h3 { margin-top: 0; color: #2c3e50; font-size: 1rem; }
+        .val { font-family: 'Courier New', monospace; font-weight: bold; color: #e67e22; font-size: 1.2rem; }
+        .highlight { color: #e74c3c; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <h2>Measurement Precision: Mark Density</h2>
+    <p style="color: #7f8c8d;">Drag the <b>Steel Block</b> to see how the number of marks changes your measurement.</p>
+    
+    <canvas id="precisionCanvas" width="800" height="400"></canvas>
+    
+    <div class="info-panel">
+        <div class="card">
+            <h3>Ruler A (Low Density)</h3>
+            <p>Known: <span id="r1-known">0</span></p>
+            <p>Estimated: <span class="highlight" id="r1-est">.0</span></p>
+            <p>Reading: <span class="val" id="r1-total">0.0</span></p>
+        </div>
+        <div class="card">
+            <h3>Ruler B (High Density)</h3>
+            <p>Known: <span id="r2-known">0.0</span></p>
+            <p>Estimated: <span class="highlight" id="r2-est">.00</span></p>
+            <p>Reading: <span class="val" id="r2-total">0.00</span></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('precisionCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // State
+    let blockWidth = 236; // Representing 2.36 units
+    let isDragging = false;
+    let startX = 0;
+
+    // Measurement Constants
+    const unitPx = 150; // 150 pixels = 1.0 unit
+    const offsetX = 100;
+
+    function drawRuler(y, label, showSubdivisions) {
+        ctx.strokeStyle = "#333";
+        ctx.lineWidth = 2;
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 14px Arial";
+        
+        // Base Line
+        ctx.beginPath();
+        ctx.moveTo(offsetX, y);
+        ctx.lineTo(offsetX + (5 * unitPx), y);
+        ctx.stroke();
+
+        // Major Marks (Every 1.0)
+        for (let i = 0; i <= 5; i++) {
+            const x = offsetX + (i * unitPx);
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x, y - 30);
+            ctx.stroke();
+            ctx.fillText(i, x - 5, y + 20);
+
+            // Subdivisions (Every 0.1)
+            if (showSubdivisions && i < 5) {
+                ctx.lineWidth = 1;
+                for (let j = 1; j < 10; j++) {
+                    const subX = x + (j * (unitPx / 10));
+                    const height = (j === 5) ? 20 : 12; // Midpoint slightly longer
+                    ctx.beginPath();
+                    ctx.moveTo(subX, y);
+                    ctx.lineTo(subX, y - height);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        ctx.fillStyle = "#7f8c8d";
+        ctx.font = "italic 12px Arial";
+        ctx.fillText(label, offsetX, y - 45);
+    }
+
+    function updateReadings() {
+        const value = blockWidth / unitPx;
+        
+        // Ruler A Logic: Precise to 0 decimal places, estimate 1st
+        const r1Known = Math.floor(value);
+        const r1Est = (value % 1).toFixed(1).substring(1);
+        document.getElementById('r1-known').innerText = r1Known;
+        document.getElementById('r1-est').innerText = r1Est;
+        document.getElementById('r1-total').innerText = value.toFixed(1);
+
+        // Ruler B Logic: Precise to 1 decimal place, estimate 2nd
+        const r2Known = (Math.floor(value * 10) / 10).toFixed(1);
+        const r2Est = ((value * 10) % 1 / 10).toFixed(2).substring(2);
+        document.getElementById('r2-known').innerText = r2Known;
+        document.getElementById('r2-est').innerText = "." + r2Est;
+        document.getElementById('r2-total').innerText = value.toFixed(2);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Rulers
+        drawRuler(100, "RULER A: Marks every 1 unit", false);
+        drawRuler(280, "RULER B: Marks every 0.1 units (10 spaces per unit)", true);
+
+        // Draw Block
+        ctx.fillStyle = "rgba(189, 195, 199, 0.8)";
+        ctx.strokeStyle = "#7f8c8d";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(offsetX, 110, blockWidth, 130, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        // Measurement End Line
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = "#e74c3c";
+        ctx.beginPath();
+        ctx.moveTo(offsetX + blockWidth, 50);
+        ctx.lineTo(offsetX + blockWidth, 330);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Handle
+        ctx.fillStyle = "#34495e";
+        ctx.beginPath();
+        ctx.arc(offsetX + blockWidth, 175, 8, 0, Math.PI*2);
+        ctx.fill();
+
+        updateReadings();
+        requestAnimationFrame(draw);
+    }
+
+    // Interactions
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        if (Math.abs(mx - (offsetX + blockWidth)) < 30) {
+            isDragging = true;
+        }
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            blockWidth = Math.max(10, Math.min(700 - offsetX, mx - offsetX));
+        }
+    });
+
+    draw();
+</script>
+
+</body>
+</html>
