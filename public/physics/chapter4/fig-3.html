@@ -2,247 +2,503 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physics Lab: Work, Energy, and Power</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Physics Lab · Work, Energy & Power</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
         * {
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
         }
         
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background: #f1f5f9;
+            height: 100dvh;
+            background: #fafbfc;
             overflow: hidden;
+            touch-action: pan-y;
+            color: #1a1e2b;
+        }
+        
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .app-title .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Tabs */
+        .tabs-container {
+            padding: 12px 24px 0 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            flex-shrink: 0;
         }
         
         .tabs {
             display: flex;
-            background: #1e293b;
-            padding: 10px 10px 0 10px;
-            gap: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            gap: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .tabs::-webkit-scrollbar {
+            display: none;
         }
         
         .tab-btn {
             padding: 12px 24px;
             border: none;
-            background: #334155;
-            color: #94a3b8;
+            background: transparent;
+            color: #7c879c;
             cursor: pointer;
-            border-radius: 8px 8px 0 0;
-            font-weight: 600;
-            font-size: 1rem;
+            font-weight: 500;
+            font-size: 0.95rem;
             transition: all 0.2s ease;
-            border: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+            touch-action: manipulation;
+            border-radius: 40px;
+            margin-bottom: -1px;
+            position: relative;
         }
         
         .tab-btn:hover {
-            background: #475569;
-            color: white;
+            color: #1a1e2b;
+            background: #f5f7fa;
         }
         
         .tab-btn.active {
-            background: #f8fafc;
-            color: #1e293b;
+            color: #0066cc;
+            font-weight: 600;
         }
         
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #0066cc;
+            border-radius: 3px 3px 0 0;
+        }
+        
+        /* Main Simulation Area */
         .simulation-container {
             flex-grow: 1;
-            background: #f8fafc;
+            background: #fafbfc;
             position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 24px;
+            touch-action: none;
+        }
+        
+        .canvas-card {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        .canvas-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 1;
         }
         
         #mainCanvas {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-            cursor: default;
-            max-width: 100%;
-            height: auto;
-        }
-        
-        .controls-panel {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .control-btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: white;
-            font-size: 0.9rem;
-        }
-        
-        .control-btn.primary {
-            background: #3b82f6;
-        }
-        
-        .control-btn.secondary {
-            background: #8b5cf6;
-        }
-        
-        .control-btn.reset {
-            background: #1e293b;
-        }
-        
-        .control-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        
-        .stats-display {
             position: absolute;
-            top: 30px;
-            left: 30px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
             display: flex;
-            gap: 30px;
-            border: 1px solid #e2e8f0;
-            backdrop-filter: blur(5px);
+            align-items: center;
+            justify-content: space-around;
+            padding: 16px 24px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
         }
         
         .stat-item {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
         }
         
-        .stat-item label {
-            display: block;
+        .stat-item .label {
             font-size: 0.7rem;
-            color: #64748b;
-            font-weight: bold;
+            font-weight: 600;
+            color: #7c879c;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
+        .stat-item .value-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+        }
+        
         .stat-item .value {
             font-size: 1.8rem;
-            font-weight: 800;
-            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            font-family: 'Inter', monospace;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+        
+        .stat-item .unit {
+            font-size: 0.8rem;
+            color: #7c879c;
+            font-weight: 500;
+        }
+        
+        /* Controls */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px 24px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .control-btn {
+            padding: 10px 20px;
+            border-radius: 40px;
+            border: 1px solid #eef2f6;
+            background: #ffffff;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #1a1e2b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+        
+        .control-btn:hover {
+            background: #f5f7fa;
+            border-color: #dce2ec;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.96);
+            background: #eef2f6;
+        }
+        
+        .control-btn.primary {
+            background: #0066cc;
+            border-color: #0066cc;
+            color: white;
+        }
+        
+        .control-btn.primary:hover {
+            background: #0055b3;
+        }
+        
+        .control-btn.secondary {
+            background: #1a1e2b;
+            border-color: #1a1e2b;
+            color: white;
+        }
+        
+        .control-btn.secondary:hover {
+            background: #2d3445;
+        }
+        
+        .control-btn.icon-only {
+            padding: 10px 14px;
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 10px 24px;
+            text-align: center;
         }
         
         .hint-text {
-            position: absolute;
-            bottom: 30px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            backdrop-filter: blur(5px);
+            display: inline-block;
+            padding: 6px 18px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
         }
         
+        /* Utility */
         .hidden {
             display: none !important;
         }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1.1rem;
+            }
+            
+            .tabs-container {
+                padding: 8px 16px 0 16px;
+            }
+            
+            .tab-btn {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+            }
+            
+            .simulation-container {
+                padding: 16px;
+            }
+            
+            .stats-bar {
+                padding: 12px 16px;
+            }
+            
+            .stat-item .value {
+                font-size: 1.4rem;
+            }
+            
+            .controls-bar {
+                padding: 12px 16px;
+                flex-wrap: wrap;
+            }
+            
+            .control-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+        }
+        
+        /* Smooth animations */
+        .simulation-container, .canvas-card, .tab-btn, .control-btn {
+            will-change: transform;
+        }
+        
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        /* Custom focus styles */
+        button:focus-visible {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
+        
+        /* Color variables for simulations */
+        .color-force { color: #e53e3e; }
+        .color-distance { color: #3182ce; }
+        .color-work { color: #38a169; }
+        .color-pe { color: #3182ce; }
+        .color-ke { color: #38a169; }
+        .color-power { color: #d69e2e; }
     </style>
 </head>
 <body>
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="work">1. Work (W = F·d)</button>
-        <button class="tab-btn" data-tab="energy">2. PE ↔ KE Exchange</button>
-        <button class="tab-btn" data-tab="power">3. Power (P = W/t)</button>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>Physics Lab</h1>
+            <span class="badge">Interactive</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <span style="font-size: 0.85rem; color: #7c879c;">Work · Energy · Power</span>
+        </div>
+    </header>
+
+    <div class="tabs-container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="work">
+                Work
+            </button>
+            <button class="tab-btn" data-tab="energy">
+                Energy
+            </button>
+            <button class="tab-btn" data-tab="power">
+                 Power
+            </button>
+        </div>
     </div>
 
     <div class="simulation-container">
-        <canvas id="mainCanvas" width="900" height="450"></canvas>
-        
-        <!-- Work Simulation Stats -->
-        <div id="workStats" class="stats-display">
-            <div class="stat-item">
-                <label>Force (F)</label>
-                <span class="value" id="forceValue" style="color: #ef4444;">0</span>
-                <small>N</small>
+        <div class="canvas-card">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas" width="1000" height="500"></canvas>
             </div>
-            <div class="stat-item">
-                <label>Distance (d)</label>
-                <span class="value" id="distanceValue" style="color: #3b82f6;">0.0</span>
-                <small>m</small>
+            
+            <!-- Work Stats -->
+            <div id="workStats" class="stats-bar">
+                <div class="stat-item">
+                    <span class="label">Force</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="forceValue" style="color: #e53e3e;">0</span>
+                        <span class="unit">N</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Distance</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="distanceValue" style="color: #3182ce;">0.0</span>
+                        <span class="unit">m</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Work</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="workValue" style="color: #38a169;">0.0</span>
+                        <span class="unit">J</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-item">
-                <label>Work (W)</label>
-                <span class="value" id="workValue" style="color: #10b981;">0.0</span>
-                <small>J</small>
+            
+            <!-- Energy Stats -->
+            <div id="energyStats" class="stats-bar hidden">
+                <div class="stat-item">
+                    <span class="label">Potential</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="peValue" style="color: #3182ce;">0</span>
+                        <span class="unit">J</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Kinetic</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="keValue" style="color: #38a169;">0</span>
+                        <span class="unit">J</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Total</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="totalEnergyValue" style="color: #1a1e2b;">390</span>
+                        <span class="unit">J</span>
+                    </div>
+                </div>
             </div>
-        </div>
-        
-        <!-- Energy Simulation Stats -->
-        <div id="energyStats" class="stats-display hidden">
-            <div class="stat-item">
-                <label>PE = mgh</label>
-                <span class="value" id="peValue" style="color: #3b82f6;">0</span>
-                <small>J</small>
+            
+            <!-- Power Stats -->
+            <div id="powerStats" class="stats-bar hidden">
+                <div class="stat-item">
+                    <span class="label">Work</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="powerWorkValue" style="color: #38a169;">0</span>
+                        <span class="unit">J</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Time</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="timeValue" style="color: #1a1e2b;">0.00</span>
+                        <span class="unit">s</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <span class="label">Power</span>
+                    <div class="value-wrapper">
+                        <span class="value" id="powerValue" style="color: #d69e2e;">0</span>
+                        <span class="unit">W</span>
+                    </div>
+                </div>
             </div>
-            <div class="stat-item">
-                <label>KE = ½mv²</label>
-                <span class="value" id="keValue" style="color: #10b981;">0</span>
-                <small>J</small>
+            
+            <!-- Work Controls -->
+            <div id="workControls" class="controls-bar">
+                <button class="control-btn" id="resetWorkBtn">
+                    <span>↻</span> Reset Crate
+                </button>
             </div>
-            <div class="stat-item">
-                <label>Total Energy</label>
-                <span class="value" id="totalEnergyValue" style="color: #f59e0b;">350</span>
-                <small>J</small>
+            
+            <!-- Energy Controls -->
+            <div id="energyControls" class="controls-bar hidden">
+                <button class="control-btn" id="resetEnergyBtn">
+                    <span>↻</span> Reset Coaster
+                </button>
             </div>
-        </div>
-        
-        <!-- Power Simulation Stats -->
-        <div id="powerStats" class="stats-display hidden">
-            <div class="stat-item">
-                <label>Work Done</label>
-                <span class="value" id="powerWorkValue" style="color: #10b981;">0</span>
-                <small>J</small>
+            
+            <!-- Power Controls -->
+            <div id="powerControls" class="controls-bar hidden">
+                <button class="control-btn primary" id="slowPushBtn">
+                    <span>🐢</span> Slow (10s)
+                </button>
+                <button class="control-btn secondary" id="fastPushBtn">
+                    <span>🐇</span> Fast (2s)
+                </button>
+                <button class="control-btn" id="resetPowerBtn">
+                    <span>↻</span> Reset
+                </button>
             </div>
-            <div class="stat-item">
-                <label>Time</label>
-                <span class="value" id="timeValue">0.00</span>
-                <small>s</small>
+            
+            <!-- Hint -->
+            <div class="hint-wrapper">
+                <div class="hint-text">
+                    <span id="hintMessage">👆 Drag horizontally to push the crate</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <label>Power</label>
-                <span class="value" id="powerValue" style="color: #f59e0b;">0</span>
-                <small>W</small>
-            </div>
-        </div>
-        
-        <!-- Work Controls -->
-        <div id="workControls" class="controls-panel">
-            <button class="control-btn reset" id="resetWorkBtn">Reset Crate</button>
-        </div>
-        
-        <!-- Power Controls -->
-        <div id="powerControls" class="controls-panel hidden">
-            <button class="control-btn primary" id="slowPushBtn">PUSH SLOW (10s)</button>
-            <button class="control-btn secondary" id="fastPushBtn">PUSH FAST (2s)</button>
-            <button class="control-btn reset" id="resetPowerBtn">RESET RACE</button>
-        </div>
-        
-        <!-- Energy Controls -->
-        <div id="energyControls" class="controls-panel hidden">
-            <button class="control-btn reset" id="resetEnergyBtn">Reset Coaster</button>
-        </div>
-        
-        <div id="hintText" class="hint-text">
-            <span id="hintMessage">Drag horizontally to push the crate!</span>
         </div>
     </div>
 
@@ -250,22 +506,33 @@
         const canvas = document.getElementById('mainCanvas');
         const ctx = canvas.getContext('2d');
         
+        // Responsive canvas
+        function resizeCanvas() {
+            const wrapper = canvas.parentElement;
+            const containerWidth = wrapper.clientWidth;
+            canvas.width = 1000;
+            canvas.height = 500;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
         // Tab management
         let currentTab = 'work';
         let animationFrame = null;
         let isDragging = false;
         
-        // ============ WORK SIMULATION STATE ============
+        // ============ WORK SIMULATION ============
         const workState = {
             crate: { x: 150, y: 270, w: 80, h: 80 },
             wallX: 750,
             force: 0,
             distance: 0,
             totalWork: 0,
-            lastMouseX: 0
+            lastPointerX: 0
         };
         
-        // ============ ENERGY SIMULATION STATE ============
+        // ============ ENERGY SIMULATION ============
         const energyState = {
             points: [
                 { x: 100, y: 120 },
@@ -281,10 +548,10 @@
             TOTAL_ENERGY: 390
         };
         
-        // ============ POWER SIMULATION STATE ============
+        // ============ POWER SIMULATION ============
         const powerState = {
-            slow: { x: 80, active: false, color: '#3b82f6', duration: 10, startTime: 0 },
-            fast: { x: 80, active: false, color: '#8b5cf6', duration: 2, startTime: 0 },
+            slow: { x: 80, active: false, color: '#0066cc', duration: 10, startTime: 0 },
+            fast: { x: 80, active: false, color: '#1a1e2b', duration: 2, startTime: 0 },
             START_X: 80,
             FINISH_X: 820,
             CONSTANT_WORK: 500,
@@ -297,12 +564,10 @@
         function switchTab(tab) {
             currentTab = tab;
             
-            // Update UI
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.tab === tab);
             });
             
-            // Hide all stats and controls
             document.getElementById('workStats').classList.add('hidden');
             document.getElementById('energyStats').classList.add('hidden');
             document.getElementById('powerStats').classList.add('hidden');
@@ -310,25 +575,21 @@
             document.getElementById('energyControls').classList.add('hidden');
             document.getElementById('powerControls').classList.add('hidden');
             
-            // Show relevant stats and controls
             if (tab === 'work') {
                 document.getElementById('workStats').classList.remove('hidden');
                 document.getElementById('workControls').classList.remove('hidden');
-                document.getElementById('hintMessage').textContent = 'Drag horizontally to push the crate!';
-                canvas.style.cursor = 'ew-resize';
+                document.getElementById('hintMessage').textContent = '👆 Drag horizontally to push the crate';
                 resetWork();
             } else if (tab === 'energy') {
                 document.getElementById('energyStats').classList.remove('hidden');
                 document.getElementById('energyControls').classList.remove('hidden');
-                document.getElementById('hintMessage').textContent = 'Drag the yellow points to shape the track. Press SPACE to reset coaster.';
-                canvas.style.cursor = 'crosshair';
+                document.getElementById('hintMessage').textContent = '👆 Drag yellow points · Double-tap to reset coaster';
                 energyState.coaster.isMoving = true;
                 computeTrack();
             } else if (tab === 'power') {
                 document.getElementById('powerStats').classList.remove('hidden');
                 document.getElementById('powerControls').classList.remove('hidden');
-                document.getElementById('hintMessage').textContent = 'Same work, different time = different power!';
-                canvas.style.cursor = 'default';
+                document.getElementById('hintMessage').textContent = '⚡ Same work, different time = different power';
             }
         }
         
@@ -350,54 +611,78 @@
         function drawWork() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            // Clean, modern style
             // Ground
-            ctx.fillStyle = '#f1f5f9';
-            ctx.fillRect(0, 370, canvas.width, 80);
-            ctx.strokeStyle = '#cbd5e0';
+            ctx.fillStyle = '#f5f7fa';
+            ctx.fillRect(0, 370, canvas.width, 130);
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(0, 370);
             ctx.lineTo(canvas.width, 370);
             ctx.stroke();
             
             // Wall
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillRect(workState.wallX, 170, 16, 200);
             ctx.fillStyle = '#94a3b8';
-            ctx.fillRect(workState.wallX, 170, 20, 200);
+            ctx.fillRect(workState.wallX + 4, 180, 4, 180);
+            
+            // Crate shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+            ctx.fillRect(workState.crate.x + 4, workState.crate.y + 4, workState.crate.w, workState.crate.h);
             
             // Crate
-            ctx.fillStyle = '#92400e';
+            ctx.fillStyle = '#d97706';
             ctx.fillRect(workState.crate.x, workState.crate.y, workState.crate.w, workState.crate.h);
-            ctx.strokeStyle = '#451a03';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(workState.crate.x, workState.crate.y, workState.crate.w, workState.crate.h);
+            
+            // Crate details
+            ctx.fillStyle = '#b45309';
+            ctx.fillRect(workState.crate.x + 10, workState.crate.y + 15, 15, 4);
+            ctx.fillRect(workState.crate.x + 10, workState.crate.y + 30, 15, 4);
+            ctx.fillRect(workState.crate.x + 10, workState.crate.y + 45, 15, 4);
+            ctx.fillRect(workState.crate.x + 55, workState.crate.y + 15, 15, 4);
+            ctx.fillRect(workState.crate.x + 55, workState.crate.y + 30, 15, 4);
+            ctx.fillRect(workState.crate.x + 55, workState.crate.y + 45, 15, 4);
             
             // Force arrow
             if (workState.force > 5) {
-                const arrowWidth = workState.force * 0.6;
-                ctx.fillStyle = '#ef4444';
+                const arrowWidth = Math.min(workState.force * 0.5, 200);
+                ctx.strokeStyle = '#e53e3e';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
                 ctx.beginPath();
-                ctx.moveTo(workState.crate.x, workState.crate.y + 40);
+                ctx.moveTo(workState.crate.x - 5, workState.crate.y + 40);
                 ctx.lineTo(workState.crate.x - arrowWidth, workState.crate.y + 40);
-                ctx.lineWidth = 8;
-                ctx.strokeStyle = '#ef4444';
                 ctx.stroke();
                 
                 // Arrowhead
+                ctx.fillStyle = '#e53e3e';
                 ctx.beginPath();
-                ctx.moveTo(workState.crate.x, workState.crate.y + 40);
-                ctx.lineTo(workState.crate.x - 15, workState.crate.y + 30);
-                ctx.lineTo(workState.crate.x - 15, workState.crate.y + 50);
+                ctx.moveTo(workState.crate.x - 8, workState.crate.y + 40);
+                ctx.lineTo(workState.crate.x - 22, workState.crate.y + 30);
+                ctx.lineTo(workState.crate.x - 22, workState.crate.y + 50);
                 ctx.fill();
             }
             
             // Distance line
-            ctx.setLineDash([5, 5]);
-            ctx.strokeStyle = '#3b82f6';
+            ctx.strokeStyle = '#3182ce';
             ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
             ctx.beginPath();
             ctx.moveTo(150, 385);
             ctx.lineTo(workState.crate.x, 385);
             ctx.stroke();
             ctx.setLineDash([]);
+            
+            // Distance markers
+            ctx.fillStyle = '#3182ce';
+            ctx.beginPath();
+            ctx.arc(150, 385, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(workState.crate.x, 385, 3, 0, Math.PI * 2);
+            ctx.fill();
         }
         
         function updateWork() {
@@ -450,61 +735,95 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // Ground
+            ctx.fillStyle = '#f5f7fa';
+            ctx.fillRect(0, energyState.GROUND_Y, canvas.width, 110);
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1.5;
             ctx.beginPath();
             ctx.moveTo(0, energyState.GROUND_Y);
             ctx.lineTo(canvas.width, energyState.GROUND_Y);
-            ctx.strokeStyle = '#cbd5e0';
-            ctx.lineWidth = 2;
             ctx.stroke();
+            
+            // Track shadow
+            if (energyState.trackPoints.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(energyState.trackPoints[0].x, energyState.trackPoints[0].y + 4);
+                energyState.trackPoints.forEach(p => ctx.lineTo(p.x, p.y + 4));
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.04)';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+            }
             
             // Track
             if (energyState.trackPoints.length > 0) {
                 ctx.beginPath();
                 ctx.moveTo(energyState.trackPoints[0].x, energyState.trackPoints[0].y);
                 energyState.trackPoints.forEach(p => ctx.lineTo(p.x, p.y));
-                ctx.strokeStyle = '#cbd5e0';
-                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 2;
                 ctx.stroke();
             }
             
             // Control points
             energyState.points.forEach(p => {
-                ctx.fillStyle = '#f59e0b';
+                ctx.fillStyle = '#eab308';
+                ctx.shadowColor = 'rgba(234, 179, 8, 0.3)';
+                ctx.shadowBlur = 8;
                 ctx.beginPath();
-                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.strokeStyle = '#d97706';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#ca8a04';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                ctx.fill();
             });
             
             // Coaster
             const pos = getCoasterPos();
             ctx.fillStyle = '#1e293b';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 2;
             ctx.beginPath();
-            ctx.rect(pos.x - 20, pos.y - 30, 40, 30);
+            ctx.rect(pos.x - 18, pos.y - 28, 36, 28);
             ctx.fill();
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.rect(pos.x - 14, pos.y - 32, 6, 6);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.rect(pos.x + 8, pos.y - 32, 6, 6);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
             
             // Energy bars
-            drawEnergyBar(50, 200, energyState.coaster.pe || 0, '#3b82f6', 'PE');
-            drawEnergyBar(canvas.width - 150, 200, energyState.coaster.ke || 0, '#10b981', 'KE');
+            drawEnergyBar(50, 180, energyState.coaster.pe || 0, '#3182ce');
+            drawEnergyBar(canvas.width - 130, 180, energyState.coaster.ke || 0, '#38a169');
         }
         
-        function drawEnergyBar(x, height, value, color, label) {
+        function drawEnergyBar(x, height, value, color) {
             ctx.save();
-            ctx.translate(x, 100);
+            ctx.translate(x, 110);
             
-            ctx.fillStyle = '#1e293b';
-            ctx.font = 'bold 12px sans-serif';
-            ctx.fillText(label, 0, -20);
+            // Bar background
+            ctx.fillStyle = '#f1f5f9';
+            ctx.beginPath();
+            ctx.rect(0, 0, 36, height);
+            ctx.fill();
             
-            ctx.strokeStyle = '#cbd5e0';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(0, 0, 40, height);
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(0, 0, 36, height);
             
+            // Fill
             const fillHeight = height * (value / energyState.TOTAL_ENERGY);
             ctx.fillStyle = color;
-            ctx.fillRect(0, height - fillHeight, 40, fillHeight);
+            ctx.fillRect(0, height - fillHeight, 36, fillHeight);
             
             ctx.restore();
         }
@@ -560,40 +879,55 @@
         function drawPower() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw lanes
             for (let i = 0; i < 2; i++) {
                 const y = 150 + i * 150;
                 
                 // Lane background
-                ctx.fillStyle = '#f8fafc';
-                ctx.fillRect(0, y - 60, canvas.width, 120);
+                ctx.fillStyle = '#fafbfc';
+                ctx.fillRect(0, y - 50, canvas.width, 100);
                 
-                // Lane divider
+                // Lane line
                 ctx.strokeStyle = '#e2e8f0';
-                ctx.lineWidth = 2;
+                ctx.lineWidth = 1.5;
                 ctx.beginPath();
-                ctx.moveTo(0, y + 60);
-                ctx.lineTo(canvas.width, y + 60);
+                ctx.moveTo(0, y + 50);
+                ctx.lineTo(canvas.width, y + 50);
                 ctx.stroke();
                 
-                // Finish line
-                ctx.fillStyle = '#000';
-                ctx.fillRect(powerState.FINISH_X, y - 40, 10, 100);
+                // Finish line pattern
+                ctx.fillStyle = '#1e293b';
+                for (let j = 0; j < 10; j++) {
+                    ctx.fillRect(powerState.FINISH_X, y - 40 + j * 10, 8, 5);
+                }
                 
                 // Draw pushers
                 const pusher = i === 0 ? powerState.slow : powerState.fast;
-                ctx.fillStyle = '#92400e';
-                ctx.fillRect(pusher.x, y - 20, 60, 60);
                 
+                // Shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+                ctx.fillRect(pusher.x + 3, y - 17, 56, 56);
+                
+                // Body
+                ctx.fillStyle = '#ea580c';
+                ctx.fillRect(pusher.x, y - 20, 56, 56);
+                ctx.fillStyle = '#c2410c';
+                ctx.fillRect(pusher.x + 8, y - 12, 12, 40);
+                ctx.fillRect(pusher.x + 36, y - 12, 12, 40);
+                
+                // Handle
                 ctx.fillStyle = pusher.color;
-                ctx.fillRect(pusher.x - 30, y - 10, 25, 50);
+                ctx.fillRect(pusher.x - 28, y - 10, 24, 12);
+                ctx.fillStyle = pusher.color === '#0066cc' ? '#0055b3' : '#2d3445';
+                ctx.beginPath();
+                ctx.arc(pusher.x - 28, y - 4, 8, 0, Math.PI * 2);
+                ctx.fill();
             }
             
             // Labels
+            ctx.font = '500 13px Inter, sans-serif';
             ctx.fillStyle = '#64748b';
-            ctx.font = 'bold 14px sans-serif';
-            ctx.fillText('SLOW PUSH (10s)', 50, 120);
-            ctx.fillText('FAST PUSH (2s)', 50, 270);
+            ctx.fillText('SLOW PUSH', 50, 110);
+            ctx.fillText('FAST PUSH', 50, 260);
         }
         
         function updatePower() {
@@ -604,7 +938,7 @@
                 if (s.active) {
                     const elapsed = (now - s.startTime) / 1000;
                     const progress = Math.min(elapsed / s.duration, 1);
-                    s.x = powerState.START_X + (powerState.FINISH_X - powerState.START_X - 60) * progress;
+                    s.x = powerState.START_X + (powerState.FINISH_X - powerState.START_X - 56) * progress;
                     
                     if (progress >= 1) {
                         s.active = false;
@@ -651,70 +985,108 @@
             animationFrame = requestAnimationFrame(animate);
         }
         
-        // ============ EVENT HANDLERS ============
-        canvas.addEventListener('mousedown', (e) => {
+        // ============ POINTER EVENTS ============
+        function getCanvasCoords(e) {
             const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            const my = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+        
+        function handlePointerDown(e) {
+            e.preventDefault();
+            
+            const coords = getCanvasCoords(e);
             
             if (currentTab === 'work') {
                 isDragging = true;
-                workState.lastMouseX = e.clientX;
+                workState.lastPointerX = coords.x;
+                canvas.setPointerCapture(e.pointerId);
             } else if (currentTab === 'energy') {
                 energyState.points.forEach(p => {
-                    if (Math.abs(mx - p.x) < 20 && Math.abs(my - p.y) < 20) {
+                    if (Math.abs(coords.x - p.x) < 30 && Math.abs(coords.y - p.y) < 30) {
                         energyState.dragTarget = p;
-                        p.yOffset = my - p.y;
+                        p.yOffset = coords.y - p.y;
+                        canvas.setPointerCapture(e.pointerId);
                     }
                 });
             }
-        });
+        }
         
-        window.addEventListener('mousemove', (e) => {
+        function handlePointerMove(e) {
+            e.preventDefault();
+            
+            const coords = getCanvasCoords(e);
+            
             if (currentTab === 'work' && isDragging) {
-                const mouseDiff = e.clientX - workState.lastMouseX;
-                if (mouseDiff > 0) {
-                    workState.force += mouseDiff * 1.5;
+                const deltaX = coords.x - workState.lastPointerX;
+                if (deltaX > 0) {
+                    workState.force += deltaX * 1.5;
                     if (workState.force > 400) workState.force = 400;
                 }
-                workState.lastMouseX = e.clientX;
+                workState.lastPointerX = coords.x;
             } else if (currentTab === 'energy' && energyState.dragTarget) {
-                const rect = canvas.getBoundingClientRect();
-                const my = e.clientY - rect.top;
-                energyState.dragTarget.y = Math.max(80, Math.min(energyState.GROUND_Y, my - energyState.dragTarget.yOffset));
+                energyState.dragTarget.y = Math.max(80, Math.min(energyState.GROUND_Y, coords.y - energyState.dragTarget.yOffset));
                 computeTrack();
             }
-        });
+        }
         
-        window.addEventListener('mouseup', () => {
+        function handlePointerUp(e) {
+            e.preventDefault();
+            
             isDragging = false;
             energyState.dragTarget = null;
-        });
+            canvas.releasePointerCapture(e.pointerId);
+        }
         
-        window.addEventListener('keydown', (e) => {
-            if (currentTab === 'energy' && e.code === 'Space') {
+        function handleDoubleTap(e) {
+            e.preventDefault();
+            
+            if (currentTab === 'energy') {
                 energyState.coaster.x = 0;
                 energyState.coaster.t = 0;
                 energyState.coaster.vx = 0;
                 energyState.coaster.isMoving = true;
-                e.preventDefault();
             }
-        });
+        }
         
         // ============ INITIALIZATION ============
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+        canvas.addEventListener('dblclick', handleDoubleTap);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                switchTab(btn.dataset.tab);
+            }, { passive: false });
         });
         
         document.getElementById('resetWorkBtn').addEventListener('click', resetWork);
-        
         document.getElementById('resetEnergyBtn').addEventListener('click', () => {
             energyState.coaster.x = 0;
             energyState.coaster.t = 0;
             energyState.coaster.vx = 0;
             energyState.coaster.isMoving = true;
         });
-        
         document.getElementById('slowPushBtn').addEventListener('click', () => {
             if (!powerState.slow.active) {
                 powerState.slow.x = powerState.START_X;
@@ -722,7 +1094,6 @@
                 powerState.slow.startTime = performance.now();
             }
         });
-        
         document.getElementById('fastPushBtn').addEventListener('click', () => {
             if (!powerState.fast.active) {
                 powerState.fast.x = powerState.START_X;
@@ -730,10 +1101,8 @@
                 powerState.fast.startTime = performance.now();
             }
         });
-        
         document.getElementById('resetPowerBtn').addEventListener('click', resetPower);
         
-        // Initialize
         computeTrack();
         animate();
     </script>
