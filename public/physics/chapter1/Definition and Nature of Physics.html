@@ -2,37 +2,217 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Physics: Wind Power Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wind Power · Physics Lab</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #fafbfc;
+            overflow: hidden;
+            touch-action: pan-y;
+            color: #1a1e2b;
+        }
+        
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .app-title .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Main Simulation Area */
+        .simulation-container {
+            flex-grow: 1;
+            background: #fafbfc;
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
-            padding: 20px;
+            justify-content: center;
+            padding: 24px;
+            touch-action: none;
         }
-        canvas {
-            border: 3px solid #2c3e50;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            cursor: grab;
+        
+        .canvas-card {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
         }
-        canvas:active { cursor: grabbing; }
-        .label-box { text-align: center; margin-bottom: 15px; max-width: 700px; }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 10;
+        }
+        
+        #physicsCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 12px 24px;
+            text-align: center;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .hint-text {
+            display: inline-block;
+            padding: 6px 18px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
+        }
+        
+        /* Reset Button */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 24px 16px 24px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .control-btn {
+            padding: 10px 24px;
+            border-radius: 40px;
+            border: 1px solid #eef2f6;
+            background: #ffffff;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #1a1e2b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .control-btn:hover {
+            background: #f5f7fa;
+            border-color: #dce2ec;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.96);
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1.1rem;
+            }
+            
+            .simulation-container {
+                padding: 16px;
+            }
+            
+            .controls-bar {
+                padding: 10px 16px;
+            }
+        }
+        
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        button:focus-visible {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>💨 Wind Power Generator</h1>
+            <span class="badge">Kinetic → Electrical</span>
+        </div>
+    </header>
 
-    <div class="label-box">
-        <h2>Physics Lab: Wind Energy Conversion</h2>
-        <p><b>Instructions:</b> Drag the <b>Wind Cloud</b> closer to the fan. The kinetic energy of the wind will power the circuit and light the bulb!</p>
+    <div class="simulation-container">
+        <div class="canvas-card">
+            <div class="canvas-wrapper">
+                <canvas id="physicsCanvas" width="800" height="500"></canvas>
+            </div>
+            
+            <!-- Controls -->
+            <div class="controls-bar">
+                <button class="control-btn" id="resetWindBtn">
+                    <span>↻</span> Reset Wind
+                </button>
+            </div>
+            
+            <!-- Hint -->
+            <div class="hint-wrapper">
+                <div class="hint-text">
+                    <span id="hintMessage">👆 Drag the cloud toward the turbine to generate power</span>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <canvas id="physicsCanvas" width="800" height="500"></canvas>
 
     <script>
         const canvas = document.getElementById('physicsCanvas');
@@ -42,34 +222,79 @@
         const groundY = height - 60;
 
         // --- State Variables ---
-        const windCloud = { x: 100, y: 150, r: 35, isDragging: false };
+        const windCloud = { 
+            x: 100, 
+            y: 150, 
+            r: 35, 
+            isDragging: false,
+            initialX: 100,
+            initialY: 150
+        };
+        
         const fan = { x: 500, y: 180, angle: 0, speed: 0 };
         const bulb = { x: 700, y: 180 };
         const obeliskX = 150;
 
-        // --- Interaction Logic ---
-        canvas.addEventListener('mousedown', (e) => {
+        // --- Unified Pointer Events (Mouse + Touch) ---
+        function getCanvasCoords(e) {
             const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            const my = e.clientY - rect.top;
-            const dist = Math.sqrt((mx - windCloud.x)**2 + (my - windCloud.y)**2);
-            if (dist < windCloud.r) windCloud.isDragging = true;
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (windCloud.isDragging) {
-                const rect = canvas.getBoundingClientRect();
-                windCloud.x = e.clientX - rect.left;
-                windCloud.y = e.clientY - rect.top;
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
             }
-        });
-
-        window.addEventListener('mouseup', () => windCloud.isDragging = false);
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+        
+        function handlePointerDown(e) {
+            e.preventDefault();
+            
+            const coords = getCanvasCoords(e);
+            const dist = Math.sqrt((coords.x - windCloud.x) ** 2 + (coords.y - windCloud.y) ** 2);
+            
+            if (dist < windCloud.r * 1.5) {
+                windCloud.isDragging = true;
+                canvas.setPointerCapture(e.pointerId);
+            }
+        }
+        
+        function handlePointerMove(e) {
+            e.preventDefault();
+            
+            if (windCloud.isDragging) {
+                const coords = getCanvasCoords(e);
+                windCloud.x = Math.max(40, Math.min(width - 40, coords.x));
+                windCloud.y = Math.max(40, Math.min(height - 100, coords.y));
+            }
+        }
+        
+        function handlePointerUp(e) {
+            e.preventDefault();
+            windCloud.isDragging = false;
+            canvas.releasePointerCapture(e.pointerId);
+        }
+        
+        function resetWind() {
+            windCloud.x = windCloud.initialX;
+            windCloud.y = windCloud.initialY;
+            fan.speed = 0;
+        }
 
         function drawScene() {
             ctx.clearRect(0, 0, width, height);
 
-            // 1. Draw Ground & Obelisk (Heritage)
+            // 1. Draw Ground & Obelisk
             ctx.fillStyle = "#2ecc71";
             ctx.fillRect(0, groundY, width, 60);
             
@@ -82,16 +307,16 @@
             ctx.lineTo(obeliskX - 15, groundY - 200);
             ctx.fill();
             ctx.fillStyle = "#2c3e50";
-            ctx.font = "14px Arial";
+            ctx.font = "14px Inter, Arial, sans-serif";
             ctx.fillText("Axum (Statics)", obeliskX - 45, groundY + 25);
 
-            // 2. Physics Calculation: Distance between Wind and Fan
-            const dist = Math.sqrt((windCloud.x - fan.x)**2 + (windCloud.y - fan.y)**2);
+            // 2. Physics Calculation
+            const dist = Math.sqrt((windCloud.x - fan.x) ** 2 + (windCloud.y - fan.y) ** 2);
             const effectRadius = 250;
             if (dist < effectRadius) {
                 fan.speed = (1 - (dist / effectRadius)) * 0.4;
             } else {
-                fan.speed *= 0.95; // Friction slows it down
+                fan.speed *= 0.95;
             }
             fan.angle += fan.speed;
 
@@ -105,24 +330,26 @@
             ctx.lineTo(bulb.x, bulb.y + 30);
             ctx.stroke();
 
-            // 4. Draw Fan (The Generator)
+            // 4. Draw Fan
             ctx.save();
             ctx.translate(fan.x, fan.y);
             ctx.rotate(fan.angle);
             ctx.fillStyle = "#3498db";
-            for(let i=0; i<3; i++) {
+            for(let i = 0; i < 3; i++) {
                 ctx.beginPath();
                 ctx.ellipse(0, 0, 10, 60, 0, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.rotate((Math.PI * 2) / 3);
             }
             ctx.restore();
-            // Fan Hub
+            
             ctx.fillStyle = "#2c3e50";
-            ctx.beginPath(); ctx.arc(fan.x, fan.y, 10, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); 
+            ctx.arc(fan.x, fan.y, 10, 0, Math.PI*2); 
+            ctx.fill();
 
-            // 5. Draw Light Bulb (Classic Shape)
-            const brightness = fan.speed * 5; // Direct physics link: Speed = Light
+            // 5. Draw Light Bulb
+            const brightness = fan.speed * 5;
             ctx.save();
             ctx.translate(bulb.x, bulb.y);
             
@@ -132,7 +359,9 @@
                 glow.addColorStop(0, `rgba(255, 255, 0, ${brightness})`);
                 glow.addColorStop(1, "rgba(255, 255, 0, 0)");
                 ctx.fillStyle = glow;
-                ctx.beginPath(); ctx.arc(0, 0, 50 * brightness, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); 
+                ctx.arc(0, 0, 50 * brightness, 0, Math.PI*2); 
+                ctx.fill();
             }
 
             // Bulb Glass
@@ -150,7 +379,11 @@
             // Filament
             if (brightness > 0.1) {
                 ctx.strokeStyle = "white";
-                ctx.beginPath(); ctx.moveTo(-10, 5); ctx.lineTo(0, -10); ctx.lineTo(10, 5); ctx.stroke();
+                ctx.beginPath(); 
+                ctx.moveTo(-10, 5); 
+                ctx.lineTo(0, -10); 
+                ctx.lineTo(10, 5); 
+                ctx.stroke();
             }
             ctx.restore();
 
@@ -162,18 +395,43 @@
             ctx.arc(windCloud.x + 20, windCloud.y + 10, windCloud.r * 0.7, 0, Math.PI*2);
             ctx.fill();
             ctx.fillStyle = "#2c3e50";
-            ctx.font = "bold 12px Arial";
+            ctx.font = "bold 12px Inter, Arial, sans-serif";
             ctx.fillText("WIND", windCloud.x - 17, windCloud.y + 5);
 
-            // Labels
+            // 7. Labels
             ctx.fillStyle = "#7f8c8d";
-            ctx.font = "14px Arial";
+            ctx.font = "14px Inter, Arial, sans-serif";
             ctx.fillText("Kinetic Energy (Wind)", 250, 100);
             ctx.fillText("➞ Electrical Energy (Wire)", 480, groundY - 30);
+            
+            // Update hint
+            const hintEl = document.getElementById('hintMessage');
+            if (brightness > 0.5) {
+                hintEl.textContent = '✨ Maximum power! The bulb is glowing brightly! ✨';
+            } else if (brightness > 0.2) {
+                hintEl.textContent = '💡 Good power! Bring the cloud closer for more light!';
+            } else if (brightness > 0.05) {
+                hintEl.textContent = '🌬️ The turbine is spinning! More wind = more power!';
+            } else {
+                hintEl.textContent = '👆 Drag the cloud toward the turbine to generate power';
+            }
             
             requestAnimationFrame(drawScene);
         }
 
+        // --- Initialize ---
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        document.getElementById('resetWindBtn').addEventListener('click', resetWind);
+        document.getElementById('resetWindBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            resetWind();
+        }, { passive: false });
+        
         drawScene();
     </script>
 </body>
