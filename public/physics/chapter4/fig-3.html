@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Physics Lab: Work, Energy, and Power</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
@@ -14,6 +18,7 @@
             background: #f1f5f9;
             overflow: hidden;
         }
+        
         .tabs {
             display: flex;
             background: #1e293b;
@@ -21,474 +26,716 @@
             gap: 5px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
+        
         .tab-btn {
-            padding: 12px 20px;
+            padding: 12px 24px;
             border: none;
             background: #334155;
             color: #94a3b8;
             cursor: pointer;
             border-radius: 8px 8px 0 0;
             font-weight: 600;
-            font-size: 0.9rem;
+            font-size: 1rem;
             transition: all 0.2s ease;
+            border: none;
         }
+        
         .tab-btn:hover {
             background: #475569;
             color: white;
         }
+        
         .tab-btn.active {
             background: #f8fafc;
             color: #1e293b;
         }
-        .tab-content {
+        
+        .simulation-container {
             flex-grow: 1;
-            display: none;
-            height: calc(100vh - 55px);
+            background: #f8fafc;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        .tab-content.active {
-            display: block;
+        
+        #mainCanvas {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
+            cursor: default;
+            max-width: 100%;
+            height: auto;
         }
-        iframe {
-            width: 100%;
-            height: 100%;
+        
+        .controls-panel {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .control-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
             border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        .control-btn.primary {
+            background: #3b82f6;
+        }
+        
+        .control-btn.secondary {
+            background: #8b5cf6;
+        }
+        
+        .control-btn.reset {
+            background: #1e293b;
+        }
+        
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .stats-display {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 30px;
+            border: 1px solid #e2e8f0;
+            backdrop-filter: blur(5px);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-item label {
+            display: block;
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-item .value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .hint-text {
+            position: absolute;
+            bottom: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            backdrop-filter: blur(5px);
+        }
+        
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-
     <div class="tabs">
-        <button class="tab-btn active" onclick="openTab(event, 'workTab')">1. Work (W = Fd)</button>
-        <button class="tab-btn" onclick="openTab(event, 'energyTab')">2. PE vs KE Exchange</button>
-        <button class="tab-btn" onclick="openTab(event, 'powerTab')">3. Power (P = W/t)</button>
+        <button class="tab-btn active" data-tab="work">1. Work (W = F·d)</button>
+        <button class="tab-btn" data-tab="energy">2. PE ↔ KE Exchange</button>
+        <button class="tab-btn" data-tab="power">3. Power (P = W/t)</button>
     </div>
 
-    <div id="workTab" class="tab-content active">
-        <iframe srcdoc='
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <title>Ultimate Work Lab: W = Fd</title>
-                <style>
-                    :root {
-                        --bg: #f0f4f8;
-                        --force: #ef4444;
-                        --dist: #3b82f6;
-                        --work: #10b981;
-                        --crate: #92400e;
-                    }
-
-                    body {
-                        font-family: "Segoe UI", system-ui, sans-serif;
-                        background: var(--bg);
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        height: 100vh;
-                        margin: 0;
-                        overflow: hidden;
-                        user-select: none;
-                    }
-
-                    .dashboard {
-                        background: white;
-                        padding: 20px 40px;
-                        border-radius: 20px;
-                        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-                        display: flex;
-                        gap: 30px;
-                        margin-bottom: 20px;
-                        border: 2px solid #e2e8f0;
-                    }
-
-                    .stat { text-align: center; }
-                    .stat label { display: block; font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase; }
-                    .stat span { font-size: 1.8rem; font-weight: 800; font-family: monospace; }
-
-                    #canvas-container {
-                        position: relative;
-                        background: white;
-                        padding: 10px;
-                        border-radius: 16px;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-                    }
-
-                    canvas { cursor: ew-resize; border-radius: 8px; background: #fff; }
-
-                    .hint {
-                        margin-top: 15px;
-                        color: #475569;
-                        font-size: 0.9rem;
-                        background: #e2e8f0;
-                        padding: 5px 15px;
-                        border-radius: 20px;
-                    }
-                </style>
-            </head>
-            <body>
-
-                <div class="dashboard">
-                    <div class="stat">
-                        <label>Force (F)</label>
-                        <span id="f-val" style="color:var(--force)">0</span><small>N</small>
-                    </div>
-                    <div class="stat">
-                        <label>Distance (d)</label>
-                        <span id="d-val" style="color:var(--dist)">0.0</span><small>m</small>
-                    </div>
-                    <div class="stat" style="border-left: 2px solid #f1f5f9; padding-left: 30px;">
-                        <label>Work Done (W)</label>
-                        <span id="w-val" style="color:var(--work)">0.0</span><small>J</small>
-                    </div>
-                </div>
-
-                <div id="canvas-container">
-                    <canvas id="workCanvas" width="800" height="300"></canvas>
-                </div>
-
-                <div class="hint">
-                    <b>DRAG FAST</b> to increase Force. <b>HIT THE WALL</b> to see Work stop!
-                </div>
-
-            <script>
-                const canvas = document.getElementById("workCanvas");
-                const ctx = canvas.getContext("2d");
-                
-                let crate = { x: 100, y: 170, w: 80, h: 80, mass: 20 };
-                let wallX = 700;
-                let force = 0;
-                let distance = 0;
-                let totalWork = 0;
-                let isDragging = false;
-                let lastMouseX = 0;
-
-                function update() {
-                    let friction = isDragging ? 2 : 5;
-                    if (force > 0) force -= friction;
-                    if (force < 0) force = 0;
-
-                    if (force > 15) {
-                        let dx = force * 0.02;
-                        if (crate.x + crate.w + dx < wallX) {
-                            crate.x += dx;
-                            distance += dx / 50; 
-                            totalWork += (force * (dx / 50)) / 10; 
-                        } else {
-                            crate.x = wallX - crate.w;
-                        }
-                    }
-
-                    draw();
-                    document.getElementById("f-val").innerText = Math.round(force);
-                    document.getElementById("d-val").innerText = (distance).toFixed(2);
-                    document.getElementById("w-val").innerText = (totalWork).toFixed(1);
-                    requestAnimationFrame(update);
-                }
-
-                function draw() {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.fillStyle = "#f1f5f9";
-                    ctx.fillRect(0, 250, canvas.width, 50);
-                    ctx.strokeStyle = "#cbd5e0";
-                    ctx.strokeRect(0, 250, canvas.width, 1);
-                    ctx.fillStyle = "#94a3b8";
-                    ctx.fillRect(wallX, 50, 20, 200);
-                    ctx.fillStyle = "#92400e";
-                    ctx.fillRect(crate.x, crate.y, crate.w, crate.h);
-                    ctx.strokeStyle = "#451a03";
-                    ctx.lineWidth = 3;
-                    ctx.strokeRect(crate.x, crate.y, crate.w, crate.h);
-                    ctx.strokeStyle = "rgba(255,255,255,0.1)";
-                    ctx.beginPath();
-                    ctx.moveTo(crate.x + 10, crate.y + 20); ctx.lineTo(crate.x + 70, crate.y + 20);
-                    ctx.moveTo(crate.x + 10, crate.y + 40); ctx.lineTo(crate.x + 70, crate.y + 40);
-                    ctx.stroke();
-                    if (force > 5) {
-                        let arrowWidth = force * 0.8;
-                        ctx.fillStyle = "#ef4444";
-                        ctx.beginPath();
-                        ctx.moveTo(crate.x, crate.y + 40);
-                        ctx.lineTo(crate.x - arrowWidth, crate.y + 40);
-                        ctx.lineWidth = 10;
-                        ctx.strokeStyle = "#ef4444";
-                        ctx.stroke();
-                        ctx.beginPath();
-                        ctx.moveTo(crate.x, crate.y + 40);
-                        ctx.lineTo(crate.x - 15, crate.y + 30);
-                        ctx.lineTo(crate.x - 15, crate.y + 50);
-                        ctx.fill();
-                        ctx.font = "bold 14px sans-serif";
-                        ctx.fillText("PUSH", crate.x - arrowWidth - 40, crate.y + 45);
-                    }
-                    ctx.setLineDash([5, 5]);
-                    ctx.strokeStyle = "#3b82f6";
-                    ctx.beginPath();
-                    ctx.moveTo(100, 265);
-                    ctx.lineTo(crate.x, 265);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
-
-                canvas.addEventListener("mousedown", e => {
-                    isDragging = true;
-                    lastMouseX = e.clientX;
-                });
-
-                window.addEventListener("mousemove", e => {
-                    if (isDragging) {
-                        let mouseDiff = e.clientX - lastMouseX;
-                        if (mouseDiff > 0) {
-                            force += mouseDiff * 1.5;
-                            if (force > 400) force = 400;
-                        }
-                        lastMouseX = e.clientX;
-                    }
-                });
-
-                window.addEventListener("mouseup", () => isDragging = false);
-                update();
-            </script>
-            </body>
-            </html>
-        '></iframe>
-    </div>
-
-    <div id="energyTab" class="tab-content">
-        <iframe srcdoc='
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <title>The Roller Coaster: PE vs. KE Exchange</title>
-                <style>
-                    :root {
-                        --bg: #f8fafc;
-                        --track: #cbd5e0;
-                        --potential: #3b82f6;
-                        --kinetic: #10b981;
-                        --point-color: #f59e0b;
-                        --text-main: #1e293b;
-                        --border: #e2e8f0;
-                    }
-                    body {
-                        font-family: system-ui, sans-serif;
-                        background-color: var(--bg);
-                        color: var(--text-main);
-                        margin: 0;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        justify-content: center;
-                        height: 100vh;
-                        overflow: hidden;
-                        user-select: none;
-                    }
-                    .header { text-align: center; margin-bottom: 25px; }
-                    .math-box {
-                        background: white; padding: 15px 30px; border-radius: 50px;
-                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid var(--border);
-                        margin-top: 10px; font-family: serif; font-size: 1.3rem; font-style: italic;
-                    }
-                    #labCanvas { background: white; border-radius: 24px; border: 1px solid var(--border); cursor: crosshair; }
-                    .instruction-tag { position: absolute; bottom: 30px; background: rgba(255, 255, 255, 0.8); padding: 10px 20px; border-radius: 12px; font-size: 0.9rem; color: #64748b; border: 1px solid var(--border); }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>Roller Coaster Lab</h1>
-                    <div class="math-box">
-                        <span style="color:var(--potential)">PE = mgh</span> ↔ <span style="color:var(--kinetic)">KE = ½mv²</span>
-                    </div>
-                </div>
-                <canvas id="labCanvas" width="800" height="400"></canvas>
-                <div class="instruction-tag"><b>Drag the yellow points</b> to sculpt the track. Press <b>"SPACE"</b> to reset.</div>
-                <script>
-                    const canvas = document.getElementById("labCanvas");
-                    const ctx = canvas.getContext("2d");
-                    const GROUND_Y = 350;
-                    const TOTAL_ENERGY = GROUND_Y * 1.5;
-                    let coaster = { x: 0, t: 0, vx: 0, totalEnergy: TOTAL_ENERGY, isMoving: true };
-                    let points = [{ x: 50, y: 80 }, { x: 220, y: 320 }, { x: 380, y: 150 }, { x: 550, y: 300 }, { x: 750, y: 200 }];
-                    let dragTarget = null;
-                    let trackPoints = [];
-
-                    function getSplinePoint(t, p0, p1, p2, p3) {
-                        const t2 = t * t, t3 = t2 * t;
-                        const f1 = -0.5*t3 + t2 - 0.5*t, f2 = 1.5*t3 - 2.5*t2 + 1.0, f3 = -1.5*t3 + 2.0*t2 + 0.5*t, f4 = 0.5*t3 - 0.5*t2;
-                        return { x: p0.x*f1 + p1.x*f2 + p2.x*f3 + p3.x*f4, y: p0.y*f1 + p1.y*f2 + p2.y*f3 + p3.y*f4 };
-                    }
-
-                    function computeTrack() {
-                        trackPoints = [];
-                        for (let i = 0; i < points.length - 1; i++) {
-                            let p0 = points[i > 0 ? i - 1 : i], p1 = points[i], p2 = points[i + 1], p3 = points[i + 2 < points.length ? i + 2 : i + 1];
-                            for (let t = 0; t <= 1; t += 0.05) trackPoints.push(getSplinePoint(t, p0, p1, p2, p3));
-                        }
-                    }
-
-                    canvas.addEventListener("mousedown", e => {
-                        const rect = canvas.getBoundingClientRect();
-                        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-                        points.forEach(p => { if (Math.abs(mx - p.x) < 20 && Math.abs(my - p.y) < 20) { dragTarget = p; p.yOffset = my - p.y; }});
-                    });
-
-                    window.addEventListener("mousemove", e => {
-                        if (dragTarget) {
-                            const rect = canvas.getBoundingClientRect();
-                            dragTarget.y = Math.max(80, Math.min(GROUND_Y, e.clientY - rect.top - dragTarget.yOffset));
-                            computeTrack();
-                        }
-                    });
-
-                    window.addEventListener("mouseup", () => dragTarget = null);
-                    window.addEventListener("keydown", e => { if (e.code === "Space") { coaster.x = 0; coaster.t = 0; coaster.vx = 0; coaster.isMoving = true; }});
-
-                    function getCoasterPos() {
-                        if (trackPoints.length === 0) return { x:points[0].x, y:points[0].y };
-                        let idx = Math.floor(coaster.x);
-                        if (idx >= trackPoints.length - 1) return trackPoints[trackPoints.length-1];
-                        let p1 = trackPoints[idx], p2 = trackPoints[idx + 1];
-                        return { x: p1.x + (p2.x - p1.x) * coaster.t, y: p1.y + (p2.y - p1.y) * coaster.t };
-                    }
-
-                    function updatePhysics() {
-                        if (!coaster.isMoving || trackPoints.length < 2) return;
-                        let pos = getCoasterPos();
-                        let height = Math.max(0, GROUND_Y - pos.y);
-                        coaster.pe = height;
-                        coaster.ke = Math.max(0, coaster.totalEnergy - height);
-                        coaster.vx = coaster.ke * 0.05;
-                        coaster.t += coaster.vx * 0.01;
-                        if (coaster.t >= 1) { coaster.t = 0; coaster.x++; }
-                        if (coaster.x >= trackPoints.length - 2) { coaster.x = 0; coaster.t = 0; coaster.vx = 0; }
-                    }
-
-                    function drawBattery(x, height, value, color, label) {
-                        ctx.save(); ctx.translate(x, 150);
-                        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--text-main");
-                        ctx.font = "bold 12px sans-serif"; ctx.fillText(label, 0, -20);
-                        ctx.roundRect(0, 0, 40, height, 5); ctx.stroke();
-                        const fillHeight = height * (value / TOTAL_ENERGY);
-                        ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(0, height - fillHeight, 40, fillHeight, 5); ctx.fill();
-                        ctx.restore();
-                    }
-
-                    function loop() {
-                        updatePhysics();
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        ctx.beginPath(); ctx.moveTo(0, GROUND_Y); ctx.lineTo(canvas.width, GROUND_Y); ctx.stroke();
-                        ctx.strokeStyle = "#cbd5e0"; ctx.lineWidth = 6; ctx.beginPath();
-                        if (trackPoints.length > 0) ctx.moveTo(trackPoints[0].x, trackPoints[0].y);
-                        trackPoints.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
-                        points.forEach(p => { ctx.fillStyle = "#f59e0b"; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill(); });
-                        let pos = getCoasterPos(); ctx.fillStyle = "#1e293b"; ctx.beginPath(); ctx.roundRect(pos.x - 20, pos.y - 30, 40, 30, 5); ctx.fill();
-                        drawBattery(50, 200, coaster.pe, "#3b82f6", "POTENTIAL (PE)");
-                        drawBattery(canvas.width - 150, 200, coaster.ke, "#10b981", "KINETIC (KE)");
-                        requestAnimationFrame(loop);
-                    }
-                    computeTrack(); loop();
-                </script>
-            </body>
-            </html>
-        '></iframe>
-    </div>
-
-    <div id="powerTab" class="tab-content">
-        <iframe srcdoc='
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <title>Power Race: P = W/t</title>
-                <style>
-                    :root { --bg: #fdfdfd; --work-color: #10b981; --power-color: #f59e0b; --pusher-a: #3b82f6; --pusher-b: #8b5cf6; }
-                    body { font-family: "Segoe UI", sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; user-select: none; }
-                    .track-container { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; width: 800px; }
-                    .dashboard { display: flex; justify-content: space-between; margin-bottom: 20px; padding: 15px; background: #f8fafc; border-radius: 12px; }
-                    .lane { position: relative; height: 120px; border-bottom: 2px dashed #e2e8f0; margin-bottom: 10px; overflow: hidden; }
-                    .finish-line { position: absolute; right: 50px; top: 0; bottom: 0; width: 10px; background: repeating-linear-gradient(45deg, #000, #000 5px, #fff 5px, #fff 10px); }
-                    .stat-box { text-align: center; width: 120px; }
-                    .stat-box label { display: block; font-size: 0.7rem; color: #64748b; font-weight: bold; }
-                    .stat-box span { font-size: 1.4rem; font-weight: 800; }
-                    #controls { margin-top: 20px; display: flex; gap: 10px; }
-                    button { padding: 10px 25px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; color: white; }
-                    .btn-slow { background: var(--pusher-a); } .btn-fast { background: var(--pusher-b); } .btn-reset { background: #1e293b; }
-                </style>
-            </head>
-            <body>
-                <div class="track-container">
-                    <h2 style="text-align:center; margin:0;">Power: The "Rate" of Work</h2>
-                    <div class="dashboard">
-                        <div class="stat-box"><label>WORK DONE</label><span id="work-display" style="color:var(--work-color)">0</span><small>J</small></div>
-                        <div class="stat-box"><label>TIME (t)</label><span id="time-display">0.00</span><small>s</small></div>
-                        <div class="stat-box" style="border-left: 2px solid #e2e8f0; padding-left: 20px;"><label>AVG POWER</label><span id="power-display" style="color:var(--power-color)">0</span><small>W</small></div>
-                    </div>
-                    <div class="lane"><div class="finish-line"></div><canvas id="canvasA" width="800" height="120"></canvas></div>
-                    <div class="lane"><div class="finish-line"></div><canvas id="canvasB" width="800" height="120"></canvas></div>
-                    <div id="controls">
-                        <button class="btn-slow" onclick="startRace(&#39;slow&#39;)">PUSH SLOW (10s)</button>
-                        <button class="btn-fast" onclick="startRace(&#39;fast&#39;)">PUSH FAST (2s)</button>
-                        <button class="btn-reset" onclick="resetRace()">RESET RACE</button>
-                    </div>
-                </div>
-                <script>
-                    const ctxA = document.getElementById("canvasA").getContext("2d");
-                    const ctxB = document.getElementById("canvasB").getContext("2d");
-                    const START_X = 50, FINISH_X = 740, CONSTANT_WORK = 500;
-                    let state = { slow: { x: START_X, t: 0, active: false, color: "#3b82f6", duration: 10 }, fast: { x: START_X, t: 0, active: false, color: "#8b5cf6", duration: 2 } };
-
-                    function startRace(type) { if (!state[type].active) { state[type].x = START_X; state[type].t = 0; state[type].active = true; state[type].startTime = performance.now(); } }
-                    function resetRace() { Object.keys(state).forEach(k => { state[k].active = false; state[k].x = START_X; state[k].t = 0; }); updateHUD(0,0,0); }
-                    function updateHUD(w, t, p) { document.getElementById("work-display").innerText = Math.round(w); document.getElementById("time-display").innerText = t.toFixed(2); document.getElementById("power-display").innerText = Math.round(p); }
-
-                    function drawPusher(ctx, s) {
-                        ctx.clearRect(0, 0, 800, 120); ctx.fillStyle = "#92400e"; ctx.fillRect(s.x, 40, 60, 60);
-                        ctx.fillStyle = s.color; ctx.fillRect(s.x - 30, 50, 25, 50);
-                        if (s.active) {
-                            let glow = ((CONSTANT_WORK/s.duration)/50)*20; let grad = ctx.createRadialGradient(s.x-15, 75, 0, s.x-15, 75, glow);
-                            grad.addColorStop(0, "rgba(245, 158, 11, 0.8)"); grad.addColorStop(1, "transparent");
-                            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(s.x-15, 75, glow, 0, Math.PI*2); ctx.fill();
-                        }
-                    }
-
-                    function loop() {
-                        let now = performance.now();
-                        Object.keys(state).forEach(k => {
-                            let s = state[k];
-                            if (s.active) {
-                                let elapsed = (now - s.startTime) / 1000;
-                                let progress = Math.min(elapsed / s.duration, 1);
-                                s.x = START_X + (FINISH_X - START_X - 60) * progress;
-                                s.t = elapsed; if (progress >= 1) s.active = false;
-                                updateHUD(CONSTANT_WORK * progress, s.t, CONSTANT_WORK / Math.max(elapsed, 0.1));
-                            }
-                        });
-                        drawPusher(ctxA, state.slow); drawPusher(ctxB, state.fast);
-                        requestAnimationFrame(loop);
-                    }
-                    loop();
-                </script>
-            </body>
-            </html>
-        '></iframe>
+    <div class="simulation-container">
+        <canvas id="mainCanvas" width="900" height="450"></canvas>
+        
+        <!-- Work Simulation Stats -->
+        <div id="workStats" class="stats-display">
+            <div class="stat-item">
+                <label>Force (F)</label>
+                <span class="value" id="forceValue" style="color: #ef4444;">0</span>
+                <small>N</small>
+            </div>
+            <div class="stat-item">
+                <label>Distance (d)</label>
+                <span class="value" id="distanceValue" style="color: #3b82f6;">0.0</span>
+                <small>m</small>
+            </div>
+            <div class="stat-item">
+                <label>Work (W)</label>
+                <span class="value" id="workValue" style="color: #10b981;">0.0</span>
+                <small>J</small>
+            </div>
+        </div>
+        
+        <!-- Energy Simulation Stats -->
+        <div id="energyStats" class="stats-display hidden">
+            <div class="stat-item">
+                <label>PE = mgh</label>
+                <span class="value" id="peValue" style="color: #3b82f6;">0</span>
+                <small>J</small>
+            </div>
+            <div class="stat-item">
+                <label>KE = ½mv²</label>
+                <span class="value" id="keValue" style="color: #10b981;">0</span>
+                <small>J</small>
+            </div>
+            <div class="stat-item">
+                <label>Total Energy</label>
+                <span class="value" id="totalEnergyValue" style="color: #f59e0b;">350</span>
+                <small>J</small>
+            </div>
+        </div>
+        
+        <!-- Power Simulation Stats -->
+        <div id="powerStats" class="stats-display hidden">
+            <div class="stat-item">
+                <label>Work Done</label>
+                <span class="value" id="powerWorkValue" style="color: #10b981;">0</span>
+                <small>J</small>
+            </div>
+            <div class="stat-item">
+                <label>Time</label>
+                <span class="value" id="timeValue">0.00</span>
+                <small>s</small>
+            </div>
+            <div class="stat-item">
+                <label>Power</label>
+                <span class="value" id="powerValue" style="color: #f59e0b;">0</span>
+                <small>W</small>
+            </div>
+        </div>
+        
+        <!-- Work Controls -->
+        <div id="workControls" class="controls-panel">
+            <button class="control-btn reset" id="resetWorkBtn">Reset Crate</button>
+        </div>
+        
+        <!-- Power Controls -->
+        <div id="powerControls" class="controls-panel hidden">
+            <button class="control-btn primary" id="slowPushBtn">PUSH SLOW (10s)</button>
+            <button class="control-btn secondary" id="fastPushBtn">PUSH FAST (2s)</button>
+            <button class="control-btn reset" id="resetPowerBtn">RESET RACE</button>
+        </div>
+        
+        <!-- Energy Controls -->
+        <div id="energyControls" class="controls-panel hidden">
+            <button class="control-btn reset" id="resetEnergyBtn">Reset Coaster</button>
+        </div>
+        
+        <div id="hintText" class="hint-text">
+            <span id="hintMessage">Drag horizontally to push the crate!</span>
+        </div>
     </div>
 
     <script>
-        function openTab(evt, tabName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("tab-content");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Tab management
+        let currentTab = 'work';
+        let animationFrame = null;
+        let isDragging = false;
+        
+        // ============ WORK SIMULATION STATE ============
+        const workState = {
+            crate: { x: 150, y: 270, w: 80, h: 80 },
+            wallX: 750,
+            force: 0,
+            distance: 0,
+            totalWork: 0,
+            lastMouseX: 0
+        };
+        
+        // ============ ENERGY SIMULATION STATE ============
+        const energyState = {
+            points: [
+                { x: 100, y: 120 },
+                { x: 270, y: 360 },
+                { x: 430, y: 190 },
+                { x: 600, y: 340 },
+                { x: 800, y: 240 }
+            ],
+            coaster: { x: 0, t: 0, vx: 0, isMoving: true },
+            trackPoints: [],
+            dragTarget: null,
+            GROUND_Y: 390,
+            TOTAL_ENERGY: 390
+        };
+        
+        // ============ POWER SIMULATION STATE ============
+        const powerState = {
+            slow: { x: 80, active: false, color: '#3b82f6', duration: 10, startTime: 0 },
+            fast: { x: 80, active: false, color: '#8b5cf6', duration: 2, startTime: 0 },
+            START_X: 80,
+            FINISH_X: 820,
+            CONSTANT_WORK: 500,
+            currentWork: 0,
+            currentTime: 0,
+            currentPower: 0
+        };
+        
+        // ============ HELPER FUNCTIONS ============
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update UI
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+            
+            // Hide all stats and controls
+            document.getElementById('workStats').classList.add('hidden');
+            document.getElementById('energyStats').classList.add('hidden');
+            document.getElementById('powerStats').classList.add('hidden');
+            document.getElementById('workControls').classList.add('hidden');
+            document.getElementById('energyControls').classList.add('hidden');
+            document.getElementById('powerControls').classList.add('hidden');
+            
+            // Show relevant stats and controls
+            if (tab === 'work') {
+                document.getElementById('workStats').classList.remove('hidden');
+                document.getElementById('workControls').classList.remove('hidden');
+                document.getElementById('hintMessage').textContent = 'Drag horizontally to push the crate!';
+                canvas.style.cursor = 'ew-resize';
+                resetWork();
+            } else if (tab === 'energy') {
+                document.getElementById('energyStats').classList.remove('hidden');
+                document.getElementById('energyControls').classList.remove('hidden');
+                document.getElementById('hintMessage').textContent = 'Drag the yellow points to shape the track. Press SPACE to reset coaster.';
+                canvas.style.cursor = 'crosshair';
+                energyState.coaster.isMoving = true;
+                computeTrack();
+            } else if (tab === 'power') {
+                document.getElementById('powerStats').classList.remove('hidden');
+                document.getElementById('powerControls').classList.remove('hidden');
+                document.getElementById('hintMessage').textContent = 'Same work, different time = different power!';
+                canvas.style.cursor = 'default';
             }
-            tablinks = document.getElementsByClassName("tab-btn");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].className = tablinks[i].className.replace(" active", "");
-            }
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.className += " active";
         }
+        
+        // ============ WORK SIMULATION ============
+        function resetWork() {
+            workState.crate.x = 150;
+            workState.force = 0;
+            workState.distance = 0;
+            workState.totalWork = 0;
+            updateWorkDisplay();
+        }
+        
+        function updateWorkDisplay() {
+            document.getElementById('forceValue').textContent = Math.round(workState.force);
+            document.getElementById('distanceValue').textContent = workState.distance.toFixed(2);
+            document.getElementById('workValue').textContent = workState.totalWork.toFixed(1);
+        }
+        
+        function drawWork() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Ground
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(0, 370, canvas.width, 80);
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.beginPath();
+            ctx.moveTo(0, 370);
+            ctx.lineTo(canvas.width, 370);
+            ctx.stroke();
+            
+            // Wall
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(workState.wallX, 170, 20, 200);
+            
+            // Crate
+            ctx.fillStyle = '#92400e';
+            ctx.fillRect(workState.crate.x, workState.crate.y, workState.crate.w, workState.crate.h);
+            ctx.strokeStyle = '#451a03';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(workState.crate.x, workState.crate.y, workState.crate.w, workState.crate.h);
+            
+            // Force arrow
+            if (workState.force > 5) {
+                const arrowWidth = workState.force * 0.6;
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.moveTo(workState.crate.x, workState.crate.y + 40);
+                ctx.lineTo(workState.crate.x - arrowWidth, workState.crate.y + 40);
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = '#ef4444';
+                ctx.stroke();
+                
+                // Arrowhead
+                ctx.beginPath();
+                ctx.moveTo(workState.crate.x, workState.crate.y + 40);
+                ctx.lineTo(workState.crate.x - 15, workState.crate.y + 30);
+                ctx.lineTo(workState.crate.x - 15, workState.crate.y + 50);
+                ctx.fill();
+            }
+            
+            // Distance line
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(150, 385);
+            ctx.lineTo(workState.crate.x, 385);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        function updateWork() {
+            let friction = isDragging ? 2 : 5;
+            if (workState.force > 0) workState.force -= friction;
+            if (workState.force < 0) workState.force = 0;
+            
+            if (workState.force > 15) {
+                const dx = workState.force * 0.015;
+                if (workState.crate.x + workState.crate.w + dx < workState.wallX) {
+                    workState.crate.x += dx;
+                    workState.distance += dx / 50;
+                    workState.totalWork += (workState.force * (dx / 50)) / 10;
+                } else {
+                    workState.crate.x = workState.wallX - workState.crate.w;
+                }
+            }
+            
+            updateWorkDisplay();
+        }
+        
+        // ============ ENERGY SIMULATION ============
+        function computeTrack() {
+            energyState.trackPoints = [];
+            const pts = energyState.points;
+            
+            for (let i = 0; i < pts.length - 1; i++) {
+                const p0 = pts[i > 0 ? i - 1 : i];
+                const p1 = pts[i];
+                const p2 = pts[i + 1];
+                const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+                
+                for (let t = 0; t <= 1; t += 0.05) {
+                    const t2 = t * t;
+                    const t3 = t2 * t;
+                    const f1 = -0.5*t3 + t2 - 0.5*t;
+                    const f2 = 1.5*t3 - 2.5*t2 + 1.0;
+                    const f3 = -1.5*t3 + 2.0*t2 + 0.5*t;
+                    const f4 = 0.5*t3 - 0.5*t2;
+                    
+                    energyState.trackPoints.push({
+                        x: p0.x*f1 + p1.x*f2 + p2.x*f3 + p3.x*f4,
+                        y: p0.y*f1 + p1.y*f2 + p2.y*f3 + p3.y*f4
+                    });
+                }
+            }
+        }
+        
+        function drawEnergy() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Ground
+            ctx.beginPath();
+            ctx.moveTo(0, energyState.GROUND_Y);
+            ctx.lineTo(canvas.width, energyState.GROUND_Y);
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Track
+            if (energyState.trackPoints.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(energyState.trackPoints[0].x, energyState.trackPoints[0].y);
+                energyState.trackPoints.forEach(p => ctx.lineTo(p.x, p.y));
+                ctx.strokeStyle = '#cbd5e0';
+                ctx.lineWidth = 6;
+                ctx.stroke();
+            }
+            
+            // Control points
+            energyState.points.forEach(p => {
+                ctx.fillStyle = '#f59e0b';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#d97706';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+            
+            // Coaster
+            const pos = getCoasterPos();
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.rect(pos.x - 20, pos.y - 30, 40, 30);
+            ctx.fill();
+            
+            // Energy bars
+            drawEnergyBar(50, 200, energyState.coaster.pe || 0, '#3b82f6', 'PE');
+            drawEnergyBar(canvas.width - 150, 200, energyState.coaster.ke || 0, '#10b981', 'KE');
+        }
+        
+        function drawEnergyBar(x, height, value, color, label) {
+            ctx.save();
+            ctx.translate(x, 100);
+            
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(label, 0, -20);
+            
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, 40, height);
+            
+            const fillHeight = height * (value / energyState.TOTAL_ENERGY);
+            ctx.fillStyle = color;
+            ctx.fillRect(0, height - fillHeight, 40, fillHeight);
+            
+            ctx.restore();
+        }
+        
+        function getCoasterPos() {
+            if (energyState.trackPoints.length === 0) {
+                return { x: energyState.points[0].x, y: energyState.points[0].y };
+            }
+            
+            let idx = Math.floor(energyState.coaster.x);
+            if (idx >= energyState.trackPoints.length - 1) {
+                return energyState.trackPoints[energyState.trackPoints.length - 1];
+            }
+            
+            const p1 = energyState.trackPoints[idx];
+            const p2 = energyState.trackPoints[idx + 1];
+            const t = energyState.coaster.t;
+            
+            return {
+                x: p1.x + (p2.x - p1.x) * t,
+                y: p1.y + (p2.y - p1.y) * t
+            };
+        }
+        
+        function updateEnergy() {
+            if (!energyState.coaster.isMoving || energyState.trackPoints.length < 2) return;
+            
+            const pos = getCoasterPos();
+            const height = Math.max(0, energyState.GROUND_Y - pos.y);
+            
+            energyState.coaster.pe = height;
+            energyState.coaster.ke = Math.max(0, energyState.TOTAL_ENERGY - height);
+            energyState.coaster.vx = energyState.coaster.ke * 0.03;
+            energyState.coaster.t += energyState.coaster.vx * 0.01;
+            
+            if (energyState.coaster.t >= 1) {
+                energyState.coaster.t = 0;
+                energyState.coaster.x++;
+            }
+            
+            if (energyState.coaster.x >= energyState.trackPoints.length - 2) {
+                energyState.coaster.x = 0;
+                energyState.coaster.t = 0;
+                energyState.coaster.vx = 0;
+            }
+            
+            document.getElementById('peValue').textContent = Math.round(energyState.coaster.pe);
+            document.getElementById('keValue').textContent = Math.round(energyState.coaster.ke);
+            document.getElementById('totalEnergyValue').textContent = energyState.TOTAL_ENERGY;
+        }
+        
+        // ============ POWER SIMULATION ============
+        function drawPower() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw lanes
+            for (let i = 0; i < 2; i++) {
+                const y = 150 + i * 150;
+                
+                // Lane background
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(0, y - 60, canvas.width, 120);
+                
+                // Lane divider
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, y + 60);
+                ctx.lineTo(canvas.width, y + 60);
+                ctx.stroke();
+                
+                // Finish line
+                ctx.fillStyle = '#000';
+                ctx.fillRect(powerState.FINISH_X, y - 40, 10, 100);
+                
+                // Draw pushers
+                const pusher = i === 0 ? powerState.slow : powerState.fast;
+                ctx.fillStyle = '#92400e';
+                ctx.fillRect(pusher.x, y - 20, 60, 60);
+                
+                ctx.fillStyle = pusher.color;
+                ctx.fillRect(pusher.x - 30, y - 10, 25, 50);
+            }
+            
+            // Labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText('SLOW PUSH (10s)', 50, 120);
+            ctx.fillText('FAST PUSH (2s)', 50, 270);
+        }
+        
+        function updatePower() {
+            const now = performance.now();
+            
+            ['slow', 'fast'].forEach(type => {
+                const s = powerState[type];
+                if (s.active) {
+                    const elapsed = (now - s.startTime) / 1000;
+                    const progress = Math.min(elapsed / s.duration, 1);
+                    s.x = powerState.START_X + (powerState.FINISH_X - powerState.START_X - 60) * progress;
+                    
+                    if (progress >= 1) {
+                        s.active = false;
+                    }
+                    
+                    powerState.currentWork = powerState.CONSTANT_WORK * progress;
+                    powerState.currentTime = elapsed;
+                    powerState.currentPower = powerState.CONSTANT_WORK / Math.max(elapsed, 0.1);
+                    
+                    document.getElementById('powerWorkValue').textContent = Math.round(powerState.currentWork);
+                    document.getElementById('timeValue').textContent = powerState.currentTime.toFixed(2);
+                    document.getElementById('powerValue').textContent = Math.round(powerState.currentPower);
+                }
+            });
+        }
+        
+        function resetPower() {
+            powerState.slow.active = false;
+            powerState.slow.x = powerState.START_X;
+            powerState.fast.active = false;
+            powerState.fast.x = powerState.START_X;
+            powerState.currentWork = 0;
+            powerState.currentTime = 0;
+            powerState.currentPower = 0;
+            
+            document.getElementById('powerWorkValue').textContent = '0';
+            document.getElementById('timeValue').textContent = '0.00';
+            document.getElementById('powerValue').textContent = '0';
+        }
+        
+        // ============ ANIMATION LOOP ============
+        function animate() {
+            if (currentTab === 'work') {
+                updateWork();
+                drawWork();
+            } else if (currentTab === 'energy') {
+                updateEnergy();
+                drawEnergy();
+            } else if (currentTab === 'power') {
+                updatePower();
+                drawPower();
+            }
+            
+            animationFrame = requestAnimationFrame(animate);
+        }
+        
+        // ============ EVENT HANDLERS ============
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+            
+            if (currentTab === 'work') {
+                isDragging = true;
+                workState.lastMouseX = e.clientX;
+            } else if (currentTab === 'energy') {
+                energyState.points.forEach(p => {
+                    if (Math.abs(mx - p.x) < 20 && Math.abs(my - p.y) < 20) {
+                        energyState.dragTarget = p;
+                        p.yOffset = my - p.y;
+                    }
+                });
+            }
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+            if (currentTab === 'work' && isDragging) {
+                const mouseDiff = e.clientX - workState.lastMouseX;
+                if (mouseDiff > 0) {
+                    workState.force += mouseDiff * 1.5;
+                    if (workState.force > 400) workState.force = 400;
+                }
+                workState.lastMouseX = e.clientX;
+            } else if (currentTab === 'energy' && energyState.dragTarget) {
+                const rect = canvas.getBoundingClientRect();
+                const my = e.clientY - rect.top;
+                energyState.dragTarget.y = Math.max(80, Math.min(energyState.GROUND_Y, my - energyState.dragTarget.yOffset));
+                computeTrack();
+            }
+        });
+        
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            energyState.dragTarget = null;
+        });
+        
+        window.addEventListener('keydown', (e) => {
+            if (currentTab === 'energy' && e.code === 'Space') {
+                energyState.coaster.x = 0;
+                energyState.coaster.t = 0;
+                energyState.coaster.vx = 0;
+                energyState.coaster.isMoving = true;
+                e.preventDefault();
+            }
+        });
+        
+        // ============ INITIALIZATION ============
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+        
+        document.getElementById('resetWorkBtn').addEventListener('click', resetWork);
+        
+        document.getElementById('resetEnergyBtn').addEventListener('click', () => {
+            energyState.coaster.x = 0;
+            energyState.coaster.t = 0;
+            energyState.coaster.vx = 0;
+            energyState.coaster.isMoving = true;
+        });
+        
+        document.getElementById('slowPushBtn').addEventListener('click', () => {
+            if (!powerState.slow.active) {
+                powerState.slow.x = powerState.START_X;
+                powerState.slow.active = true;
+                powerState.slow.startTime = performance.now();
+            }
+        });
+        
+        document.getElementById('fastPushBtn').addEventListener('click', () => {
+            if (!powerState.fast.active) {
+                powerState.fast.x = powerState.START_X;
+                powerState.fast.active = true;
+                powerState.fast.startTime = performance.now();
+            }
+        });
+        
+        document.getElementById('resetPowerBtn').addEventListener('click', resetPower);
+        
+        // Initialize
+        computeTrack();
+        animate();
     </script>
 </body>
 </html>
