@@ -2,171 +2,584 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Precision & Mark Density Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Precision Lab · Mark Density</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #fdfdfd; padding: 20px; color: #333; }
-        .lab-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; max-width: 900px; }
-        canvas { border: 1px solid #eee; border-radius: 12px; cursor: grab; background: #fff; margin-bottom: 10px; }
-        canvas:active { cursor: grabbing; }
-        .info-panel { display: flex; justify-content: space-around; margin-top: 20px; gap: 20px; }
-        .card { flex: 1; padding: 15px; border-radius: 10px; background: #f8f9fa; border-left: 5px solid #3498db; text-align: left; }
-        .card h3 { margin-top: 0; color: #2c3e50; font-size: 1rem; }
-        .val { font-family: 'Courier New', monospace; font-weight: bold; color: #e67e22; font-size: 1.2rem; }
-        .highlight { color: #e74c3c; text-decoration: underline; }
-    </style>
-</head>
-<body>
-
-<div class="lab-container">
-    <h2>Measurement Precision: Mark Density</h2>
-    <p style="color: #7f8c8d;">Drag the <b>Steel Block</b> to see how the number of marks changes your measurement.</p>
-    
-    <canvas id="precisionCanvas" width="800" height="400"></canvas>
-    
-    <div class="info-panel">
-        <div class="card">
-            <h3>Ruler A (Low Density)</h3>
-            <p>Known: <span id="r1-known">0</span></p>
-            <p>Estimated: <span class="highlight" id="r1-est">.0</span></p>
-            <p>Reading: <span class="val" id="r1-total">0.0</span></p>
-        </div>
-        <div class="card">
-            <h3>Ruler B (High Density)</h3>
-            <p>Known: <span id="r2-known">0.0</span></p>
-            <p>Estimated: <span class="highlight" id="r2-est">.00</span></p>
-            <p>Reading: <span class="val" id="r2-total">0.00</span></p>
-        </div>
-    </div>
-</div>
-
-<script>
-    const canvas = document.getElementById('precisionCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // State
-    let blockWidth = 236; // Representing 2.36 units
-    let isDragging = false;
-    let startX = 0;
-
-    // Measurement Constants
-    const unitPx = 150; // 150 pixels = 1.0 unit
-    const offsetX = 100;
-
-    function drawRuler(y, label, showSubdivisions) {
-        ctx.strokeStyle = "#333";
-        ctx.lineWidth = 2;
-        ctx.fillStyle = "#333";
-        ctx.font = "bold 14px Arial";
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        // Base Line
-        ctx.beginPath();
-        ctx.moveTo(offsetX, y);
-        ctx.lineTo(offsetX + (5 * unitPx), y);
-        ctx.stroke();
-
-        // Major Marks (Every 1.0)
-        for (let i = 0; i <= 5; i++) {
-            const x = offsetX + (i * unitPx);
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(x, y - 30);
-            ctx.stroke();
-            ctx.fillText(i, x - 5, y + 20);
-
-            // Subdivisions (Every 0.1)
-            if (showSubdivisions && i < 5) {
-                ctx.lineWidth = 1;
-                for (let j = 1; j < 10; j++) {
-                    const subX = x + (j * (unitPx / 10));
-                    const height = (j === 5) ? 20 : 12; // Midpoint slightly longer
-                    ctx.beginPath();
-                    ctx.moveTo(subX, y);
-                    ctx.lineTo(subX, y - height);
-                    ctx.stroke();
-                }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #fafbfc;
+            overflow: hidden;
+            touch-action: pan-y;
+            color: #1a1e2b;
+        }
+        
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .app-title .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Main Simulation Area */
+        .simulation-container {
+            flex-grow: 1;
+            background: #fafbfc;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            touch-action: none;
+        }
+        
+        .canvas-card {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 1;
+        }
+        
+        #precisionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+        
+        /* Info Cards */
+        .info-panel {
+            display: flex;
+            gap: 1px;
+            background: #eef2f6;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .card {
+            flex: 1;
+            padding: 20px 24px;
+            background: #ffffff;
+            text-align: left;
+        }
+        
+        .card:first-child {
+            border-right: 1px solid #eef2f6;
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .card-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .card:first-child .card-icon {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .card:last-child .card-icon {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        
+        .card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a1e2b;
+            margin: 0;
+        }
+        
+        .reading-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f7fa;
+        }
+        
+        .reading-row:last-child {
+            border-bottom: none;
+        }
+        
+        .reading-label {
+            font-size: 0.85rem;
+            color: #7c879c;
+            font-weight: 500;
+        }
+        
+        .reading-value {
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        
+        .highlight {
+            color: #dc2626;
+        }
+        
+        .total-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1a1e2b;
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 12px 24px 16px 24px;
+            text-align: center;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .hint-text {
+            display: inline-block;
+            padding: 6px 18px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
+        }
+        
+        /* Description */
+        .desc-wrapper {
+            padding: 0 24px 16px 24px;
+            background: #ffffff;
+        }
+        
+        .desc-text {
+            font-size: 0.9rem;
+            color: #5b687c;
+            line-height: 1.5;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1.1rem;
+            }
+            
+            .simulation-container {
+                padding: 12px;
+            }
+            
+            .info-panel {
+                flex-direction: column;
+            }
+            
+            .card {
+                padding: 16px;
+            }
+            
+            .card:first-child {
+                border-right: none;
+                border-bottom: 1px solid #eef2f6;
+            }
+            
+            .total-value {
+                font-size: 1.2rem;
             }
         }
         
-        ctx.fillStyle = "#7f8c8d";
-        ctx.font = "italic 12px Arial";
-        ctx.fillText(label, offsetX, y - 45);
-    }
-
-    function updateReadings() {
-        const value = blockWidth / unitPx;
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
         
-        // Ruler A Logic: Precise to 0 decimal places, estimate 1st
-        const r1Known = Math.floor(value);
-        const r1Est = (value % 1).toFixed(1).substring(1);
-        document.getElementById('r1-known').innerText = r1Known;
-        document.getElementById('r1-est').innerText = r1Est;
-        document.getElementById('r1-total').innerText = value.toFixed(1);
+        /* RoundRect polyfill */
+        
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>📏 Precision & Mark Density</h1>
+            <span class="badge">Measurement Lab</span>
+        </div>
+    </header>
 
-        // Ruler B Logic: Precise to 1 decimal place, estimate 2nd
-        const r2Known = (Math.floor(value * 10) / 10).toFixed(1);
-        const r2Est = ((value * 10) % 1 / 10).toFixed(2).substring(2);
-        document.getElementById('r2-known').innerText = r2Known;
-        document.getElementById('r2-est').innerText = "." + r2Est;
-        document.getElementById('r2-total').innerText = value.toFixed(2);
-    }
+    <div class="simulation-container">
+        <div class="canvas-card">
+            <div class="canvas-wrapper">
+                <canvas id="precisionCanvas" width="1000" height="500"></canvas>
+            </div>
+            
+            <!-- Description -->
+            <div class="desc-wrapper">
+                <div class="desc-text">
+                    Drag the <strong>steel block</strong> handle to see how mark density affects measurement precision.
+                </div>
+            </div>
+            
+            <!-- Info Cards -->
+            <div class="info-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">①</div>
+                        <h3>Ruler A · Low Density</h3>
+                    </div>
+                    <div class="reading-row">
+                        <span class="reading-label">Known digits</span>
+                        <span class="reading-value" id="r1-known">0</span>
+                    </div>
+                    <div class="reading-row">
+                        <span class="reading-label">Estimated digit</span>
+                        <span class="reading-value highlight" id="r1-est">.0</span>
+                    </div>
+                    <div class="reading-row">
+                        <span class="reading-label">Total reading</span>
+                        <span class="reading-value total-value" id="r1-total">0.0</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">②</div>
+                        <h3>Ruler B · High Density</h3>
+                    </div>
+                    <div class="reading-row">
+                        <span class="reading-label">Known digits</span>
+                        <span class="reading-value" id="r2-known">0.0</span>
+                    </div>
+                    <div class="reading-row">
+                        <span class="reading-label">Estimated digit</span>
+                        <span class="reading-value highlight" id="r2-est">.00</span>
+                    </div>
+                    <div class="reading-row">
+                        <span class="reading-label">Total reading</span>
+                        <span class="reading-value total-value" id="r2-total">0.00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hint -->
+            <div class="hint-wrapper">
+                <div class="hint-text">
+                    <span id="hintMessage">👆 Drag the handle to adjust the block width</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Rulers
-        drawRuler(100, "RULER A: Marks every 1 unit", false);
-        drawRuler(280, "RULER B: Marks every 0.1 units (10 spaces per unit)", true);
-
-        // Draw Block
-        ctx.fillStyle = "rgba(189, 195, 199, 0.8)";
-        ctx.strokeStyle = "#7f8c8d";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(offsetX, 110, blockWidth, 130, 4);
-        ctx.fill();
-        ctx.stroke();
-
-        // Measurement End Line
-        ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.moveTo(offsetX + blockWidth, 50);
-        ctx.lineTo(offsetX + blockWidth, 330);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Handle
-        ctx.fillStyle = "#34495e";
-        ctx.beginPath();
-        ctx.arc(offsetX + blockWidth, 175, 8, 0, Math.PI*2);
-        ctx.fill();
-
-        updateReadings();
-        requestAnimationFrame(draw);
-    }
-
-    // Interactions
-    canvas.addEventListener('mousedown', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        if (Math.abs(mx - (offsetX + blockWidth)) < 30) {
-            isDragging = true;
+    <script>
+        CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.moveTo(x + r, y);
+            this.lineTo(x + w - r, y);
+            this.quadraticCurveTo(x + w, y, x + w, y + r);
+            this.lineTo(x + w, y + h - r);
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            this.lineTo(x + r, y + h);
+            this.quadraticCurveTo(x, y + h, x, y + h - r);
+            this.lineTo(x, y + r);
+            this.quadraticCurveTo(x, y, x + r, y);
+            return this;
+        };
+        const canvas = document.getElementById('precisionCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Canvas internal dimensions
+        const width = 1000;
+        const height = 500;
+        
+        function resizeCanvas() {
+            canvas.width = width;
+            canvas.height = height;
         }
-    });
-
-    window.addEventListener('mouseup', () => isDragging = false);
-
-    canvas.addEventListener('mousemove', (e) => {
-        if (isDragging) {
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // State
+        let blockWidth = 300; // Scaled from original 236
+        let isDragging = false;
+        let activePointerId = null;
+        
+        // Measurement Constants (scaled for 1000 width)
+        const unitPx = 180;
+        const offsetX = 120;
+        
+        function drawRuler(y, label, showSubdivisions) {
+            ctx.strokeStyle = "#1e293b";
+            ctx.lineWidth = 2;
+            ctx.fillStyle = "#1e293b";
+            ctx.font = "600 14px Inter, sans-serif";
+            
+            // Base Line
+            ctx.beginPath();
+            ctx.moveTo(offsetX, y);
+            ctx.lineTo(offsetX + (5 * unitPx), y);
+            ctx.stroke();
+            
+            // Major Marks (Every 1.0)
+            for (let i = 0; i <= 5; i++) {
+                const x = offsetX + (i * unitPx);
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x, y - 35);
+                ctx.stroke();
+                ctx.fillText(i, x - 6, y + 24);
+                
+                // Subdivisions (Every 0.1)
+                if (showSubdivisions && i < 5) {
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = "#64748b";
+                    for (let j = 1; j < 10; j++) {
+                        const subX = x + (j * (unitPx / 10));
+                        const height = (j === 5) ? 22 : 14;
+                        ctx.beginPath();
+                        ctx.moveTo(subX, y);
+                        ctx.lineTo(subX, y - height);
+                        ctx.stroke();
+                    }
+                    ctx.strokeStyle = "#1e293b";
+                }
+            }
+            
+            ctx.fillStyle = "#64748b";
+            ctx.font = "500 13px Inter, sans-serif";
+            ctx.fillText(label, offsetX, y - 52);
+        }
+        
+        function updateReadings() {
+            const value = blockWidth / unitPx;
+            
+            // Ruler A: Precise to 0 decimal places, estimate 1st
+            const r1Known = Math.floor(value);
+            const r1Est = (value % 1).toFixed(1).substring(1);
+            document.getElementById('r1-known').innerText = r1Known;
+            document.getElementById('r1-est').innerText = r1Est;
+            document.getElementById('r1-total').innerText = value.toFixed(1);
+            
+            // Ruler B: Precise to 1 decimal place, estimate 2nd
+            const r2Known = (Math.floor(value * 10) / 10).toFixed(1);
+            const r2Est = ((value * 10) % 1 / 10).toFixed(2).substring(2);
+            document.getElementById('r2-known').innerText = r2Known;
+            document.getElementById('r2-est').innerText = "." + r2Est;
+            document.getElementById('r2-total').innerText = value.toFixed(2);
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Background tint for rulers
+            ctx.fillStyle = '#fafbfc';
+            ctx.fillRect(offsetX - 10, 60, 5 * unitPx + 20, 100);
+            ctx.fillRect(offsetX - 10, 280, 5 * unitPx + 20, 100);
+            
+            // Draw Rulers
+            drawRuler(110, "RULER A · Marks every 1 unit (low precision)", false);
+            drawRuler(330, "RULER B · Marks every 0.1 units (high precision)", true);
+            
+            // Draw Block shadow
+            ctx.fillStyle = "rgba(0, 0, 0, 0.04)";
+            ctx.beginPath();
+            ctx.roundRect(offsetX + 3, 123, blockWidth, 155, 6);
+            ctx.fill();
+            
+            // Draw Block
+            ctx.fillStyle = "#cbd5e1";
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.roundRect(offsetX, 120, blockWidth, 155, 6);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Block pattern (crosshatch)
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.3;
+            for (let i = 0; i < blockWidth; i += 15) {
+                ctx.beginPath();
+                ctx.moveTo(offsetX + i, 120);
+                ctx.lineTo(offsetX + i, 275);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            
+            // Measurement End Line
+            ctx.setLineDash([6, 4]);
+            ctx.strokeStyle = "#dc2626";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(offsetX + blockWidth, 55);
+            ctx.lineTo(offsetX + blockWidth, 400);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Handle
+            ctx.fillStyle = "#1e293b";
+            ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 2;
+            ctx.beginPath();
+            ctx.arc(offsetX + blockWidth, 197, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = "#475569";
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(offsetX + blockWidth - 2, 195, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Drag indicator arrows
+            if (!isDragging) {
+                ctx.fillStyle = "#64748b";
+                ctx.font = "12px Inter, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("← Drag →", offsetX + blockWidth, 230);
+            }
+            
+            updateReadings();
+            requestAnimationFrame(draw);
+        }
+        
+        // Unified Pointer Events
+        function getCanvasCoords(e) {
             const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            blockWidth = Math.max(10, Math.min(700 - offsetX, mx - offsetX));
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
         }
-    });
-
-    draw();
-</script>
-
+        
+        function handlePointerDown(e) {
+            e.preventDefault();
+            
+            const coords = getCanvasCoords(e);
+            const handleX = offsetX + blockWidth;
+            
+            if (Math.abs(coords.x - handleX) < 40) {
+                isDragging = true;
+                activePointerId = e.pointerId;
+                canvas.setPointerCapture(e.pointerId);
+                document.getElementById('hintMessage').textContent = '👆 Drag to adjust the block width';
+            }
+        }
+        
+        function handlePointerMove(e) {
+            e.preventDefault();
+            
+            if (isDragging) {
+                const coords = getCanvasCoords(e);
+                const maxWidth = width - offsetX - 80;
+                const newWidth = Math.max(30, Math.min(maxWidth, coords.x - offsetX));
+                blockWidth = newWidth;
+                
+                const value = blockWidth / unitPx;
+                document.getElementById('hintMessage').textContent = `📐 Current reading: ${value.toFixed(2)} units`;
+            }
+        }
+        
+        function handlePointerUp(e) {
+            e.preventDefault();
+            
+            if (isDragging) {
+                isDragging = false;
+                activePointerId = null;
+                canvas.releasePointerCapture(e.pointerId);
+                
+                const value = blockWidth / unitPx;
+                document.getElementById('hintMessage').textContent = `✅ Measurement: ${value.toFixed(2)} units · Drag handle to change`;
+            }
+        }
+        
+        // Initialize
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        draw();
+    </script>
 </body>
 </html>

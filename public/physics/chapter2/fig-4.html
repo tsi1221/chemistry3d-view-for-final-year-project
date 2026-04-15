@@ -2,139 +2,652 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Perfected Scientific Notation Slider</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scientific Notation · Decimal Slider</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; align-items: center; background: #fdfdfd; padding: 20px; color: #333; }
-        .lab-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); text-align: center; max-width: 900px; width: 100%; }
-        .tab-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 8px 16px; border: 1px solid #ddd; background: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
-        .tab-btn.active { background: #3498db; color: white; border-color: #3498db; }
-        canvas { border: 1px solid #eee; border-radius: 12px; cursor: grab; background: #fff; margin-bottom: 10px; }
-        canvas:active { cursor: grabbing; }
-        .equation-readout { font-family: 'Courier New', monospace; font-weight: bold; font-size: 2rem; color: #34495e; margin: 15px 0; padding: 15px; background: #ecf0f1; border-radius: 8px; min-height: 50px; }
-        .exponent-count { font-size: 1.1rem; color: #e67e22; height: 30px; font-weight: 600; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #fafbfc;
+            overflow: hidden;
+            touch-action: pan-y;
+            color: #1a1e2b;
+        }
+        
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .app-title .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Tabs & Input */
+        .controls-row {
+            padding: 12px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+        
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .tab-btn {
+            padding: 8px 18px;
+            border: none;
+            background: transparent;
+            color: #7c879c;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            border-radius: 40px;
+        }
+        
+        .tab-btn:hover {
+            color: #1a1e2b;
+            background: #f5f7fa;
+        }
+        
+        .tab-btn.active {
+            background: #1a1e2b;
+            color: white;
+        }
+        
+        .number-input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .number-input-group label {
+            font-size: 0.85rem;
+            color: #5b687c;
+            font-weight: 500;
+        }
+        
+        .number-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #f5f7fa;
+            border: 1px solid #eef2f6;
+            border-radius: 40px;
+            padding: 4px 8px 4px 16px;
+        }
+        
+        .number-input-wrapper input {
+            border: none;
+            background: transparent;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a1e2b;
+            width: 130px;
+            outline: none;
+            padding: 8px 0;
+        }
+        
+        .number-input-wrapper input:focus {
+            outline: none;
+        }
+        
+        .number-input-wrapper button {
+            padding: 8px 16px;
+            border: none;
+            background: #1a1e2b;
+            color: white;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+        }
+        
+        .number-input-wrapper button:hover {
+            background: #2d3445;
+        }
+        
+        /* Main Simulation Area */
+        .simulation-container {
+            flex-grow: 1;
+            background: #fafbfc;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            touch-action: none;
+        }
+        
+        .canvas-card {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 32 / 11;
+        }
+        
+        #notationCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+        
+        /* Equation Display */
+        .equation-section {
+            padding: 20px 24px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        #equation-display {
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-weight: 700;
+            font-size: 2rem;
+            color: #1a1e2b;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        #move-count {
+            font-size: 0.95rem;
+            color: #e67e22;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 12px 24px 16px 24px;
+            text-align: center;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .hint-text {
+            display: inline-block;
+            padding: 6px 18px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
+        }
+        
+        /* Description */
+        .desc-wrapper {
+            padding: 0 24px 16px 24px;
+            background: #ffffff;
+        }
+        
+        .desc-text {
+            font-size: 0.85rem;
+            color: #7c879c;
+            line-height: 1.5;
+            text-align: center;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1.1rem;
+            }
+            
+            .controls-row {
+                padding: 12px 16px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .tab-bar {
+                justify-content: center;
+            }
+            
+            .number-input-group {
+                justify-content: center;
+            }
+            
+            .number-input-wrapper {
+                flex: 1;
+            }
+            
+            .number-input-wrapper input {
+                width: 100%;
+                min-width: 100px;
+            }
+            
+            .simulation-container {
+                padding: 12px;
+            }
+            
+            .equation-section {
+                padding: 16px;
+            }
+            
+            #equation-display {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        button:focus-visible {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>🔢 Scientific Notation</h1>
+            <span class="badge">Decimal Slider</span>
+        </div>
+    </header>
 
-<div class="lab-container">
-    <h2>Scientific Notation: Moving the Point</h2>
-    
-    <div class="tab-bar">
-        <button id="btn-pos" class="tab-btn active" onclick="setMode('pos')">Large Number (29970)</button>
-        <button id="btn-neg" class="tab-btn" onclick="setMode('neg')">Small Number (0.00042)</button>
+    <div class="controls-row">
+        <div class="tab-bar">
+            <button id="btn-pos" class="tab-btn active" data-mode="pos">📈 Large (29970)</button>
+            <button id="btn-neg" class="tab-btn" data-mode="neg">📉 Small (0.00042)</button>
+        </div>
+        
+        <div class="number-input-group">
+            <label>Custom number:</label>
+            <div class="number-input-wrapper">
+                <input type="text" id="customNumberInput" placeholder="e.g., 3.14, 5000, 0.001" value="">
+                <button id="applyNumberBtn">Apply</button>
+            </div>
+        </div>
     </div>
 
-    <div class="equation-readout" id="equation-display">--</div>
-    <div class="exponent-count" id="move-count">Moves (n): 0</div>
-    
-    <canvas id="notationCanvas" width="850" height="280"></canvas>
-    
-    <p style="color: #7f8c8d; max-width: 700px; line-height: 1.5; font-size: 0.9rem;">
-        <b>Logic:</b> The digits stay the same. Dragging the <b>Red Decimal</b> simply changes its position. 
-        $n$ counts how many steps you moved from the start!
-    </p>
-</div>
+    <div class="simulation-container">
+        <div class="canvas-card">
+            <div class="canvas-wrapper">
+                <canvas id="notationCanvas" width="960" height="330"></canvas>
+            </div>
+            
+            <!-- Equation Display -->
+            <div class="equation-section">
+                <div id="equation-display">--</div>
+                <div id="move-count">Moves (n): 0</div>
+            </div>
+            
+            <!-- Description -->
+            <div class="desc-wrapper">
+                <div class="desc-text">
+                    <strong>Logic:</strong> The digits stay the same. Drag the <span style="color: #dc2626;">● Red Decimal</span> to change its position. 
+                    <em>n</em> counts how many steps you moved from the start!
+                </div>
+            </div>
+            
+            <!-- Hint -->
+            <div class="hint-wrapper">
+                <div class="hint-text">
+                    <span id="hintMessage">👆 Drag the red decimal point to change its position</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<script>
-    const canvas = document.getElementById('notationCanvas');
-    const ctx = canvas.getContext('2d');
-    const eqDisplay = document.getElementById('equation-display');
-    const moveDisplay = document.getElementById('move-count');
+    <script>
+        const canvas = document.getElementById('notationCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplay = document.getElementById('equation-display');
+        const moveDisplay = document.getElementById('move-count');
+        const hintEl = document.getElementById('hintMessage');
+        const customInput = document.getElementById('customNumberInput');
 
-    // Configuration
-    let mode = 'pos';
-    let digits = "29970";
-    let startX = 180;
-    let spacing = 100;
-    
-    let homeIdx = 5; // Original decimal index
-    let decX = 0;    // Pixel position
-    let isDragging = false;
-    const baseLineY = 150;
-
-    function setMode(m) {
-        mode = m;
-        document.getElementById('btn-pos').className = (m === 'pos' ? 'tab-btn active' : 'tab-btn');
-        document.getElementById('btn-neg').className = (m === 'neg' ? 'tab-btn active' : 'tab-btn');
+        // Canvas internal dimensions
+        const width = 960;
+        const height = 330;
         
-        if(m === 'pos') {
-            digits = "29970";
-            homeIdx = 5;
-        } else {
-            digits = "00042"; 
-            homeIdx = 1; // Represents 0.00042
+        function resizeCanvas() {
+            canvas.width = width;
+            canvas.height = height;
         }
-        decX = startX + (homeIdx * spacing) - (spacing/2);
-    }
-
-    function update() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 1. Calculate Current "Slot" Index (Smooth for visual, Rounded for math)
-        let currentSlotFloat = (decX - startX + (spacing/2)) / spacing;
-        let currentSlotInt = Math.round(currentSlotFloat);
         
-        // 2. Calculate n (Integer jumps from Home)
-        let n = homeIdx - currentSlotInt;
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-        // 3. String-based Coefficient Calculation
-        // Insert a "." at the currentSlotInt position in the digits string
-        let coeffStr = digits.slice(0, currentSlotInt) + "." + digits.slice(currentSlotInt);
-        let dValue = parseFloat(coeffStr);
+        // Configuration
+        let mode = 'pos';
+        let digits = "29970";
+        let startX = 200;
+        let spacing = 110;
+        
+        let homeIdx = 5;
+        let decX = 0;
+        let isDragging = false;
+        const baseLineY = 160;
 
-        // 4. Update UI
-        const isProper = (Math.abs(dValue) >= 1 && Math.abs(dValue) < 10);
-        eqDisplay.innerHTML = `${dValue} × 10<sup>${n}</sup>`;
-        eqDisplay.style.color = isProper ? "#2ecc71" : "#34495e";
-        moveDisplay.innerText = `Decimal Jumps (n): ${n}`;
-
-        // 5. Draw the Digits
-        ctx.font = "bold 75px 'Courier New'";
-        ctx.textAlign = "center";
-        ctx.fillStyle = "#333";
-        for(let i = 0; i < digits.length; i++) {
-            ctx.fillText(digits[i], startX + (i * spacing), baseLineY + 25);
+        function setMode(m) {
+            mode = m;
+            document.getElementById('btn-pos').classList.toggle('active', m === 'pos');
+            document.getElementById('btn-neg').classList.toggle('active', m === 'neg');
+            
+            if(m === 'pos') {
+                digits = "29970";
+                homeIdx = 5;
+                hintEl.textContent = '👆 Large number mode · Drag the decimal point';
+            } else {
+                digits = "00042"; 
+                homeIdx = 1;
+                hintEl.textContent = '👆 Small number mode · Drag the decimal point';
+            }
+            decX = startX + (homeIdx * spacing) - (spacing/2);
+            customInput.value = '';
         }
 
-        // 6. Draw the Decimal Handle (The Slider)
-        const handleY = baseLineY + 15;
-        if (isProper) {
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = "rgba(46, 204, 113, 0.6)";
+        function applyCustomNumber() {
+            let inputValue = customInput.value.trim();
+            if (!inputValue) return;
+            
+            // Parse the number
+            let num = parseFloat(inputValue);
+            if (isNaN(num)) {
+                hintEl.textContent = '⚠️ Please enter a valid number';
+                return;
+            }
+            
+            // Convert to string without scientific notation
+            let numStr = num.toString();
+            
+            // Remove decimal point and leading zeros for digits array
+            let cleanStr = numStr.replace('.', '');
+            
+            // Remove leading zeros (but keep at least one digit)
+            cleanStr = cleanStr.replace(/^0+/, '');
+            if (cleanStr === '') cleanStr = '0';
+            
+            // Find original decimal position
+            let decimalPos = numStr.indexOf('.');
+            if (decimalPos === -1) {
+                decimalPos = numStr.length;
+                homeIdx = cleanStr.length;
+            } else {
+                // Count digits before decimal
+                let digitsBefore = numStr.substring(0, decimalPos).replace(/^-/, '').length;
+                homeIdx = digitsBefore;
+            }
+            
+            // Limit digits to prevent overflow
+            if (cleanStr.length > 8) {
+                cleanStr = cleanStr.substring(0, 8);
+                homeIdx = Math.min(homeIdx, cleanStr.length);
+            }
+            
+            digits = cleanStr;
+            
+            // Determine mode based on number size
+            if (Math.abs(num) >= 1) {
+                mode = 'pos';
+                document.getElementById('btn-pos').classList.add('active');
+                document.getElementById('btn-neg').classList.remove('active');
+            } else {
+                mode = 'neg';
+                document.getElementById('btn-neg').classList.add('active');
+                document.getElementById('btn-pos').classList.remove('active');
+            }
+            
+            decX = startX + (homeIdx * spacing) - (spacing/2);
+            hintEl.textContent = `✅ Custom number: ${num} · Drag the decimal point`;
         }
 
-        ctx.fillStyle = "#e74c3c";
-        ctx.beginPath();
-        ctx.arc(decX, handleY, 12, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        function update() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Background
+            ctx.fillStyle = '#fafbfc';
+            ctx.fillRect(0, 0, width, height);
 
-        ctx.strokeStyle = "#e74c3c";
-        ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(decX, handleY - 10); ctx.lineTo(decX, handleY - 70); ctx.stroke();
-        ctx.beginPath(); ctx.arc(decX, handleY - 85, 20, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "white"; ctx.font = "bold 22px Arial"; ctx.fillText("↔", decX, handleY - 77);
+            // Calculate Current "Slot" Index
+            let currentSlotFloat = (decX - startX + (spacing/2)) / spacing;
+            let currentSlotInt = Math.round(currentSlotFloat);
+            currentSlotInt = Math.max(0, Math.min(digits.length, currentSlotInt));
+            
+            // Calculate n (Integer jumps from Home)
+            let n = homeIdx - currentSlotInt;
+            
+            // String-based Coefficient Calculation
+            let coeffStr = digits.slice(0, currentSlotInt) + "." + digits.slice(currentSlotInt);
+            let dValue = parseFloat(coeffStr);
+            
+            // Update UI
+            const isProper = (Math.abs(dValue) >= 1 && Math.abs(dValue) < 10) || dValue === 0;
+            eqDisplay.innerHTML = `${dValue} × 10<sup>${n}</sup>`;
+            eqDisplay.style.color = isProper ? "#2ecc71" : "#1a1e2b";
+            moveDisplay.innerText = `Decimal Jumps (n): ${n}`;
+            
+            // Draw guide line
+            ctx.strokeStyle = "#eef2f6";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(startX - 30, baseLineY + 50);
+            ctx.lineTo(startX + (digits.length * spacing) + 30, baseLineY + 50);
+            ctx.stroke();
+            
+            // Draw the Digits
+            ctx.font = "bold 80px 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#1e293b";
+            
+            for(let i = 0; i < digits.length; i++) {
+                ctx.fillText(digits[i], startX + (i * spacing), baseLineY + 30);
+            }
+            
+            // Draw position markers
+            ctx.fillStyle = "#cbd5e1";
+            ctx.font = "12px Inter, sans-serif";
+            for(let i = 0; i <= digits.length; i++) {
+                ctx.fillText(i.toString(), startX + (i * spacing) - (spacing/2), baseLineY + 75);
+            }
 
-        requestAnimationFrame(update);
-    }
+            // Draw the Decimal Handle
+            const handleY = baseLineY + 15;
+            
+            if (isProper) {
+                ctx.shadowBlur = 25;
+                ctx.shadowColor = "rgba(46, 204, 113, 0.4)";
+            } else {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "rgba(220, 38, 38, 0.3)";
+            }
+            
+            // Decimal point circle
+            ctx.fillStyle = "#dc2626";
+            ctx.beginPath();
+            ctx.arc(decX, handleY, 14, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            
+            // Connection line
+            ctx.strokeStyle = "#dc2626";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(decX, handleY - 12);
+            ctx.lineTo(decX, handleY - 75);
+            ctx.stroke();
+            
+            // Drag handle
+            ctx.fillStyle = "#dc2626";
+            ctx.beginPath();
+            ctx.arc(decX, handleY - 90, 22, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = "white";
+            ctx.font = "bold 22px Inter, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("↕", decX, handleY - 90);
+            
+            // "Drag me" label when not dragging
+            if (!isDragging) {
+                ctx.fillStyle = "#64748b";
+                ctx.font = "11px Inter, sans-serif";
+                ctx.fillText("DRAG", decX, handleY - 120);
+            }
 
-    canvas.addEventListener('mousedown', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        if (Math.abs((e.clientX - rect.left) - decX) < 40) isDragging = true;
-    });
+            requestAnimationFrame(update);
+        }
 
-    window.addEventListener('mouseup', () => isDragging = false);
-
-    canvas.addEventListener('mousemove', (e) => {
-        if (isDragging) {
+        // Unified Pointer Events
+        function getCanvasCoords(e) {
             const rect = canvas.getBoundingClientRect();
-            decX = Math.max(startX - (spacing/2), Math.min(startX + (digits.length * spacing) - (spacing/2), e.clientX - rect.left));
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
         }
-    });
 
-    setMode('pos');
-    update();
-</script>
+        function handlePointerDown(e) {
+            e.preventDefault();
+            
+            const coords = getCanvasCoords(e);
+            const handleY = baseLineY - 90;
+            
+            if (Math.abs(coords.x - decX) < 50 && Math.abs(coords.y - handleY) < 60) {
+                isDragging = true;
+                canvas.setPointerCapture(e.pointerId);
+                hintEl.textContent = '👆 Dragging... Release to set position';
+            }
+        }
+
+        function handlePointerMove(e) {
+            e.preventDefault();
+            
+            if (isDragging) {
+                const coords = getCanvasCoords(e);
+                const minX = startX - (spacing/2);
+                const maxX = startX + (digits.length * spacing) - (spacing/2);
+                decX = Math.max(minX, Math.min(maxX, coords.x));
+            }
+        }
+
+        function handlePointerUp(e) {
+            e.preventDefault();
+            
+            if (isDragging) {
+                isDragging = false;
+                canvas.releasePointerCapture(e.pointerId);
+                
+                let currentSlotFloat = (decX - startX + (spacing/2)) / spacing;
+                let currentSlotInt = Math.round(currentSlotFloat);
+                currentSlotInt = Math.max(0, Math.min(digits.length, currentSlotInt));
+                let n = homeIdx - currentSlotInt;
+                
+                hintEl.textContent = `✅ Decimal set · n = ${n}`;
+            }
+        }
+
+        // Initialize
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        document.getElementById('btn-pos').addEventListener('click', () => setMode('pos'));
+        document.getElementById('btn-neg').addEventListener('click', () => setMode('neg'));
+        document.getElementById('applyNumberBtn').addEventListener('click', applyCustomNumber);
+        
+        // Enter key in input
+        customInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                applyCustomNumber();
+            }
+        });
+        
+        // Touch events for buttons
+        document.getElementById('btn-pos').addEventListener('touchstart', (e) => { e.preventDefault(); setMode('pos'); }, { passive: false });
+        document.getElementById('btn-neg').addEventListener('touchstart', (e) => { e.preventDefault(); setMode('neg'); }, { passive: false });
+        
+        setMode('pos');
+        update();
+    </script>
 </body>
 </html>

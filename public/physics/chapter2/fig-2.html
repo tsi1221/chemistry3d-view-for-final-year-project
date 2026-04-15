@@ -2,176 +2,578 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>The Precision Laboratory - Multi-Device Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Precision Lab · Multi-Device</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; background: #f0f2f5; color: #1a1a1b; margin: 0; padding: 20px; }
-        .container { background: #ffffff; padding: 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 950px; width: 100%; text-align: center; }
-        .tab-bar { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn { padding: 10px 18px; border: 1px solid #ddd; background: #fff; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; color: #555; }
-        .tab-btn.active { background: #3498db; color: white; border-color: #3498db; }
-        canvas { border: 1px solid #e0e0e0; border-radius: 12px; background: #fdfdfd; margin-bottom: 20px; cursor: crosshair; }
-        .info-box { text-align: left; padding: 20px; background: #f8f9fa; border-left: 4px solid #3498db; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        .reading-display { font-family: 'Courier New', monospace; font-size: 1.2rem; color: #e67e22; font-weight: bold; margin-bottom: 10px; min-height: 25px; }
-        .highlight { color: #e74c3c; font-weight: bold; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #fafbfc;
+            overflow: hidden;
+            touch-action: pan-y;
+            color: #1a1e2b;
+        }
+        
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .app-title .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Tabs */
+        .tabs-container {
+            padding: 12px 24px 0 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            flex-shrink: 0;
+        }
+        
+        .tab-bar {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+        }
+        
+        .tab-bar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            color: #7c879c;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+            touch-action: manipulation;
+            border-radius: 40px;
+        }
+        
+        .tab-btn:hover {
+            color: #1a1e2b;
+            background: #f5f7fa;
+        }
+        
+        .tab-btn.active {
+            background: #1a1e2b;
+            color: white;
+        }
+        
+        /* Main Simulation Area */
+        .simulation-container {
+            flex-grow: 1;
+            background: #fafbfc;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            touch-action: none;
+        }
+        
+        .canvas-card {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+        }
+        
+        #mainCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+        
+        /* Reading Display */
+        .reading-bar {
+            padding: 14px 24px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        #val-readout {
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 1.1rem;
+            color: #1a1e2b;
+            font-weight: 500;
+            min-height: 28px;
+            text-align: center;
+        }
+        
+        .highlight {
+            color: #dc2626;
+            font-weight: 600;
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            padding: 18px 24px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        #exp-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #1a1e2b;
+            margin-bottom: 6px;
+        }
+        
+        #exp-desc {
+            font-size: 0.9rem;
+            color: #5b687c;
+            line-height: 1.5;
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 10px 24px 16px 24px;
+            text-align: center;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .hint-text {
+            display: inline-block;
+            padding: 6px 18px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1.1rem;
+            }
+            
+            .tabs-container {
+                padding: 8px 16px 0 16px;
+            }
+            
+            .tab-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+            
+            .simulation-container {
+                padding: 12px;
+            }
+            
+            .reading-bar {
+                padding: 12px 16px;
+            }
+            
+            #val-readout {
+                font-size: 0.95rem;
+            }
+            
+            .info-panel {
+                padding: 14px 16px;
+            }
+            
+            #exp-name {
+                font-size: 1rem;
+            }
+            
+            #exp-desc {
+                font-size: 0.85rem;
+            }
+        }
+        
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        button:focus-visible {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>📊 Precision Laboratory</h1>
+            <span class="badge">Multi-Device</span>
+        </div>
+    </header>
 
-<div class="container">
-    <div class="tab-bar" id="tab-bar"></div>
+    <div class="tabs-container">
+        <div class="tab-bar" id="tab-bar"></div>
+    </div>
 
-    <div id="display-area">
-        <div id="val-readout" class="reading-display">Move the sliders to measure</div>
-        <canvas id="mainCanvas" width="900" height="500"></canvas>
-        <div class="info-box">
-            <h2 id="exp-name">Loading...</h2>
-            <p id="exp-desc"></p>
+    <div class="simulation-container">
+        <div class="canvas-card">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas" width="1000" height="562"></canvas>
+            </div>
+            
+            <!-- Reading Display -->
+            <div class="reading-bar">
+                <div id="val-readout">Move the sliders to measure</div>
+            </div>
+            
+            <!-- Info Panel -->
+            <div class="info-panel">
+                <div id="exp-name">Loading...</div>
+                <div id="exp-desc"></div>
+            </div>
+            
+            <!-- Hint -->
+            <div class="hint-wrapper">
+                <div class="hint-text">
+                    <span id="hintMessage">👆 Drag the red sliders to adjust measurements</span>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const canvas = document.getElementById('mainCanvas');
-    const ctx = canvas.getContext('2d');
-    const nameEl = document.getElementById('exp-name');
-    const descEl = document.getElementById('exp-desc');
-    const readoutEl = document.getElementById('val-readout');
-    const tabBar = document.getElementById('tab-bar');
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const nameEl = document.getElementById('exp-name');
+        const descEl = document.getElementById('exp-desc');
+        const readoutEl = document.getElementById('val-readout');
+        const hintEl = document.getElementById('hintMessage');
+        const tabBar = document.getElementById('tab-bar');
 
-    let activeTab = 0;
-    const mouse = { x: 0, y: 0, isDown: false };
-
-    const state = {
-        mass: { value: 6.38, ox: 150, unitPx: 60 },
-        temp: { value: 38.45, ox: 350, oy: 50, h: 380 }
-    };
-
-    const experiments = [
-        {
-            name: "Mass Comparison",
-            desc: "Device A (Top) has marks every 1g. Device B (Bottom) has marks every 0.1g. Notice how Device B allows you to estimate the hundredths place (0.01g).",
-            draw: () => {
-                const s = state.mass;
-                // Device A: 1g marks
-                drawBeam(s.ox, 120, "DEVICE A: 1g Divisions", 1, false, s.value);
-                // Device B: 0.1g marks
-                drawBeam(s.ox, 320, "DEVICE B: 0.1g Divisions", 0.1, true, s.value);
-                
-                readoutEl.innerHTML = `Reading A: ~${s.value.toFixed(1)}g | Reading B: ${s.value.toFixed(2)}g (Precise)`;
-            }
-        },
-        {
-            name: "Temperature Comparison",
-            desc: "The left thermometer has 10° marks (low precision). The right has 1° marks (high precision). As mark density increases, so does the certainty of your data.",
-            draw: () => {
-                const s = state.temp;
-                // Thermometer 1: Coarse
-                drawThermometer(s.ox - 150, s.oy, s.h, 10, "COARSE (10°)", s.value);
-                // Thermometer 2: Fine
-                drawThermometer(s.ox + 150, s.oy, s.h, 1, "FINE (1°)", s.value);
-
-                readoutEl.innerHTML = `Observation: At ${s.value.toFixed(1)}°C, the Fine Scale allows for a <span class="highlight">0.01</span> estimation.`;
-            }
-        }
-    ];
-
-    function drawBeam(x, y, label, step, sub, val) {
-        const width = 600;
-        ctx.fillStyle = "#f1f2f6";
-        ctx.fillRect(x, y, width, 50);
-        ctx.strokeStyle = "#2f3542";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, width, 50);
+        // Canvas internal dimensions
+        const width = 1000;
+        const height = 562;
         
-        ctx.fillStyle = "#2f3542"; ctx.font = "bold 13px Arial"; ctx.textAlign="left";
-        ctx.fillText(label, x, y - 15);
+        function resizeCanvas() {
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-        // Scale Logic
-        for(let i=0; i<=10; i++) {
-            let px = x + (i * 60);
-            ctx.beginPath(); ctx.moveTo(px, y); ctx.lineTo(px, y+20); ctx.stroke();
-            ctx.fillText(i, px - 4, y + 35);
+        let activeTab = 0;
+        const mouse = { x: 0, y: 0, isDown: false, target: null };
+
+        const state = {
+            mass: { value: 6.38, ox: 180, unitPx: 64 },
+            temp: { value: 38.45, ox: 420, oy: 60, h: 420 }
+        };
+
+        const experiments = [
+            {
+                name: "Mass Comparison",
+                desc: "Device A (Top) has marks every 1g. Device B (Bottom) has marks every 0.1g. Notice how Device B allows you to estimate the hundredths place (0.01g).",
+                hint: "⚖️ Drag the red rider to measure mass on both scales",
+                draw: () => {
+                    const s = state.mass;
+                    drawBeam(s.ox, 120, "DEVICE A · 1g Divisions", 1, false, s.value);
+                    drawBeam(s.ox, 340, "DEVICE B · 0.1g Divisions", 0.1, true, s.value);
+                    
+                    readoutEl.innerHTML = `Reading A: ~${s.value.toFixed(1)}g  ·  Reading B: <span class="highlight">${s.value.toFixed(2)}g</span> (Precise)`;
+                }
+            },
+            {
+                name: "Temperature Comparison",
+                desc: "The left thermometer has 10° marks (low precision). The right has 1° marks (high precision). As mark density increases, so does the certainty of your data.",
+                hint: "🌡️ Drag anywhere on the thermometers to adjust temperature",
+                draw: () => {
+                    const s = state.temp;
+                    drawThermometer(s.ox - 200, s.oy, s.h, 10, "COARSE · 10° marks", s.value);
+                    drawThermometer(s.ox + 200, s.oy, s.h, 1, "FINE · 1° marks", s.value);
+
+                    readoutEl.innerHTML = `Temperature: ${s.value.toFixed(1)}°C · Fine scale allows <span class="highlight">0.01°</span> estimation`;
+                }
+            }
+        ];
+
+        function drawBeam(x, y, label, step, sub, val) {
+            const beamWidth = 640;
             
-            if(sub && i < 10) {
-                for(let j=1; j<10; j++) {
-                    let spx = px + (j * 6);
-                    ctx.beginPath(); ctx.moveTo(spx, y); ctx.lineTo(spx, y+10); ctx.stroke();
+            // Beam background
+            ctx.fillStyle = "#f5f7fa";
+            ctx.fillRect(x, y, beamWidth, 55);
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, beamWidth, 55);
+            
+            ctx.fillStyle = "#1e293b"; 
+            ctx.font = "600 13px Inter, sans-serif"; 
+            ctx.textAlign = "left";
+            ctx.fillText(label, x, y - 12);
+
+            // Scale marks
+            ctx.strokeStyle = "#475569";
+            ctx.lineWidth = 2;
+            ctx.fillStyle = "#475569";
+            ctx.font = "12px Inter, sans-serif";
+            
+            for(let i = 0; i <= 10; i++) {
+                let px = x + (i * 64);
+                ctx.beginPath(); 
+                ctx.moveTo(px, y); 
+                ctx.lineTo(px, y + 22); 
+                ctx.stroke();
+                ctx.fillText(i, px - 5, y + 40);
+                
+                if(sub && i < 10) {
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = "#94a3b8";
+                    for(let j = 1; j < 10; j++) {
+                        let spx = px + (j * 6.4);
+                        ctx.beginPath(); 
+                        ctx.moveTo(spx, y); 
+                        ctx.lineTo(spx, y + 12); 
+                        ctx.stroke();
+                    }
+                    ctx.strokeStyle = "#475569";
+                    ctx.lineWidth = 2;
+                }
+            }
+
+            // Rider (Slider)
+            const riderX = x + (val * 64);
+            ctx.fillStyle = "#dc2626";
+            ctx.shadowColor = "rgba(220, 38, 38, 0.3)";
+            ctx.shadowBlur = 8;
+            ctx.fillRect(riderX - 10, y - 12, 20, 30);
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(riderX - 10, y - 12, 20, 30);
+            
+            // Rider indicator line
+            ctx.strokeStyle = "#dc2626";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(riderX, y - 20);
+            ctx.lineTo(riderX, y + 70);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawThermometer(x, y, h, step, label, val) {
+            // Tube
+            ctx.strokeStyle = "#475569"; 
+            ctx.lineWidth = 4;
+            ctx.strokeRect(x, y, 35, h);
+            
+            // Liquid
+            const fill = (val / 100) * h;
+            ctx.fillStyle = "#dc2626";
+            ctx.shadowColor = "rgba(220, 38, 38, 0.3)";
+            ctx.shadowBlur = 6;
+            ctx.fillRect(x + 3, y + h - fill, 29, fill);
+            ctx.shadowBlur = 0;
+            
+            // Bulb
+            ctx.fillStyle = "#dc2626";
+            ctx.beginPath();
+            ctx.ellipse(x + 17.5, y + h + 8, 18, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Scale
+            ctx.fillStyle = "#475569"; 
+            ctx.font = "11px Inter, sans-serif";
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 1.5;
+            
+            for(let i = 0; i <= 100; i += step) {
+                const ty = y + h - (i / 100 * h);
+                ctx.beginPath();
+                ctx.moveTo(x + 35, ty);
+                ctx.lineTo(x + 50, ty);
+                ctx.stroke();
+                if(i % 10 === 0) ctx.fillText(i, x + 55, ty + 4);
+            }
+            
+            ctx.textAlign = "center";
+            ctx.fillStyle = "#1e293b";
+            ctx.font = "600 12px Inter, sans-serif";
+            ctx.fillText(label, x + 17.5, y + h + 40);
+            
+            // Current value indicator
+            const indicatorY = y + h - fill;
+            ctx.strokeStyle = "#1e293b";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x - 8, indicatorY);
+            ctx.lineTo(x + 43, indicatorY);
+            ctx.stroke();
+        }
+
+        function init() {
+            experiments.forEach((ex, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'tab-btn' + (i === activeTab ? ' active' : '');
+                btn.innerText = ex.name;
+                btn.onclick = () => {
+                    activeTab = i;
+                    document.querySelectorAll('.tab-btn').forEach((b, idx) => b.className = 'tab-btn' + (idx === i ? ' active' : ''));
+                    nameEl.innerText = ex.name;
+                    descEl.innerText = ex.desc;
+                    hintEl.textContent = ex.hint;
+                };
+                btn.addEventListener('touchstart', (e) => { e.preventDefault(); }, { passive: false });
+                tabBar.appendChild(btn);
+            });
+            
+            nameEl.innerText = experiments[activeTab].name;
+            descEl.innerText = experiments[activeTab].desc;
+            hintEl.textContent = experiments[activeTab].hint;
+            animate();
+        }
+
+        // Unified Pointer Events
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handleInput(coords) {
+            if(activeTab === 0) {
+                // Mass comparison
+                const s = state.mass;
+                const beamArea = (coords.y > 100 && coords.y < 200) || (coords.y > 320 && coords.y < 420);
+                if (beamArea) {
+                    s.value = Math.max(0, Math.min(10, (coords.x - s.ox) / 64));
+                }
+            } else {
+                // Temperature comparison
+                const s = state.temp;
+                const leftArea = coords.x > s.ox - 220 && coords.x < s.ox - 150;
+                const rightArea = coords.x > s.ox + 180 && coords.x < s.ox + 250;
+                if (leftArea || rightArea) {
+                    s.value = Math.max(0, Math.min(100, ((s.oy + s.h) - coords.y) / (s.h / 100)));
                 }
             }
         }
 
-        // Rider (Slider)
-        const riderX = x + (val * 60);
-        ctx.fillStyle = "#e74c3c";
-        ctx.fillRect(riderX - 8, y - 10, 16, 25);
-        ctx.strokeStyle = "white"; ctx.strokeRect(riderX - 8, y-10, 16, 25);
-    }
-
-    function drawThermometer(x, y, h, step, label, val) {
-        // Tube
-        ctx.strokeStyle = "#2f3542"; ctx.lineWidth = 4;
-        ctx.strokeRect(x, y, 30, h);
-        
-        // Liquid
-        const fill = (val / 100) * h;
-        ctx.fillStyle = "#e74c3c";
-        ctx.fillRect(x + 2, y + h - fill, 26, fill);
-
-        // Scale
-        ctx.fillStyle = "#2f3542"; ctx.font = "11px Arial";
-        for(let i=0; i<=100; i+=step) {
-            const ty = y + h - (i/100 * h);
-            ctx.beginPath();
-            ctx.moveTo(x + 30, ty);
-            ctx.lineTo(x + 45, ty);
-            ctx.stroke();
-            if(i % 10 === 0) ctx.fillText(i, x + 50, ty + 4);
+        function handlePointerDown(e) {
+            e.preventDefault();
+            
+            const coords = getCanvasCoords(e);
+            mouse.isDown = true;
+            handleInput(coords);
+            canvas.setPointerCapture(e.pointerId);
         }
-        ctx.textAlign = "center";
-        ctx.fillText(label, x + 15, y + h + 25);
-    }
 
-    function init() {
-        experiments.forEach((ex, i) => {
-            const btn = document.createElement('button');
-            btn.className = 'tab-btn' + (i === activeTab ? ' active' : '');
-            btn.innerText = ex.name;
-            btn.onclick = () => {
-                activeTab = i;
-                document.querySelectorAll('.tab-btn').forEach((b, idx) => b.className = 'tab-btn' + (idx === i ? ' active' : ''));
-                nameEl.innerText = ex.name;
-                descEl.innerText = ex.desc;
-            };
-            tabBar.appendChild(btn);
-        });
-        nameEl.innerText = experiments[activeTab].name;
-        descEl.innerText = experiments[activeTab].desc;
-        animate();
-    }
-
-    canvas.onmousedown = (e) => { mouse.isDown = true; handleInput(e); };
-    window.onmouseup = () => mouse.isDown = false;
-    canvas.onmousemove = (e) => { if(mouse.isDown) handleInput(e); };
-
-    function handleInput(e) {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-
-        if(activeTab === 0) {
-            state.mass.value = Math.max(0, Math.min(10, (mx - state.mass.ox) / 60));
-        } else {
-            state.temp.value = Math.max(0, Math.min(100, ( (state.temp.oy + state.temp.h) - my) / (state.temp.h / 100)));
+        function handlePointerMove(e) {
+            e.preventDefault();
+            
+            if (mouse.isDown) {
+                const coords = getCanvasCoords(e);
+                handleInput(coords);
+            }
         }
-    }
 
-    function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        experiments[activeTab].draw();
-        requestAnimationFrame(animate);
-    }
+        function handlePointerUp(e) {
+            e.preventDefault();
+            mouse.isDown = false;
+            canvas.releasePointerCapture(e.pointerId);
+        }
 
-    init();
-</script>
+        // Initialize
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            experiments[activeTab].draw();
+            requestAnimationFrame(animate);
+        }
+
+        init();
+    </script>
 </body>
 </html>

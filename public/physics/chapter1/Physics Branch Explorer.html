@@ -2,284 +2,1284 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced Physics Hub</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Physics Hub · Interactive Branch Explorer</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', sans-serif; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            background: #fdfdfd; 
-            color: #333; 
-            margin: 0; 
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #f8fafc;
+            overflow: hidden;
+            touch-action: pan-y;
+            color: #1e293b;
+        }
+        
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .app-title .badge {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+        
+        /* Theme Toggle */
+        .theme-toggle {
+            padding: 8px 12px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+        }
+        
+        .theme-toggle:hover {
+            background: #e2e8f0;
+            transform: scale(1.05);
+        }
+        
+        /* Main Simulation Area */
+        .simulation-container {
+            flex-grow: 1;
+            background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
+            touch-action: none;
         }
-        canvas { 
-            background: #ffffff; 
-            border: 2px solid #e0e6ed; 
-            border-radius: 16px; 
-            cursor: pointer; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+        
+        .canvas-card {
+            position: relative;
+            width: 100%;
+            max-width: 1100px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
         }
-        .ui-panel { 
-            margin: 10px 0 20px 0; 
-            text-align: center; 
-            max-width: 700px; 
-            background: #fff; 
-            padding: 15px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #fafcff;
         }
-        h2 { margin: 0 0 10px 0; color: #2c3e50; }
-        h3 { color: #e74c3c; margin: 10px 0 5px 0; transition: color 0.3s;}
-        p { margin: 5px 0; line-height: 1.5; color: #7f8c8d; }
+        
+        #branchCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+        
+        /* Interactive Control Panel */
+        .interaction-panel {
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .interaction-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .interaction-indicator {
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 2px;
+        }
+        
+        #interactionTitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .interaction-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .control-btn {
+            padding: 8px 16px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .control-btn:hover {
+            background: #f1f5f9;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.15);
+        }
+        
+        .control-btn:active {
+            transform: translateY(0);
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .slider-container label {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 500;
+            min-width: 80px;
+        }
+        
+        .slider-container input {
+            flex: 1;
+            height: 4px;
+            background: #cbd5e1;
+            border-radius: 2px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .slider-container input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            border: 2px solid white;
+        }
+        
+        #valueDisplay {
+            min-width: 50px;
+            text-align: center;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        
+        /* Info Panel */
+        .info-panel {
+            padding: 14px 24px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .branch-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        
+        .branch-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+        
+        #branchTitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            color: #1e293b;
+        }
+        
+        #branchDesc {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin-left: 22px;
+        }
+        
+        /* Legend */
+        .legend-panel {
+            padding: 12px 24px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px 24px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 8px 24px 12px 24px;
+            text-align: center;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .hint-text {
+            display: inline-block;
+            padding: 6px 18px;
+            background: #eff6ff;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #3b82f6;
+            border: 1px solid #bfdbfe;
+            font-weight: 500;
+        }
+        
+        /* Branch Count */
+        .branch-stats {
+            display: flex;
+            gap: 16px;
+            color: #64748b;
+            font-size: 0.85rem;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1rem;
+            }
+            
+            .simulation-container {
+                padding: 8px;
+            }
+            
+            .interaction-panel {
+                padding: 12px 16px;
+            }
+            
+            .interaction-controls {
+                flex-direction: column;
+            }
+            
+            .slider-container {
+                min-width: auto;
+            }
+            
+            .info-panel {
+                padding: 12px 16px;
+            }
+            
+            #branchTitle {
+                font-size: 0.95rem;
+            }
+            
+            #branchDesc {
+                font-size: 0.8rem;
+            }
+            
+            .branch-stats {
+                display: none;
+            }
+            
+            .control-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .legend-panel {
+                padding: 10px 16px;
+                gap: 8px 12px;
+            }
+            
+            .legend-item {
+                font-size: 0.7rem;
+            }
+        }
+        
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        button:focus-visible {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>⚛️ Physics Interactive Lab</h1>
+            <span class="badge">Experiment</span>
+        </div>
+        <div class="branch-stats">
+            <span>7 Branches</span>
+            <span>·</span>
+            <span id="exploreStatus">Click to Interact</span>
+        </div>
+    </header>
 
-    <div class="ui-panel">
-        <h2>Physics Branch Explorer</h2>
-        <p>A "Solar System" of Physics. Orbits are static. Click a planet to bring its animation to life in the center!</p>
-        <h3 id="branchTitle">Active Branch: Core</h3>
-        <p id="branchDesc">Click any orbiting planet to explore.</p>
+    <div class="simulation-container">
+        <div class="canvas-card">
+            <div class="canvas-wrapper">
+                <canvas id="branchCanvas" width="1100" height="619"></canvas>
+            </div>
+            
+            <!-- Interactive Control Panel -->
+            <div class="interaction-panel" id="interactionPanel" style="display: none;">
+                <div class="interaction-header">
+                    <div class="interaction-indicator"></div>
+                    <span id="interactionTitle">Interactive Controls</span>
+                </div>
+                <div class="interaction-controls" id="interactionControls">
+                    <!-- Dynamic controls will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Info Panel -->
+            <div class="info-panel">
+                <div class="branch-header">
+                    <div class="branch-indicator" id="branchIndicator" style="background-color: #3b82f6;"></div>
+                    <span id="branchTitle">Select a Physics Branch</span>
+                </div>
+                <div id="branchDesc">Click any orbiting planet to explore and interact with that branch of physics!</div>
+            </div>
+            
+            <!-- Legend -->
+            <div class="legend-panel" id="legendPanel"></div>
+            
+            <!-- Hint -->
+            <div class="hint-wrapper">
+                <div class="hint-text">
+                    <span id="hintMessage">Click a planet to start experimenting!</span>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <canvas id="branchCanvas" width="900" height="550"></canvas>
 
     <script>
         const canvas = document.getElementById('branchCanvas');
         const ctx = canvas.getContext('2d');
         const titleEl = document.getElementById('branchTitle');
         const descEl = document.getElementById('branchDesc');
+        const indicatorEl = document.getElementById('branchIndicator');
+        const hintEl = document.getElementById('hintMessage');
+        const interactionPanel = document.getElementById('interactionPanel');
+        const interactionTitle = document.getElementById('interactionTitle');
+        const interactionControls = document.getElementById('interactionControls');
+        const exploreStatus = document.getElementById('exploreStatus');
+        const legendPanel = document.getElementById('legendPanel');
+
+        // Canvas dimensions
+        const width = 1100;
+        const height = 619;
+        
+        function resizeCanvas() {
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
         let selectedBranch = null;
         let time = 0;
+        // Micro-interaction state
+        let hoveredBranch = null;
+        let dragState = { dragging: false, startAngle: 0, lastAngle: 0, pointerStart: null };
+        let orbitRotation = 0;
+        let mouseParallax = { x: 0, y: 0 };
+        let ripple = { active: false, x: 0, y: 0, radius: 0, color: '' };
+        // Interactive state variables
+        let pendulumAngle = 0;
+        let pendulumVelocity = 0.05;
+        let waveFrequency = 1;
+        let lightAngle = 0;
+        let temperature = 50;
+        let magneticFieldStrength = 1;
+        let particleEnergy = 1;
+        let telescopeZoom = 1;
 
         const branches = [
-            { name: "Classical Mechanics", color: "#3498db", symbol: "ball", desc: "The motion of large objects and forces." },
-            { name: "Acoustics", color: "#f1c40f", symbol: "wave", desc: "The production and transmission of sound." },
-            { name: "Electro-Optics", color: "#9b59b6", symbol: "light", desc: "Behavior, propagation, properties of light; refraction and reflection." },
-            { name: "Thermodynamics", color: "#e67e22", symbol: "heat", desc: "Study of thermal energy, heat transfer, and Entropy (disorder)." },
-            { name: "Electromagnetism", color: "#2ecc71", symbol: "magnet", desc: "Electricity, magnetism, and electromagnetic fields." },
-            { name: "Nuclear Physics", color: "#e74c3c", symbol: "atom", desc: "The structure and properties of the atomic nucleus." },
-            { name: "Astrophysics", color: "#1abc9c", symbol: "star", desc: "Physics applied to stars, space, and galaxies; specialized telescopes." }
+            { 
+                name: "Classical Mechanics", 
+                color: "#3b82f6", 
+                symbol: "pendulum", 
+                desc: "Study motion, forces, and energy. Experiment with the pendulum!",
+                keyConcept: "Newton's Laws",
+                interactive: true,
+                controls: [
+                    { type: 'slider', label: 'Gravity', min: 0, max: 2, default: 1, param: 'gravity' },
+                    { type: 'button', label: '🔽 Add Energy', action: 'addEnergy' },
+                    { type: 'button', label: '⏸️ Pause', action: 'togglePause' }
+                ]
+            },
+            { 
+                name: "Acoustics", 
+                color: "#eab308", 
+                symbol: "wave", 
+                desc: "Explore sound waves and vibrations. Adjust frequency to see wavelength changes!",
+                keyConcept: "Wave Propagation",
+                interactive: true,
+                controls: [
+                    { type: 'slider', label: 'Frequency', min: 0.5, max: 3, default: 1, param: 'frequency' },
+                    { type: 'slider', label: 'Amplitude', min: 0.2, max: 2, default: 1, param: 'amplitude' },
+                    { type: 'button', label: '📊 Show Harmonics', action: 'toggleHarmonics' }
+                ]
+            },
+            { 
+                name: "Electro-Optics", 
+                color: "#a855f7", 
+                symbol: "light", 
+                desc: "Manipulate light through lenses and prisms. Discover refraction and reflection!",
+                keyConcept: "Refraction",
+                interactive: true,
+                controls: [
+                    { type: 'slider', label: 'Refraction', min: 1, max: 2.5, default: 1.5, param: 'refraction' },
+                    { type: 'slider', label: 'Light Angle', min: -45, max: 45, default: 0, param: 'angle' },
+                    { type: 'button', label: '🌈 Split Light', action: 'splitLight' }
+                ]
+            },
+            { 
+                name: "Thermodynamics", 
+                color: "#f97316", 
+                symbol: "heat", 
+                desc: "Control temperature and watch entropy in action. Heat things up!",
+                keyConcept: "Entropy",
+                interactive: true,
+                controls: [
+                    { type: 'slider', label: 'Temperature', min: 0, max: 100, default: 50, param: 'temp' },
+                    { type: 'button', label: '🔥 Heat Up', action: 'heatUp' },
+                    { type: 'button', label: '❄️ Cool Down', action: 'coolDown' },
+                    { type: 'button', label: '🔄 Reset', action: 'resetTemp' }
+                ]
+            },
+            { 
+                name: "Electromagnetism", 
+                color: "#10b981", 
+                symbol: "magnet", 
+                desc: "Generate magnetic fields and see their effects. Adjust field strength!",
+                keyConcept: "Maxwell's Equations",
+                interactive: true,
+                controls: [
+                    { type: 'slider', label: 'Field Strength', min: 0.2, max: 2, default: 1, param: 'strength' },
+                    { type: 'button', label: '🔄 Flip Poles', action: 'flipPoles' },
+                    { type: 'button', label: '⚡ Add Current', action: 'addCurrent' }
+                ]
+            },
+            { 
+                name: "Nuclear Physics", 
+                color: "#ef4444", 
+                symbol: "atom", 
+                desc: "Probe the atomic nucleus. Control particle energy!",
+                keyConcept: "Nuclear Forces",
+                interactive: true,
+                controls: [
+                    { type: 'slider', label: 'Particle Energy', min: 0.5, max: 3, default: 1, param: 'energy' },
+                    { type: 'button', label: '⚛️ Split Nucleus', action: 'split' },
+                    { type: 'button', label: '🔬 Observe Decay', action: 'decay' }
+                ]
+            },
+            { 
+                name: "Astrophysics", 
+                color: "#14b8a6", 
+                symbol: "star", 
+                desc: "Observe the cosmos through our virtual telescope!",
+                keyConcept: "Gravitation",
+                interactive: true,
+                controls: [
+                    { type: 'slider', label: 'Zoom', min: 0.5, max: 2, default: 1, param: 'zoom' },
+                    { type: 'button', label: '🔭 Focus', action: 'focus' },
+                    { type: 'button', label: '⭐ Find Star', action: 'findStar' }
+                ]
+            }
         ];
 
-        // Drawing function with an added "isActive" parameter
-        function drawPlanetIcon(ctx, branch, size, t, isActive = false) {
-            ctx.strokeStyle = branch.color;
-            ctx.fillStyle = branch.color + "11"; // Very light fill
-            ctx.lineWidth = 2.5;
+        // Build legend
+        function buildLegend() {
+            legendPanel.innerHTML = '';
+            branches.forEach(b => {
+                const item = document.createElement('div');
+                item.className = 'legend-item';
+                item.innerHTML = `
+                    <div class="legend-color" style="background-color: ${b.color};"></div>
+                    <span>${b.name}</span>
+                `;
+                legendPanel.appendChild(item);
+            });
+        }
+        buildLegend();
+
+        // Interactive state
+        let interactiveState = {
+            gravity: 1,
+            frequency: 1,
+            amplitude: 1,
+            refraction: 1.5,
+            angle: 0,
+            temp: 50,
+            strength: 1,
+            energy: 1,
+            zoom: 1,
+            isPaused: false,
+            showHarmonics: false,
+            splitLightMode: false,
+            flipPoles: false,
+            currentMode: null
+        };
+
+        // Build interaction controls
+        function buildInteractionControls(branch) {
+            interactionControls.innerHTML = '';
             
-            // If NOT active, use a fixed time to make it static
-            const fixedTime = 0.5; // Example fixed time to keep icons distinct
-            const currentT = isActive ? t : fixedTime;
-
-            switch(branch.symbol) {
-                case "ball": // Classical Mechanics
-                    ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                    let ballY = Math.sin(currentT * 4) * (size - 8);
-                    ctx.fillStyle = branch.color; ctx.beginPath(); ctx.arc(0, ballY, size/2.5, 0, Math.PI*2); ctx.fill();
-                    break;
-                case "wave": // Acoustics
-                    for(let i=0; i<3; i++) {
-                        ctx.beginPath(); ctx.arc(0,0, ((currentT*15 + i*8)%size), 0, Math.PI*2); ctx.stroke();
-                    }
-                    ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke();
-                    break;
-                case "light": // Electro-Optics (Refraction and Reflection)
-                    ctx.lineWidth = 2;
-
-                    // 1. Refraction (Top-Left)
-                    const lensX = -size / 2; const lensY = -size / 3;
-                    ctx.fillStyle = branch.color + "22";
-                    ctx.beginPath(); ctx.arc(lensX, lensY, size/2, -0.6, 0.6); ctx.arc(lensX - size/2, lensY, size/2, 0.6, -0.6, true); ctx.closePath(); ctx.fill(); ctx.stroke();
-                    ctx.strokeStyle = isActive ? (time % 1.5 > 0.75 ? "orange" : branch.color) : branch.color;
-                    ctx.beginPath(); ctx.moveTo(lensX - size, lensY - 10); ctx.lineTo(lensX, lensY); ctx.lineTo(lensX + size/1.5, lensY + 15); ctx.stroke();
-
-                    // 2. Reflection (Bottom-Right)
-                    const mirX = size / 2.5; const mirY = size / 3;
-                    ctx.strokeStyle = branch.color; ctx.fillStyle = "silver";
-                    ctx.beginPath(); ctx.rect(mirX - 5, mirY - 15, 10, 30); ctx.fill(); ctx.stroke();
-                    ctx.strokeStyle = isActive ? (time % 1.5 < 0.75 ? "red" : branch.color) : branch.color;
-                    ctx.beginPath(); ctx.moveTo(mirX - size/1.5, mirY - 20); ctx.lineTo(mirX, mirY); ctx.lineTo(mirX - size/1.5, mirY + 20); ctx.stroke();
+            branch.controls.forEach(control => {
+                if (control.type === 'slider') {
+                    const container = document.createElement('div');
+                    container.className = 'slider-container';
+                    container.innerHTML = `
+                        <label>${control.label}</label>
+                        <input type="range" id="${control.param}" min="${control.min}" max="${control.max}" step="0.1" value="${control.default}">
+                        <span id="${control.param}Value">${control.default}</span>
+                    `;
+                    interactionControls.appendChild(container);
                     
-                    ctx.strokeStyle = branch.color; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke();
+                    const slider = container.querySelector('input');
+                    const valueDisplay = container.querySelector('span');
+                    slider.addEventListener('input', (e) => {
+                        interactiveState[control.param] = parseFloat(e.target.value);
+                        valueDisplay.textContent = parseFloat(e.target.value).toFixed(1);
+                    });
+                } else if (control.type === 'button') {
+                    const button = document.createElement('button');
+                    button.className = 'control-btn';
+                    button.innerHTML = control.label;
+                    button.addEventListener('click', () => handleInteraction(branch.symbol, control.action));
+                    interactionControls.appendChild(button);
+                }
+            });
+        }
+
+        // Handle interactive actions
+        function handleInteraction(symbol, action) {
+            switch(symbol) {
+                case 'pendulum':
+                    if (action === 'addEnergy') pendulumVelocity *= 1.5;
+                    if (action === 'togglePause') interactiveState.isPaused = !interactiveState.isPaused;
                     break;
-                case "heat": // Thermodynamics (Visualize ENTROPY)
-                    ctx.setLineDash([]);
-                    ctx.strokeStyle = branch.color;
-                    ctx.lineWidth = 3;
-
-                    // The 'box' or system boundary
-                    ctx.strokeRect(-size, -size/2, size*2, size);
-
-                    // Visualize Disorder vs. Order
-                    if (isActive) {
-                        // Entropy animation (Divider dissolves, energy spreads)
-                        const totalParticles = 60;
-                        const tCycle = (time % 12); // Slow down the cycle
-                        let order = 1;
-                        if (tCycle > 4) order = Math.max(0, 1 - (tCycle - 4) / 5);
-
-                        for (let p = 0; p < totalParticles; p++) {
-                            // Order factor makes them stick left, Disorder spreads them out
-                            let spreadX = (Math.random() - 0.5) * size * 1.8;
-                            let px = (-size/1.5 * order) + (spreadX * (1 - order));
-                            let py = (Math.random() - 0.5) * size * 0.8;
-                            
-                            // Visualizing hot (spread out) energy
-                            ctx.fillStyle = isActive ? (p % 2 === 0 ? "orange" : "red") : branch.color;
-                            ctx.beginPath(); ctx.arc(px, py, 2.5, 0, Math.PI*2); ctx.fill();
-                        }
-                        
-                        // Vertical divider line (melts)
-                        ctx.save();
-                        ctx.globalAlpha = order;
-                        ctx.beginPath(); ctx.moveTo(0, -size/2); ctx.lineTo(0, size/2); ctx.stroke();
-                        ctx.restore();
-                        
-                        ctx.fillStyle = "#333"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center";
-                        ctx.fillText(order > 0.5 ? "Order (Low Entropy)" : "Disorder (High Entropy)", 0, size/2 + 20);
-
-                    } else {
-                        // Static representation (simple disorganized dots)
-                        for (let p = 0; p < 20; p++) {
-                            let px = (Math.random() - 0.5) * size * 1.6;
-                            let py = (Math.random() - 0.5) * size * 0.7;
-                            ctx.fillStyle = branch.color;
-                            ctx.beginPath(); ctx.arc(px, py, 2, 0, Math.PI*2); ctx.fill();
-                        }
-                    }
-
-                    // Original symbol (optional to keep for identification)
-                    // ctx.font = `${size*1.5}px Arial`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                    // ctx.fillText("♨", Math.sin(fixedTime*2)*5, 0);
-
-                    ctx.strokeStyle = branch.color; ctx.beginPath(); ctx.arc(0,0, size+5, 0, Math.PI*2); ctx.lineWidth = 2.5; ctx.stroke();
+                case 'wave':
+                    if (action === 'toggleHarmonics') interactiveState.showHarmonics = !interactiveState.showHarmonics;
                     break;
-                case "magnet": // Electromagnetism
-                    if(isActive) ctx.rotate(t); else ctx.rotate(fixedTime);
-                    ctx.strokeRect(-size/2, -size/5, size, size/2.5);
-                    ctx.fillStyle = branch.color; ctx.font = `${size*0.8}px Arial`;
-                    ctx.fillText("N", -size/4, 0); ctx.fillText("S", size/4, 0);
-                    ctx.beginPath(); ctx.arc(0,0, size, 0, Math.PI*2); ctx.stroke();
+                case 'light':
+                    if (action === 'splitLight') interactiveState.splitLightMode = !interactiveState.splitLightMode;
                     break;
-                case "atom": // Nuclear
-                    ctx.beginPath(); ctx.arc(0,0, size/2.5, 0, Math.PI*2); ctx.fillStyle = "#ffcccc"; ctx.fill(); ctx.stroke();
-                    const orbitRotation = isActive ? t*2 : fixedTime*2;
-                    for(let i=0; i<2; i++) {
-                        ctx.save();
-                        ctx.rotate(Math.PI/2 + (i*0.5));
-                        ctx.beginPath(); ctx.ellipse(0,0, size*0.9, size/2, orbitRotation, 0, Math.PI*2); ctx.stroke();
-                        ctx.restore();
+                case 'heat':
+                    if (action === 'heatUp') interactiveState.temp = Math.min(100, interactiveState.temp + 10);
+                    if (action === 'coolDown') interactiveState.temp = Math.max(0, interactiveState.temp - 10);
+                    if (action === 'resetTemp') interactiveState.temp = 50;
+                    const tempSlider = document.getElementById('temp');
+                    if (tempSlider) {
+                        tempSlider.value = interactiveState.temp;
+                        const tempValue = document.getElementById('tempValue');
+                        if (tempValue) tempValue.textContent = interactiveState.temp;
                     }
                     break;
-                case "star": // Astrophysics (Reflecting telescope)
-                    ctx.lineWidth = 2; ctx.strokeStyle = branch.color;
-                    const teleW = size * 1.5; const teleH = size / 1.8;
-                    ctx.strokeRect(-teleW/2, -teleH/2, teleW, teleH);
-                    // Mirrors
-                    ctx.fillStyle = branch.color + "22";
-                    ctx.beginPath(); ctx.arc(teleW/2 - 5, 0, size/2.5, -Math.PI/2, Math.PI/2); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(-teleW/2 + 25, -10); ctx.lineTo(-teleW/2 + 25, 10); ctx.stroke();
-                    // Light path
-                    if(isActive){
-                        ctx.lineWidth = 1.5; ctx.strokeStyle = "red";
-                        ctx.beginPath(); ctx.moveTo(-teleW/2 - 10, -10); ctx.lineTo(teleW/2 - 10, -10);
-                        ctx.moveTo(-teleW/2 - 10, 10); ctx.lineTo(teleW/2 - 10, 10);
-                        ctx.lineTo(-teleW/2 + 25, 0); ctx.lineTo(-teleW/2 + 15, teleH/2 + 5);
-                        ctx.stroke();
-                    }
-                    ctx.beginPath(); ctx.arc(0,0, size+5, 0, Math.PI*2); ctx.lineWidth = 2.5; ctx.stroke();
+                case 'magnet':
+                    if (action === 'flipPoles') interactiveState.flipPoles = !interactiveState.flipPoles;
+                    if (action === 'addCurrent') interactiveState.strength = Math.min(2, interactiveState.strength + 0.2);
+                    break;
+                case 'atom':
+                    if (action === 'split') particleEnergy = 3;
+                    if (action === 'decay') interactiveState.currentMode = interactiveState.currentMode === 'decay' ? null : 'decay';
+                    break;
+                case 'star':
+                    if (action === 'focus') interactiveState.zoom = 1.5;
+                    if (action === 'findStar') interactiveState.currentMode = interactiveState.currentMode === 'star' ? null : 'star';
                     break;
             }
+        }
+
+        // Drawing functions for each interactive branch
+        function drawPendulum(ctx, size, t, isActive) {
+            const angle = isActive ? pendulumAngle : Math.sin(t * 0.5) * 0.5;
+            const gravity = interactiveState.gravity;
+            
+            if (isActive && !interactiveState.isPaused) {
+                pendulumVelocity += -gravity * 0.01 * Math.sin(pendulumAngle);
+                pendulumAngle += pendulumVelocity;
+                pendulumVelocity *= 0.995;
+            }
+            
+            ctx.save();
+            ctx.rotate(angle);
+            
+            // String
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, size * 2);
+            ctx.stroke();
+            
+            // Bob
+            ctx.fillStyle = '#3b82f6';
+            ctx.shadowColor = '#3b82f6';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(0, size * 2 + size/2, size/2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.restore();
+            
+            // Pivot
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawWave(ctx, size, t, isActive) {
+            const freq = interactiveState.frequency;
+            const amp = interactiveState.amplitude;
+            
+            ctx.strokeStyle = '#eab308';
+            ctx.lineWidth = 2.5;
+            
+            for(let harmonic = 1; harmonic <= (interactiveState.showHarmonics ? 3 : 1); harmonic++) {
+                ctx.beginPath();
+                const harmonicAmp = amp / harmonic;
+                ctx.globalAlpha = harmonic === 1 ? 1 : 0.3;
+                
+                for(let x = -size; x <= size; x += 2) {
+                    const y = Math.sin(x * 0.1 * freq * harmonic + t * 2) * harmonicAmp * 15;
+                    if(x === -size) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawLight(ctx, size, t, isActive) {
+            const refraction = interactiveState.refraction;
+            const angle = interactiveState.angle * Math.PI / 180;
+            
+            // Light source
+            ctx.fillStyle = '#fef08a';
+            ctx.shadowColor = '#eab308';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(-size, 0, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Light rays
+            ctx.strokeStyle = interactiveState.splitLightMode ? '#ef4444' : '#eab308';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 10;
+            
+            // Incident ray
+            ctx.beginPath();
+            ctx.moveTo(-size + 8, 0);
+            ctx.lineTo(-size/2, -10 + angle * 20);
+            ctx.stroke();
+            
+            // Refracted ray
+            const refractedAngle = angle / refraction;
+            ctx.beginPath();
+            ctx.moveTo(-size/2, -10 + angle * 20);
+            ctx.lineTo(size/2, -10 + refractedAngle * 30);
+            ctx.stroke();
+            
+            if (interactiveState.splitLightMode) {
+                ctx.strokeStyle = '#3b82f6';
+                ctx.beginPath();
+                ctx.moveTo(-size/2, -10 + angle * 20);
+                ctx.lineTo(size/2, 10 + refractedAngle * 25);
+                ctx.stroke();
+                
+                ctx.strokeStyle = '#10b981';
+                ctx.beginPath();
+                ctx.moveTo(-size/2, -10 + angle * 20);
+                ctx.lineTo(size/2, -30 + refractedAngle * 20);
+                ctx.stroke();
+            }
+            
+            // Lens
+            ctx.fillStyle = 'rgba(203, 213, 225, 0.4)';
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.ellipse(-size/2, -10, 15, 25, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        function drawHeat(ctx, size, t, isActive) {
+            const temp = interactiveState.temp / 100;
+            
+            // Container
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(-size, -size, size * 2, size * 1.5);
+            
+            // Heat indicator
+            const heatColor = `rgb(${255 * temp}, ${100 * (1 - temp)}, 0)`;
+            ctx.fillStyle = heatColor;
+            ctx.globalAlpha = 0.4 + temp * 0.4;
+            ctx.fillRect(-size + 2, -size + 2, size * 2 - 4, size * 1.5 - 4);
+            
+            // Particles
+            ctx.globalAlpha = 1;
+            const particleCount = 20 + Math.floor(temp * 40);
+            for(let i = 0; i < particleCount; i++) {
+                const x = (Math.random() - 0.5) * size * 1.5 + (temp * 20 * Math.sin(t + i));
+                const y = (Math.random() - 0.5) * size + Math.sin(t * 2 + i) * temp * 15;
+                
+                ctx.fillStyle = heatColor;
+                ctx.beginPath();
+                ctx.arc(x, y, 3 + temp * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Thermometer
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(size + 10, -size, 10, size * 1.5 * temp);
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.strokeRect(size + 10, -size, 10, size * 1.5);
+        }
+
+        function drawMagnet(ctx, size, t, isActive) {
+            const strength = interactiveState.strength;
+            const flipped = interactiveState.flipPoles;
+            
+            // Magnet
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-size/2, -size/3, size, size/1.5);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillRect(-size/2, -size/3, size/3, size/1.5);
+            
+            // Poles
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.fillText(flipped ? 'S' : 'N', -size/3, 0);
+            ctx.fillText(flipped ? 'N' : 'S', size/4, 0);
+            
+            // Field lines
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 5]);
+            ctx.globalAlpha = strength * 0.4;
+            
+            for(let i = -2; i <= 2; i++) {
+                ctx.beginPath();
+                ctx.moveTo(-size/2 - 20, i * 15);
+                ctx.quadraticCurveTo(0, i * 20 * strength, size/2 + 20, i * 15);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+        }
+
+        function drawAtom(ctx, size, t, isActive) {
+            const energy = interactiveState.energy;
+            
+            // Nucleus
+            ctx.fillStyle = '#ef4444';
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 12 * energy;
+            ctx.beginPath();
+            ctx.arc(0, 0, size/3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Electron orbits
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 5;
+            
+            for(let i = 0; i < 3; i++) {
+                ctx.save();
+                ctx.rotate(t * energy * (i + 1) * 0.5);
+                ctx.beginPath();
+                ctx.ellipse(0, 0, size * 0.8, size * 0.4 * (i + 1) * 0.5, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Electron
+                ctx.fillStyle = '#60a5fa';
+                ctx.beginPath();
+                ctx.arc(size * 0.8, 0, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+            
+            if (interactiveState.currentMode === 'decay') {
+                // Decay particles
+                ctx.fillStyle = '#fbbf24';
+                for(let i = 0; i < 5; i++) {
+                    const angle = t * 2 + i * 1.2;
+                    ctx.beginPath();
+                    ctx.arc(Math.cos(angle) * size, Math.sin(angle) * size, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            ctx.shadowBlur = 0;
+        }
+
+        function drawStar(ctx, size, t, isActive) {
+            const zoom = interactiveState.zoom;
+            
+            // Telescope
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-size, -size/3);
+            ctx.lineTo(size, -size/3);
+            ctx.lineTo(size, size/3);
+            ctx.lineTo(-size, size/3);
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Lens
+            ctx.fillStyle = 'rgba(147, 197, 253, 0.3)';
+            ctx.strokeStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.arc(size, 0, size/2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Stars in view
+            ctx.fillStyle = '#1e293b';
+            ctx.shadowColor = '#3b82f6';
+            ctx.shadowBlur = 5;
+            
+            const starCount = 5 + Math.floor(zoom * 10);
+            for(let i = 0; i < starCount; i++) {
+                const x = (i * 23) % (size * 1.5) - size/2;
+                const y = Math.sin(i * 2.5 + t) * 20;
+                const starSize = (Math.sin(t * 3 + i) * 0.5 + 1) * zoom * 3;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, starSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Twinkle effect
+                if (isActive && i % 2 === 0) {
+                    ctx.strokeStyle = '#eab308';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(x - starSize * 2, y);
+                    ctx.lineTo(x + starSize * 2, y);
+                    ctx.moveTo(x, y - starSize * 2);
+                    ctx.lineTo(x, y + starSize * 2);
+                    ctx.stroke();
+                }
+            }
+            ctx.shadowBlur = 0;
+        }
+
+        function drawPlanetIcon(ctx, branch, size, t, isActive = false) {
+            ctx.save();
+            
+            switch(branch.symbol) {
+                case 'pendulum':
+                    drawPendulum(ctx, size, t, isActive);
+                    break;
+                case 'wave':
+                    drawWave(ctx, size, t, isActive);
+                    break;
+                case 'light':
+                    drawLight(ctx, size, t, isActive);
+                    break;
+                case 'heat':
+                    drawHeat(ctx, size, t, isActive);
+                    break;
+                case 'magnet':
+                    drawMagnet(ctx, size, t, isActive);
+                    break;
+                case 'atom':
+                    drawAtom(ctx, size, t, isActive);
+                    break;
+                case 'star':
+                    drawStar(ctx, size, t, isActive);
+                    break;
+            }
+            
+            // Border
+            ctx.strokeStyle = branch.color;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, size + 5, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.restore();
         }
 
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            time += 0.02;
-
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const orbitRadius = 220;
-
-            // Draw central display background (Sun)
-            const sunGlow = ctx.createRadialGradient(centerX, centerY, 30, centerX, centerY, 120);
-            sunGlow.addColorStop(0, '#fef9e7');
-            sunGlow.addColorStop(1, '#ffffff');
-            ctx.fillStyle = sunGlow;
-            ctx.beginPath(); ctx.arc(centerX, centerY, 120, 0, Math.PI * 2); ctx.fill();
-
-            // Draw orbits (dotted for subtle effect)
-            ctx.strokeStyle = "#e1e8ed"; ctx.lineWidth = 1; ctx.setLineDash([5, 8]);
-            ctx.beginPath(); ctx.arc(centerX, centerY, orbitRadius, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-
-            // --- Draw Center Focus Area (ACTIVE) ---
+            ctx.clearRect(0, 0, width, height);
+            if (!interactiveState.isPaused) {
+                time += 0.02;
+            }
+            // Parallax center
+            const centerX = width / 2 + mouseParallax.x * 20;
+            const centerY = height / 2 - 10 + mouseParallax.y * 20;
+            const orbitRadius = 240;
+            // Draw background
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 400);
+            gradient.addColorStop(0, '#eff6ff');
+            gradient.addColorStop(1, '#f8fafc');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 400, 0, Math.PI * 2);
+            ctx.fill();
+            // Draw orbits (with drag rotation)
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(orbitRotation);
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 8]);
+            ctx.beginPath();
+            ctx.arc(0, 0, orbitRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+            // Draw Center Focus Area
             if (selectedBranch) {
                 ctx.save();
                 ctx.translate(centerX, centerY);
-                // Draw a larger version of the selected icon, ACTIVE
-                drawPlanetIcon(ctx, selectedBranch, 70, time, true);
-                
-                // Pulsing glow for selection
-                ctx.shadowBlur = 15 + Math.sin(time*3)*8; ctx.shadowColor = selectedBranch.color;
-                ctx.beginPath(); ctx.arc(0,0, 110, 0, Math.PI*2); ctx.stroke();
-                
+                ctx.shadowColor = selectedBranch.color;
+                ctx.shadowBlur = 25;
+                drawPlanetIcon(ctx, selectedBranch, 80, time, true);
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 18px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(selectedBranch.name, 0, -60);
+                ctx.fillStyle = selectedBranch.color;
+                ctx.font = '600 13px Inter, sans-serif';
+                ctx.fillText(selectedBranch.keyConcept, 0, -42);
                 ctx.restore();
+                // Draw connecting beam
+                branches.forEach(b => {
+                    if (b === selectedBranch) {
+                        ctx.save();
+                        const gradient = ctx.createLinearGradient(b.currentX, b.currentY, centerX, centerY);
+                        gradient.addColorStop(0, b.color + '80');
+                        gradient.addColorStop(1, b.color + '20');
+                        ctx.strokeStyle = gradient;
+                        ctx.lineWidth = 3;
+                        ctx.setLineDash([10, 5]);
+                        ctx.globalAlpha = 0.3 + Math.sin(time * 5) * 0.1;
+                        ctx.beginPath();
+                        ctx.moveTo(b.currentX, b.currentY);
+                        ctx.lineTo(centerX, centerY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.restore();
+                    }
+                });
             } else {
-                // Default: Central Core
-                ctx.fillStyle = '#f1c40f'; // Knowledge Yellow
-                ctx.beginPath(); ctx.arc(centerX, centerY, 40, 0, Math.PI * 2); ctx.fill();
-                ctx.fillStyle = '#333'; ctx.font = 'bold 20px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#3b82f6';
+                ctx.shadowColor = '#3b82f6';
+                ctx.shadowBlur = 25;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 45, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#1e293b';
+                ctx.font = 'bold 20px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
                 ctx.fillText("PHYSICS", centerX, centerY);
+                ctx.font = '13px Inter, sans-serif';
+                ctx.fillStyle = '#64748b';
+                ctx.fillText("Interactive Lab", centerX, centerY + 30);
             }
-
-            // --- Draw Orbiting Planets (The Branches, STATIC ICONS) ---
+            // Draw Orbiting Planets (with drag rotation, hover, ripple)
             branches.forEach((b, i) => {
-                const orbitSpeed = 0.1;
-                const currentAngle = (i / branches.length) * Math.PI * 2 + (time * orbitSpeed);
+                const orbitSpeed = 0.08;
+                const baseAngle = (i / branches.length) * Math.PI * 2;
+                const currentAngle = baseAngle + (time * orbitSpeed) + orbitRotation;
                 const planetX = centerX + Math.cos(currentAngle) * orbitRadius;
                 const planetY = centerY + Math.sin(currentAngle) * orbitRadius;
-                
-                b.currentX = planetX; b.currentY = planetY; // Store for click detection
-
+                b.currentX = planetX;
+                b.currentY = planetY;
+                // Orbit label
                 ctx.save();
+                const labelAngle = currentAngle;
+                const labelRadius = orbitRadius + 40;
+                const labelX = centerX + Math.cos(labelAngle) * labelRadius;
+                const labelY = centerY + Math.sin(labelAngle) * labelRadius - 5;
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#94a3b8';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.roundRect(labelX - 60, labelY - 12, 120, 24, 12);
+                ctx.fill();
+                ctx.strokeStyle = b.color;
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = b.color;
+                ctx.font = '600 11px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(b.name, labelX, labelY);
+                // Draw planet (hover/selected scale)
                 ctx.translate(planetX, planetY);
-                
-                // Draw smaller version of the icon, STATIC
-                drawPlanetIcon(ctx, b, 25, time, false);
-                
-                // Draw Name Label
-                ctx.fillStyle = "#2c3e50";
-                ctx.font = "bold 13px Segoe UI"; ctx.textAlign = "center"; ctx.textBaseline = "top";
-                ctx.fillText(b.name, 0, 45); // Label below
-                
+                let scale = 1;
+                if (hoveredBranch === b) scale = 1.18 + 0.04 * Math.sin(time * 8);
+                if (selectedBranch === b) {
+                    ctx.shadowColor = b.color;
+                    ctx.shadowBlur = 20;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 40, 0, Math.PI * 2);
+                    ctx.fillStyle = b.color + '15';
+                    ctx.fill();
+                }
+                ctx.save();
+                ctx.scale(scale, scale);
+                drawPlanetIcon(ctx, b, 30, time, false);
+                ctx.restore();
+                ctx.fillStyle = "#64748b";
+                ctx.font = "500 9px Inter, sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "top";
+                ctx.fillText(b.keyConcept, 0, 42);
+                // Tooltip on hover
+                if (hoveredBranch === b) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.95;
+                    ctx.translate(0, -55);
+                    ctx.fillStyle = '#fff';
+                    ctx.strokeStyle = b.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.roundRect(-80, -32, 160, 38, 10);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = b.color;
+                    ctx.font = 'bold 13px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(b.name, 0, -15);
+                    ctx.font = '12px Inter, sans-serif';
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillText(b.desc, 0, 5);
+                    ctx.restore();
+                }
                 ctx.restore();
             });
-
+            // Ripple effect on click
+            if (ripple.active) {
+                ctx.save();
+                ctx.globalAlpha = 0.25 * (1 - ripple.radius / 80);
+                ctx.strokeStyle = ripple.color;
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.arc(ripple.x, ripple.y, ripple.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+                ripple.radius += 4;
+                if (ripple.radius > 80) ripple.active = false;
+            }
             requestAnimationFrame(draw);
         }
 
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            const my = e.clientY - rect.top;
+        // Helper for rounded rectangles
+        CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.moveTo(x + r, y);
+            this.lineTo(x + w - r, y);
+            this.quadraticCurveTo(x + w, y, x + w, y + r);
+            this.lineTo(x + w, y + h - r);
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            this.lineTo(x + r, y + h);
+            this.quadraticCurveTo(x, y + h, x, y + h - r);
+            this.lineTo(x, y + r);
+            this.quadraticCurveTo(x, y, x + r, y);
+            return this;
+        };
 
+        // Pointer Events
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handlePointerDown(e) {
+            e.preventDefault();
+            const coords = getCanvasCoords(e);
+            let hit = false;
             branches.forEach(b => {
-                const dist = Math.sqrt((mx - b.currentX)**2 + (my - b.currentY)**2);
-                if (dist < 40) { // Large click radius
+                const dist = Math.sqrt((coords.x - b.currentX) ** 2 + (coords.y - b.currentY) ** 2);
+                if (dist < 55) {
                     selectedBranch = b;
-                    titleEl.innerText = "Active Branch: " + b.name;
+                    titleEl.innerText = `Active Branch: ${b.name}`;
                     titleEl.style.color = b.color;
+                    indicatorEl.style.backgroundColor = b.color;
                     descEl.innerText = b.desc;
+                    hintEl.textContent = `Now experimenting with: ${b.name}`;
+                    exploreStatus.textContent = `Lab: ${b.name}`;
+                    // Show interaction panel
+                    interactionPanel.style.display = 'block';
+                    interactionTitle.textContent = `${b.name} Controls`;
+                    buildInteractionControls(b);
+                    // Ripple effect
+                    ripple.active = true;
+                    ripple.x = b.currentX;
+                    ripple.y = b.currentY;
+                    ripple.radius = 0;
+                    ripple.color = b.color;
+                    hit = true;
                 }
             });
-        });
+            // Drag-to-rotate if not clicking a planet
+            if (!hit) {
+                dragState.dragging = true;
+                dragState.pointerStart = coords;
+                // Calculate angle from center
+                const dx = coords.x - width / 2;
+                const dy = coords.y - (height / 2 - 10);
+                dragState.startAngle = Math.atan2(dy, dx) - orbitRotation;
+            }
+        }
 
-        // Initialize default UI display
-        descEl.innerText = "Click any orbiting planet to beam its active animation to the central Sun!";
-
+        function handlePointerMove(e) {
+            const coords = getCanvasCoords(e);
+            // Hover detection
+            let found = null;
+            branches.forEach(b => {
+                const dist = Math.sqrt((coords.x - b.currentX) ** 2 + (coords.y - b.currentY) ** 2);
+                if (dist < 45) found = b;
+            });
+            hoveredBranch = found;
+            // Drag-to-rotate
+            if (dragState.dragging && dragState.pointerStart) {
+                const dx = coords.x - width / 2;
+                const dy = coords.y - (height / 2 - 10);
+                const angle = Math.atan2(dy, dx);
+                orbitRotation = angle - dragState.startAngle;
+            }
+        }
+        function handlePointerUp(e) {
+            dragState.dragging = false;
+        }
+        function handlePointerLeave(e) {
+            hoveredBranch = null;
+            dragState.dragging = false;
+        }
+        function handleMouseMove(e) {
+            // Parallax effect
+            const rect = canvas.getBoundingClientRect();
+            mouseParallax.x = ((e.clientX - rect.left) / rect.width - 0.5) * 1.2;
+            mouseParallax.y = ((e.clientY - rect.top) / rect.height - 0.5) * 1.2;
+        }
+        // Initialize
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointerleave', handlePointerLeave);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
         draw();
     </script>
 </body>

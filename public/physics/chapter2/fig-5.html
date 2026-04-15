@@ -2,150 +2,577 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>The Sig Fig Process Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sig Fig Lab · Uncertainty Filter</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; color: #333; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .lab-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); max-width: 1100px; width: 100%; border: 1px solid #eee; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        .split-view { display: flex; gap: 30px; margin-top: 20px; }
-        .pane { flex: 1; background: #ffffff; border-radius: 15px; padding: 20px; border: 1px solid #eef0f2; position: relative; }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
         
-        h3 { color: #2c3e50; margin-top: 0; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
-        .icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.9rem; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #fafbfc;
+            overflow: hidden;
+            touch-action: pan-y;
+            color: #1a1e2b;
+        }
         
-        canvas { background: #fff; border-radius: 8px; width: 100%; height: 400px; cursor: pointer; }
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
         
-        .controls { margin-bottom: 20px; display: flex; justify-content: center; gap: 15px; background: #f1f3f5; padding: 15px; border-radius: 12px; }
-        input { border: 2px solid #dee2e6; padding: 8px; border-radius: 6px; width: 100px; text-align: center; font-family: 'Courier New'; font-weight: bold; font-size: 1.1rem; }
-        input:focus { border-color: #3498db; outline: none; }
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
         
-        .step-msg { font-size: 0.9rem; font-weight: 600; color: #7f8c8d; margin-top: 10px; min-height: 40px; }
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .app-title .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Controls */
+        .controls-bar {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .input-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #5b687c;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #f5f7fa;
+            border: 1px solid #eef2f6;
+            border-radius: 40px;
+            padding: 4px 8px 4px 16px;
+        }
+        
+        .input-wrapper input {
+            border: none;
+            background: transparent;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a1e2b;
+            width: 100px;
+            outline: none;
+            padding: 8px 0;
+            text-align: center;
+        }
+        
+        .input-wrapper input:focus {
+            outline: none;
+        }
+        
+        .input-wrapper button {
+            padding: 8px 16px;
+            border: none;
+            background: #1a1e2b;
+            color: white;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            margin-left: 4px;
+        }
+        
+        /* Main Simulation Area */
+        .simulation-container {
+            flex-grow: 1;
+            background: #fafbfc;
+            padding: 20px;
+            overflow-y: auto;
+            touch-action: pan-y;
+        }
+        
+        .split-view {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .pane {
+            flex: 1;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
+        }
+        
+        .pane-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .pane-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .pane-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1a1e2b;
+        }
+        
+        .pane-content {
+            padding: 20px;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 5 / 4;
+            margin-bottom: 16px;
+        }
+        
+        .pane canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #fafbfc;
+            border-radius: 12px;
+        }
+        
+        .step-msg {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #5b687c;
+            padding: 12px 16px;
+            background: #f5f7fa;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .step-msg b {
+            color: #1a1e2b;
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 12px 24px 16px 24px;
+            text-align: center;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+            flex-shrink: 0;
+        }
+        
+        .hint-text {
+            display: inline-block;
+            padding: 6px 18px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 700px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1.1rem;
+            }
+            
+            .controls-bar {
+                padding: 12px 16px;
+                gap: 12px;
+            }
+            
+            .input-group {
+                flex: 1;
+            }
+            
+            .input-wrapper {
+                flex: 1;
+            }
+            
+            .input-wrapper input {
+                width: 100%;
+                min-width: 70px;
+            }
+            
+            .simulation-container {
+                padding: 12px;
+            }
+            
+            .split-view {
+                flex-direction: column;
+            }
+            
+            .pane-header {
+                padding: 14px 16px;
+            }
+            
+            .pane-content {
+                padding: 16px;
+            }
+        }
+        
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        button:focus-visible {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
     </style>
 </head>
 <body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>🔬 Sig Fig Laboratory</h1>
+            <span class="badge">Uncertainty Filter</span>
+        </div>
+    </header>
 
-<div class="lab-container">
-    <h2>The Process: How Uncertainty is Filtered</h2>
-    
-    <div class="controls">
-        <div><span class="label">Value A:</span> <input type="text" id="valA" value="12.52" oninput="runProcess()"></div>
-        <div><span class="label">Value B:</span> <input type="text" id="valB" value="3.1" oninput="runProcess()"></div>
+    <div class="controls-bar">
+        <div class="input-group">
+            <label>Value A</label>
+            <div class="input-wrapper">
+                <input type="text" id="valA" value="12.52" placeholder="12.52">
+            </div>
+        </div>
+        <div class="input-group">
+            <label>Value B</label>
+            <div class="input-wrapper">
+                <input type="text" id="valB" value="3.1" placeholder="3.1">
+            </div>
+        </div>
+        <button class="input-wrapper button" id="updateBtn" style="padding: 8px 24px; background: #1a1e2b; color: white; border-radius: 40px; border: none; font-weight: 500; cursor: pointer;">
+            Update
+        </button>
     </div>
 
-    <div class="split-view">
-        <div class="pane">
-            <h3><div class="icon" style="background:#e74c3c">|</div> Addition (Decimal Places)</h3>
-            <div id="msgAdd" class="step-msg">Aligning decimals...</div>
-            <canvas id="addCanvas" width="500" height="400"></canvas>
-        </div>
+    <div class="simulation-container">
+        <div class="split-view">
+            <!-- Addition Pane -->
+            <div class="pane">
+                <div class="pane-header">
+                    <div class="pane-icon" style="background: #dc2626;">+</div>
+                    <h3>Addition · Decimal Places</h3>
+                </div>
+                <div class="pane-content">
+                    <div class="canvas-wrapper">
+                        <canvas id="addCanvas" width="500" height="400"></canvas>
+                    </div>
+                    <div id="msgAdd" class="step-msg">Aligning decimals...</div>
+                </div>
+            </div>
 
-        <div class="pane">
-            <h3><div class="icon" style="background:#e67e22">⎔</div> Multiplication (Sig Fig Count)</h3>
-            <div id="msgMul" class="step-msg">Counting significant figures...</div>
-            <canvas id="mulCanvas" width="500" height="400"></canvas>
+            <!-- Multiplication Pane -->
+            <div class="pane">
+                <div class="pane-header">
+                    <div class="pane-icon" style="background: #e67e22;">×</div>
+                    <h3>Multiplication · Sig Figs</h3>
+                </div>
+                <div class="pane-content">
+                    <div class="canvas-wrapper">
+                        <canvas id="mulCanvas" width="500" height="400"></canvas>
+                    </div>
+                    <div id="msgMul" class="step-msg">Counting significant figures...</div>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    const addCanvas = document.getElementById('addCanvas');
-    const mulCanvas = document.getElementById('mulCanvas');
-    const msgAdd = document.getElementById('msgAdd');
-    const msgMul = document.getElementById('msgMul');
+    <div class="hint-wrapper">
+        <div class="hint-text">
+            <span id="hintMessage">💡 The red line shows the precision limit · Change values to see the effect</span>
+        </div>
+    </div>
 
-    function runProcess() {
-        const a = document.getElementById('valA').value;
-        const b = document.getElementById('valB').value;
+    <script>
+        const addCanvas = document.getElementById('addCanvas');
+        const mulCanvas = document.getElementById('mulCanvas');
+        const msgAdd = document.getElementById('msgAdd');
+        const msgMul = document.getElementById('msgMul');
+        const hintEl = document.getElementById('hintMessage');
+
+        // Canvas internal dimensions
+        const canvasWidth = 500;
+        const canvasHeight = 400;
         
-        drawAddition(a, b);
-        drawMultiplication(a, b);
-    }
-
-    function getDecimals(s) { return s.includes('.') ? s.length - s.indexOf('.') - 1 : 0; }
-    function getSigFigs(s) { return s.replace('.', '').replace(/^0+/, '').length; }
-
-    function drawAddition(v1, v2) {
-        const ctx = addCanvas.getContext('2d');
-        ctx.clearRect(0, 0, addCanvas.width, addCanvas.height);
+        function resizeCanvases() {
+            addCanvas.width = canvasWidth;
+            addCanvas.height = canvasHeight;
+            mulCanvas.width = canvasWidth;
+            mulCanvas.height = canvasHeight;
+        }
         
-        const d1 = getDecimals(v1);
-        const d2 = getDecimals(v2);
-        const limit = Math.min(d1, d2);
-        const sum = (parseFloat(v1) + parseFloat(v2)).toFixed(4);
+        window.addEventListener('resize', resizeCanvases);
+        resizeCanvases();
 
-        const centerX = 250;
-        const charW = 35;
+        function runProcess() {
+            const a = document.getElementById('valA').value;
+            const b = document.getElementById('valB').value;
+            
+            // Validate inputs
+            const numA = parseFloat(a);
+            const numB = parseFloat(b);
+            
+            if (isNaN(numA) || isNaN(numB)) {
+                hintEl.textContent = '⚠️ Please enter valid numbers';
+                return;
+            }
+            
+            drawAddition(a, b);
+            drawMultiplication(a, b);
+            
+            const d1 = getDecimals(a);
+            const d2 = getDecimals(b);
+            const limit = Math.min(d1, d2);
+            hintEl.textContent = `✅ Addition limited to ${limit} decimal place(s) · Multiplication limited by weakest link`;
+        }
+
+        function getDecimals(s) { 
+            return s.includes('.') ? s.length - s.indexOf('.') - 1 : 0; 
+        }
         
-        ctx.font = "bold 45px 'Courier New'";
-        ctx.textAlign = "right";
+        function getSigFigs(s) { 
+            let clean = s.replace(/^-/, '');
+            if (clean.includes('.')) {
+                clean = clean.replace(/^0+/, '');
+            } else {
+                clean = clean.replace(/^0+/, '');
+            }
+            return clean.replace('.', '').length;
+        }
 
-        // Draw decimals aligned vertically
-        ctx.fillStyle = "#34495e";
-        ctx.fillText(v1, centerX + (d1 * charW), 100);
-        ctx.fillText("+ " + v2, centerX + (d2 * charW), 160);
+        function drawAddition(v1, v2) {
+            const ctx = addCanvas.getContext('2d');
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const d1 = getDecimals(v1);
+            const d2 = getDecimals(v2);
+            const limit = Math.min(d1, d2);
+            const sum = (parseFloat(v1) + parseFloat(v2)).toFixed(Math.max(d1, d2));
+            
+            const centerX = 250;
+            const charW = 38;
+            
+            // Background
+            ctx.fillStyle = '#fafbfc';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Labels
+            ctx.fillStyle = '#7c879c';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('ADDITION', 20, 30);
+            
+            ctx.font = 'bold 42px "SF Mono", Menlo, Monaco, Consolas, monospace';
+            ctx.textAlign = 'right';
+            
+            // Draw decimals aligned vertically
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText(v1, centerX + (d1 * charW), 100);
+            ctx.fillStyle = '#475569';
+            ctx.font = 'bold 36px "SF Mono", Menlo, Monaco, Consolas, monospace';
+            ctx.fillText('+ ' + v2, centerX + (d2 * charW), 160);
+            
+            // Addition Line
+            ctx.strokeStyle = '#cbd5e1'; 
+            ctx.lineWidth = 2;
+            ctx.beginPath(); 
+            ctx.moveTo(80, 185); 
+            ctx.lineTo(420, 185); 
+            ctx.stroke();
+            
+            // The Wall Logic
+            const wallX = centerX + (limit * charW) + 8;
+            ctx.setLineDash([6, 4]); 
+            ctx.strokeStyle = '#dc2626'; 
+            ctx.lineWidth = 3;
+            ctx.beginPath(); 
+            ctx.moveTo(wallX, 50); 
+            ctx.lineTo(wallX, 350); 
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // "Precision Limit" label
+            ctx.save();
+            ctx.translate(wallX - 15, 70);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillStyle = '#dc2626';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('PRECISION LIMIT', 0, 0);
+            ctx.restore();
+            
+            // Result
+            ctx.font = 'bold 42px "SF Mono", Menlo, Monaco, Consolas, monospace';
+            ctx.fillStyle = '#2ecc71';
+            ctx.textAlign = 'right';
+            ctx.fillText(sum, centerX + (Math.max(d1, d2) * charW), 250);
+            
+            // Blurring the uncertain part
+            ctx.fillStyle = 'rgba(250, 251, 252, 0.9)';
+            ctx.fillRect(wallX + 2, 210, 220, 60);
+            
+            // Rounded result hint
+            const roundedSum = (parseFloat(v1) + parseFloat(v2)).toFixed(limit);
+            ctx.fillStyle = '#7c879c';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(`→ rounds to ${roundedSum}`, centerX + (Math.max(d1, d2) * charW), 290);
+            
+            msgAdd.innerHTML = `Limiting to <b>${limit}</b> decimal place(s) because of "${limit === d1 ? v1 : v2}".`;
+        }
+
+        function drawMultiplication(v1, v2) {
+            const ctx = mulCanvas.getContext('2d');
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const s1 = getSigFigs(v1);
+            const s2 = getSigFigs(v2);
+            const limit = Math.min(s1, s2);
+            const prod = (parseFloat(v1) * parseFloat(v2)).toString();
+            const roundedProd = (parseFloat(v1) * parseFloat(v2)).toPrecision(limit);
+            
+            // Background
+            ctx.fillStyle = '#fafbfc';
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Label
+            ctx.fillStyle = '#7c879c';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('MULTIPLICATION', 20, 30);
+            
+            ctx.textAlign = 'center';
+            
+            // Box 1
+            ctx.strokeStyle = '#3b82f6'; 
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(100, 55, 300, 60);
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 32px "SF Mono", Menlo, Monaco, Consolas, monospace';
+            ctx.fillText(v1, 250, 95);
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText(s1 + ' SIG FIGS', 250, 45);
+            
+            // Box 2
+            ctx.strokeStyle = '#3b82f6';
+            ctx.strokeRect(100, 135, 300, 60);
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 32px "SF Mono", Menlo, Monaco, Consolas, monospace';
+            ctx.fillText(v2, 250, 175);
+            ctx.font = '11px Inter, sans-serif';
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText(s2 + ' SIG FIGS', 250, 130);
+            
+            // × symbol
+            ctx.fillStyle = '#7c879c';
+            ctx.font = '20px Inter, sans-serif';
+            ctx.fillText('×', 250, 215);
+            
+            // Raw Product
+            ctx.font = 'bold 36px "SF Mono", Menlo, Monaco, Consolas, monospace';
+            ctx.fillStyle = '#94a3b8'; 
+            ctx.fillText(prod.substring(0, 10), 250, 275);
+            
+            // The "Crop" indicator
+            const cropW = Math.min(300, limit * 45);
+            ctx.strokeStyle = '#e67e22'; 
+            ctx.lineWidth = 4;
+            ctx.setLineDash([8, 4]);
+            ctx.strokeRect(250 - cropW/2, 240, cropW, 55);
+            ctx.setLineDash([]);
+            
+            ctx.fillStyle = '#e67e22'; 
+            ctx.font = 'bold 13px Inter, sans-serif';
+            ctx.fillText('⛏️ CHISEL TO ' + limit + ' SIG FIGS', 250, 325);
+            
+            // Final rounded value
+            ctx.fillStyle = '#2ecc71';
+            ctx.font = 'bold 32px "SF Mono", Menlo, Monaco, Consolas, monospace';
+            ctx.fillText('→ ' + roundedProd, 250, 370);
+            
+            msgMul.innerHTML = `The "weakest link" has <b>${limit}</b> sig figs. Result must be cropped to ${limit} sig figs.`;
+        }
+
+        // Event listeners
+        document.getElementById('updateBtn').addEventListener('click', runProcess);
+        document.getElementById('valA').addEventListener('keypress', (e) => { if (e.key === 'Enter') runProcess(); });
+        document.getElementById('valB').addEventListener('keypress', (e) => { if (e.key === 'Enter') runProcess(); });
         
-        // Draw Addition Line
-        ctx.strokeStyle = "#dee2e6"; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(50, 185); ctx.lineTo(450, 185); ctx.stroke();
-
-        // The Wall Logic
-        const wallX = centerX + (limit * charW) + 5;
-        ctx.setLineDash([5, 5]); ctx.strokeStyle = "#e74c3c"; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(wallX, 50); ctx.lineTo(wallX, 350); ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Result
-        ctx.fillStyle = "#2ecc71";
-        ctx.fillText(sum, centerX + (Math.max(d1, d2) * charW), 250);
-
-        // Blurring the uncertain part
-        ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
-        ctx.fillRect(wallX + 2, 210, 200, 60);
+        // Touch events
+        document.getElementById('updateBtn').addEventListener('touchstart', (e) => { e.preventDefault(); runProcess(); }, { passive: false });
         
-        msgAdd.innerHTML = `Limiting to <b>${limit}</b> decimal place(s) because of "${limit === d1 ? v1 : v2}".`;
-    }
-
-    function drawMultiplication(v1, v2) {
-        const ctx = mulCanvas.getContext('2d');
-        ctx.clearRect(0, 0, mulCanvas.width, mulCanvas.height);
-        
-        const s1 = getSigFigs(v1);
-        const s2 = getSigFigs(v2);
-        const limit = Math.min(s1, s2);
-        const prod = (parseFloat(v1) * parseFloat(v2)).toString();
-
-        // Input Boxes
-        ctx.textAlign = "center";
-        ctx.font = "bold 30px 'Courier New'";
-        
-        // Box 1
-        ctx.strokeStyle = "#3498db"; ctx.strokeRect(100, 60, 300, 60);
-        ctx.fillStyle = "#34495e"; ctx.fillText(v1, 250, 100);
-        ctx.font = "12px sans-serif"; ctx.fillText(s1 + " SIG FIGS", 250, 50);
-
-        // Box 2
-        ctx.font = "bold 30px 'Courier New'";
-        ctx.strokeStyle = "#3498db"; ctx.strokeRect(100, 140, 300, 60);
-        ctx.fillText(v2, 250, 180);
-        ctx.font = "12px sans-serif"; ctx.fillText(s2 + " SIG FIGS", 250, 135);
-
-        // Raw Product
-        ctx.font = "bold 40px 'Courier New'";
-        ctx.fillStyle = "#bdc3c7"; 
-        ctx.fillText(prod, 250, 280);
-
-        // The "Crop" Chisel
-        const cropW = limit * 45; // Visual width
-        ctx.strokeStyle = "#e67e22"; ctx.lineWidth = 5;
-        ctx.strokeRect(250 - (prod.length * 22.5) / 2 - 10, 240, cropW, 60);
-        
-        ctx.fillStyle = "#e67e22"; ctx.font = "bold 14px sans-serif";
-        ctx.fillText("CHISEL TO " + limit + " SIG FIGS", 250, 330);
-        
-        msgMul.innerHTML = `The "weakest link" has <b>${limit}</b> sig figs. Result must be cropped.`;
-    }
-
-    runProcess();
-</script>
+        runProcess();
+    </script>
 </body>
 </html>
