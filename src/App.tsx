@@ -57,9 +57,8 @@ const Section: React.FC<SectionProps> = ({ title, items, favorites, toggleFavori
 };
 
 // ================= FULL DATASET =================
-// All existing lessons belong to Grade 9 (Mathematics, Chemistry, Physics)
-// Biology is added as a subject with no lessons initially (placeholder for future)
-const rawLessonsData: Omit<Item, 'grade'>[] = [
+// ----- GRADE 9 LESSONS (existing) -----
+const grade9Lessons: Omit<Item, 'grade'>[] = [
   // ---------- MATHEMATICS ----------
   { name: "Set Membership Bubble", link: "/maths/chapter1maths/1The Set Membership Bubble.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
   { name: "Set Description Slider", link: "/maths/chapter1maths/2. Set Description Slider (Roster vs. Set-Builder).html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
@@ -107,7 +106,7 @@ const rawLessonsData: Omit<Item, 'grade'>[] = [
   { name: "3D Congruency Rigid Motion (4)", link: "/maths/chapter7/4.3D_Congruency_Rigid_Motion.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
   { name: "3D Congruency Rigid Motion (5)", link: "/maths/chapter7/5.3D_Congruency_Rigid_Motion.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
   { name: "3D Linear Planes Lab (C7)", link: "/maths/chapter7/5.3D_Linear_Planes_Lab.html", chapter: "Chapter 7: Similarity & Motion", subject: "Mathematics" },
-  // ---------- CHEMISTRY ----------
+  // ---------- CHEMISTRY (Grade 9) ----------
   { name: "Chemical Reactions", link: "/chapter1/chemicalreaction.html", chapter: "Chapter 1", subject: "Chemistry" },
   { name: "Boyle's Law", link: "/chapter1/BOYLE’S LAW.html", chapter: "Chapter 1", subject: "Chemistry" },
   { name: "Atomic Model", link: "/chapter1/atomicmodel.html", chapter: "Chapter 1", subject: "Chemistry" },
@@ -139,7 +138,7 @@ const rawLessonsData: Omit<Item, 'grade'>[] = [
   { name: "Formation of Ions", link: "/chapter5/3.  Formation of Ions (Cations & Anions).html", chapter: "Chapter 5", subject: "Chemistry" },
   { name: "Ionic Bond Formation", link: "/chapter5/4.Ionic Bond Formation (NaCl, CaCl₂).html", chapter: "Chapter 5", subject: "Chemistry" },
   { name: "Lewis Dot Structures", link: "/chapter5/5.Lewis Dot Structures.html", chapter: "Chapter 5", subject: "Chemistry" },
-  // ---------- PHYSICS ----------
+  // ---------- PHYSICS (Grade 9) ----------
   { name: "Definition and Nature of Physics", link: "/physics/chapter1/Definition%20and%20Nature%20of%20Physics.html", chapter: "Chapter 1: Foundations", subject: "Physics" },
   { name: "Figure 3 - Physics Concept", link: "/physics/chapter1/figur-3.html", chapter: "Chapter 1: Foundations", subject: "Physics" },
   { name: "Physics Branch Explorer", link: "/physics/chapter1/Physics%20Branch%20Explorer.html", chapter: "Chapter 1: Foundations", subject: "Physics" },
@@ -167,11 +166,43 @@ const rawLessonsData: Omit<Item, 'grade'>[] = [
   { name: "Figure 2 - Optics", link: "/physics/chapter7/fig-2.html", chapter: "Chapter 7: Optics & Light", subject: "Physics" },
 ];
 
-// All existing lessons belong to Grade 9 (other grades are empty placeholders)
-const allLessons: Item[] = rawLessonsData.map(item => ({ ...item, grade: 9 }));
+// ----- GRADE 12 CHEMISTRY LESSONS (new) -----
+const grade12ChemistryLessons: Omit<Item, 'grade'>[] = [
+  // Chapter 1: Acid-Base Equilibria
+  { name: "pH Scale", link: "/grade12Chemistry/chapter1/1pH_Scale.html", chapter: "Chapter 1: Acid-Base Equilibria", subject: "Chemistry" },
+  { name: "Proton Transfer", link: "/grade12Chemistry/chapter1/2proton_transfer.html", chapter: "Chapter 1: Acid-Base Equilibria", subject: "Chemistry" },
+  { name: "Water Ionization Lab", link: "/grade12Chemistry/chapter1/3water_ionization_lab.html", chapter: "Chapter 1: Acid-Base Equilibria", subject: "Chemistry" },
+  { name: "Acid Strength Lab", link: "/grade12Chemistry/chapter1/4acid_strength_lab.html", chapter: "Chapter 1: Acid-Base Equilibria", subject: "Chemistry" },
+  { name: "Acid-Metal Reaction Lab", link: "/grade12Chemistry/chapter1/5acid_metal_lab_v3.html", chapter: "Chapter 1: Acid-Base Equilibria", subject: "Chemistry" },
+  // Chapter 2: Electrochemistry
+  { name: "Galvanic Cell 3D", link: "/grade12Chemistry/chapter2/1galvanic_cell_3d.html", chapter: "Chapter 2: Electrochemistry", subject: "Chemistry" },
+  { name: "Electroplating Lab 3D", link: "/grade12Chemistry/chapter2/2electroplating_lab_3d.html", chapter: "Chapter 2: Electrochemistry", subject: "Chemistry" },
+  { name: "Atomic Redox Lab", link: "/grade12Chemistry/chapter2/3atomic_redox_lab.html", chapter: "Chapter 2: Electrochemistry", subject: "Chemistry" },
+  { name: "Corrosion Pit Lab", link: "/grade12Chemistry/chapter2/4corrosion_pit_lab.html", chapter: "Chapter 2: Electrochemistry", subject: "Chemistry" },
+  { name: "Hydrogen Fuel Cell 3D", link: "/grade12Chemistry/chapter2/5hydrogen_fuel_cell_3d.html", chapter: "Chapter 2: Electrochemistry", subject: "Chemistry" },
+  // Chapter 3: Industrial Chemistry
+  { name: "Haber Bosch Reactor", link: "/grade12Chemistry/chapter3/1haber_bosch_reactor.html", chapter: "Chapter 3: Industrial Chemistry", subject: "Chemistry" },
+  { name: "Contact Process Reactor", link: "/grade12Chemistry/chapter3/2contact_process_reactor.html", chapter: "Chapter 3: Industrial Chemistry", subject: "Chemistry" },
+  { name: "Solvay Tower 3D", link: "/grade12Chemistry/chapter3/3solvay_tower_3d.html", chapter: "Chapter 3: Industrial Chemistry", subject: "Chemistry" },
+  { name: "Castner Kellner Lab", link: "/grade12Chemistry/chapter3/4castner_kellner_lab.html", chapter: "Chapter 3: Industrial Chemistry", subject: "Chemistry" },
+  // Chapter 4: Polymers & Materials
+  { name: "Polymer Builder 3D", link: "/grade12Chemistry/chapter4/1polymer_builder_3d.html", chapter: "Chapter 4: Polymers & Materials", subject: "Chemistry" },
+  { name: "EduTwin Molecular Lab", link: "/grade12Chemistry/chapter4/2edutwin_molecular_lab.html", chapter: "Chapter 4: Polymers & Materials", subject: "Chemistry" },
+  { name: "Greenhouse Vibrations 3D", link: "/grade12Chemistry/chapter4/3greenhouse_vibrations_3d.html", chapter: "Chapter 4: Polymers & Materials", subject: "Chemistry" },
+  { name: "Crystal Lattice Systems", link: "/grade12Chemistry/chapter4/4crystal-lattice-systems.html", chapter: "Chapter 4: Polymers & Materials", subject: "Chemistry" },
+  { name: "Protein Folding", link: "/grade12Chemistry/chapter4/5. Protein Folding .html", chapter: "Chapter 4: Polymers & Materials", subject: "Chemistry" },
+  // Chapter 5: Green Chemistry & Atom Economy
+  { name: "Protein Ribbon Visualizer", link: "/grade12Chemistry/chapter5/1Protein Ribbon Visualizer.html", chapter: "Chapter 5: Green Chemistry", subject: "Chemistry" },
+  { name: "Atom Economy", link: "/grade12Chemistry/chapter5/2atom-economy.html", chapter: "Chapter 5: Green Chemistry", subject: "Chemistry" },
+];
 
-// (Optional) Add Biology lessons here in the future – currently empty
-// Example: { name: "Cell Structure", link: "/biology/cell.html", chapter: "Chapter 1", subject: "Biology", grade: 9 }
+// Combine all lessons, assigning proper grades
+const allLessons: Item[] = [
+  ...grade9Lessons.map(item => ({ ...item, grade: 9 as Grade })),
+  ...grade12ChemistryLessons.map(item => ({ ...item, grade: 12 as Grade })),
+  // Grade 10 and 11 remain empty for now (no lessons)
+  // Biology can be added later with grade 9-12 as needed
+];
 
 // ================= MAIN APP =================
 const App: React.FC = () => {
@@ -192,7 +223,7 @@ const App: React.FC = () => {
     localStorage.setItem('eduTwin_bookmarks', JSON.stringify(updated));
   };
 
-  // Filtering logic: grade, search, subject, favorites
+  // Filtering logic
   const filteredItems = allLessons.filter(item => {
     if (item.grade !== selectedGrade) return false;
     if (selectedSubject !== 'All' && item.subject !== selectedSubject) return false;
@@ -202,7 +233,6 @@ const App: React.FC = () => {
     return true;
   });
 
-  // Group by "Subject – Chapter" for display
   const visibleChapters = Array.from(
     new Set(filteredItems.map(i => `${i.subject} – ${i.chapter}`))
   );
@@ -210,11 +240,12 @@ const App: React.FC = () => {
   const gradeOptions: Grade[] = [9, 10, 11, 12];
   const subjectOptions: (Subject | 'All')[] = ['All', 'Mathematics', 'Chemistry', 'Physics', 'Biology'];
 
-  // Helper: count lessons per subject for current grade (for UI badges)
   const getSubjectCount = (subject: Subject | 'All') => {
     if (subject === 'All') return allLessons.filter(l => l.grade === selectedGrade).length;
     return allLessons.filter(l => l.grade === selectedGrade && l.subject === subject).length;
   };
+
+  const hasAnyContent = filteredItems.length > 0;
 
   return (
     <div className="container">
@@ -223,7 +254,7 @@ const App: React.FC = () => {
         <div className="controls">
           <input
             type="text"
-            placeholder="🔍 Search lessons (e.g., 'Quadratic', 'Boyle')..."
+            placeholder="🔍 Search lessons (e.g., 'pH', 'Galvanic')..."
             className="search-bar"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
@@ -247,7 +278,10 @@ const App: React.FC = () => {
                 onClick={() => setSelectedSubject(subj)}
               >
                 {subj}
-                {selectedGrade === 9 && subj !== 'All' && (
+                {selectedGrade === 9 && subj !== 'All' && getSubjectCount(subj) > 0 && (
+                  <span className="subject-count"> ({getSubjectCount(subj)})</span>
+                )}
+                {selectedGrade === 12 && subj === 'Chemistry' && getSubjectCount(subj) > 0 && (
                   <span className="subject-count"> ({getSubjectCount(subj)})</span>
                 )}
               </button>
@@ -263,24 +297,44 @@ const App: React.FC = () => {
           </label>
         </div>
         <div style={{ marginTop: '0.8rem', fontSize: '0.85rem', color: '#3b6e9e' }}>
-          {selectedGrade === 9 ? (
-            <span>✅ Grade 9 • {allLessons.length} interactive simulations (Mathematics, Chemistry, Physics) — Biology coming soon</span>
-          ) : (
-            <span>📌 Grade {selectedGrade} content — coming soon. Explore Grade 9 for full labs.</span>
+          {selectedGrade === 9 && (
+            <span>✅ Grade 9 • {getSubjectCount('All')} interactive simulations (Mathematics, Chemistry, Physics) — Biology coming soon</span>
+          )}
+          {selectedGrade === 12 && (
+            <span>🧪 Grade 12 • {getSubjectCount('All')} Chemistry simulations (Acid-Base, Electrochemistry, Industrial Chemistry, Polymers, Green Chemistry)</span>
+          )}
+          {(selectedGrade === 10 || selectedGrade === 11) && (
+            <span>📌 Grade {selectedGrade} content — coming soon. Explore Grade 9 or Grade 12 for available labs.</span>
           )}
         </div>
       </header>
 
       <main className="content">
-        {/* Grade 9 with actual content */}
-        {selectedGrade === 9 && visibleChapters.length === 0 && (
+        {!hasAnyContent && selectedGrade === 9 && (
           <div className="empty-state">
             <p>🔍 No lessons match your search, subject, or favorites filter.</p>
             <p>Try adjusting keywords or turning off 'favorites only'.</p>
           </div>
         )}
 
-        {selectedGrade === 9 && visibleChapters.length > 0 && (
+        {!hasAnyContent && selectedGrade === 12 && (
+          <div className="empty-state">
+            <p>🧪 <strong>Grade 12 Chemistry</strong></p>
+            <p>No lessons match your current filters. Try clearing search or showing all subjects.</p>
+          </div>
+        )}
+
+        {!hasAnyContent && (selectedGrade === 10 || selectedGrade === 11) && (
+          <div className="empty-state">
+            <p>📚 <strong>Grade {selectedGrade} Content</strong></p>
+            <p>✨ This grade is under development. New visualizations coming soon! ✨</p>
+            <p style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
+              ⭐ Meanwhile, switch to <strong>Grade 9</strong> or <strong>Grade 12</strong> to access available labs.
+            </p>
+          </div>
+        )}
+
+        {hasAnyContent && (
           <>
             {visibleChapters.map(title => (
               <Section
@@ -291,27 +345,14 @@ const App: React.FC = () => {
                 toggleFavorite={toggleFavorite}
               />
             ))}
-            {filteredItems.length > 0 && (
-              <div style={{ marginTop: '1rem', textAlign: 'right', fontSize: '0.75rem', color: '#5d7f9e' }}>
-                {filteredItems.length} lesson{filteredItems.length !== 1 ? 's' : ''} displayed
-              </div>
-            )}
+            <div style={{ marginTop: '1rem', textAlign: 'right', fontSize: '0.75rem', color: '#5d7f9e' }}>
+              {filteredItems.length} lesson{filteredItems.length !== 1 ? 's' : ''} displayed
+            </div>
           </>
         )}
 
-        {/* Grades 10-12: placeholder message */}
-        {selectedGrade !== 9 && (
-          <div className="empty-state">
-            <p>📚 <strong>Grade {selectedGrade} Content</strong></p>
-            <p>✨ This grade is under development. New visualizations coming soon! ✨</p>
-            <p style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
-              ⭐ Meanwhile, switch to <strong>Grade 9</strong> to access all visualizations.
-            </p>
-          </div>
-        )}
-
-        {/* Biology placeholder note when Grade 9 and Biology selected with no items */}
-        {selectedGrade === 9 && selectedSubject === 'Biology' && filteredItems.length === 0 && (
+        {/* Biology placeholder for Grade 9/12 if selected but no content yet */}
+        {selectedSubject === 'Biology' && hasAnyContent === false && (selectedGrade === 9 || selectedGrade === 12) && (
           <div className="empty-state" style={{ marginTop: '1rem' }}>
             <p>🧬 <strong>Biology content is being prepared</strong></p>
             <p>Interactive biology visualizations will appear here soon.</p>
@@ -320,7 +361,7 @@ const App: React.FC = () => {
       </main>
 
       <footer>
-        🧪 EduTwin – Interactive STEM visualizations • Grade 9 full library (Math, Chem, Physics) • Biology + Grades 10-12 in progress
+        🧪 EduTwin – Interactive STEM visualizations • Grade 9 (Math, Chem, Physics) • Grade 12 Chemistry (full) • Biology & Grades 10-11 in progress
       </footer>
     </div>
   );
