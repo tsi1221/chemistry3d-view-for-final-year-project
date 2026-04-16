@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Theory: The Sorting Machine</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1d;
+            --panel-bg: rgba(35, 35, 40, 0.95);
+            --accent-gold: #ffcc00;
+            --accent-cyan: #00f2ff;
+            --accent-red: #ff3366;
+            --text-color: #e0e0e0;
+            --border-ui: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-color);
+        }
+
+        #canvas { display: block; touch-action: none; }
+
+        /* UI Overlay */
+        .interface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space;
+            padding: 20px;
+        }
+
+        .top-bar {
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: auto;
+        }
+
+        .control-panel {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            background: var(--panel-bg);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: var(--border-ui);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            min-width: 280px;
+        }
+
+        .panel-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            pointer-events: auto;
+        }
+
+        .btn:hover { background: rgba(255,255,255,0.15); border-color: var(--accent-cyan); }
+        .btn.active { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); }
+        .btn.danger { border-color: var(--accent-red); color: var(--accent-red); }
+        .btn.danger:hover { background: var(--accent-red); color: white; }
+
+        .log-panel {
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            height: 120px;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            border: var(--border-ui);
+            pointer-events: auto;
+        }
+
+        .log-entry { margin-bottom: 4px; border-left: 2px solid var(--accent-cyan); padding-left: 8px; animation: fadeIn 0.3s ease; }
+        .log-entry.fail { border-left-color: var(--accent-red); opacity: 0.7; }
+
+        .instruction-overlay {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            pointer-events: none;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 768px) {
+            .control-panel { width: 100%; min-width: unset; }
+            .top-bar { flex-direction: column; gap: 10px; }
+            .log-panel { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="interface">
+    <div class="top-bar">
+        <div class="control-panel">
+            <div class="panel-title">Machine Parameters</div>
+            <div class="btn-group">
+                <button class="btn active" onclick="setRule('vowels', this)">Vowels</button>
+                <button class="btn" onclick="setRule('multiples', this)">Mult. of 3</button>
+                <button class="btn" onclick="setRule('primes', this)">Primes</button>
+                <button class="btn danger" onclick="setRule('vague', this)">Vague Set</button>
+            </div>
+            <div class="panel-title">Operations</div>
+            <div class="btn-group">
+                <button class="btn" onclick="toggleManual()">Manual Mode</button>
+                <button class="btn" onclick="resetMachine()">Reset All</button>
+            </div>
+            <div class="log-panel" id="log">
+                <div class="log-entry">System ready. Awaiting input.</div>
+            </div>
+        </div>
+    </div>
+    <div class="instruction-overlay" id="instruction">Drag elements into the scanner</div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const logEl = document.getElementById('log');
+    const instructionEl = document.getElementById('instruction');
+
+    let width, height;
+    let elements = [];
+    let particles = [];
+    let currentRule = 'vowels';
+    let manualMode = false;
+    let draggedElement = null;
+    let scannerState = 'idle'; // 'idle', 'scanning', 'error'
+    let scannerPulse = 0;
+    let glitchEffect = 0;
+
+    const RULES = {
+        vowels: { 
+            name: "Vowels", 
+            check: (v) => ['a','e','i','o','u'].includes(v.toLowerCase()),
+            pool: ['A','B','E','X','I','M','U','O','Z','Y']
+        },
+        multiples: { 
+            name: "Multiples of 3", 
+            check: (v) => parseInt(v) % 3 === 0,
+            pool: ['1','3','4','6','8','9','12','13','15','2']
+        },
+        primes: { 
+            name: "Primes", 
+            check: (v) => {
+                let n = parseInt(v);
+                if (n < 2) return false;
+                for(let i=2; i <= Math.sqrt(n); i++) if(n % i === 0) return false;
+                return true;
+            },
+            pool: ['2','3','4','5','6','7','8','9','11','13']
+        },
+        vague: { name: "Beautiful Elements", check: null }
+    };
+
+    class Element {
+        constructor(value, x, y) {
+            this.value = value;
+            this.x = x; this.y = y;
+            this.targetX = x; this.targetY = y;
+            this.size = 35;
+            this.status = 'belt'; // 'belt', 'scanning', 'member', 'excluded'
+            this.vx = 0; this.vy = 0;
+            this.opacity = 1;
+        }
+
+        update() {
+            if (this === draggedElement) return;
+
+            if (this.status === 'belt') {
+                this.x += (this.targetX - this.x) * 0.1;
+                this.y += (this.targetY - this.y) * 0.1;
+            } else if (this.status === 'member' || this.status === 'excluded') {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.opacity -= 0.01;
+            }
+        }
+
+        draw() {
+            ctx.save();
+            ctx.globalAlpha = this.opacity;
+            ctx.translate(this.x, this.y);
+
+            // Circle
+            ctx.beginPath();
+            ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,255,255,0.05)';
+            ctx.fill();
+            ctx.strokeStyle = this.status === 'belt' ? 'rgba(255,255,255,0.3)' : (this.status === 'member' ? varToHex('--accent-cyan') : varToHex('--accent-red'));
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 20px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(this.value, 0, 0);
+
+            ctx.restore();
+        }
+    }
+
+    function init() {
+        resize();
+        spawnElements();
+        animate();
+    }
+
+    function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    function spawnElements() {
+        elements = [];
+        const pool = RULES[currentRule].pool || RULES.vowels.pool;
+        for (let i = 0; i < pool.length; i++) {
+            elements.push(new Element(pool[i], 100, 150 + i * 90));
+        }
+    }
+
+    function setRule(key, btn) {
+        currentRule = key;
+        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        if (key === 'vague') {
+            scannerState = 'error';
+            addLog("CRITICAL ERROR: 'Beautiful' is not a well-defined rule.", true);
+        } else {
+            scannerState = 'idle';
+            addLog(`Scanner programmed: ${RULES[key].name}`);
+        }
+        spawnElements();
+    }
+
+    function toggleManual() {
+        manualMode = !manualMode;
+        instructionEl.innerText = manualMode ? "Manual Sort: Drag element to top (∈) or bottom (∉)" : "Automatic Sort: Drop element in scanner";
+        addLog(manualMode ? "Manual Mode Enabled" : "Automatic Mode Enabled");
+    }
+
+    function resetMachine() {
+        spawnElements();
+        addLog("Machine Reset complete.");
+        scannerState = 'idle';
+    }
+
+    function addLog(text, isFail = false) {
+        const div = document.createElement('div');
+        div.className = `log-entry ${isFail ? 'fail' : ''}`;
+        div.innerText = `> ${text}`;
+        logEl.prepend(div);
+        if (logEl.children.length > 20) logEl.removeChild(logEl.lastChild);
+    }
+
+    function drawBackground() {
+        const scannerX = width / 2;
+        const scannerY = height / 2;
+
+        // Conveyor Belt
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, scannerY - 60, scannerX - 100, 120);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        for(let i=0; i < (scannerX - 100); i += 40) {
+            ctx.beginPath();
+            ctx.moveTo(i, scannerY - 60);
+            ctx.lineTo(i, scannerY + 60);
+            ctx.stroke();
+        }
+
+        // Fork Paths
+        ctx.lineWidth = 10;
+        // Top Fork (Member)
+        ctx.strokeStyle = 'rgba(0, 242, 255, 0.2)';
+        ctx.beginPath();
+        ctx.moveTo(scannerX + 100, scannerY);
+        ctx.quadraticCurveTo(scannerX + 150, scannerY, scannerX + 250, scannerY - 150);
+        ctx.lineTo(width, scannerY - 150);
+        ctx.stroke();
+
+        // Bottom Fork (Excluded)
+        ctx.strokeStyle = 'rgba(255, 51, 102, 0.2)';
+        ctx.beginPath();
+        ctx.moveTo(scannerX + 100, scannerY);
+        ctx.quadraticCurveTo(scannerX + 150, scannerY, scannerX + 250, scannerY + 150);
+        ctx.lineTo(width, scannerY + 150);
+        ctx.stroke();
+
+        // Labels
+        ctx.font = 'bold 14px monospace';
+        ctx.fillStyle = varToHex('--accent-cyan');
+        ctx.fillText("MEMBERSHIP AREA (∈ A)", width - 200, scannerY - 170);
+        ctx.fillStyle = varToHex('--accent-red');
+        ctx.fillText("EXCLUDED ZONE (∉ A)", width - 200, scannerY + 180);
+    }
+
+    function drawScanner() {
+        const x = width / 2;
+        const y = height / 2;
+        
+        ctx.save();
+        if (scannerState === 'error') {
+            glitchEffect = Math.sin(Date.now() * 0.1) * 5;
+            ctx.translate(glitchEffect, 0);
+        }
+
+        // Body
+        ctx.fillStyle = '#333';
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'black';
+        ctx.fillRect(x - 100, y - 120, 200, 240);
+        
+        // Screen
+        ctx.fillStyle = scannerState === 'error' ? '#200' : '#111';
+        ctx.fillRect(x - 80, y - 100, 160, 80);
+        
+        // Screen Text
+        ctx.textAlign = 'center';
+        ctx.fillStyle = scannerState === 'error' ? varToHex('--accent-red') : varToHex('--accent-cyan');
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText("SET A DEFINITION:", x, y - 85);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText(RULES[currentRule].name.toUpperCase(), x, y - 60);
+
+        if (scannerState === 'error') {
+            ctx.fillStyle = varToHex('--accent-red');
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText("!! UNDEFINED !!", x, y - 40);
+        }
+
+        // Scanner Aperture
+        ctx.strokeStyle = scannerPulse > 0 ? (scannerPulseColor) : '#555';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x - 80, y, 160, 100);
+        
+        if (scannerPulse > 0) {
+            ctx.globalAlpha = scannerPulse / 20;
+            ctx.fillStyle = scannerPulseColor;
+            ctx.fillRect(x - 80, y, 160, 100);
+            scannerPulse--;
+        }
+
+        ctx.restore();
+    }
+
+    let scannerPulseColor = '#00f2ff';
+
+    function processSorting(el, manualChoice = null) {
+        const scannerX = width / 2;
+        const scannerY = height / 2;
+
+        if (currentRule === 'vague') {
+            el.vx = -5; el.vy = (Math.random() - 0.5) * 10;
+            addLog(`Error: ${el.value} is unclassifiable.`, true);
+            return;
+        }
+
+        const isMember = RULES[currentRule].check(el.value);
+        
+        // In manual mode, check if user was correct
+        if (manualChoice !== null) {
+            const userWasCorrect = (manualChoice === 'member' && isMember) || (manualChoice === 'excluded' && !isMember);
+            if (!userWasCorrect) {
+                el.targetX = 100; el.targetY = 150 + elements.indexOf(el) * 90;
+                addLog(`Incorrect! ${el.value} does ${isMember ? '' : 'not '}fit the rule.`, true);
+                return;
+            }
+        }
+
+        el.status = isMember ? 'member' : 'excluded';
+        el.vx = 8;
+        el.vy = isMember ? -4 : 4;
+        
+        scannerPulse = 20;
+        scannerPulseColor = isMember ? varToHex('--accent-cyan') : varToHex('--accent-red');
+        
+        addLog(`${el.value} ${isMember ? '∈' : '∉'} A (${isMember ? 'Accept' : 'Reject'})`, !isMember);
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+        
+        drawBackground();
+        drawScanner();
+
+        elements.forEach(el => {
+            el.update();
+            el.draw();
+        });
+
+        // Cleanup finished elements
+        elements = elements.filter(el => el.opacity > 0);
+        if (elements.length < 5) {
+            const pool = RULES[currentRule].pool || RULES.vowels.pool;
+            const val = pool[Math.floor(Math.random() * pool.length)];
+            elements.push(new Element(val, -50, height * 0.5));
+            elements[elements.length-1].targetX = 100;
+            elements[elements.length-1].targetY = 200 + (Math.random()*300);
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // Input Handling
+    function handleDown(e) {
+        const pos = getMousePos(e);
+        draggedElement = elements.find(el => {
+            const d = Math.hypot(el.x - pos.x, el.y - pos.y);
+            return d < el.size;
+        });
+    }
+
+    function handleMove(e) {
+        if (!draggedElement) return;
+        const pos = getMousePos(e);
+        draggedElement.x = pos.x;
+        draggedElement.y = pos.y;
+    }
+
+    function handleUp(e) {
+        if (!draggedElement) return;
+        
+        const scannerX = width / 2;
+        const scannerY = height / 2;
+        const distToScanner = Math.hypot(draggedElement.x - scannerX, draggedElement.y - (scannerY + 50));
+
+        if (distToScanner < 100) {
+            if (manualMode) {
+                // Return if they dropped it in scanner during manual mode
+                draggedElement.targetX = 100;
+            } else {
+                processSorting(draggedElement);
+            }
+        } else if (manualMode) {
+            if (draggedElement.y < scannerY - 100) processSorting(draggedElement, 'member');
+            else if (draggedElement.y > scannerY + 100) processSorting(draggedElement, 'excluded');
+        }
+
+        draggedElement = null;
+    }
+
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function varToHex(varName) {
+        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    }
+
+    window.addEventListener('resize', resize);
+    canvas.addEventListener('mousedown', handleDown);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleUp);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); });
+    canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleUp(e); });
+
+    init();
+</script>
+</body>
+</html>
