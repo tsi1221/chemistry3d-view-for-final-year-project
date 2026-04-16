@@ -60,8 +60,8 @@ const Section: React.FC<SectionProps> = ({ title, items, favorites, toggleFavori
 // ----- GRADE 9 LESSONS (existing) -----
 const grade9Lessons: Omit<Item, 'grade'>[] = [
   // ---------- MATHEMATICS ----------
-  { name: "Set Membership Bubble", link: "/grade9/maths/chapter1/Set Theory The Sorting Machine.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
-  { name: "Set Description Slider", link: "/grade9/maths/chapter1/Set Theory Studio · Verbal · Listing · Set-Builder.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
+  { name: "Set Membership Bubble", link: "/grade9/maths/chapter1/Set_Theory_The_Sorting_Machine.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
+  { name: "Set Description Slider", link: "/grade9/maths/chapter1/Set_Theory_Studio_Verbal_Listing_Set_Builder.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
   { name: "Empty Set Visualizer", link: "/grade9/maths/chapter1/3empty_set_visualizer.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
   { name: "Finite vs Infinite Sets", link: "/grade9/maths/chapter1/4.finite_infinite_visualizer.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
   { name: "Venn Diagram Lab", link: "/grade9/maths/chapter1/5.venn_diagram_lab.html.htm", chapter: "Chapter 1: Sets", subject: "Mathematics" },
