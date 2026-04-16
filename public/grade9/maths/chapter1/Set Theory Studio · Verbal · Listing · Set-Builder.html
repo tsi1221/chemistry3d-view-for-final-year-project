@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Set Theory Studio · Verbal · Listing · Set-Builder</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Global Tab Bar */
+        .global-tab-bar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            z-index: 100;
+            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .tab-button {
+            background: transparent;
+            border: none;
+            padding: 14px 32px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border-radius: 0;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            letter-spacing: 0.3px;
+            border-bottom: 3px solid transparent;
+            touch-action: manipulation;
+        }
+
+        .tab-button.active {
+            background: transparent;
+            color: #0066cc;
+            border-bottom: 3px solid #0066cc;
+            box-shadow: none;
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #f8fafc;
+            color: #1a1e2b;
+            border-bottom-color: #cbd5e1;
+        }
+
+        .tab-content {
+            display: none;
+            width: 100%;
+            height: calc(100vh - 53px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab-content.active-tab {
+            display: block;
+        }
+
+        /* ========== VERBAL METHOD ========== */
+        .verbal-container {
+            --bg-color: #fafbfc;
+            --ui-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1a1e2b;
+            --text-secondary: #64748b;
+            --accent: #0066cc;
+            --accent-glow: rgba(0, 102, 204, 0.15);
+            --bubble-fill: rgba(0, 102, 204, 0.06);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        .verbal-container header {
+            background: var(--ui-bg);
+            padding: 1.2rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .verbal-container .search-container {
+            position: relative;
+            flex-grow: 1;
+            max-width: 600px;
+        }
+
+        .verbal-container .search-label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .verbal-container input[type="text"] {
+            width: 100%;
+            padding: 0.9rem 1rem 0.9rem 7.5rem;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.15s ease;
+        }
+
+        .verbal-container input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .verbal-container input[type="text"]:focus + .search-label,
+        .verbal-container input[type="text"]:not(:placeholder-shown) + .search-label {
+            color: var(--accent);
+        }
+
+        .verbal-container button {
+            padding: 0.9rem 1.8rem;
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s ease;
+            touch-action: manipulation;
+        }
+
+        .verbal-container button:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .verbal-container button.reset {
+            color: #dc2626;
+            border-color: #fee2e2;
+        }
+        
+        .verbal-container button.reset:hover {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .verbal-container main {
+            flex-grow: 1;
+            position: relative;
+            width: 100%;
+        }
+
+        .verbal-container canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .verbal-container #instructions {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(250, 251, 252, 0.98);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            padding: 2rem;
+            text-align: center;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .verbal-container #instructions.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .verbal-container #instructions h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .verbal-container #instructions p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .verbal-container .example-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 350px;
+        }
+
+        .verbal-container .example-list li {
+            background: #ffffff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.15s ease;
+            border-left: 3px solid var(--accent);
+        }
+        
+        .verbal-container .example-list li:hover {
+            border-color: var(--accent);
+            background: #f0f7ff;
+            transform: translateX(4px);
+        }
+
+        @media (max-width: 640px) {
+            .verbal-container header { padding: 1rem; }
+            .verbal-container input[type="text"] { padding: 0.9rem 1rem; }
+            .verbal-container .search-label { display: none; }
+            .verbal-container .controls { width: 100%; justify-content: center; }
+        }
+
+        /* ========== LISTING METHOD ========== */
+        .listing-root {
+            --bg: #fafbfc;
+            --panel: #ffffff;
+            --accent: #7c3aed;
+            --accent-glow: rgba(124, 58, 237, 0.1);
+            --text: #1a1e2b;
+            background: var(--bg);
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .listing-root canvas { display: block; touch-action: none; width: 100%; height: 100%; }
+
+        .listing-root .ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+        }
+
+        .listing-root .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: auto;
+        }
+
+        .listing-root .mode-panel {
+            background: var(--panel);
+            padding: 16px;
+            border-radius: 0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 250px;
+        }
+
+        .listing-root .mode-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .listing-root .btn-toggle {
+            display: flex;
+            background: #f1f5f9;
+            border-radius: 0;
+            padding: 2px;
+        }
+
+        .listing-root .btn-toggle button {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--text);
+            padding: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 0;
+            transition: all 0.15s;
+            touch-action: manipulation;
+        }
+
+        .listing-root .btn-toggle button.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: none;
+        }
+
+        .listing-root .btn-action {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: var(--text);
+            padding: 12px;
+            border-radius: 0;
+            cursor: pointer;
+            font-weight: 500;
+            transition: 0.15s;
+            touch-action: manipulation;
+        }
+
+        .listing-root .btn-action:hover { 
+            background: #f8fafc; 
+            border-color: var(--accent);
+        }
+
+        .listing-root .instruction-toast {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            padding: 12px 24px;
+            border-radius: 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid var(--accent);
+            text-align: center;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            color: #475569;
+        }
+
+        @media (max-width: 600px) {
+            .listing-root .mode-panel { width: 100%; }
+            .listing-root .header { width: 100%; }
+        }
+
+        /* ========== SET-BUILDER ========== */
+        .builder-root {
+            --bg: #f8fafc;
+            --gate-idle: #94a3b8;
+            --gate-pass: #10b981;
+            --gate-fail: #ef4444;
+            --accent: #0284c7;
+            --glass: #ffffff;
+            background: var(--bg);
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .builder-root canvas { display: block; width: 100%; height: 100%; }
+
+        .builder-root .ui-overlay {
+            position: absolute;
+            top: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 10; width: 90%; max-width: 650px;
+            pointer-events: none;
+        }
+
+        .builder-root .code-display {
+            background: var(--glass);
+            border: 1px solid #e2e8f0;
+            padding: 20px 28px; 
+            border-radius: 0;
+            text-align: center; 
+            font-size: 1.5rem;
+            pointer-events: auto; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border-left: 4px solid var(--accent);
+        }
+
+        .builder-root .math-text { 
+            font-family: 'Cambria Math', 'Times New Roman', serif; 
+            letter-spacing: 2px; 
+            font-weight: 600;
+            color: #1a1e2b;
+        }
+        
+        .builder-root .math-text span {
+            color: var(--accent);
+        }
+
+        .builder-root .controls {
+            margin-top: 16px; 
+            display: flex; 
+            gap: 8px; 
+            justify-content: center; 
+            pointer-events: auto;
+            flex-wrap: wrap;
+        }
+
+        .builder-root .btn {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #1a1e2b; 
+            padding: 10px 20px; 
+            border-radius: 0; 
+            cursor: pointer;
+            transition: 0.15s; 
+            font-size: 0.9rem;
+            font-weight: 500;
+            touch-action: manipulation;
+        }
+        
+        .builder-root .btn:hover { 
+            background: #f8fafc; 
+            border-color: var(--accent);
+        }
+        
+        .builder-root .btn.active { 
+            background: var(--accent); 
+            color: white; 
+            border-color: var(--accent);
+            box-shadow: none;
+        }
+
+        .builder-root .status-msg {
+            position: absolute; 
+            bottom: 50px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            font-size: 0.85rem; 
+            font-weight: 500;
+            color: #64748b; 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+            pointer-events: none;
+            background: #ffffff;
+            padding: 10px 24px;
+            border-radius: 0;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid var(--accent);
+        }
+
+        @media (max-width: 600px) {
+            .builder-root .code-display { font-size: 1.2rem; padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="global-tab-bar">
+    <button class="tab-button active" data-tab="verbal">Verbal Method</button>
+    <button class="tab-button" data-tab="listing">Listing Method</button>
+    <button class="tab-button" data-tab="builder">Set-Builder</button>
+</div>
+
+<!-- ===================== VERBAL METHOD ===================== -->
+<div id="tab-verbal" class="tab-content active-tab">
+    <div class="verbal-container">
+        <header>
+            <div class="search-container">
+                <input type="text" id="set-definition" placeholder="e.g., Whole numbers from 1 to 10" autocomplete="off">
+                <span class="search-label">Set Definition:</span>
+            </div>
+            <div class="controls">
+                <button class="reset" id="reset-btn">Reset</button>
+            </div>
+        </header>
+        <main>
+            <div id="instructions">
+                <h2>The Verbal Method</h2>
+                <p>Define a set using plain English. Type a precise description to generate the elements.</p>
+                <p style="font-size: 0.9rem; margin-top: 5px;">Try clicking an example:</p>
+                <ul class="example-list">
+                    <li data-query="Whole numbers from 5 to 25">Whole numbers from 5 to 25</li>
+                    <li data-query="Even numbers between 0 and 30">Even numbers between 0 and 30</li>
+                    <li data-query="Letters in the word 'MATHEMATICS'">Letters in the word 'MATHEMATICS'</li>
+                    <li data-query="First 10 square numbers">First 10 square numbers</li>
+                </ul>
+            </div>
+            <canvas id="visualizer"></canvas>
+        </main>
+    </div>
+</div>
+
+<!-- ===================== LISTING METHOD ===================== -->
+<div id="tab-listing" class="tab-content">
+    <div class="listing-root">
+        <canvas id="listing-canvas"></canvas>
+        <div class="ui-layer">
+            <div class="header">
+                <div class="mode-panel">
+                    <div class="mode-title">Listing Method</div>
+                    <div class="btn-toggle">
+                        <button id="btn-complete" class="active">Complete</button>
+                        <button id="btn-partial">Partial</button>
+                    </div>
+                    <button class="btn-action" id="reset-listing">Reset Set</button>
+                </div>
+            </div>
+            <div class="instruction-toast" id="toast">Drag numbers into the braces { }</div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== SET-BUILDER ===================== -->
+<div id="tab-builder" class="tab-content">
+    <div class="builder-root">
+        <div class="ui-overlay">
+            <div class="code-display" id="display">
+                <span class="math-text">A = { <span id="var">x</span> <span id="gate-symbol">|</span> <span id="condition">x is even</span> }</span>
+            </div>
+            <div class="controls">
+                <button class="btn active" id="rule-even">x is Even</button>
+                <button class="btn" id="rule-prime">x is Prime</button>
+                <button class="btn" id="rule-greater">x > 5</button>
+                <button class="btn" id="launch-stream">Launch Stream</button>
+            </div>
+        </div>
+        <div class="status-msg" id="status">Awaiting Input...</div>
+        <canvas id="builder-canvas"></canvas>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ========== TAB SWITCHING ==========
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-tab');
+                tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                contents.forEach(content => content.classList.remove('active-tab'));
+                document.getElementById(`tab-${target}`).classList.add('active-tab');
+                
+                setTimeout(() => {
+                    if (target === 'verbal' && window.verbalResize) window.verbalResize();
+                    else if (target === 'listing' && window.listingResize) window.listingResize();
+                    else if (target === 'builder' && window.builderResize) window.builderResize();
+                }, 50);
+            });
+            
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const target = btn.getAttribute('data-tab');
+                tabs.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                contents.forEach(content => content.classList.remove('active-tab'));
+                document.getElementById(`tab-${target}`).classList.add('active-tab');
+            }, { passive: false });
+        });
+
+        // ========== VERBAL METHOD ==========
+        (function initVerbal() {
+            const canvas = document.getElementById('visualizer');
+            const ctx = canvas.getContext('2d');
+            const inputField = document.getElementById('set-definition');
+            const resetBtn = document.getElementById('reset-btn');
+            const instructions = document.getElementById('instructions');
+            const exampleLis = document.querySelectorAll('#tab-verbal .example-list li');
+
+            let width, height, dpr;
+            let bubbles = [];
+            let targetValues = new Set();
+            let animationId;
+            let isFirstInteraction = true;
+
+            const COLOR_ACCENT = '#0066cc';
+            const COLOR_BUBBLE_FILL = 'rgba(0, 102, 204, 0.04)';
+            const COLOR_TEXT = '#1a1e2b';
+
+            class FloatingBubble {
+                constructor(value, x, y) {
+                    this.value = value;
+                    this.text = String(value);
+                    this.x = x ?? Math.random() * width;
+                    this.y = y ?? Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 1.2;
+                    this.vy = (Math.random() - 0.5) * 1.2;
+                    ctx.font = 'bold 16px Inter, sans-serif';
+                    const textWidth = ctx.measureText(this.text).width;
+                    this.baseRadius = Math.max(28, textWidth / 2 + 18);
+                    this.radius = 0;
+                    this.targetRadius = this.baseRadius;
+                    this.opacity = 0;
+                    this.targetOpacity = 1;
+                    this.state = 'appearing';
+                    this.markedForRemoval = false;
+                }
+                update(deltaTime) {
+                    this.x += this.vx * (deltaTime / 16);
+                    this.y += this.vy * (deltaTime / 16);
+                    if (this.x - this.radius < 0) { this.x = this.radius; this.vx *= -1; }
+                    if (this.x + this.radius > width) { this.x = width - this.radius; this.vx *= -1; }
+                    if (this.y - this.radius < 0) { this.y = this.radius; this.vy *= -1; }
+                    if (this.y + this.radius > height) { this.y = height - this.radius; this.vy *= -1; }
+                    const lerpSpeed = 0.1 * (deltaTime / 16);
+                    if (this.state === 'appearing') {
+                        this.radius += (this.targetRadius - this.radius) * lerpSpeed;
+                        this.opacity += (this.targetOpacity - this.opacity) * lerpSpeed;
+                        if (this.opacity > 0.98 && this.radius > this.targetRadius - 1) {
+                            this.state = 'active';
+                            this.radius = this.targetRadius;
+                            this.opacity = this.targetOpacity;
+                        }
+                    } else if (this.state === 'vanishing') {
+                        this.targetRadius = 0;
+                        this.targetOpacity = 0;
+                        this.radius += (0 - this.radius) * lerpSpeed * 1.5;
+                        this.opacity += (0 - this.opacity) * lerpSpeed * 1.5;
+                        if (this.opacity < 0.01) this.markedForRemoval = true;
+                    }
+                }
+                draw() {
+                    if (this.opacity <= 0) return;
+                    ctx.save();
+                    ctx.globalAlpha = this.opacity;
+                    ctx.translate(this.x, this.y);
+                    ctx.shadowBlur = 12 * this.opacity;
+                    ctx.shadowColor = 'rgba(0, 102, 204, 0.2)';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = COLOR_BUBBLE_FILL;
+                    ctx.fill();
+                    ctx.strokeStyle = COLOR_ACCENT;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = COLOR_TEXT;
+                    ctx.font = '600 16px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.text, 0, 1);
+                    ctx.restore();
+                }
+            }
+
+            function parseVerbalDefinition(text) {
+                const query = text.toLowerCase().trim();
+                const newTargetValues = new Set();
+                if (query.length === 0) return newTargetValues;
+                let match = query.match(/^whole numbers from (\d+) to (\d+)$/);
+                if (match) {
+                    let start = parseInt(match[1]), end = parseInt(match[2]);
+                    if (start > end) [start, end] = [end, start];
+                    for (let i = start; i <= end; i++) newTargetValues.add(i);
+                    return newTargetValues;
+                }
+                match = query.match(/^(even|odd) numbers between (\d+) and (\d+)$/);
+                if (match) {
+                    const type = match[1];
+                    let start = parseInt(match[2]), end = parseInt(match[3]);
+                    if (start > end) [start, end] = [end, start];
+                    const remainderNeeded = type === 'even' ? 0 : 1;
+                    for (let i = start + 1; i < end; i++) {
+                        if (Math.abs(i % 2) === remainderNeeded) newTargetValues.add(i);
+                    }
+                    return newTargetValues;
+                }
+                match = query.match(/^letters in the word ['"]([^'"]+)['"]$/);
+                if (match) {
+                    const word = match[1].toUpperCase().replace(/[^A-Z]/g, '');
+                    new Set(word.split('')).forEach(char => newTargetValues.add(char));
+                    return newTargetValues;
+                }
+                match = query.match(/^first (\d+) square numbers$/);
+                if (match) {
+                    let count = parseInt(match[1]);
+                    if (count > 100) count = 100;
+                    for (let i = 1; i <= count; i++) newTargetValues.add(i * i);
+                    return newTargetValues;
+                }
+                return newTargetValues;
+            }
+
+            function updateSimulation(text) {
+                const newTargetValues = parseVerbalDefinition(text);
+                bubbles.forEach(bubble => {
+                    if (!newTargetValues.has(bubble.value)) bubble.state = 'vanishing';
+                    else if (bubble.state === 'vanishing') { bubble.state = 'appearing'; bubble.targetRadius = bubble.baseRadius; bubble.targetOpacity = 1; }
+                });
+                const currentValues = new Set(bubbles.map(b => b.value));
+                newTargetValues.forEach(val => {
+                    if (!currentValues.has(val)) {
+                        const spawnX = width / 2 + (Math.random() - 0.5) * 120;
+                        const spawnY = height / 2 + (Math.random() - 0.5) * 120;
+                        bubbles.push(new FloatingBubble(val, spawnX, spawnY));
+                    }
+                });
+                targetValues = newTargetValues;
+            }
+
+            function handleInput() {
+                if (isFirstInteraction) { instructions.classList.add('hidden'); isFirstInteraction = false; }
+                updateSimulation(inputField.value);
+            }
+            
+            function handleReset() { 
+                inputField.value = ''; 
+                inputField.focus(); 
+                updateSimulation(''); 
+                if (!isFirstInteraction) { 
+                    instructions.classList.remove('hidden'); 
+                    isFirstInteraction = true; 
+                } 
+            }
+            
+            function handleExampleClick(e) { 
+                const query = e.target.getAttribute('data-query'); 
+                if (query) { 
+                    inputField.value = query; 
+                    handleInput(); 
+                } 
+            }
+
+            function resizeVerbal() {
+                dpr = window.devicePixelRatio || 1;
+                width = canvas.parentElement.offsetWidth;
+                height = canvas.parentElement.offsetHeight;
+                canvas.width = width * dpr;
+                canvas.height = height * dpr;
+                ctx.scale(dpr, dpr);
+                bubbles.forEach(b => { 
+                    if(b.state === 'active') { 
+                        b.x = Math.max(b.radius, Math.min(width - b.radius, b.x)); 
+                        b.y = Math.max(b.radius, Math.min(height - b.radius, b.y)); 
+                    } 
+                });
+            }
+
+            let lastTime = 0;
+            function loop(ts) {
+                const deltaTime = ts - lastTime;
+                lastTime = ts;
+                ctx.clearRect(0, 0, width, height);
+                
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < width; i += 40) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
+                }
+                for (let i = 0; i < height; i += 40) {
+                    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(width, i); ctx.stroke();
+                }
+                
+                bubbles = bubbles.filter(b => !b.markedForRemoval);
+                bubbles.forEach(bubble => { bubble.update(deltaTime); bubble.draw(); });
+                animationId = requestAnimationFrame(loop);
+            }
+
+            window.addEventListener('resize', resizeVerbal);
+            inputField.addEventListener('input', handleInput);
+            resetBtn.addEventListener('click', handleReset);
+            exampleLis.forEach(li => li.addEventListener('click', handleExampleClick));
+            resizeVerbal();
+            loop(0);
+            window.verbalResize = resizeVerbal;
+        })();
+
+        // ========== LISTING METHOD ==========
+        (function initListing() {
+            const canvas = document.getElementById('listing-canvas');
+            const ctx = canvas.getContext('2d');
+            const toast = document.getElementById('toast');
+            let width, height;
+            let mode = 'complete';
+            let elements = [];
+            let pile = [];
+            let draggedElement = null;
+            let bracesWidth = 120;
+            let targetBracesWidth = 120;
+            let revealedCount = 3;
+
+            if (!CanvasRenderingContext2D.prototype.roundRect) {
+                CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                    if (w < 2 * r) r = w / 2;
+                    if (h < 2 * r) r = h / 2;
+                    this.moveTo(x+r, y);
+                    this.lineTo(x+w-r, y);
+                    this.quadraticCurveTo(x+w, y, x+w, y+r);
+                    this.lineTo(x+w, y+h-r);
+                    this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+                    this.lineTo(x+r, y+h);
+                    this.quadraticCurveTo(x, y+h, x, y+h-r);
+                    this.lineTo(x, y+r);
+                    this.quadraticCurveTo(x, y, x+r, y);
+                    return this;
+                };
+            }
+
+            class Item {
+                constructor(value, x, y) {
+                    this.value = value; this.x = x; this.y = y; this.targetX = x; this.targetY = y;
+                    this.size = 54; this.opacity = 1; this.isDragging = false;
+                }
+                update() { 
+                    if (!this.isDragging) { 
+                        this.x += (this.targetX - this.x) * 0.15; 
+                        this.y += (this.targetY - this.y) * 0.15; 
+                    } 
+                }
+                draw() {
+                    ctx.save(); 
+                    ctx.globalAlpha = this.opacity;
+                    ctx.shadowColor = 'rgba(0,0,0,0.1)';
+                    ctx.shadowBlur = this.isDragging ? 12 : 6;
+                    ctx.beginPath(); 
+                    ctx.roundRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size, 0);
+                    ctx.fillStyle = '#ffffff'; 
+                    ctx.fill();
+                    ctx.strokeStyle = '#7c3aed'; 
+                    ctx.lineWidth = 2; 
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#1a1e2b'; 
+                    ctx.font = '600 20px "SF Mono", monospace'; 
+                    ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.value, this.x, this.y);
+                    ctx.restore();
+                }
+            }
+
+            function resizeListing() {
+                width = window.innerWidth; 
+                height = window.innerHeight;
+                canvas.width = width; 
+                canvas.height = height;
+            }
+            
+            function reset() {
+                elements = []; pile = []; revealedCount = 3;
+                const items = mode === 'complete' ? ['a', 'e', 'i', 'o', 'u'] : ['1', '2', '3', '4', '5', '6', '7', '8'];
+                items.forEach((val, i) => { pile.push(new Item(val, 80 + i * 75, height - 110)); });
+                toast.innerText = mode === 'complete' ? "Drag vowels into the display case" : "Drag numbers to create a sequence";
+            }
+            
+            function setMode(m) {
+                mode = m;
+                document.getElementById('btn-complete').classList.toggle('active', m === 'complete');
+                document.getElementById('btn-partial').classList.toggle('active', m === 'partial');
+                reset();
+            }
+            
+            function drawBraces() {
+                const centerX = width / 2, centerY = height / 2;
+                let contentWidth = mode === 'complete' ? (elements.length * 75) : (revealedCount * 75 + 60);
+                targetBracesWidth = Math.max(140, contentWidth + 100);
+                bracesWidth += (targetBracesWidth - bracesWidth) * 0.1;
+                ctx.save(); 
+                ctx.fillStyle = '#7c3aed'; 
+                ctx.font = 'bold 90px "Times New Roman", serif'; 
+                ctx.textAlign = 'center';
+                ctx.fillText('{', centerX - bracesWidth/2, centerY + 28);
+                ctx.fillText('}', centerX + bracesWidth/2, centerY + 28);
+                if (mode === 'partial') {
+                    const dotX = centerX + (revealedCount * 37.5) + 15;
+                    ctx.globalAlpha = Math.sin(Date.now() * 0.004) * 0.3 + 0.7;
+                    ctx.font = 'bold 45px monospace'; 
+                    ctx.fillStyle = '#7c3aed';
+                    ctx.fillText('...', dotX, centerY);
+                    ctx.restore();
+                } else {
+                    ctx.restore();
+                }
+            }
+            
+            function updateLayout() {
+                const centerX = width / 2, centerY = height / 2;
+                if (mode === 'complete') {
+                    const startX = centerX - ((elements.length - 1) * 75) / 2;
+                    elements.forEach((el, i) => { el.targetX = startX + i * 75; el.targetY = centerY; });
+                } else {
+                    const startX = centerX - (revealedCount * 75) / 2 - 20;
+                    elements.slice(0, revealedCount).forEach((el, i) => { el.targetX = startX + i * 75; el.targetY = centerY; });
+                    elements.forEach((el, i) => { el.opacity = (i >= revealedCount) ? 0 : 1; });
+                }
+            }
+            
+            function animateListing() {
+                ctx.fillStyle = '#fafbfc'; 
+                ctx.fillRect(0, 0, width, height);
+                
+                ctx.strokeStyle = '#e2e8f0'; 
+                ctx.lineWidth = 1;
+                for(let x = 0; x < width; x += 50){ 
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); 
+                }
+                for(let y = 0; y < height; y += 50){ 
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); 
+                }
+                
+                drawBraces(); 
+                updateLayout();
+                pile.forEach(i => { i.update(); i.draw(); });
+                elements.forEach(i => { i.update(); i.draw(); });
+                requestAnimationFrame(animateListing);
+            }
+
+            function getPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            }
+            
+            function handleDown(e) {
+                e.preventDefault();
+                const pos = getPos(e);
+                if (mode === 'partial') {
+                    const dotX = width/2 + (revealedCount * 37.5) + 15;
+                    if (Math.hypot(pos.x - dotX, pos.y - height/2) < 45 && elements.length > revealedCount) {
+                        revealedCount = Math.min(elements.length, revealedCount + 1);
+                        toast.innerText = `Showing ${revealedCount} of ${elements.length} elements`;
+                        return;
+                    }
+                }
+                for(let i = 0; i < pile.length; i++) { 
+                    if(Math.hypot(pile[i].x - pos.x, pile[i].y - pos.y) < pile[i].size) { 
+                        draggedElement = pile[i]; 
+                        draggedElement.isDragging = true; 
+                        pile.splice(i, 1); 
+                        break; 
+                    } 
+                }
+                for(let i = 0; i < elements.length; i++) { 
+                    if(Math.hypot(elements[i].x - pos.x, elements[i].y - pos.y) < elements[i].size) { 
+                        draggedElement = elements[i]; 
+                        draggedElement.isDragging = true; 
+                        elements.splice(i, 1); 
+                        break; 
+                    } 
+                }
+            }
+            
+            function handleMove(e) { 
+                e.preventDefault();
+                if(draggedElement) { 
+                    const pos = getPos(e); 
+                    draggedElement.x = pos.x; 
+                    draggedElement.y = pos.y; 
+                } 
+            }
+            
+            function handleUp(e) {
+                e.preventDefault();
+                if(!draggedElement) return;
+                draggedElement.isDragging = false;
+                const inDropZone = Math.abs(draggedElement.y - height/2) < 120;
+                if(inDropZone) { 
+                    elements.push(draggedElement); 
+                    elements.sort((a,b) => a.value.localeCompare(b.value)); 
+                    toast.innerText = mode === 'complete' ? `Set: { ${elements.map(e => e.value).join(', ')} }` : `${elements.length} elements in set`;
+                } else { 
+                    draggedElement.targetY = height - 110; 
+                    draggedElement.targetX = 80 + pile.length * 75; 
+                    pile.push(draggedElement); 
+                }
+                draggedElement = null;
+            }
+
+            window.addEventListener('resize', resizeListing);
+            canvas.addEventListener('mousedown', handleDown); 
+            canvas.addEventListener('mousemove', handleMove); 
+            canvas.addEventListener('mouseup', handleUp);
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown(e); }, { passive: false });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, { passive: false });
+            canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleUp(e); });
+            
+            document.getElementById('btn-complete').onclick = () => setMode('complete');
+            document.getElementById('btn-partial').onclick = () => setMode('partial');
+            document.getElementById('reset-listing').onclick = () => reset();
+            
+            resizeListing(); reset(); animateListing();
+            window.listingResize = resizeListing;
+        })();
+
+        // ========== SET-BUILDER ==========
+        (function initBuilder() {
+            const canvas = document.getElementById('builder-canvas');
+            const ctx = canvas.getContext('2d');
+            const statusEl = document.getElementById('status');
+            const gateSymbol = document.getElementById('gate-symbol');
+            let width, height;
+            let particles = [];
+            let currentRule = 'even';
+            let gateState = 'idle';
+            let gateTimer = 0;
+
+            const RULES = {
+                even: (n) => n % 2 === 0,
+                prime: (n) => { if (n < 2) return false; for(let i = 2; i <= Math.sqrt(n); i++) if(n % i === 0) return false; return true; },
+                greater: (n) => n > 5
+            };
+
+            class Particle {
+                constructor(val) { 
+                    this.val = val; 
+                    this.x = -60; 
+                    this.y = height/2 + (Math.random() - 0.5) * 120; 
+                    this.speed = 4.5 + Math.random() * 2.5; 
+                    this.size = 28; 
+                    this.status = 'testing'; 
+                    this.opacity = 1; 
+                    this.vx = this.speed; 
+                    this.vy = (Math.random() - 0.5) * 1.2; 
+                }
+                update() {
+                    this.x += this.vx; 
+                    this.y += this.vy;
+                    const gateX = width/2;
+                    if(this.status === 'testing' && this.x > gateX - 25) {
+                        const passes = RULES[currentRule](this.val);
+                        if(passes) { this.status = 'passed'; triggerGate('pass'); } 
+                        else { this.status = 'failed'; this.vx = -2.5; this.vy = (Math.random() - 0.5) * 12; triggerGate('fail'); }
+                    }
+                    if(this.status === 'failed' || this.x > width) this.opacity -= 0.015;
+                }
+                draw() {
+                    ctx.save(); 
+                    ctx.globalAlpha = this.opacity; 
+                    ctx.shadowBlur = this.status === 'passed' ? 15 : (this.status === 'failed' ? 10 : 0);
+                    ctx.shadowColor = this.status === 'passed' ? 'rgba(16, 185, 129, 0.3)' : (this.status === 'failed' ? 'rgba(239, 68, 68, 0.3)' : 'transparent');
+                    ctx.beginPath(); 
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.status === 'passed' ? '#10b981' : (this.status === 'failed' ? '#ef4444' : '#0284c7');
+                    ctx.fill(); 
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ffffff'; 
+                    ctx.font = '600 16px "SF Mono", monospace'; 
+                    ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.val, this.x, this.y); 
+                    ctx.restore();
+                }
+            }
+
+            function resizeBuilder() { 
+                width = window.innerWidth; 
+                height = window.innerHeight; 
+                canvas.width = width; 
+                canvas.height = height; 
+            }
+            
+            function spawnParticles() { 
+                for(let i = 0; i < 12; i++) {
+                    setTimeout(() => { 
+                        particles.push(new Particle(Math.floor(Math.random() * 15))); 
+                    }, i * 350); 
+                }
+                statusEl.innerText = "Processing Stream..."; 
+            }
+            
+            function changeRule(rule, btnElem) {
+                currentRule = rule;
+                document.querySelectorAll('#tab-builder .btn').forEach(b => b.classList.remove('active'));
+                btnElem.classList.add('active');
+                const condMap = { even: "x is even", prime: "x is Prime", greater: "x > 5" };
+                document.getElementById('condition').innerText = condMap[rule];
+                particles = []; 
+                statusEl.innerText = "Rule: " + condMap[rule];
+            }
+            
+            function triggerGate(type) { 
+                gateState = type; 
+                gateTimer = 15; 
+                statusEl.innerText = type === 'pass' ? "Element Accepted" : "Element Rejected"; 
+            }
+            
+            function drawGate() {
+                const x = width/2; 
+                ctx.save(); 
+                ctx.shadowBlur = 20;
+                if(gateState === 'pass') { 
+                    ctx.strokeStyle = '#10b981'; 
+                    ctx.shadowColor = 'rgba(16, 185, 129, 0.3)'; 
+                    gateSymbol.style.color = '#10b981'; 
+                } else if(gateState === 'fail') { 
+                    ctx.strokeStyle = '#ef4444'; 
+                    ctx.shadowColor = 'rgba(239, 68, 68, 0.3)'; 
+                    gateSymbol.style.color = '#ef4444'; 
+                } else { 
+                    ctx.strokeStyle = '#94a3b8'; 
+                    ctx.shadowColor = 'transparent'; 
+                    gateSymbol.style.color = '#1a1e2b'; 
+                }
+                ctx.lineWidth = 5; 
+                ctx.beginPath(); 
+                ctx.moveTo(x, height/2 - 160); 
+                ctx.lineTo(x, height/2 + 160); 
+                ctx.stroke();
+                if(gateTimer > 0) { gateTimer--; if(gateTimer === 0) gateState = 'idle'; }
+                ctx.restore();
+            }
+            
+            function animateBuilder() {
+                ctx.fillStyle = '#f8fafc'; 
+                ctx.fillRect(0, 0, width, height);
+                
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i < width; i += 50) {
+                    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, height); ctx.stroke();
+                }
+                
+                drawGate();
+                for(let i = 0; i < particles.length; i++) { 
+                    particles[i].update(); 
+                    particles[i].draw(); 
+                    if(particles[i].opacity <= 0) { 
+                        particles.splice(i, 1); 
+                        i--; 
+                    } 
+                }
+                requestAnimationFrame(animateBuilder);
+            }
+
+            window.addEventListener('resize', resizeBuilder);
+            document.getElementById('rule-even').onclick = () => changeRule('even', document.getElementById('rule-even'));
+            document.getElementById('rule-prime').onclick = () => changeRule('prime', document.getElementById('rule-prime'));
+            document.getElementById('rule-greater').onclick = () => changeRule('greater', document.getElementById('rule-greater'));
+            document.getElementById('launch-stream').onclick = spawnParticles;
+            
+            resizeBuilder(); 
+            animateBuilder();
+            window.builderResize = resizeBuilder;
+        })();
+    })();
+</script>
+</body>
+</html>
