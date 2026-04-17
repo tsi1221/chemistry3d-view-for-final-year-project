@@ -2,287 +2,689 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTwin Lab: Absolute Value Tent</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Absolute Value Tent | Interactive Equation Lab</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --accent-blue: #00a2ff;
-            --white: #ffffff;
-            --bg: #f8fafc;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1000px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
-            overflow: hidden;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: var(--primary-blue);
-            color: white;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            text-align: center;
         }
 
-        .lab-layout {
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            padding: 20px;
-            gap: 20px;
-        }
-
-        @media (max-width: 850px) {
-            .lab-layout { grid-template-columns: 1fr; }
-        }
-
-        .viz-box {
+        .lab-card {
+            max-width: 1100px;
+            width: 100%;
             background: #ffffff;
-            border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            position: relative;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
+        }
+
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
+            text-align: center;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 780px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .equation-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .equation-preview span {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #0f3b5c;
         }
 
         canvas {
+            display: block;
             width: 100%;
             height: auto;
-            display: block;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        .formula-card {
-            background: #e7f1ff;
-            padding: 20px;
-            border-radius: 12px;
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
             text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 4px solid var(--primary-blue);
-        }
-
-        .equation-text {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-blue);
-            font-family: 'Courier New', monospace;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
         .control-panel {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 16px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1.2rem;
         }
 
-        .slider-group label {
-            display: block;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            font-size: 1.3rem;
             font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
         }
 
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--primary-blue);
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 16px;
+            border-radius: 40px;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .equation-input-area {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .equation-input-area input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 10px 14px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .equation-input-area input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px #f59e0b30;
+        }
+
+        .equation-input-area button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 18px;
+            border-radius: 60px;
+            font-weight: 600;
             cursor: pointer;
         }
 
-        #distanceAlert {
-            display: none;
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .alert-toast {
             position: fixed;
-            top: 20px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--primary-blue);
-            color: white;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-weight: bold;
+            background: #f59e0b;
+            color: #2d2a1e;
+            padding: 10px 26px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
             z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .alert-toast.visible {
+            opacity: 1;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<div id="distanceAlert">Two Solutions Found!</div>
-
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">Absolute Value Tent</h2>
-        <p style="margin:5px 0 0">Visualizing Distance as a 3D Structure</p>
-    </header>
-
-    <div class="lab-layout">
-        <main>
-            <div class="formula-card">
-                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 5px;">CURRENT EQUATION</div>
-                <div class="equation-text" id="eqDisplay">|x - 2| = 4</div>
-            </div>
-            <div class="viz-box">
-                <canvas id="tentCanvas" width="600" height="400"></canvas>
-            </div>
-        </main>
-
-        <aside class="control-panel">
-            <div class="slider-group">
-                <label>Center Shift (a)</label>
-                <input type="range" id="valA" min="-10" max="10" value="2" step="0.5">
-                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelA">a = 2</div>
-            </div>
-
-            <div class="slider-group">
-                <label>Cutter Height (b)</label>
-                <input type="range" id="valB" min="0" max="8" value="4" step="0.2">
-                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelB">b = 4</div>
-            </div>
-
-            <div style="background: #fffbe6; padding: 15px; border-radius: 10px; border-left: 5px solid #fbbf24; font-size: 0.85rem;">
-                <strong>Concept:</strong> The horizontal blue bar "cuts" the tent. Notice how it hits the tent in two places, creating two solutions on the number line below.
-            </div>
-        </aside>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>⛺ Absolute Value Tent · |x − a| = b</h1>
+        <p>Distance from a equals b → two solutions (the tent peaks)</p>
     </div>
+
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="equation-preview">
+                <span id="eqDisplay">|x − 2| = 4</span>
+            </div>
+            <canvas id="tentCanvas" width="600" height="400"></canvas>
+            <div class="drag-hint">
+                ✨ Drag horizontally → change center (a) &nbsp;|&nbsp; Drag vertically → change height (b)
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📍 Center (a)</span>
+                    <span id="solutionHint" style="background:#fef3e2; padding:2px 8px; border-radius:40px;">solutions → ?</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="aMinus">−</button>
+                    <span id="aValue">2.0</span>
+                    <button id="aPlus">+</button>
+                </div>
+            </div>
+
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Distance / Height (b)</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="bMinus">−</button>
+                    <span id="bValue">4.0</span>
+                    <button id="bPlus">+</button>
+                </div>
+            </div>
+
+            <div class="equation-input-area">
+                <input type="text" id="eqInput" placeholder="|x - 2| = 4" value="|x - 2| = 4">
+                <button id="applyEqBtn">⇄ Set Equation</button>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Reset to |x − 2| = 4</button>
+        </div>
+    </div>
+    <footer>⚡ The horizontal red line cuts the V‑shape at two points → solutions on number line.</footer>
 </div>
 
+<div id="solutionToast" class="alert-toast">🎯 Two solutions found! (or one if b=0)</div>
+
 <script>
-    const canvas = document.getElementById('tentCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('distanceAlert');
-
-    let a = 2; // Center
-    let b = 4; // Height/Distance
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    (function(){
+        // ---------- State ----------
+        let a = 2;      // center
+        let b = 4;      // height / distance (b >= 0)
         
-        const centerX = canvas.width / 2;
-        const baseY = 320;
-        const scale = 25;
-
-        // Update UI Text
-        document.getElementById('eqDisplay').innerText = `|x - ${a}| = ${b}`;
-        document.getElementById('labelA').innerText = `a = ${a}`;
-        document.getElementById('labelB').innerText = `b = ${b}`;
-
-        // 1. Draw Number Line (Floor)
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(50, baseY);
-        ctx.lineTo(550, baseY);
-        ctx.stroke();
-
-        // Draw Ticks
-        for(let i = -10; i <= 10; i++) {
-            let xPos = centerX + (i * scale);
+        // DOM elements
+        const canvas = document.getElementById('tentCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplaySpan = document.getElementById('eqDisplay');
+        const aValueSpan = document.getElementById('aValue');
+        const bValueSpan = document.getElementById('bValue');
+        const solutionHintSpan = document.getElementById('solutionHint');
+        const eqInputField = document.getElementById('eqInput');
+        const toast = document.getElementById('solutionToast');
+        
+        // dimensions & scaling
+        let canvasWidth = 600;
+        let canvasHeight = 400;
+        let scaleX = 1;   // pixels per unit (x-axis)
+        let originX = canvasWidth / 2;
+        let baseY = 320;   // y coordinate for y=0 on number line
+        let scaleY = 25;   // pixels per unit (y axis)
+        
+        function updateScaleAndOrigin() {
+            originX = canvasWidth / 2;
+            baseY = canvasHeight - 70;
+            scaleY = Math.min(28, (canvasHeight - 100) / 12);
+            scaleX = (canvasWidth - 100) / 22;  // from -10 to 10 range
+        }
+        
+        // Helper to compute solutions
+        function getSolutions() {
+            if (b < 0) return [];
+            if (b === 0) return [a];
+            return [a - b, a + b];
+        }
+        
+        function updateUIAndDraw() {
+            // clamp b to non-negative
+            if (b < 0) b = 0;
+            // update displays
+            aValueSpan.innerText = a.toFixed(1);
+            bValueSpan.innerText = b.toFixed(1);
+            eqDisplaySpan.innerText = `|x − ${a.toFixed(1)}| = ${b.toFixed(1)}`;
+            
+            const solutions = getSolutions();
+            if (solutions.length === 2) {
+                solutionHintSpan.innerHTML = `x = ${solutions[0].toFixed(2)}, ${solutions[1].toFixed(2)}`;
+                toast.classList.add('visible');
+                if (window.toastTimeout) clearTimeout(window.toastTimeout);
+                window.toastTimeout = setTimeout(() => toast.classList.remove('visible'), 2000);
+            } else if (solutions.length === 1 && b === 0) {
+                solutionHintSpan.innerHTML = `x = ${solutions[0].toFixed(2)} (touching peak)`;
+                toast.classList.add('visible');
+                if (window.toastTimeout) clearTimeout(window.toastTimeout);
+                window.toastTimeout = setTimeout(() => toast.classList.remove('visible'), 1800);
+            } else {
+                solutionHintSpan.innerHTML = `no real solutions`;
+                toast.classList.remove('visible');
+            }
+            drawCanvas();
+        }
+        
+        // ---------- Drawing the Tent & Number Line ----------
+        function drawCanvas() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // draw number line (floor)
             ctx.beginPath();
-            ctx.moveTo(xPos, baseY - 5);
-            ctx.lineTo(xPos, baseY + 5);
+            ctx.moveTo(40, baseY);
+            ctx.lineTo(canvasWidth - 40, baseY);
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
             ctx.stroke();
+            
+            // draw ticks from -10 to 10
+            ctx.font = '12px Inter';
+            ctx.fillStyle = '#475569';
+            for (let xVal = -10; xVal <= 10; xVal++) {
+                let xPos = originX + xVal * scaleX;
+                if (xPos > 20 && xPos < canvasWidth - 20) {
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, baseY - 5);
+                    ctx.lineTo(xPos, baseY + 5);
+                    ctx.stroke();
+                    if (xVal !== 0) {
+                        ctx.fillText(xVal, xPos - 5, baseY + 18);
+                    } else {
+                        ctx.fillText("0", xPos - 4, baseY + 18);
+                    }
+                }
+            }
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText("a", originX + a * scaleX - 6, baseY - 12);
+            
+            // draw V-shape: y = |x - a|
+            ctx.beginPath();
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([]);
+            
+            // left side (x <= a)
+            let leftStartX = Math.max(-10, a - 12);
+            let leftEndX = a;
+            let leftStartY = Math.abs(leftStartX - a);
+            let pStart = { x: originX + leftStartX * scaleX, y: baseY - leftStartY * scaleY };
+            let pVertex = { x: originX + a * scaleX, y: baseY };
+            ctx.beginPath();
+            ctx.moveTo(pStart.x, pStart.y);
+            ctx.lineTo(pVertex.x, pVertex.y);
+            // right side
+            let rightEndX = Math.min(10, a + 12);
+            let rightEndY = Math.abs(rightEndX - a);
+            let pRightEnd = { x: originX + rightEndX * scaleX, y: baseY - rightEndY * scaleY };
+            ctx.lineTo(pRightEnd.x, pRightEnd.y);
+            ctx.stroke();
+            
+            // draw horizontal cutter line at y = b
+            const cutterY = baseY - b * scaleY;
+            if (cutterY >= 10 && cutterY <= canvasHeight - 20) {
+                ctx.beginPath();
+                ctx.moveTo(40, cutterY);
+                ctx.lineTo(canvasWidth - 40, cutterY);
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                // label
+                ctx.fillStyle = '#dc2626';
+                ctx.font = 'bold 12px Inter';
+                ctx.fillText(`y = ${b.toFixed(1)}`, canvasWidth - 70, cutterY - 5);
+            }
+            
+            // draw solution points & projections
+            const solutions = getSolutions();
+            ctx.setLineDash([6, 6]);
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#64748b';
+            
+            solutions.forEach(sol => {
+                let xPos = originX + sol * scaleX;
+                if (xPos > 20 && xPos < canvasWidth - 20 && cutterY > 10 && cutterY < canvasHeight - 20) {
+                    // projection line
+                    ctx.beginPath();
+                    ctx.moveTo(xPos, cutterY);
+                    ctx.lineTo(xPos, baseY);
+                    ctx.stroke();
+                    // point on number line
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(xPos, baseY, 6, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(xPos, baseY, 2.5, 0, 2*Math.PI);
+                    ctx.fill();
+                    // point on cutter line
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(xPos, cutterY, 6, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(xPos, cutterY, 2.5, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.setLineDash([6, 6]);
+                } else {
+                    // still draw number line point if within bounds
+                    if (xPos > 20 && xPos < canvasWidth - 20) {
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = '#ef4444';
+                        ctx.beginPath();
+                        ctx.arc(xPos, baseY, 6, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = 'white';
+                        ctx.beginPath();
+                        ctx.arc(xPos, baseY, 2.5, 0, 2*Math.PI);
+                        ctx.fill();
+                    }
+                }
+            });
+            ctx.setLineDash([]);
+            
+            // optional label for vertex
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = 'bold 10px monospace';
+            ctx.fillText(`(${a.toFixed(1)}, 0)`, originX + a*scaleX - 20, baseY - 8);
         }
-
-        // 2. Draw the 3D "Tent" (Absolute Value Function)
-        // y = |x - a|
-        ctx.strokeStyle = '#0056b3';
-        ctx.lineWidth = 4;
-        ctx.setLineDash([]);
-        ctx.beginPath();
         
-        // Left side of V
-        ctx.moveTo(centerX + (a * scale), baseY);
-        ctx.lineTo(centerX + ((a - 10) * scale), baseY - (10 * scale));
-        
-        // Right side of V
-        ctx.moveTo(centerX + (a * scale), baseY);
-        ctx.lineTo(centerX + ((a + 10) * scale), baseY - (10 * scale));
-        ctx.stroke();
-
-        // 3. Draw "Cutter Bar" (The result b)
-        const barY = baseY - (b * scale);
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(50, barY);
-        ctx.lineTo(550, barY);
-        ctx.stroke();
-
-        // 4. Calculate Solutions and Draw Projections
-        const sol1 = a - b;
-        const sol2 = a + b;
-        const x1 = centerX + (sol1 * scale);
-        const x2 = centerX + (sol2 * scale);
-
-        // Projection Lines (Dashed)
-        ctx.strokeStyle = '#64748b';
-        ctx.setLineDash([5, 5]);
-        ctx.lineWidth = 1;
-        
-        // Left Projection
-        ctx.beginPath();
-        ctx.moveTo(x1, barY);
-        ctx.lineTo(x1, baseY);
-        ctx.stroke();
-
-        // Right Projection
-        ctx.beginPath();
-        ctx.moveTo(x2, barY);
-        ctx.lineTo(x2, baseY);
-        ctx.stroke();
-
-        // 5. Draw Solution Points on Number Line
-        ctx.setLineDash([]);
-        ctx.fillStyle = '#ef4444';
-        
-        // Point 1
-        ctx.beginPath();
-        ctx.arc(x1, baseY, 6, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Point 2
-        ctx.beginPath();
-        ctx.arc(x2, baseY, 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 6. Show Alert
-        if (b > 0) {
-            alertBox.style.display = 'block';
-        } else if (b === 0) {
-            alertBox.innerText = "Single Solution (The Peak)!";
-            alertBox.style.display = 'block';
-        } else {
-            alertBox.style.display = 'none';
+        // ---------- Resize handler ----------
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 30, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.65;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            updateScaleAndOrigin();
+            drawCanvas();
         }
-    }
-
-    // Event Listeners
-    document.getElementById('valA').addEventListener('input', (e) => { 
-        a = parseFloat(e.target.value); 
-        draw(); 
-    });
-    document.getElementById('valB').addEventListener('input', (e) => { 
-        b = parseFloat(e.target.value); 
-        draw(); 
-    });
-
-    // Initial Draw
-    draw();
+        
+        // ---------- Parameter updates ----------
+        function setA(newA) {
+            a = Math.min(10, Math.max(-10, newA));
+            a = Math.round(a * 10) / 10;
+            updateUIAndDraw();
+        }
+        
+        function setB(newB) {
+            b = Math.min(12, Math.max(0, newB));
+            b = Math.round(b * 10) / 10;
+            updateUIAndDraw();
+        }
+        
+        // ---------- Equation parser: |x - a| = b ----------
+        function parseAbsoluteEquation(eqStr) {
+            let cleaned = eqStr.replace(/\s/g, '');
+            // match pattern |x - a| = b   or |x + a| = b
+            let regex = /\|x([+-][\d\.]+)?\|=([\d\.]+)/;
+            let match = cleaned.match(regex);
+            if (!match) {
+                // try alternative |x - a| = b with a having sign
+                let altRegex = /\|x([+-][\d\.]+)\|=([\d\.]+)/;
+                match = cleaned.match(altRegex);
+            }
+            if (match) {
+                let aPart = match[1] || '';
+                let bVal = parseFloat(match[2]);
+                if (isNaN(bVal)) return null;
+                let aVal = 0;
+                if (aPart === '') aVal = 0;
+                else if (aPart === '+') aVal = 0;
+                else if (aPart === '-') aVal = 0;
+                else aVal = parseFloat(aPart);
+                if (isNaN(aVal)) aVal = 0;
+                // note: |x - a| means inside is x - a. So if pattern is |x + 2| -> a = -2
+                // our parser: if we see + sign, it's x + c => a = -c
+                if (aPart && aPart.includes('+')) {
+                    aVal = -aVal;
+                }
+                return { a: aVal, b: bVal };
+            }
+            // try manual: split by =
+            let sides = cleaned.split('=');
+            if (sides.length !== 2) return null;
+            let left = sides[0];
+            let right = parseFloat(sides[1]);
+            if (isNaN(right)) return null;
+            let absMatch = left.match(/^\|x([+-][\d\.]+)?\|$/);
+            if (absMatch) {
+                let inner = absMatch[1] || '';
+                let aVal = 0;
+                if (inner === '') aVal = 0;
+                else if (inner === '+') aVal = 0;
+                else if (inner === '-') aVal = 0;
+                else aVal = parseFloat(inner);
+                if (isNaN(aVal)) return null;
+                if (inner && inner.includes('+')) aVal = -aVal;
+                return { a: aVal, b: right };
+            }
+            return null;
+        }
+        
+        function applyEquationFromInput() {
+            let raw = eqInputField.value.trim();
+            let parsed = parseAbsoluteEquation(raw);
+            if (parsed && parsed.b >= 0) {
+                a = parsed.a;
+                b = parsed.b;
+                eqInputField.value = `|x - ${a}| = ${b}`;
+                updateUIAndDraw();
+            } else {
+                eqInputField.style.borderColor = '#f87171';
+                setTimeout(() => eqInputField.style.borderColor = '#dce3ec', 800);
+            }
+        }
+        
+        // ---------- Reset ----------
+        function resetToDefault() {
+            a = 2;
+            b = 4;
+            eqInputField.value = "|x - 2| = 4";
+            updateUIAndDraw();
+        }
+        
+        // ---------- Canvas Drag Interaction (change a and b) ----------
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function handleDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const pos = getPointerPos(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function handleDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastPointer.x;
+            const dy = pos.y - lastPointer.y;
+            if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+                // horizontal: change a
+                let aDelta = dx / scaleX;
+                let newA = a + aDelta;
+                setA(newA);
+                // vertical: change b (inverted: moving up decreases b? intuitive: drag up increases b? make natural)
+                let bDelta = -dy / scaleY;
+                let newB = b + bDelta;
+                setB(newB);
+            }
+            lastPointer = pos;
+        }
+        
+        function handleDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', handleDragStart);
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+            canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+            canvas.addEventListener('touchmove', handleDragMove, { passive: false });
+            canvas.addEventListener('touchend', handleDragEnd);
+            canvas.addEventListener('touchcancel', handleDragEnd);
+        }
+        
+        // ---------- Stepper buttons ----------
+        function bindSteppers() {
+            document.getElementById('aMinus').addEventListener('click', () => setA(a - 0.5));
+            document.getElementById('aPlus').addEventListener('click', () => setA(a + 0.5));
+            document.getElementById('bMinus').addEventListener('click', () => setB(b - 0.5));
+            document.getElementById('bPlus').addEventListener('click', () => setB(b + 0.5));
+        }
+        
+        // ---------- Resize observer ----------
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                resizeCanvas();
+                drawCanvas();
+            }, 100);
+        }
+        
+        // ---------- Initialization ----------
+        function init() {
+            resizeCanvas();
+            bindSteppers();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('applyEqBtn').addEventListener('click', applyEquationFromInput);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUIAndDraw();
+        }
+        
+        init();
+    })();
 </script>
-
 </body>
 </html>

@@ -2,323 +2,712 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTwin Math Lab: 3D Systems</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>3D Systems Lab | Linear Equations Visualizer</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --accent-blue: #00a2ff;
-            --white: #ffffff;
-            --bg: #f8fafc;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-            touch-action: none; /* Prevents scrolling while rotating on mobile */
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1100px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: white;
-            padding: 20px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        .lab-layout {
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
             display: grid;
-            grid-template-columns: 1fr 340px;
-            padding: 20px;
-            gap: 20px;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        @media (max-width: 900px) {
-            .lab-layout { grid-template-columns: 1fr; }
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .canvas-container {
-            background: #0f172a;
-            border-radius: 16px;
-            position: relative;
-            cursor: move;
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .equation-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            margin: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .equation-preview div {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 4px 0;
         }
 
         canvas {
+            display: block;
             width: 100%;
             height: auto;
-            display: block;
+            background: #ffffff;
+            cursor: grab;
+            touch-action: none;
         }
 
-        .equation-overlay {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border-left: 6px solid var(--primary-blue);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        canvas:active {
+            cursor: grabbing;
         }
 
-        .equation-text {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin: 5px 0;
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin: 0.5rem;
+            border-radius: 40px;
         }
 
+        /* Right panel - custom controls without range sliders */
         .control-panel {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 16px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 1.2rem;
         }
 
-        .slider-group {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
+        .eq-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
         }
 
-        .slider-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: bold;
+        .eq-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.8rem;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .coeff-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        .coeff-item {
+            flex: 1;
+            min-width: 70px;
+            background: #f1f5f9;
+            border-radius: 40px;
+            padding: 4px 8px;
+            text-align: center;
+        }
+
+        .coeff-item label {
+            font-size: 0.7rem;
+            font-weight: 600;
             color: #475569;
-            margin-bottom: 5px;
+            display: block;
         }
 
-        input[type="range"] {
+        .stepper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .stepper button {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            width: 32px;
+            height: 32px;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper button:active {
+            transform: scale(0.92);
+            background: #e2e8f0;
+        }
+
+        .stepper span {
+            min-width: 40px;
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .equation-input-area {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .equation-input-area input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 10px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .equation-input-area input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f630;
+        }
+
+        .equation-input-area button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 16px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
             width: 100%;
-            accent-color: var(--primary-blue);
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
         }
 
-        /* Alert Notification */
-        #alertContainer {
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .alert-toast {
             position: fixed;
-            top: 25px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 2000;
-            pointer-events: none;
-        }
-
-        .math-alert {
-            background: var(--primary-blue);
+            background: #3b82f6;
             color: white;
-            padding: 14px 35px;
-            border-radius: 50px;
+            padding: 10px 24px;
+            border-radius: 60px;
             font-weight: 600;
-            box-shadow: 0 10px 25px rgba(0, 86, 179, 0.3);
-            display: none;
-            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
         }
 
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .alert-toast.visible {
+            opacity: 1;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<div id="alertContainer">
-    <div id="solutionAlert" class="math-alert">✨ Intersection Found! System Solved.</div>
-</div>
-
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">3D Systems Visualizer</h2>
-        <p style="margin:5px 0 0">Interactive Linear Equations Laboratory</p>
-    </header>
-
-    <div class="lab-layout">
-        <main>
-            <div class="equation-overlay">
-                <div class="equation-text" style="color: #3b82f6;" id="eq1Text">Eq 1: 1.0x + 1.0y = 5</div>
-                <div class="equation-text" style="color: #a855f7;" id="eq2Text">Eq 2: 1.0x - 1.0y = 2</div>
-            </div>
-            <div class="canvas-container" id="canvasFrame">
-                <canvas id="systemCanvas" width="600" height="500"></canvas>
-            </div>
-        </main>
-
-        <aside class="control-panel">
-            <h4 style="margin:0; color: #3b82f6;">Equation 1</h4>
-            <div class="slider-group">
-                <label>a1: <span id="v_a1">1.0</span></label>
-                <input type="range" id="a1" min="-3" max="3" step="0.1" value="1">
-                <label>b1: <span id="v_b1">1.0</span></label>
-                <input type="range" id="b1" min="-3" max="3" step="0.1" value="1">
-                <label>c1: <span id="v_c1">5.0</span></label>
-                <input type="range" id="c1" min="-10" max="10" step="1" value="5">
-            </div>
-
-            <h4 style="margin:10px 0 0; color: #a855f7;">Equation 2</h4>
-            <div class="slider-group">
-                <label>a2: <span id="v_a2">1.0</span></label>
-                <input type="range" id="a2" min="-3" max="3" step="0.1" value="1">
-                <label>b2: <span id="v_b2">-1.0</span></label>
-                <input type="range" id="b2" min="-3" max="3" step="0.1" value="-1">
-                <label>c2: <span id="v_c2">2.0</span></label>
-                <input type="range" id="c2" min="-10" max="10" step="1" value="2">
-            </div>
-        </aside>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🧊 3D Linear Systems · Plane Intersection</h1>
+        <p>Two equations: a₁x + b₁y = c₁ &nbsp;|&nbsp; a₂x + b₂y = c₂ → solution = intersection line (z free)</p>
     </div>
+
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="equation-preview">
+                <div style="color:#3b82f6" id="eq1Preview">Eq1: 1.0x + 1.0y = 5</div>
+                <div style="color:#a855f7" id="eq2Preview">Eq2: 1.0x - 1.0y = 2</div>
+            </div>
+            <canvas id="systemCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag on canvas → rotate 3D view (touch & mouse)
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <!-- Equation 1 controls (no range sliders) -->
+            <div class="eq-card">
+                <div class="eq-title">
+                    <span style="color:#3b82f6">📘 Equation 1</span>
+                    <span id="solHint" style="font-size:0.7rem; background:#eef2ff; padding:2px 8px; border-radius:40px;">solution → ?</span>
+                </div>
+                <div class="coeff-group">
+                    <div class="coeff-item"><label>a₁</label>
+                        <div class="stepper"><button data-param="a1" data-delta="-0.1">−</button><span id="val_a1">1.0</span><button data-param="a1" data-delta="0.1">+</button></div>
+                    </div>
+                    <div class="coeff-item"><label>b₁</label>
+                        <div class="stepper"><button data-param="b1" data-delta="-0.1">−</button><span id="val_b1">1.0</span><button data-param="b1" data-delta="0.1">+</button></div>
+                    </div>
+                    <div class="coeff-item"><label>c₁</label>
+                        <div class="stepper"><button data-param="c1" data-delta="-1">−</button><span id="val_c1">5</span><button data-param="c1" data-delta="1">+</button></div>
+                    </div>
+                </div>
+                <div class="equation-input-area">
+                    <input type="text" id="eq1Input" placeholder="e.g., 1x + 1y = 5" value="1x + 1y = 5">
+                    <button id="setEq1Btn">⇄ Set</button>
+                </div>
+            </div>
+
+            <!-- Equation 2 controls -->
+            <div class="eq-card">
+                <div class="eq-title">
+                    <span style="color:#a855f7">📗 Equation 2</span>
+                </div>
+                <div class="coeff-group">
+                    <div class="coeff-item"><label>a₂</label>
+                        <div class="stepper"><button data-param="a2" data-delta="-0.1">−</button><span id="val_a2">1.0</span><button data-param="a2" data-delta="0.1">+</button></div>
+                    </div>
+                    <div class="coeff-item"><label>b₂</label>
+                        <div class="stepper"><button data-param="b2" data-delta="-0.1">−</button><span id="val_b2">-1.0</span><button data-param="b2" data-delta="0.1">+</button></div>
+                    </div>
+                    <div class="coeff-item"><label>c₂</label>
+                        <div class="stepper"><button data-param="c2" data-delta="-1">−</button><span id="val_c2">2</span><button data-param="c2" data-delta="1">+</button></div>
+                    </div>
+                </div>
+                <div class="equation-input-area">
+                    <input type="text" id="eq2Input" placeholder="e.g., 1x - 1y = 2" value="1x - 1y = 2">
+                    <button id="setEq2Btn">⇄ Set</button>
+                </div>
+            </div>
+
+            <button id="resetViewBtn" class="reset-btn">⟳ Reset Camera & Default Equations</button>
+        </div>
+    </div>
+    <footer>⚡ Intersection point (red sphere) is the solution (x,y). Planes extend vertically.</footer>
 </div>
+
+<div id="intersectionToast" class="alert-toast">✨ Intersection found! System solved.</div>
 
 <script>
-    const canvas = document.getElementById('systemCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('solutionAlert');
-
-    let params = { a1: 1, b1: 1, c1: 5, a2: 1, b2: -1, c2: 2 };
-    let rotation = { x: 0.5, y: 0.7 };
-    let isDragging = false;
-    let lastMouse = { x: 0, y: 0 };
-    const scale = 22;
-
-    function project(x, y, z) {
-        let cosY = Math.cos(rotation.y);
-        let sinY = Math.sin(rotation.y);
-        let x1 = x * cosY - z * sinY;
-        let z1 = x * sinY + z * cosY;
-
-        let cosX = Math.cos(rotation.x);
-        let sinX = Math.sin(rotation.x);
-        let y2 = y * cosX - z1 * sinX;
-        let z2 = y * sinX + z1 * cosX;
-
-        return {
-            x: (canvas.width / 2) + x1 * scale,
-            y: (canvas.height / 2) - y2 * scale,
-            z: z2
+    (function(){
+        // ---------- State ----------
+        let params = {
+            a1: 1, b1: 1, c1: 5,
+            a2: 1, b2: -1, c2: 2
         };
-    }
-
-    function drawPlane(a, b, c, color) {
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.35;
-        const range = 12;
-
-        if (Math.abs(b) > 0.05) {
-            const getY = (currX) => (c - a * currX) / b;
-            let p1 = project(-range, getY(-range), -range);
-            let p2 = project(range, getY(range), -range);
-            let p3 = project(range, getY(range), range);
-            let p4 = project(-range, getY(-range), range);
+        
+        // 3D rotation (radians)
+        let rotation = { x: 0.5, y: 0.7 };
+        let isDragging = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        const canvas = document.getElementById('systemCanvas');
+        const ctx = canvas.getContext('2d');
+        const eq1Preview = document.getElementById('eq1Preview');
+        const eq2Preview = document.getElementById('eq2Preview');
+        const toast = document.getElementById('intersectionToast');
+        
+        // scale factor for projection
+        const scale = 22;
+        
+        // Helper: update UI labels and redraw
+        function updateUI() {
+            document.getElementById('val_a1').innerText = params.a1.toFixed(1);
+            document.getElementById('val_b1').innerText = params.b1.toFixed(1);
+            document.getElementById('val_c1').innerText = params.c1;
+            document.getElementById('val_a2').innerText = params.a2.toFixed(1);
+            document.getElementById('val_b2').innerText = params.b2.toFixed(1);
+            document.getElementById('val_c2').innerText = params.c2;
             
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            ctx.lineTo(p3.x, p3.y);
-            ctx.lineTo(p4.x, p4.y);
-            ctx.closePath();
-            ctx.fill();
-        }
-        ctx.globalAlpha = 1.0;
-    }
-
-    function drawGrid() {
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        // X-Axis
-        let pX1 = project(-12, 0, 0); let pX2 = project(12, 0, 0);
-        ctx.moveTo(pX1.x, pX1.y); ctx.lineTo(pX2.x, pX2.y);
-        // Y-Axis
-        let pY1 = project(0, -12, 0); let pY2 = project(0, 12, 0);
-        ctx.moveTo(pY1.x, pY1.y); ctx.lineTo(pY2.x, pY2.y);
-        ctx.stroke();
-    }
-
-    function update() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawGrid();
-        drawPlane(params.a1, params.b1, params.c1, '#3b82f6');
-        drawPlane(params.a2, params.b2, params.c2, '#a855f7');
-
-        document.getElementById('eq1Text').innerText = `Eq 1: ${params.a1.toFixed(1)}x + ${params.b1.toFixed(1)}y = ${params.c1}`;
-        document.getElementById('eq2Text').innerText = `Eq 2: ${params.a2.toFixed(1)}x + ${params.b2.toFixed(1)}y = ${params.c2}`;
-
-        // Solve Intersection
-        const det = params.a1 * params.b2 - params.a2 * params.b1;
-        if (Math.abs(det) > 0.05) {
-            const solX = (params.c1 * params.b2 - params.c2 * params.b1) / det;
-            const solY = (params.a1 * params.c2 - params.a2 * params.c1) / det;
+            eq1Preview.innerText = `Eq1: ${params.a1.toFixed(1)}x + ${params.b1.toFixed(1)}y = ${params.c1}`;
+            eq2Preview.innerText = `Eq2: ${params.a2.toFixed(1)}x + ${params.b2.toFixed(1)}y = ${params.c2}`;
             
-            const p = project(solX, solY, 0);
-            ctx.fillStyle = '#ff0000';
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // Show alert if intersection is within visible bounds
-            if(Math.abs(solX) < 15 && Math.abs(solY) < 15) {
-                alertBox.style.display = 'block';
+            // update solution hint
+            const det = params.a1 * params.b2 - params.a2 * params.b1;
+            if (Math.abs(det) > 1e-6) {
+                const solX = (params.c1 * params.b2 - params.c2 * params.b1) / det;
+                const solY = (params.a1 * params.c2 - params.a2 * params.c1) / det;
+                document.getElementById('solHint').innerHTML = `(x,y) = (${solX.toFixed(2)}, ${solY.toFixed(2)})`;
             } else {
-                alertBox.style.display = 'none';
+                document.getElementById('solHint').innerHTML = `parallel / no unique`;
             }
-        } else {
-            alertBox.style.display = 'none';
+            drawScene();
         }
-    }
-
-    // Controls Logic
-    ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'].forEach(id => {
-        const input = document.getElementById(id);
-        input.addEventListener('input', (e) => {
-            params[id] = parseFloat(e.target.value);
-            document.getElementById('v_' + id).innerText = params[id].toFixed(1);
-            update();
-        });
-    });
-
-    // Interaction Logic
-    const frame = document.getElementById('canvasFrame');
-    frame.addEventListener('mousedown', e => { isDragging = true; lastMouse = {x: e.clientX, y: e.clientY}; });
-    window.addEventListener('mouseup', () => isDragging = false);
-    window.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-        rotation.y += (e.clientX - lastMouse.x) * 0.01;
-        rotation.x += (e.clientY - lastMouse.y) * 0.01;
-        lastMouse = {x: e.clientX, y: e.clientY};
-        update();
-    });
-
-    // Mobile Touch
-    frame.addEventListener('touchstart', e => { 
-        isDragging = true; 
-        lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY}; 
-    });
-    window.addEventListener('touchend', () => isDragging = false);
-    window.addEventListener('touchmove', e => {
-        if (!isDragging) return;
-        rotation.y += (e.touches[0].clientX - lastMouse.x) * 0.01;
-        rotation.x += (e.touches[0].clientY - lastMouse.y) * 0.01;
-        lastMouse = {x: e.touches[0].clientX, y: e.touches[0].clientY};
-        update();
-    });
-
-    update();
+        
+        // ---------- 3D Projection ----------
+        function project(x, y, z) {
+            let cosY = Math.cos(rotation.y);
+            let sinY = Math.sin(rotation.y);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+            
+            let cosX = Math.cos(rotation.x);
+            let sinX = Math.sin(rotation.x);
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = y * sinX + z1 * cosX;
+            
+            return {
+                x: canvas.width / 2 + x1 * scale,
+                y: canvas.height / 2 - y2 * scale,
+                z: z2
+            };
+        }
+        
+        // Draw a semi-transparent plane for a₁x + b₁y = c₁ (vertical extrusion in Z)
+        function drawPlane(a, b, c, color) {
+            if (Math.abs(b) < 1e-6 && Math.abs(a) < 1e-6) return;
+            const range = 12;
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.35;
+            
+            // We draw a quad: y expressed as (c - a*x)/b  if b != 0
+            if (Math.abs(b) > 1e-6) {
+                const getY = (xVal) => (c - a * xVal) / b;
+                let p1 = project(-range, getY(-range), -range);
+                let p2 = project(range, getY(range), -range);
+                let p3 = project(range, getY(range), range);
+                let p4 = project(-range, getY(-range), range);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.closePath();
+                ctx.fill();
+            } else if (Math.abs(a) > 1e-6) {
+                // vertical plane x = c/a
+                const xConst = c / a;
+                let p1 = project(xConst, -range, -range);
+                let p2 = project(xConst, range, -range);
+                let p3 = project(xConst, range, range);
+                let p4 = project(xConst, -range, range);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.lineTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        function drawGridAndAxes() {
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            // X axis (red-ish)
+            let origin = project(0,0,0);
+            let xAxis = project(12,0,0);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(xAxis.x, xAxis.y);
+            ctx.strokeStyle = '#ef4444';
+            ctx.stroke();
+            // Y axis
+            let yAxis = project(0,12,0);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(yAxis.x, yAxis.y);
+            ctx.strokeStyle = '#22c55e';
+            ctx.stroke();
+            // grid lines on ground
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 0.8;
+            for (let i = -10; i <= 10; i+=2) {
+                let p1 = project(i, -10, 0);
+                let p2 = project(i, 10, 0);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+                let p3 = project(-10, i, 0);
+                let p4 = project(10, i, 0);
+                ctx.beginPath();
+                ctx.moveTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawIntersection() {
+            const det = params.a1 * params.b2 - params.a2 * params.b1;
+            if (Math.abs(det) > 1e-6) {
+                const solX = (params.c1 * params.b2 - params.c2 * params.b1) / det;
+                const solY = (params.a1 * params.c2 - params.a2 * params.c1) / det;
+                const proj = project(solX, solY, 0);
+                ctx.fillStyle = '#ef4444';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, 7, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(proj.x, proj.y, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                // show toast if intersection is within visible range (approx)
+                if (Math.abs(solX) < 14 && Math.abs(solY) < 14) {
+                    toast.classList.add('visible');
+                    if (window.toastTimeout) clearTimeout(window.toastTimeout);
+                    window.toastTimeout = setTimeout(() => toast.classList.remove('visible'), 1800);
+                } else {
+                    toast.classList.remove('visible');
+                }
+            } else {
+                toast.classList.remove('visible');
+            }
+        }
+        
+        function drawScene() {
+            if (!ctx) return;
+            if (canvas.width === 0 || canvas.height === 0) resizeCanvas();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGridAndAxes();
+            drawPlane(params.a1, params.b1, params.c1, '#3b82f6');
+            drawPlane(params.a2, params.b2, params.c2, '#a855f7');
+            drawIntersection();
+        }
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 20, 700);
+            const targetW = maxWidth;
+            const targetH = targetW * 0.7;
+            canvas.width = targetW;
+            canvas.height = targetH;
+            drawScene();
+        }
+        
+        // ---------- Parameter update ----------
+        function setParam(param, value) {
+            if (params.hasOwnProperty(param)) {
+                let newVal = parseFloat(value);
+                if (isNaN(newVal)) return;
+                if (param === 'c1' || param === 'c2') newVal = Math.round(newVal);
+                else newVal = Math.round(newVal * 10) / 10;
+                params[param] = newVal;
+                updateUI();
+            }
+        }
+        
+        // equation parser for a₁x + b₁y = c₁  (allow spaces, +-)
+        function parseEquation(eqStr) {
+            eqStr = eqStr.replace(/\s/g, '');
+            let sides = eqStr.split('=');
+            if (sides.length !== 2) return null;
+            let left = sides[0];
+            let right = sides[1];
+            let cVal = parseFloat(right);
+            if (isNaN(cVal)) return null;
+            
+            let aVal = 0, bVal = 0;
+            // pattern for x term and y term
+            let xMatch = left.match(/([+-]?[\d\.]*)x/);
+            let yMatch = left.match(/([+-]?[\d\.]*)y/);
+            if (xMatch) {
+                let coeff = xMatch[1];
+                if (coeff === '+' || coeff === '') aVal = 1;
+                else if (coeff === '-') aVal = -1;
+                else aVal = parseFloat(coeff);
+                if (isNaN(aVal)) aVal = 1;
+            }
+            if (yMatch) {
+                let coeff = yMatch[1];
+                if (coeff === '+' || coeff === '') bVal = 1;
+                else if (coeff === '-') bVal = -1;
+                else bVal = parseFloat(coeff);
+                if (isNaN(bVal)) bVal = 1;
+            }
+            // handle implicit terms
+            if (!xMatch && !yMatch) return null;
+            return { a: aVal, b: bVal, c: cVal };
+        }
+        
+        function setEquation1FromInput() {
+            const raw = document.getElementById('eq1Input').value;
+            const parsed = parseEquation(raw);
+            if (parsed) {
+                params.a1 = parsed.a;
+                params.b1 = parsed.b;
+                params.c1 = parsed.c;
+                document.getElementById('eq1Input').value = `${parsed.a}x + ${parsed.b}y = ${parsed.c}`;
+                updateUI();
+            } else {
+                document.getElementById('eq1Input').style.borderColor = '#f87171';
+                setTimeout(() => document.getElementById('eq1Input').style.borderColor = '#dce3ec', 800);
+            }
+        }
+        
+        function setEquation2FromInput() {
+            const raw = document.getElementById('eq2Input').value;
+            const parsed = parseEquation(raw);
+            if (parsed) {
+                params.a2 = parsed.a;
+                params.b2 = parsed.b;
+                params.c2 = parsed.c;
+                document.getElementById('eq2Input').value = `${parsed.a}x + ${parsed.b}y = ${parsed.c}`;
+                updateUI();
+            } else {
+                document.getElementById('eq2Input').style.borderColor = '#f87171';
+                setTimeout(() => document.getElementById('eq2Input').style.borderColor = '#dce3ec', 800);
+            }
+        }
+        
+        function resetToDefault() {
+            params = { a1: 1, b1: 1, c1: 5, a2: 1, b2: -1, c2: 2 };
+            rotation = { x: 0.5, y: 0.7 };
+            document.getElementById('eq1Input').value = "1x + 1y = 5";
+            document.getElementById('eq2Input').value = "1x - 1y = 2";
+            updateUI();
+        }
+        
+        // ---------- Event binding for steppers ----------
+        function bindSteppers() {
+            document.querySelectorAll('.stepper button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const param = btn.getAttribute('data-param');
+                    const delta = parseFloat(btn.getAttribute('data-delta'));
+                    if (param && !isNaN(delta)) {
+                        let newVal = params[param] + delta;
+                        if (param === 'c1' || param === 'c2') newVal = Math.round(newVal);
+                        else newVal = Math.round(newVal * 10) / 10;
+                        setParam(param, newVal);
+                    }
+                });
+            });
+        }
+        
+        // ---------- 3D Drag (touch & mouse) ----------
+        function initDrag() {
+            const canvasElem = canvas;
+            const getPointerPos = (e) => {
+                let clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                return { x: clientX, y: clientY };
+            };
+            
+            const onPointerStart = (e) => {
+                e.preventDefault();
+                isDragging = true;
+                const pos = getPointerPos(e);
+                lastPointer = pos;
+                canvasElem.setPointerCapture?.(e.pointerId);
+            };
+            const onPointerMove = (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                const pos = getPointerPos(e);
+                const dx = pos.x - lastPointer.x;
+                const dy = pos.y - lastPointer.y;
+                if (dx !== 0 || dy !== 0) {
+                    rotation.y += dx * 0.008;
+                    rotation.x += dy * 0.008;
+                    rotation.x = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotation.x));
+                    drawScene();
+                }
+                lastPointer = pos;
+            };
+            const onPointerEnd = () => { isDragging = false; };
+            
+            canvasElem.addEventListener('mousedown', onPointerStart);
+            window.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerEnd);
+            canvasElem.addEventListener('touchstart', onPointerStart, { passive: false });
+            canvasElem.addEventListener('touchmove', onPointerMove, { passive: false });
+            canvasElem.addEventListener('touchend', onPointerEnd);
+            canvasElem.addEventListener('touchcancel', onPointerEnd);
+        }
+        
+        // ---------- Resize observer ----------
+        let resizeTimer;
+        function handleResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                resizeCanvas();
+                drawScene();
+            }, 100);
+        }
+        
+        function init() {
+            resizeCanvas();
+            bindSteppers();
+            initDrag();
+            window.addEventListener('resize', handleResize);
+            document.getElementById('setEq1Btn').addEventListener('click', setEquation1FromInput);
+            document.getElementById('setEq2Btn').addEventListener('click', setEquation2FromInput);
+            document.getElementById('resetViewBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

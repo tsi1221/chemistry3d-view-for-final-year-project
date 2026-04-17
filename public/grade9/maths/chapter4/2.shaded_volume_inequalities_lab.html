@@ -2,247 +2,426 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade 9 Math Lab: Shaded Volume Inequalities</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Shaded Volume Lab | 3D Inequality Explorer</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --accent-blue: #00a2ff;
-            --white: #ffffff;
-            --bg: #f8fafc;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-            color: #333;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1100px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 86, 179, 0.15);
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: white;
-            padding: 20px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        .lab-layout {
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
             display: grid;
-            grid-template-columns: 1fr 340px;
-            padding: 20px;
-            gap: 20px;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        @media (max-width: 900px) {
-            .lab-layout { grid-template-columns: 1fr; }
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .canvas-container {
-            background: #111827; /* Dark background for 3D pop */
-            border-radius: 16px;
-            position: relative;
-            cursor: move;
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
             overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .inequality-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .inequality-preview div {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 4px 0;
         }
 
         canvas {
+            display: block;
             width: 100%;
             height: auto;
-            display: block;
+            background: #111827;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        .formula-overlay {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border-left: 6px solid var(--primary-blue);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        canvas:active {
+            cursor: grabbing;
         }
 
-        .equation-text {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin: 5px 0;
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
         .control-panel {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 16px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            border: 1px solid #e2e8f0;
+            gap: 1.2rem;
         }
 
-        .slider-group {
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
         }
 
-        .slider-group label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: bold;
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .coeff-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .coeff-item {
+            flex: 1;
+            min-width: 70px;
+            text-align: center;
+            background: #f1f5f9;
+            border-radius: 40px;
+            padding: 4px 6px;
+        }
+
+        .coeff-item label {
+            font-size: 0.7rem;
+            font-weight: 600;
             color: #475569;
-            margin-bottom: 5px;
+            display: block;
         }
 
-        input[type="range"] {
+        .stepper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .stepper button {
+            background: white;
+            border: 1px solid #cbd5e1;
+            width: 30px;
+            height: 30px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .stepper button:active {
+            transform: scale(0.92);
+            background: #e2e8f0;
+        }
+
+        .stepper span {
+            font-family: monospace;
+            font-weight: 700;
+            min-width: 40px;
+            font-size: 0.9rem;
+        }
+
+        .inequality-input {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .inequality-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            outline: none;
+        }
+
+        .inequality-input input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f630;
+        }
+
+        .inequality-input button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 16px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
             width: 100%;
-            accent-color: var(--primary-blue);
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
         }
 
-        /* Blue/White Alert Notification */
-        #alertContainer {
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .alert-toast {
             position: fixed;
-            top: 25px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: 2000;
-            pointer-events: none;
-        }
-
-        .math-alert {
-            background: var(--primary-blue);
+            background: #3b82f6;
             color: white;
-            padding: 14px 35px;
-            border-radius: 50px;
+            padding: 10px 26px;
+            border-radius: 60px;
             font-weight: 600;
-            box-shadow: 0 10px 25px rgba(0, 86, 179, 0.3);
-            display: none;
-            animation: slideIn 0.3s ease-out;
+            font-size: 0.9rem;
+            z-index: 1000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
         }
 
-        @keyframes slideIn {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .alert-toast.visible {
+            opacity: 1;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<div id="alertContainer">
-    <div id="statusAlert" class="math-alert">Lab Updated</div>
-</div>
-
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">Shaded Volume Lab</h2>
-        <p style="margin:5px 0 0">Visualizing Systems of Inequalities in 3D Space</p>
-    </header>
-
-    <div class="lab-layout">
-        <main>
-            <div class="formula-overlay">
-                <div class="equation-text" style="color: #3b82f6;" id="ineq1Text">Ineq 1: 1.0x + 1.0y < 5</div>
-                <div class="equation-text" style="color: #a855f7;" id="ineq2Text">Ineq 2: 1.0x - 1.0y > 2</div>
-            </div>
-            <div class="canvas-container" id="canvasFrame">
-                <canvas id="inequalityCanvas" width="600" height="500"></canvas>
-            </div>
-        </main>
-
-        <aside class="control-panel">
-            <h4 style="margin:0; color: #3b82f6;">Inequality 1 (Blue)</h4>
-            <div class="slider-group">
-                <label>a1: <span id="v_a1">1.0</span></label>
-                <input type="range" id="a1" min="-3" max="3" step="0.1" value="1">
-                <label>b1: <span id="v_b1">1.0</span></label>
-                <input type="range" id="b1" min="-3" max="3" step="0.1" value="1">
-                <label>c1: <span id="v_c1">5.0</span></label>
-                <input type="range" id="c1" min="-10" max="10" step="1" value="5">
-            </div>
-
-            <h4 style="margin:10px 0 0; color: #a855f7;">Inequality 2 (Purple)</h4>
-            <div class="slider-group">
-                <label>a2: <span id="v_a2">1.0</span></label>
-                <input type="range" id="a2" min="-3" max="3" step="0.1" value="1">
-                <label>b2: <span id="v_b2">-1.0</span></label>
-                <input type="range" id="b2" min="-3" max="3" step="0.1" value="-1">
-                <label>c2: <span id="v_c2">2.0</span></label>
-                <input type="range" id="c2" min="-10" max="10" step="1" value="2">
-            </div>
-            
-            <div style="background: #fffbe6; padding: 10px; border-radius: 8px; font-size: 0.8rem; border-left: 4px solid #fbbf24;">
-                <strong>Rotation:</strong> Click and drag on the visualization to rotate the 3D view. Overlapping colors show the solution.
-            </div>
-        </aside>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🧊 Shaded Volume · Systems of Inequalities</h1>
+        <p>a₁x + b₁y < c₁ &nbsp;&nbsp;and&nbsp;&nbsp; a₂x + b₂y > c₂ &nbsp;→ overlapping region is the solution</p>
     </div>
+
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="inequality-preview">
+                <div style="color:#3b82f6" id="ineq1Preview">1.0x + 1.0y < 5</div>
+                <div style="color:#a855f7" id="ineq2Preview">1.0x - 1.0y > 2</div>
+            </div>
+            <canvas id="ineqCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag canvas to rotate 3D view (mouse/touch)
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <!-- Inequality 1 (Blue, <) -->
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🔵 a₁x + b₁y < c₁</span>
+                    <span id="status1" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">half-space</span>
+                </div>
+                <div class="coeff-row">
+                    <div class="coeff-item"><label>a₁</label><div class="stepper"><button data-param="a1" data-delta="-0.1">−</button><span id="val_a1">1.0</span><button data-param="a1" data-delta="0.1">+</button></div></div>
+                    <div class="coeff-item"><label>b₁</label><div class="stepper"><button data-param="b1" data-delta="-0.1">−</button><span id="val_b1">1.0</span><button data-param="b1" data-delta="0.1">+</button></div></div>
+                    <div class="coeff-item"><label>c₁</label><div class="stepper"><button data-param="c1" data-delta="-1">−</button><span id="val_c1">5</span><button data-param="c1" data-delta="1">+</button></div></div>
+                </div>
+                <div class="inequality-input">
+                    <input type="text" id="ineq1Input" placeholder="e.g., 1x + 1y < 5" value="1x + 1y < 5">
+                    <button id="setIneq1Btn">⇄ Set</button>
+                </div>
+            </div>
+
+            <!-- Inequality 2 (Purple, >) -->
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🟣 a₂x + b₂y > c₂</span>
+                    <span id="status2" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">half-space</span>
+                </div>
+                <div class="coeff-row">
+                    <div class="coeff-item"><label>a₂</label><div class="stepper"><button data-param="a2" data-delta="-0.1">−</button><span id="val_a2">1.0</span><button data-param="a2" data-delta="0.1">+</button></div></div>
+                    <div class="coeff-item"><label>b₂</label><div class="stepper"><button data-param="b2" data-delta="-0.1">−</button><span id="val_b2">-1.0</span><button data-param="b2" data-delta="0.1">+</button></div></div>
+                    <div class="coeff-item"><label>c₂</label><div class="stepper"><button data-param="c2" data-delta="-1">−</button><span id="val_c2">2</span><button data-param="c2" data-delta="1">+</button></div></div>
+                </div>
+                <div class="inequality-input">
+                    <input type="text" id="ineq2Input" placeholder="e.g., 1x - 1y > 2" value="1x - 1y > 2">
+                    <button id="setIneq2Btn">⇄ Set</button>
+                </div>
+            </div>
+
+            <button id="resetIneqBtn" class="reset-btn">⟳ Reset to default inequalities</button>
+        </div>
+    </div>
+    <footer>⚡ The overlapping colored volume (darker region) is the solution set of the system.</footer>
 </div>
+
+<div id="toastMsg" class="alert-toast">✨ System updated</div>
 
 <script>
-    const canvas = document.getElementById('inequalityCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('statusAlert');
-
-    // System State: a*x + b*y < c and a*x + b*y > c
-    let params = { a1: 1, b1: 1, c1: 5, a2: 1, b2: -1, c2: 2 };
-    let rotation = { x: 0.5, y: 0.7 };
-    let isDragging = false;
-    let lastMouse = { x: 0, y: 0 };
-    const scale = 22;
-
-    // Project 3D points to 2D canvas
-    function project(x, y, z) {
-        // Rotate around Y-axis (yaw)
-        let cosY = Math.cos(rotation.y);
-        let sinY = Math.sin(rotation.y);
-        let x1 = x * cosY - z * sinY;
-        let z1 = x * sinY + z * cosY;
-
-        // Rotate around X-axis (pitch)
-        let cosX = Math.cos(rotation.x);
-        let sinX = Math.sin(rotation.x);
-        let y2 = y * cosX - z1 * sinX;
-        let z2 = y * sinX + z1 * cosX;
-
-        // Scale and center
-        return {
-            x: (canvas.width / 2) + x1 * scale,
-            y: (canvas.height / 2) - y2 * scale,
-            z: z2 // Used for depth sorting or color mixing
+    (function(){
+        // State: coefficients for a1x + b1y < c1  and  a2x + b2y > c2
+        let params = {
+            a1: 1, b1: 1, c1: 5,
+            a2: 1, b2: -1, c2: 2
         };
-    }
-
-    // Draw the 3D-style shaded volume ribbon
-    function drawInequalityVolume(a, b, c, color, isLessThan) {
-        ctx.fillStyle = color;
-        ctx.globalAlpha = 0.25; // Transparent sheets
-        const range = 12;
-
-        // In 2D, ax + by = c is a line. We treat it as a vertical ribbon plane.
-        // We calculate points for z = -10 and z = 10 to give it depth.
-        if (Math.abs(b) > 0.05) {
-            // Standard form: y = (c - ax)/b
-            const getY = (currX) => (c - a * currX) / b;
+        
+        // 3D rotation (radians)
+        let rotation = { x: 0.5, y: 0.7 };
+        let isDragging = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        // DOM elements
+        const canvas = document.getElementById('ineqCanvas');
+        const ctx = canvas.getContext('2d');
+        const ineq1Preview = document.getElementById('ineq1Preview');
+        const ineq2Preview = document.getElementById('ineq2Preview');
+        const toast = document.getElementById('toastMsg');
+        
+        // Canvas geometry
+        let canvasWidth = 600, canvasHeight = 450;
+        let scale3D = 22;
+        let centerX, centerY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            scale3D = Math.min(24, canvasWidth / 14);
+            drawScene();
+        }
+        
+        // 3D projection
+        function project(x, y, z) {
+            const cosY = Math.cos(rotation.y);
+            const sinY = Math.sin(rotation.y);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
             
-            // Generate the ribbon boundary
-            let p1 = project(-range, getY(-range), -range);
-            let p2 = project(range, getY(range), -range);
-            let p3 = project(range, getY(range), range);
-            let p4 = project(-range, getY(-range), range);
+            const cosX = Math.cos(rotation.x);
+            const sinX = Math.sin(rotation.x);
+            let y2 = y * cosX - z1 * sinX;
             
-            // Draw the ribbon boundary plane
+            return {
+                x: centerX + x1 * scale3D,
+                y: centerY - y2 * scale3D
+            };
+        }
+        
+        // Draw a semi-transparent "half-space" ribbon for inequality
+        // For a*x + b*y < c (or >), we draw the boundary plane and a shaded extrusion on the correct side.
+        function drawInequalityVolume(a, b, c, color, isLessThan) {
+            if (Math.abs(b) < 1e-6 && Math.abs(a) < 1e-6) return;
+            const range = 12;
+            const depth = 12;
+            
+            // Function to compute y from x on the boundary: a*x + b*y = c
+            let getY = null, isVertical = false;
+            if (Math.abs(b) > 1e-6) {
+                getY = (xVal) => (c - a * xVal) / b;
+            } else if (Math.abs(a) > 1e-6) {
+                isVertical = true; // vertical plane x = c/a
+            } else return;
+            
+            // Build the boundary plane quad (z from -depth to depth)
+            let p1, p2, p3, p4;
+            if (!isVertical) {
+                p1 = project(-range, getY(-range), -depth);
+                p2 = project(range, getY(range), -depth);
+                p3 = project(range, getY(range), depth);
+                p4 = project(-range, getY(-range), depth);
+            } else {
+                const xConst = c / a;
+                p1 = project(xConst, -range, -depth);
+                p2 = project(xConst, range, -depth);
+                p3 = project(xConst, range, depth);
+                p4 = project(xConst, -range, depth);
+            }
+            
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = color;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
@@ -250,139 +429,311 @@
             ctx.lineTo(p4.x, p4.y);
             ctx.closePath();
             ctx.fill();
-
-            // Shading Logic: We draw another, thicker plane "inside" the region.
-            // For a1*x + b1*y < c1, we shift y slightly down (if b1 > 0)
-            const shiftY = (isLessThan ? -1 : 1) * Math.sign(b) * 2;
-            let s1 = project(-range, getY(-range) + shiftY, -range);
-            let s2 = project(range, getY(range) + shiftY, -range);
-            let s3 = project(range, getY(range) + shiftY, range);
-            let s4 = project(-range, getY(-range) + shiftY, range);
-
-            // Shaded inside volume (simple visualization)
-            ctx.globalAlpha = 0.1;
+            
+            // Shaded extrusion: shift along normal (perpendicular to line) to represent half-space
+            // For simplicity, compute a small offset in the direction of the inequality.
+            // We'll shift points along the gradient direction (a, b).
+            const len = Math.hypot(a, b);
+            if (len < 1e-6) return;
+            const normX = a / len;
+            const normY = b / len;
+            const offset = isLessThan ? -1.2 : 1.2; // shift inward for <, outward for >
+            
+            let q1, q2, q3, q4;
+            if (!isVertical) {
+                const shiftX = normX * offset;
+                const shiftY = normY * offset;
+                q1 = project(-range + shiftX, getY(-range) + shiftY, -depth);
+                q2 = project(range + shiftX, getY(range) + shiftY, -depth);
+                q3 = project(range + shiftX, getY(range) + shiftY, depth);
+                q4 = project(-range + shiftX, getY(-range) + shiftY, depth);
+            } else {
+                // vertical plane shift along x direction
+                const xConst = c / a;
+                const shiftX = (isLessThan ? -1 : 1) * offset;
+                q1 = project(xConst + shiftX, -range, -depth);
+                q2 = project(xConst + shiftX, range, -depth);
+                q3 = project(xConst + shiftX, range, depth);
+                q4 = project(xConst + shiftX, -range, depth);
+            }
+            
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); 
-            ctx.lineTo(s2.x, s2.y); ctx.lineTo(s1.x, s1.y);
-            ctx.closePath(); ctx.fill();
-
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(q2.x, q2.y);
+            ctx.lineTo(q1.x, q1.y);
+            ctx.closePath();
+            ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(p2.x, p2.y); ctx.lineTo(p3.x, p3.y); 
-            ctx.lineTo(s3.x, s3.y); ctx.lineTo(s2.x, s2.y);
-            ctx.closePath(); ctx.fill();
-
+            ctx.moveTo(p2.x, p2.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.lineTo(q3.x, q3.y);
+            ctx.lineTo(q2.x, q2.y);
+            ctx.closePath();
+            ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y); 
-            ctx.lineTo(s4.x, s4.y); ctx.lineTo(s3.x, s3.y);
-            ctx.closePath(); ctx.fill();
-
+            ctx.moveTo(p3.x, p3.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.lineTo(q4.x, q4.y);
+            ctx.lineTo(q3.x, q3.y);
+            ctx.closePath();
+            ctx.fill();
             ctx.beginPath();
-            ctx.moveTo(p4.x, p4.y); ctx.lineTo(p1.x, p1.y); 
-            ctx.lineTo(s1.x, s1.y); ctx.lineTo(s4.x, s4.y);
-            ctx.closePath(); ctx.fill();
+            ctx.moveTo(p4.x, p4.y);
+            ctx.lineTo(p1.x, p1.y);
+            ctx.lineTo(q1.x, q1.y);
+            ctx.lineTo(q4.x, q4.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
         }
-        ctx.globalAlpha = 1.0;
-    }
-
-    function drawGrid() {
-        ctx.strokeStyle = '#475569';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        // X-Axis (along depth z=0)
-        let pX1 = project(-12, 0, 0); let pX2 = project(12, 0, 0);
-        ctx.moveTo(pX1.x, pX1.y); ctx.lineTo(pX2.x, pX2.y);
-        // Y-Axis (along depth z=0)
-        let pY1 = project(0, -12, 0); let pY2 = project(0, 12, 0);
-        ctx.moveTo(pY1.x, pY1.y); ctx.lineTo(pY2.x, pY2.y);
-        ctx.stroke();
-    }
-
-    // Main update/draw loop
-    function update() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        drawGrid();
-        
-        // Draw volume 1 (a1*x + b1*y < c1)
-        drawInequalityVolume(params.a1, params.b1, params.c1, '#3b82f6', true);
-        // Draw volume 2 (a2*x + b2*y > c2)
-        drawInequalityVolume(params.a2, params.b2, params.c2, '#a855f7', false);
-
-        // Update Equation Text Display
-        document.getElementById('ineq1Text').innerText = `Ineq 1: ${params.a1.toFixed(1)}x + ${params.b1.toFixed(1)}y < ${params.c1.toFixed(1)}`;
-        document.getElementById('ineq2Text').innerText = `Ineq 2: ${params.a2.toFixed(1)}x + ${params.b2.toFixed(1)}y > ${params.c2.toFixed(1)}`;
-
-        // Cramer's Rule for intersection (just for educational focus on boundaries)
-        const det = params.a1 * params.b2 - params.a2 * params.b1;
-        if (Math.abs(det) < 0.05) {
-            triggerAlert("Parallel Boundary Lines Detected!");
-        } else {
-            triggerAlert("Lab Updated");
+        function drawGrid() {
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 1.2;
+            // axes
+            const origin = project(0,0,0);
+            const xAxis = project(12,0,0);
+            const yAxis = project(0,12,0);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(xAxis.x, xAxis.y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(yAxis.x, yAxis.y);
+            ctx.stroke();
+            // grid lines on ground plane z=0
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 0.8;
+            for (let i = -10; i <= 10; i+=2) {
+                let p1 = project(i, -10, 0);
+                let p2 = project(i, 10, 0);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+                let p3 = project(-10, i, 0);
+                let p4 = project(10, i, 0);
+                ctx.beginPath();
+                ctx.moveTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.stroke();
+            }
         }
-    }
-
-    // Custom Alert Notification system
-    let alertTimeout;
-    function triggerAlert(message) {
-        if(alertTimeout) clearTimeout(alertTimeout);
-        alertBox.innerText = message;
-        alertBox.style.display = 'block';
-        alertTimeout = setTimeout(() => {
-            alertBox.style.display = 'none';
-        }, 1500);
-    }
-
-    // Controls Logic
-    ['a1', 'b1', 'c1', 'a2', 'b2', 'c2'].forEach(id => {
-        const input = document.getElementById(id);
-        const label = document.getElementById('v_' + id);
-        input.addEventListener('input', (e) => {
-            params[id] = parseFloat(e.target.value);
-            label.innerText = params[id].toFixed(1);
-            update();
-        });
-    });
-
-    // 3D Interaction Logic (Mouse/Touch rotation)
-    const frame = document.getElementById('canvasFrame');
-    function startDrag(e) {
-        isDragging = true;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        lastMouse = { x: clientX, y: clientY };
-    }
-
-    function endDrag() {
-        isDragging = false;
-    }
-
-    function moveDrag(e) {
-        if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
-        const dx = clientX - lastMouse.x;
-        const dy = clientY - lastMouse.y;
+        function drawScene() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            drawGrid();
+            drawInequalityVolume(params.a1, params.b1, params.c1, '#3b82f6', true);
+            drawInequalityVolume(params.a2, params.b2, params.c2, '#a855f7', false);
+            
+            // Update preview texts
+            ineq1Preview.innerText = `${params.a1.toFixed(2)}x + ${params.b1.toFixed(2)}y < ${params.c1}`;
+            ineq2Preview.innerText = `${params.a2.toFixed(2)}x + ${params.b2.toFixed(2)}y > ${params.c2}`;
+            
+            // Show toast on update (debounced)
+            showToast("System updated");
+        }
         
-        rotation.y += dx * 0.01;
-        rotation.x += dy * 0.01;
+        let toastTimer;
+        function showToast(msg) {
+            if (toastTimer) clearTimeout(toastTimer);
+            toast.innerText = msg;
+            toast.classList.add('visible');
+            toastTimer = setTimeout(() => toast.classList.remove('visible'), 1500);
+        }
         
-        lastMouse = { x: clientX, y: clientY };
-        update();
-    }
-
-    // Mouse Listeners
-    frame.addEventListener('mousedown', startDrag);
-    window.addEventListener('mouseup', endDrag);
-    window.addEventListener('mousemove', moveDrag);
-
-    // Touch Listeners (Mobile compatibility)
-    frame.addEventListener('touchstart', startDrag);
-    window.addEventListener('touchend', endDrag);
-    window.addEventListener('touchmove', moveDrag);
-
-    // Initial render
-    update();
+        // ---------- Parameter update helpers ----------
+        function setParam(param, value) {
+            if (params.hasOwnProperty(param)) {
+                let newVal = parseFloat(value);
+                if (isNaN(newVal)) return;
+                if (param === 'c1' || param === 'c2') newVal = Math.round(newVal);
+                else newVal = Math.round(newVal * 100) / 100;
+                params[param] = newVal;
+                updateUIandDraw();
+            }
+        }
+        
+        function updateUIandDraw() {
+            document.getElementById('val_a1').innerText = params.a1.toFixed(2);
+            document.getElementById('val_b1').innerText = params.b1.toFixed(2);
+            document.getElementById('val_c1').innerText = params.c1;
+            document.getElementById('val_a2').innerText = params.a2.toFixed(2);
+            document.getElementById('val_b2').innerText = params.b2.toFixed(2);
+            document.getElementById('val_c2').innerText = params.c2;
+            drawScene();
+        }
+        
+        // ---------- Equation parser for "ax + by < c" and "ax + by > c" ----------
+        function parseInequality(ineqStr) {
+            let cleaned = ineqStr.replace(/\s/g, '');
+            let operator = '';
+            let parts = [];
+            if (cleaned.includes('<')) { operator = '<'; parts = cleaned.split('<'); }
+            else if (cleaned.includes('>')) { operator = '>'; parts = cleaned.split('>'); }
+            else return null;
+            if (parts.length !== 2) return null;
+            let left = parts[0];
+            let right = parts[1];
+            let cVal = parseFloat(right);
+            if (isNaN(cVal)) return null;
+            
+            let aVal = 0, bVal = 0;
+            // match x term and y term
+            let xMatch = left.match(/([+-]?\d*\.?\d*)x/);
+            let yMatch = left.match(/([+-]?\d*\.?\d*)y/);
+            if (xMatch) {
+                let coeff = xMatch[1];
+                if (coeff === '+' || coeff === '') aVal = 1;
+                else if (coeff === '-') aVal = -1;
+                else aVal = parseFloat(coeff);
+                if (isNaN(aVal)) aVal = 1;
+            }
+            if (yMatch) {
+                let coeff = yMatch[1];
+                if (coeff === '+' || coeff === '') bVal = 1;
+                else if (coeff === '-') bVal = -1;
+                else bVal = parseFloat(coeff);
+                if (isNaN(bVal)) bVal = 1;
+            }
+            return { a: aVal, b: bVal, c: cVal, op: operator };
+        }
+        
+        function applyInequality1() {
+            const raw = document.getElementById('ineq1Input').value;
+            const parsed = parseInequality(raw);
+            if (parsed && parsed.op === '<') {
+                setParam('a1', parsed.a);
+                setParam('b1', parsed.b);
+                setParam('c1', parsed.c);
+                document.getElementById('ineq1Input').value = `${parsed.a}x + ${parsed.b}y < ${parsed.c}`;
+                updateUIandDraw();
+                showToast("Inequality 1 updated");
+            } else {
+                document.getElementById('ineq1Input').style.borderColor = '#f87171';
+                setTimeout(() => document.getElementById('ineq1Input').style.borderColor = '#dce3ec', 800);
+            }
+        }
+        
+        function applyInequality2() {
+            const raw = document.getElementById('ineq2Input').value;
+            const parsed = parseInequality(raw);
+            if (parsed && parsed.op === '>') {
+                setParam('a2', parsed.a);
+                setParam('b2', parsed.b);
+                setParam('c2', parsed.c);
+                document.getElementById('ineq2Input').value = `${parsed.a}x + ${parsed.b}y > ${parsed.c}`;
+                updateUIandDraw();
+                showToast("Inequality 2 updated");
+            } else {
+                document.getElementById('ineq2Input').style.borderColor = '#f87171';
+                setTimeout(() => document.getElementById('ineq2Input').style.borderColor = '#dce3ec', 800);
+            }
+        }
+        
+        function resetToDefault() {
+            params = { a1: 1, b1: 1, c1: 5, a2: 1, b2: -1, c2: 2 };
+            document.getElementById('ineq1Input').value = "1x + 1y < 5";
+            document.getElementById('ineq2Input').value = "1x - 1y > 2";
+            updateUIandDraw();
+            showToast("Reset to default system");
+        }
+        
+        // ---------- Stepper binding ----------
+        function bindSteppers() {
+            document.querySelectorAll('.stepper button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const param = btn.getAttribute('data-param');
+                    const delta = parseFloat(btn.getAttribute('data-delta'));
+                    if (param && !isNaN(delta)) {
+                        let newVal = params[param] + delta;
+                        if (param === 'c1' || param === 'c2') newVal = Math.round(newVal);
+                        else newVal = Math.round(newVal * 100) / 100;
+                        setParam(param, newVal);
+                    }
+                });
+            });
+        }
+        
+        // ---------- Canvas drag rotation (touch + mouse) ----------
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            const pos = getPointerPos(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastPointer.x;
+            const dy = pos.y - lastPointer.y;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                rotation.y += dx * 0.008;
+                rotation.x += dy * 0.008;
+                rotation.x = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotation.x));
+                drawScene();
+            }
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            isDragging = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                drawScene();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindSteppers();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('setIneq1Btn').addEventListener('click', applyInequality1);
+            document.getElementById('setIneq2Btn').addEventListener('click', applyInequality2);
+            document.getElementById('resetIneqBtn').addEventListener('click', resetToDefault);
+            updateUIandDraw();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

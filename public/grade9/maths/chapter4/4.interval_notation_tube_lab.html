@@ -2,356 +2,714 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade 9 Math Lab: Interval Tube</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Interval Tube Lab | 3D Interval Visualizer</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --accent-blue: #00a2ff;
-            --white: #ffffff;
-            --glass: rgba(255, 255, 255, 0.8);
-            --bg: #f0f7ff;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1000px;
-            margin: 20px auto;
-            background: var(--white);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 86, 179, 0.1);
-            overflow: hidden;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: white;
-            padding: 20px;
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        .lab-layout {
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
             display: grid;
-            grid-template-columns: 1fr 300px;
-            padding: 20px;
-            gap: 20px;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
         @media (max-width: 800px) {
-            .lab-layout { grid-template-columns: 1fr; }
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .viz-box {
+        .canvas-area {
             background: #ffffff;
-            border: 2px solid #e1e8ed;
-            border-radius: 16px;
-            position: relative;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .interval-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .interval-preview span {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
         }
 
         canvas {
+            display: block;
             width: 100%;
             height: auto;
-            display: block;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        .formula-card {
-            background: #e7f1ff;
-            padding: 15px;
-            border-radius: 12px;
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
             text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 4px solid var(--primary-blue);
-        }
-
-        .notation-text {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-blue);
-            letter-spacing: 2px;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
         .control-panel {
-            background: #fdfdfd;
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid #eee;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 1.2rem;
         }
 
-        .input-group label {
-            display: block;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
         }
 
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--primary-blue);
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
         }
 
-        .btn-toggle {
-            padding: 10px;
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
             background: #f1f5f9;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
             cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
+            transition: 0.1s;
+            color: #1e293b;
         }
 
-        .btn-toggle.active {
-            background: var(--primary-blue);
-            color: white;
-            border-color: var(--primary-blue);
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
         }
 
-        #statusAlert {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--primary-blue);
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: #f1f5f9;
+            border: none;
+            padding: 10px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #475569;
+        }
+
+        .toggle-btn.active {
+            background: #3b82f6;
             color: white;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .equation-input-area {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .equation-input-area input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 10px 14px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .equation-input-area input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f630;
+        }
+
+        .equation-input-area button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 18px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .info-card {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
+            text-align: center;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<div id="statusAlert">Valid Interval Found!</div>
-
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">3D Interval Tube Lab</h2>
-        <p style="margin:5px 0 0">Visualizing Number Regions in 3D Space</p>
-    </header>
-
-    <div class="lab-layout">
-        <main>
-            <div class="formula-card">
-                <div style="font-size: 0.8rem; color: #666;">CURRENT NOTATION</div>
-                <div class="notation-text" id="notationDisplay">[ 2, 7 ]</div>
-            </div>
-            <div class="viz-box">
-                <canvas id="intervalCanvas" width="600" height="400"></canvas>
-            </div>
-        </main>
-
-        <aside class="control-panel">
-            <div class="input-group">
-                <label>Left Point (a)</label>
-                <input type="range" id="valA" min="-10" max="10" value="2">
-                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelA">a = 2</div>
-            </div>
-
-            <div class="input-group">
-                <label>Right Point (b)</label>
-                <input type="range" id="valB" min="-10" max="10" value="7">
-                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelB">b = 7</div>
-            </div>
-
-            <div class="input-group">
-                <label>Left Boundary Type</label>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <button class="btn-toggle active" id="typeA_In" onclick="setType('A', 'In')">[ Solid</button>
-                    <button class="btn-toggle" id="typeA_Ex" onclick="setType('A', 'Ex')">( Open</button>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label>Right Boundary Type</label>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                    <button class="btn-toggle active" id="typeB_In" onclick="setType('B', 'In')">] Solid</button>
-                    <button class="btn-toggle" id="typeB_Ex" onclick="setType('B', 'Ex')">) Open</button>
-                </div>
-            </div>
-
-            <div style="background: #fffbe6; padding: 10px; border-radius: 8px; font-size: 0.85rem; border-left: 4px solid #fbbf24;">
-                <strong>Concept:</strong> Solid walls mean the number is *included*. Open portals mean the number is *excluded*.
-            </div>
-        </aside>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>📏 3D Interval Tube · Inclusive / Exclusive</h1>
+        <p>Drag canvas → shift whole interval &nbsp;|&nbsp; Solid walls = included, open arcs = excluded</p>
     </div>
+
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="interval-preview">
+                <span id="intervalDisplay">[2, 7]</span>
+            </div>
+            <canvas id="tubeCanvas" width="600" height="400"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag horizontally on canvas → move interval left/right (preserving length)
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📍 Left endpoint (a)</span>
+                    <span id="aStatus" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">inclusive</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="aMinus">−</button>
+                    <span id="aValue">2.0</span>
+                    <button id="aPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="aInput" step="0.5" value="2">
+                </div>
+            </div>
+
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📍 Right endpoint (b)</span>
+                    <span id="bStatus" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">inclusive</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="bMinus">−</button>
+                    <span id="bValue">7.0</span>
+                    <button id="bPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="bInput" step="0.5" value="7">
+                </div>
+            </div>
+
+            <div class="param-card">
+                <div class="param-title">🔘 Boundary types</div>
+                <div class="toggle-group">
+                    <button id="leftIncludeBtn" class="toggle-btn active">[  a  ]</button>
+                    <button id="leftExcludeBtn" class="toggle-btn">(  a  )</button>
+                </div>
+                <div class="toggle-group" style="margin-top: 6px;">
+                    <button id="rightIncludeBtn" class="toggle-btn active">]  b  ]</button>
+                    <button id="rightExcludeBtn" class="toggle-btn">)  b  )</button>
+                </div>
+            </div>
+
+            <div class="equation-input-area">
+                <input type="text" id="intervalInput" placeholder="e.g., [2,7] or (2,7] or [-3,5)" value="[2,7]">
+                <button id="applyIntervalBtn">⇄ Set</button>
+            </div>
+
+            <button id="resetIntervalBtn" class="reset-btn">⟳ Reset to [2, 7] (inclusive both)</button>
+
+            <div class="info-card">
+                💡 <strong>Solid wall</strong> → endpoint included (≤ / ≥)<br>
+                🌀 <strong>Open arc</strong> → endpoint excluded (&lt; / &gt;)
+            </div>
+        </div>
+    </div>
+    <footer>⚡ The 3D tube visualizes the interval on the number line. Solid blocks = inclusive, curved arcs = exclusive.</footer>
 </div>
 
 <script>
-    const canvas = document.getElementById('intervalCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('statusAlert');
-
-    // App State
-    let a = 2, b = 7;
-    let boundaryA = 'In'; 
-    let boundaryB = 'In';
-
-    // Helper to get CSS variables - Renamed from 'var' to fix runtime error
-    function getCSSVar(name) {
-        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    (function(){
+        // ---------- State ----------
+        let a = 2;           // left endpoint
+        let b = 7;           // right endpoint
+        let leftInclusive = true;   // true = [ , false = (
+        let rightInclusive = true;  // true = ] , false = )
         
-        const centerX = canvas.width / 2;
-        const baseY = canvas.height / 2 - 30;
-        const scale = 25; 
-
-        updateUI();
-
-        // Check validity (a must be < b)
-        if (a >= b) {
-            ctx.fillStyle = '#fee2e2';
-            ctx.fillRect(50, 50, canvas.width - 100, canvas.height - 100);
-            ctx.fillStyle = '#dc2626';
-            ctx.font = 'bold 20px Segoe UI';
-            ctx.textAlign = 'center';
-            ctx.fillText("Invalid Interval: 'a' must be less than 'b'", centerX, baseY + 40);
-            alertBox.style.display = 'none';
-            return;
-        }
-
-        alertBox.style.display = 'block';
-
-        const ax = centerX + (a * scale);
-        const bx = centerX + (b * scale);
-        const tubeHeight = 60;
-        const depthOffset = 20;
-
-        // 1. Draw Number Line Grid
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for(let i=-10; i<=10; i++) {
-            let tickX = centerX + (i * scale);
-            ctx.moveTo(tickX, baseY - 5); 
-            ctx.lineTo(tickX, baseY + tubeHeight + 5);
-        }
-        ctx.stroke();
-
-        // 2. Draw Total Range Reference
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(centerX - (10 * scale), baseY, 20 * scale, tubeHeight);
-        ctx.setLineDash([]);
-
-        // 3. Draw The Interval Volume
-        ctx.fillStyle = 'rgba(0, 162, 255, 0.2)';
-        ctx.fillRect(ax, baseY, bx - ax, tubeHeight);
+        // DOM elements
+        const canvas = document.getElementById('tubeCanvas');
+        const ctx = canvas.getContext('2d');
+        const intervalDisplaySpan = document.getElementById('intervalDisplay');
+        const aValueSpan = document.getElementById('aValue');
+        const bValueSpan = document.getElementById('bValue');
+        const aInput = document.getElementById('aInput');
+        const bInput = document.getElementById('bInput');
+        const leftIncludeBtn = document.getElementById('leftIncludeBtn');
+        const leftExcludeBtn = document.getElementById('leftExcludeBtn');
+        const rightIncludeBtn = document.getElementById('rightIncludeBtn');
+        const rightExcludeBtn = document.getElementById('rightExcludeBtn');
+        const aStatusSpan = document.getElementById('aStatus');
+        const bStatusSpan = document.getElementById('bStatus');
+        const intervalInputField = document.getElementById('intervalInput');
         
-        // 3D Top Plane
-        ctx.fillStyle = 'rgba(0, 86, 179, 0.1)';
-        ctx.beginPath();
-        ctx.moveTo(ax, baseY);
-        ctx.lineTo(bx, baseY);
-        ctx.lineTo(bx + depthOffset, baseY - depthOffset);
-        ctx.lineTo(ax + depthOffset, baseY - depthOffset);
-        ctx.closePath();
-        ctx.fill();
-
-        // 4. Draw Boundaries
-        drawBoundary(ax, baseY, tubeHeight, depthOffset, boundaryA, 'Left');
-        drawBoundary(bx, baseY, tubeHeight, depthOffset, boundaryB, 'Right');
-
-        // Main Axis Line
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(centerX - (10 * scale), baseY + tubeHeight);
-        ctx.lineTo(centerX + (10 * scale), baseY + tubeHeight);
-        ctx.stroke();
-    }
-
-    function drawBoundary(x, y, h, d, type, side) {
-        const primaryBlue = getCSSVar('--primary-blue');
-        ctx.strokeStyle = primaryBlue;
-        ctx.lineWidth = 4;
-
-        if (type === 'In') {
-            // Solid Boundary
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillRect(x - 5, y - 5, 10, h + 10);
-            ctx.strokeRect(x - 5, y - 5, 10, h + 10);
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 400;
+        let scale = 24;           // pixels per unit
+        let originX, baseY, tubeHeight = 60, depthOffset = 18;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.65;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            originX = canvasWidth / 2;
+            baseY = canvasHeight / 2 - 20;
+            scale = (canvasWidth - 100) / 22;  // range -10..10
+            tubeHeight = Math.min(65, canvasHeight * 0.18);
+            depthOffset = Math.min(18, scale * 0.7);
+            draw();
+        }
+        
+        // Helper to draw inclusive/exclusive boundaries
+        function drawBoundary(x, y, h, d, inclusive, isLeft) {
+            ctx.save();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#1e4a76';
+            ctx.lineWidth = 3;
             
-            // 3D Perspective Edge
-            ctx.fillStyle = 'rgba(0, 86, 179, 0.2)';
+            if (inclusive) {
+                // Solid block
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
+                ctx.fillRect(x - 6, y - 4, 12, h + 8);
+                ctx.strokeRect(x - 6, y - 4, 12, h + 8);
+                // 3D side extrusion
+                ctx.fillStyle = 'rgba(37, 99, 235, 0.25)';
+                ctx.beginPath();
+                ctx.moveTo(x + 6, y - 4);
+                ctx.lineTo(x + 6 + d, y - 4 - d);
+                ctx.lineTo(x + 6 + d, y + h + 4 - d);
+                ctx.lineTo(x + 6, y + h + 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            } else {
+                // Open arc (semi-circle)
+                ctx.beginPath();
+                const radius = h/2 + 5;
+                const startAngle = isLeft ? -Math.PI/2 : Math.PI/2;
+                const endAngle = isLeft ? Math.PI/2 : -Math.PI/2;
+                ctx.arc(x, y + h/2, radius, startAngle, endAngle, !isLeft);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+                ctx.beginPath();
+                ctx.arc(x, y + h/2, radius, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Ensure a <= b, else show error
+            if (a >= b) {
+                ctx.fillStyle = '#fee2e2';
+                ctx.fillRect(20, 20, canvasWidth-40, canvasHeight-40);
+                ctx.fillStyle = '#dc2626';
+                ctx.font = 'bold 18px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText("⚠️ Invalid interval: a must be less than b", canvasWidth/2, canvasHeight/2);
+                return;
+            }
+            
+            const leftX = originX + a * scale;
+            const rightX = originX + b * scale;
+            
+            // Draw number line grid (ticks from -10 to 10)
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            for (let i = -10; i <= 10; i++) {
+                const tickX = originX + i * scale;
+                if (tickX > 5 && tickX < canvasWidth-5) {
+                    ctx.beginPath();
+                    ctx.moveTo(tickX, baseY - 5);
+                    ctx.lineTo(tickX, baseY + tubeHeight + 5);
+                    ctx.stroke();
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '11px Inter';
+                    ctx.fillText(i, tickX - 6, baseY + tubeHeight + 18);
+                }
+            }
+            
+            // Reference background (full range -10 to 10)
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 6]);
+            ctx.strokeRect(originX - 10*scale, baseY, 20*scale, tubeHeight);
+            ctx.setLineDash([]);
+            
+            // Main interval volume (transparent blue)
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.25)';
+            ctx.fillRect(leftX, baseY, rightX - leftX, tubeHeight);
+            
+            // 3D top plane (perspective)
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.15)';
             ctx.beginPath();
-            ctx.moveTo(x + 5, y - 5);
-            ctx.lineTo(x + 5 + d, y - 5 - d);
-            ctx.lineTo(x + 5 + d, y + h + 5 - d);
-            ctx.lineTo(x + 5, y + h + 5);
+            ctx.moveTo(leftX, baseY);
+            ctx.lineTo(rightX, baseY);
+            ctx.lineTo(rightX + depthOffset, baseY - depthOffset);
+            ctx.lineTo(leftX + depthOffset, baseY - depthOffset);
             ctx.closePath();
             ctx.fill();
-            ctx.stroke();
-        } else {
-            // Open Boundary
+            
+            // Draw boundaries
+            drawBoundary(leftX, baseY, tubeHeight, depthOffset, leftInclusive, true);
+            drawBoundary(rightX, baseY, tubeHeight, depthOffset, rightInclusive, false);
+            
+            // Main axis line
             ctx.beginPath();
-            // Boolean for anticlockwise based on side
-            ctx.arc(x, y + h/2, h/2 + 5, -Math.PI/2, Math.PI/2, (side === 'Left'));
+            ctx.moveTo(originX - 10*scale, baseY + tubeHeight);
+            ctx.lineTo(originX + 10*scale, baseY + tubeHeight);
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 2.5;
             ctx.stroke();
             
-            ctx.fillStyle = 'rgba(0, 162, 255, 0.1)';
-            ctx.beginPath();
-            ctx.arc(x, y + h/2, h/2 + 5, 0, Math.PI * 2);
-            ctx.fill();
+            // Label endpoints
+            ctx.font = 'bold 12px Inter';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText(`a = ${a.toFixed(2)}`, leftX - 20, baseY - 8);
+            ctx.fillText(`b = ${b.toFixed(2)}`, rightX + 8, baseY - 8);
         }
-    }
-
-    function updateUI() {
-        let startSymbol = boundaryA === 'In' ? '[' : '(';
-        let endSymbol = boundaryB === 'In' ? ']' : ')';
-        document.getElementById('notationDisplay').innerText = `${startSymbol} ${a}, ${b} ${endSymbol}`;
-        document.getElementById('labelA').innerText = `a = ${a}`;
-        document.getElementById('labelB').innerText = `b = ${b}`;
-    }
-
-    window.setType = function(point, type) {
-        if (point === 'A') boundaryA = type;
-        if (point === 'B') boundaryB = type;
         
-        const group = point === 'A' ? ['typeA_In', 'typeA_Ex'] : ['typeB_In', 'typeB_Ex'];
-        document.getElementById(group[0]).classList.remove('active');
-        document.getElementById(group[1]).classList.remove('active');
+        // UI update (refresh all text and redraw)
+        function updateUIAndDraw() {
+            // clamp a and b to reasonable range -10..10 and ensure a < b
+            a = Math.min(9.5, Math.max(-10, a));
+            b = Math.min(10, Math.max(-9.5, b));
+            if (a >= b) {
+                if (a >= b) b = a + 0.5;
+                if (b > 10) { b = 10; a = 9.5; }
+            }
+            a = Math.round(a * 100) / 100;
+            b = Math.round(b * 100) / 100;
+            
+            const leftSym = leftInclusive ? '[' : '(';
+            const rightSym = rightInclusive ? ']' : ')';
+            intervalDisplaySpan.innerText = `${leftSym}${a}, ${b}${rightSym}`;
+            aValueSpan.innerText = a.toFixed(2);
+            bValueSpan.innerText = b.toFixed(2);
+            aInput.value = a;
+            bInput.value = b;
+            aStatusSpan.innerText = leftInclusive ? "inclusive" : "exclusive";
+            bStatusSpan.innerText = rightInclusive ? "inclusive" : "exclusive";
+            
+            // toggle button active states
+            leftIncludeBtn.classList.toggle('active', leftInclusive);
+            leftExcludeBtn.classList.toggle('active', !leftInclusive);
+            rightIncludeBtn.classList.toggle('active', rightInclusive);
+            rightExcludeBtn.classList.toggle('active', !rightInclusive);
+            
+            draw();
+        }
         
-        const activeId = point === 'A' 
-            ? (boundaryA === 'In' ? 'typeA_In' : 'typeA_Ex') 
-            : (boundaryB === 'In' ? 'typeB_In' : 'typeB_Ex');
-        document.getElementById(activeId).classList.add('active');
+        // ---------- Setters ----------
+        function setA(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(9.5, Math.max(-10, newVal));
+            if (newVal >= b) newVal = b - 0.5;
+            a = Math.round(newVal * 100) / 100;
+            updateUIAndDraw();
+        }
         
-        draw();
-    };
-
-    document.getElementById('valA').addEventListener('input', (e) => {
-        a = parseInt(e.target.value);
-        draw();
-    });
-
-    document.getElementById('valB').addEventListener('input', (e) => {
-        b = parseInt(e.target.value);
-        draw();
-    });
-
-    // Initial Render
-    draw();
+        function setB(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(10, Math.max(-9.5, newVal));
+            if (newVal <= a) newVal = a + 0.5;
+            b = Math.round(newVal * 100) / 100;
+            updateUIAndDraw();
+        }
+        
+        function setLeftInclusive(inc) {
+            leftInclusive = inc;
+            updateUIAndDraw();
+        }
+        
+        function setRightInclusive(inc) {
+            rightInclusive = inc;
+            updateUIAndDraw();
+        }
+        
+        // ---------- Parse interval notation: [a,b] , (a,b] , [a,b) , (a,b) ----------
+        function parseInterval(notation) {
+            let clean = notation.replace(/\s/g, '');
+            let leftChar = clean[0];
+            let rightChar = clean[clean.length-1];
+            if ((leftChar !== '[' && leftChar !== '(') || (rightChar !== ']' && rightChar !== ')')) return null;
+            let inner = clean.slice(1, -1);
+            let parts = inner.split(',');
+            if (parts.length !== 2) return null;
+            let aVal = parseFloat(parts[0]);
+            let bVal = parseFloat(parts[1]);
+            if (isNaN(aVal) || isNaN(bVal)) return null;
+            if (aVal >= bVal) return null;
+            let leftInc = (leftChar === '[');
+            let rightInc = (rightChar === ']');
+            return { a: aVal, b: bVal, leftInc, rightInc };
+        }
+        
+        function applyFromIntervalInput() {
+            let raw = intervalInputField.value.trim();
+            let parsed = parseInterval(raw);
+            if (parsed) {
+                a = parsed.a;
+                b = parsed.b;
+                leftInclusive = parsed.leftInc;
+                rightInclusive = parsed.rightInc;
+                updateUIAndDraw();
+                intervalInputField.value = `${leftInclusive ? '[' : '('}${a.toFixed(2)}, ${b.toFixed(2)}${rightInclusive ? ']' : ')'}`;
+            } else {
+                intervalInputField.style.borderColor = "#f87171";
+                setTimeout(() => intervalInputField.style.borderColor = "#dce3ec", 800);
+            }
+        }
+        
+        function resetToDefault() {
+            a = 2;
+            b = 7;
+            leftInclusive = true;
+            rightInclusive = true;
+            updateUIAndDraw();
+            intervalInputField.value = "[2, 7]";
+        }
+        
+        // ---------- Canvas drag: shift whole interval (preserving length) ----------
+        let dragActive = false;
+        let lastPointerX = 0;
+        
+        function getPointerX(e) {
+            let clientX;
+            if (e.touches) clientX = e.touches[0].clientX;
+            else clientX = e.clientX;
+            return clientX;
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            lastPointerX = getPointerX(e);
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const currentX = getPointerX(e);
+            const deltaX = currentX - lastPointerX;
+            if (Math.abs(deltaX) > 0.5) {
+                let deltaUnit = deltaX / scale;
+                let newA = a + deltaUnit;
+                let newB = b + deltaUnit;
+                // clamp to -10..10
+                if (newA < -10) { newA = -10; newB = newA + (b - a); }
+                if (newB > 10) { newB = 10; newA = newB - (b - a); }
+                if (newA >= newB) {
+                    newA = newB - 0.5;
+                }
+                a = Math.round(newA * 100) / 100;
+                b = Math.round(newB * 100) / 100;
+                updateUIAndDraw();
+            }
+            lastPointerX = currentX;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // ---------- Stepper & numeric input binding ----------
+        function bindControls() {
+            document.getElementById('aMinus').addEventListener('click', () => setA(a - 0.5));
+            document.getElementById('aPlus').addEventListener('click', () => setA(a + 0.5));
+            document.getElementById('bMinus').addEventListener('click', () => setB(b - 0.5));
+            document.getElementById('bPlus').addEventListener('click', () => setB(b + 0.5));
+            
+            aInput.addEventListener('change', (e) => setA(e.target.value));
+            bInput.addEventListener('change', (e) => setB(e.target.value));
+            
+            leftIncludeBtn.addEventListener('click', () => setLeftInclusive(true));
+            leftExcludeBtn.addEventListener('click', () => setLeftInclusive(false));
+            rightIncludeBtn.addEventListener('click', () => setRightInclusive(true));
+            rightExcludeBtn.addEventListener('click', () => setRightInclusive(false));
+        }
+        
+        // Resize observer
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('applyIntervalBtn').addEventListener('click', applyFromIntervalInput);
+            document.getElementById('resetIntervalBtn').addEventListener('click', resetToDefault);
+            updateUIAndDraw();
+        }
+        
+        init();
+    })();
 </script>
-
 </body>
 </html>

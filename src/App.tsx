@@ -61,7 +61,7 @@ const Section: React.FC<SectionProps> = ({ title, items, favorites, toggleFavori
 const grade9Lessons: Omit<Item, 'grade'>[] = [
   // ---------- MATHEMATICS ----------
   { name: "Set Membership Bubble", link: "/grade9/maths/chapter1/Set_Theory_The_Sorting_Machine.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
-  { name: "Set Description Slider", link: "/grade9/maths/chapter1/Set_Theory_Studio_Verbal_Listing_Set_Builder.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
+  // { name: "Set Description Slider", link: "/grade9/maths/chapter1/Set_Theory_Studio_Verbal_Listing_Set_Builder.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
   { name: "Empty Set Visualizer", link: "/grade9/maths/chapter1/3empty_set_visualizer.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
   { name: "Finite vs Infinite Sets", link: "/grade9/maths/chapter1/4.finite_infinite_visualizer.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
   { name: "Venn Diagram Lab", link: "/grade9/maths/chapter1/5.venn_diagram_lab.html.htm", chapter: "Chapter 1: Sets", subject: "Mathematics" },
@@ -147,10 +147,11 @@ const grade9Lessons: Omit<Item, 'grade'>[] = [
   { name: "Subjective vs Objective", link: "/grade9/physics/chapter2/Measurement_Lab_Subjective_vs_Objective.html", chapter: "Chapter 2: Mechanics", subject: "Physics" },
   { name: "Scientific Notation", link: "/grade9/physics/chapter2/Scientific_Notation_Decimal_Slider.html", chapter: "Chapter 2: Mechanics", subject: "Physics" },
   { name: "Sig Fig Lab · Uncertainty Filter", link: "/grade9/physics/chapter2/Sig_Fig_Lab_Uncertainty_Filter.html", chapter: "Chapter 2: Mechanics", subject: "Physics" },
+  { name: "Figure 4 - Waves", link: "/grade9/physics/chapter3/Motion_Tracer_x_t_Graph.html", chapter: "Chapter 3: Waves & Oscillations", subject: "Physics" },
   { name: "Figure 1 - Waves", link: "/grade9/physics/chapter3/Motion_Tracer_x_t_Graph.html.html", chapter: "Chapter 3: Waves & Oscillations", subject: "Physics" },
   { name: "Figure 2 - Waves", link: "/grade9/physics/chapter3/Distance_vs_Displacement_Vector_Lab.html", chapter: "Chapter 3: Waves & Oscillations", subject: "Physics" },
   { name: "Figure 3 - Waves", link: "/grade9/physics/chapter3/Kinematics_Lab_Motion_Explorer.html", chapter: "Chapter 3: Waves & Oscillations", subject: "Physics" },
-  { name: "Figure 4 - Waves", link: "/grade9/physics/chapter3/ Kinematic_Stack_Motion_Graphs.html", chapter: "Chapter 3: Waves & Oscillations", subject: "Physics" },
+  
   { name: "Figure 1 - Thermodynamics", link: "/grade9/physics/chapter4/Physics_Suite_Newton's_Laws.html", chapter: "Chapter 4: Thermodynamics", subject: "Physics" },
   { name: "Figure 2 - Thermodynamics", link: "/grade9/physics/chapter4/Lab_Static_vs_Kinetic.html", chapter: "Chapter 4: Thermodynamics", subject: "Physics" },
   { name: "Figure 3 - Thermodynamics", link: "/grade9/physics/chapter4/Physics_Lab_Work_Energy_&_Power.html", chapter: "Chapter 4: Thermodynamics", subject: "Physics" },

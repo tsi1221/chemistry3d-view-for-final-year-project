@@ -2,242 +2,532 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTwin Lab: Trigonometry Telescope</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Trigonometry Telescope | Unit Circle Lab</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --white: #ffffff;
-            --bg: #f8fafc;
-            --sine-red: #ef4444;
-            --cosine-green: #22c55e;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-            overflow-x: hidden;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .lab-shell {
-            width: 95%;
-            max-width: 1100px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
-            display: flex;
-            flex-direction: column;
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: white;
-            padding: 20px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        .lab-layout {
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
             display: grid;
-            grid-template-columns: 1fr 340px;
-            padding: 20px;
-            gap: 20px;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        @media (max-width: 900px) {
-            .lab-layout { grid-template-columns: 1fr; }
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .viz-container {
+        .canvas-area {
             background: #ffffff;
-            border: 2px solid #e2e8f0;
-            border-radius: 20px;
-            position: relative;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .trig-values {
+            display: flex;
+            justify-content: space-around;
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .trig-values div {
+            background: white;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         canvas {
+            display: block;
             width: 100%;
             height: auto;
-            display: block;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        .formula-display {
-            display: flex;
-            justify-content: space-around;
-            background: #f1f5f9;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 15px;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
         .control-panel {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1.2rem;
         }
 
-        .slider-group label {
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
             display: flex;
             justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
             font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
         }
 
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--primary-blue);
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
         }
 
-        .quadrant-alert {
-            background: var(--primary-blue);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
             text-align: center;
-            font-weight: bold;
-            display: none;
-            animation: fadeIn 0.3s;
         }
 
-        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        .angle-input-area {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .angle-input-area input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 10px 14px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            outline: none;
+            text-align: center;
+        }
+
+        .angle-input-area input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f630;
+        }
+
+        .angle-input-area button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 18px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .quadrant-badge {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #92400e;
+            transition: all 0.1s;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
+        }
     </style>
 </head>
 <body>
 
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">Unit Circle Telescope</h2>
-        <p style="margin:5px 0 0">Visualizing Sine and Cosine in 3D Space</p>
-    </header>
-
-    <div class="lab-layout">
-        <main>
-            <div class="formula-display">
-                <div style="color: var(--sine-red)">sin(θ) = <span id="sinVal">0.00</span></div>
-                <div style="color: var(--cosine-green)">cos(θ) = <span id="cosVal">1.00</span></div>
-                <div style="color: var(--primary-blue)">θ = <span id="degVal">0°</span></div>
-            </div>
-            <div class="viz-container">
-                <canvas id="trigCanvas" width="600" height="500"></canvas>
-            </div>
-        </main>
-
-        <aside class="control-panel">
-            <div class="slider-group">
-                <label>Rotation Angle (θ) <span>0° - 360°</span></label>
-                <input type="range" id="angleInput" min="0" max="360" value="0" step="1">
-            </div>
-
-            <div id="quadrantMsg" class="quadrant-alert">Quadrant I</div>
-
-            <div style="font-size: 0.85rem; color: #64748b; line-height: 1.6;">
-                <strong>Study Tip:</strong> 
-                <ul>
-                    <li>The <span style="color:var(--sine-red); font-weight:bold;">RED line</span> is the vertical height (Sine).</li>
-                    <li>The <span style="color:var(--cosine-green); font-weight:bold;">GREEN line</span> is the horizontal width (Cosine).</li>
-                    <li>Watch how they change as the point rotates!</li>
-                </ul>
-            </div>
-        </aside>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🔭 Unit Circle Telescope · Sine & Cosine Explorer</h1>
+        <p>sin(θ) = opposite/hypotenuse &nbsp;|&nbsp; cos(θ) = adjacent/hypotenuse</p>
     </div>
+
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="trig-values">
+                <div style="color:#ef4444;">sin θ = <span id="sinValue">0.00</span></div>
+                <div style="color:#22c55e;">cos θ = <span id="cosValue">1.00</span></div>
+                <div style="color:#3b82f6;">θ = <span id="angleDeg">0°</span></div>
+            </div>
+            <canvas id="unitCanvas" width="600" height="500"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag horizontally on canvas → rotate angle &nbsp;&nbsp;|&nbsp;&nbsp; Use buttons or type angle
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🎚️ Angle θ (degrees)</span>
+                    <span id="quadrantLabel" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">Quadrant I</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="angleMinus">−</button>
+                    <span id="angleValue">0</span>
+                    <button id="anglePlus">+</button>
+                </div>
+                <div class="angle-input-area">
+                    <input type="number" id="angleInput" placeholder="0 to 360" value="0" step="1">
+                    <button id="setAngleBtn">Set</button>
+                </div>
+            </div>
+
+            <button id="resetAngleBtn" class="reset-btn">⟳ Reset to 0° (cos=1, sin=0)</button>
+
+            <div class="quadrant-badge" id="quadrantMessage">
+                💡 Drag or adjust angle → watch sine (red) and cosine (green) change
+            </div>
+        </div>
+    </div>
+    <footer>⚡ The red line is sine (vertical projection), green line is cosine (horizontal projection).</footer>
 </div>
 
 <script>
-    const canvas = document.getElementById('trigCanvas');
-    const ctx = canvas.getContext('2d');
-    const angleInput = document.getElementById('angleInput');
-    const quadMsg = document.getElementById('quadrantMsg');
-
-    let angle = 0;
-    const radius = 150;
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-
-        const rad = (angle * Math.PI) / 180;
-        const x = Math.cos(rad) * radius;
-        const y = -Math.sin(rad) * radius; // Negative because Canvas Y is downward
-
-        // 1. Draw Coordinate System
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx - 200, cy); ctx.lineTo(cx + 200, cy);
-        ctx.moveTo(cx, cy - 200); ctx.lineTo(cx, cy + 200);
-        ctx.stroke();
-
-        // 2. Draw Unit Circle
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // 3. Draw Cosine (Horizontal - Green)
-        ctx.strokeStyle = '#22c55e';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + x, cy);
-        ctx.stroke();
-
-        // 4. Draw Sine (Vertical - Red)
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(cx + x, cy);
-        ctx.lineTo(cx + x, cy + y);
-        ctx.stroke();
-
-        // 5. Draw Hypotenuse (Radius)
-        ctx.strokeStyle = '#0056b3';
-        ctx.setLineDash([5, 5]);
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx + x, cy + y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // 6. Draw the Point
-        ctx.fillStyle = '#0056b3';
-        ctx.beginPath();
-        ctx.arc(cx + x, cy + y, 8, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Update Text
-        document.getElementById('sinVal').innerText = Math.sin(rad).toFixed(2);
-        document.getElementById('cosVal').innerText = Math.cos(rad).toFixed(2);
-        document.getElementById('degVal').innerText = angle + "°";
-
-        // Quadrant Alert logic
-        quadMsg.style.display = 'block';
-        if(angle >= 0 && angle < 90) quadMsg.innerText = "Quadrant I (All Positive)";
-        else if(angle >= 90 && angle < 180) quadMsg.innerText = "Quadrant II (Sine is Positive)";
-        else if(angle >= 180 && angle < 270) quadMsg.innerText = "Quadrant III (Tan is Positive)";
-        else quadMsg.innerText = "Quadrant IV (Cosine is Positive)";
-    }
-
-    angleInput.addEventListener('input', (e) => {
-        angle = parseInt(e.target.value);
-        draw();
-    });
-
-    draw();
+    (function(){
+        // Angle in degrees (0 to 360)
+        let angleDeg = 0;
+        
+        // DOM elements
+        const canvas = document.getElementById('unitCanvas');
+        const ctx = canvas.getContext('2d');
+        const sinSpan = document.getElementById('sinValue');
+        const cosSpan = document.getElementById('cosValue');
+        const angleDegSpan = document.getElementById('angleDeg');
+        const angleValueSpan = document.getElementById('angleValue');
+        const quadrantLabelSpan = document.getElementById('quadrantLabel');
+        const quadrantMsgDiv = document.getElementById('quadrantMessage');
+        const angleInputField = document.getElementById('angleInput');
+        
+        // Geometry
+        let canvasWidth = 600;
+        let canvasHeight = 500;
+        let radius = 150;
+        let centerX, centerY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.85;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            radius = Math.min(centerX, centerY) * 0.7;
+            draw();
+        }
+        
+        function getQuadrantInfo(deg) {
+            if (deg >= 0 && deg < 90) return { name: "Quadrant I", hint: "All positive (sin, cos, tan > 0)" };
+            if (deg >= 90 && deg < 180) return { name: "Quadrant II", hint: "Sine positive, cosine negative" };
+            if (deg >= 180 && deg < 270) return { name: "Quadrant III", hint: "Tangent positive, sin & cos negative" };
+            return { name: "Quadrant IV", hint: "Cosine positive, sine negative" };
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const rad = angleDeg * Math.PI / 180;
+            const x = Math.cos(rad) * radius;
+            const y = -Math.sin(rad) * radius; // canvas y inverted
+            
+            // 1. Draw coordinate axes
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(centerX - radius - 30, centerY);
+            ctx.lineTo(centerX + radius + 30, centerY);
+            ctx.moveTo(centerX, centerY - radius - 30);
+            ctx.lineTo(centerX, centerY + radius + 30);
+            ctx.stroke();
+            
+            // labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px Inter';
+            ctx.fillText('x', centerX + radius + 20, centerY - 5);
+            ctx.fillText('y', centerX + 8, centerY - radius - 15);
+            
+            // 2. Unit circle
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 3. Cosine line (horizontal, green)
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + x, centerY);
+            ctx.stroke();
+            
+            // 4. Sine line (vertical, red)
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(centerX + x, centerY);
+            ctx.lineTo(centerX + x, centerY + y);
+            ctx.stroke();
+            
+            // 5. Hypotenuse (radius, dashed blue)
+            ctx.strokeStyle = '#3b82f6';
+            ctx.setLineDash([6, 6]);
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + x, centerY + y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 6. Point on circle
+            ctx.fillStyle = '#f59e0b';
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(centerX + x, centerY + y, 8, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(centerX + x, centerY + y, 3, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // 7. Small helper text: sine/cosine labels
+            ctx.font = 'bold 11px Inter';
+            ctx.fillStyle = '#ef4444';
+            ctx.fillText('sin θ', centerX + x + 8, centerY + y - 8);
+            ctx.fillStyle = '#22c55e';
+            ctx.fillText('cos θ', centerX + x/2, centerY - 12);
+            
+            // Update numeric displays
+            const sinVal = Math.sin(rad);
+            const cosVal = Math.cos(rad);
+            sinSpan.innerText = sinVal.toFixed(4);
+            cosSpan.innerText = cosVal.toFixed(4);
+            angleDegSpan.innerText = angleDeg + "°";
+            angleValueSpan.innerText = angleDeg;
+            angleInputField.value = angleDeg;
+            
+            // Quadrant info
+            const quad = getQuadrantInfo(angleDeg);
+            quadrantLabelSpan.innerText = quad.name;
+            quadrantMsgDiv.innerHTML = `📐 ${quad.name}<br><span style="font-size:0.7rem;">${quad.hint}</span>`;
+        }
+        
+        // Angle setter with wrap-around (0-360)
+        function setAngle(deg, fromInput = false) {
+            let newDeg = deg % 360;
+            if (newDeg < 0) newDeg += 360;
+            angleDeg = Math.round(newDeg);
+            if (!fromInput) {
+                angleInputField.value = angleDeg;
+            }
+            draw();
+        }
+        
+        // Stepper buttons
+        function bindSteppers() {
+            document.getElementById('angleMinus').addEventListener('click', () => setAngle(angleDeg - 1));
+            document.getElementById('anglePlus').addEventListener('click', () => setAngle(angleDeg + 1));
+        }
+        
+        function setAngleFromInput() {
+            let val = parseFloat(angleInputField.value);
+            if (!isNaN(val)) {
+                setAngle(val, true);
+            } else {
+                angleInputField.style.borderColor = "#f87171";
+                setTimeout(() => angleInputField.style.borderColor = "#dce3ec", 800);
+            }
+        }
+        
+        function resetAngle() {
+            setAngle(0);
+        }
+        
+        // ---------- Canvas Drag: horizontal movement changes angle ----------
+        let dragActive = false;
+        let lastPointerX = 0;
+        
+        function getPointerX(e) {
+            let clientX;
+            if (e.touches) clientX = e.touches[0].clientX;
+            else clientX = e.clientX;
+            return clientX;
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            lastPointerX = getPointerX(e);
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const currentX = getPointerX(e);
+            const deltaX = currentX - lastPointerX;
+            if (Math.abs(deltaX) > 0.5) {
+                // map delta to angle change: sensitivity ~ 1 degree per 3px
+                let angleDelta = deltaX * 0.8;
+                let newAngle = angleDeg + angleDelta;
+                setAngle(newAngle);
+            }
+            lastPointerX = currentX;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindSteppers();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('setAngleBtn').addEventListener('click', setAngleFromInput);
+            document.getElementById('resetAngleBtn').addEventListener('click', resetAngle);
+            draw();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

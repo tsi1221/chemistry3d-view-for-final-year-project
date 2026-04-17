@@ -2,270 +2,630 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTwin Lab: Exponent Expansion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Exponent Expansion Lab | Powers as Dimensions</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --white: #ffffff;
-            --bg: #f8fafc;
-            --glass: rgba(255, 255, 255, 0.8);
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1000px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
-            overflow: hidden;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: white;
-            padding: 20px;
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        .lab-layout {
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            padding: 20px;
-            gap: 20px;
+            grid-template-columns: 1fr 300px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        @media (max-width: 850px) {
-            .lab-layout { grid-template-columns: 1fr; }
+        @media (max-width: 780px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
         .canvas-area {
             background: #ffffff;
-            border: 2px solid #e2e8f0;
-            border-radius: 20px;
-            position: relative;
-            cursor: move;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
 
-        canvas {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .formula-card {
-            background: #eef6ff;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            border-left: 6px solid var(--primary-blue);
+        .equation-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
             text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
         }
 
-        .exponent-text {
-            font-size: 2.5rem;
+        .equation-preview span {
+            font-size: 1.8rem;
             font-weight: 800;
-            color: var(--primary-blue);
+            color: #1e293b;
         }
 
-        .exponent-text span {
-            font-size: 1.5rem;
+        .equation-preview .sup {
+            font-size: 1.2rem;
             vertical-align: super;
         }
 
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
         .control-panel {
-            background: #f1f5f9;
-            padding: 25px;
-            border-radius: 20px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1.2rem;
         }
 
-        .slider-group label {
-            display: block;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
             font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            color: #475569;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
         }
 
-        input[type="range"] {
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .equation-input-area {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .equation-input-area input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 10px 14px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .equation-input-area input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px #f59e0b30;
+        }
+
+        .equation-input-area button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 18px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
             width: 100%;
-            accent-color: var(--primary-blue);
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .info-box {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
+            text-align: center;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
 
         .alert-toast {
             position: fixed;
-            top: 20px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--primary-blue);
-            color: white;
-            padding: 12px 30px;
-            border-radius: 50px;
-            font-weight: bold;
-            display: none;
+            background: #f59e0b;
+            color: #2d2a1e;
+            padding: 10px 26px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
             z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .alert-toast.visible {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
 
-<div id="statusAlert" class="alert-toast">Dimension Expanded!</div>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>📐 Exponent Expansion · Powers as Dimensions</h1>
+        <p>baseⁿ = total units &nbsp;|&nbsp; 1D line → 2D grid → 3D cube</p>
+    </div>
 
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">Exponent Expansion Lab</h2>
-        <p style="margin:5px 0 0">Visualizing Powers as Physical Dimensions</p>
-    </header>
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="equation-preview">
+                <span id="eqDisplay">3² = 9</span>
+            </div>
+            <canvas id="powerCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag canvas to rotate 3D view &nbsp;&nbsp;|&nbsp;&nbsp; Use controls below to change base/exponent
+            </div>
+        </div>
 
-    <div class="lab-layout">
-        <main>
-            <div class="formula-card">
-                <div class="exponent-text" id="eqDisplay">3<span>2</span> = 9</div>
-                <div style="color: #64748b; font-size: 0.9rem; margin-top: 5px;">
-                    Total Units: <span id="unitCount">9</span>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🔢 Base (x)</span>
+                    <span id="totalUnits" style="background:#eef2ff; padding:2px 10px; border-radius:40px;">units: 9</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="baseMinus">−</button>
+                    <span id="baseValue">3</span>
+                    <button id="basePlus">+</button>
                 </div>
             </div>
-            <div class="canvas-area">
-                <canvas id="cubeCanvas" width="600" height="500"></canvas>
-            </div>
-        </main>
 
-        <aside class="control-panel">
-            <div class="slider-group">
-                <label>Base (x): <span id="labelBase">3</span></label>
-                <input type="range" id="valBase" min="1" max="5" value="3" step="1">
-            </div>
-
-            <div class="slider-group">
-                <label>Exponent (n): <span id="labelExp">2</span></label>
-                <input type="range" id="valExp" min="1" max="3" value="2" step="1">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>⚡ Exponent (n)</span>
+                    <span id="dimensionHint" style="background:#eef2ff; padding:2px 10px; border-radius:40px;">2D Area</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="expMinus">−</button>
+                    <span id="expValue">2</span>
+                    <button id="expPlus">+</button>
+                </div>
             </div>
 
-            <div style="background: #fffbe6; padding: 15px; border-radius: 12px; font-size: 0.85rem; border-left: 5px solid #fbbf24;">
-                <strong>Instruction:</strong> Change the exponent to <strong>3</strong> to watch the 2D area extrude into a 3D volume. Drag the canvas to rotate!
+            <div class="equation-input-area">
+                <input type="text" id="powerInput" placeholder="e.g., 3^2, 4^3, 2^3" value="3^2">
+                <button id="applyPowerBtn">⇄ Set</button>
             </div>
-        </aside>
+
+            <button id="resetPowerBtn" class="reset-btn">⟳ Reset to 3² (classic square)</button>
+
+            <div class="info-box">
+                💡 <strong>Visual insight:</strong><br>
+                • Exponent = 1 → line of base units<br>
+                • Exponent = 2 → base × base grid (area)<br>
+                • Exponent = 3 → base × base × base cube (volume)
+            </div>
+        </div>
     </div>
+    <footer>⚡ Drag to rotate. Watch how adding dimension transforms the shape!</footer>
 </div>
 
+<div id="dimensionToast" class="alert-toast">✨ Dimension expanded! ✨</div>
+
 <script>
-    const canvas = document.getElementById('cubeCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('statusAlert');
-
-    let base = 3;
-    let exp = 2;
-    let rot = { x: -0.5, y: 0.5 };
-    let isDragging = false;
-    let lastMouse = { x: 0, y: 0 };
-
-    function project(x, y, z) {
-        let x1 = x * Math.cos(rot.y) - z * Math.sin(rot.y);
-        let z1 = x * Math.sin(rot.y) + z * Math.cos(rot.y);
-        let y2 = y * Math.cos(rot.x) - z1 * Math.sin(rot.x);
-        const scale = 40;
-        return {
-            x: (canvas.width / 2) + x1 * scale,
-            y: (canvas.height / 2) - y2 * scale
-        };
-    }
-
-    function drawBox(x, y, z, size, color) {
-        const s = size / 2;
-        const p1 = project(x-s, y-s, z-s);
-        const p2 = project(x+s, y-s, z-s);
-        const p3 = project(x+s, y+s, z-s);
-        const p4 = project(x-s, y+s, z-s);
-        const p5 = project(x-s, y-s, z+s);
-        const p6 = project(x+s, y-s, z+s);
-        const p7 = project(x+s, y+s, z+s);
-        const p8 = project(x-s, y+s, z+s);
-
-        ctx.strokeStyle = "rgba(0, 86, 179, 0.8)";
-        ctx.fillStyle = color;
-        ctx.lineWidth = 1;
-
-        // Simple back-to-front drawing order logic (simplified)
-        const drawFace = (pts) => {
-            ctx.beginPath();
-            ctx.moveTo(pts[0].x, pts[0].y);
-            pts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-        };
-
-        drawFace([p1, p2, p3, p4]); // back
-        drawFace([p5, p6, p7, p8]); // front
-        drawFace([p1, p2, p6, p5]); // top
-        drawFace([p4, p3, p7, p8]); // bottom
-        drawFace([p1, p4, p8, p5]); // left
-        drawFace([p2, p3, p7, p6]); // right
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    (function(){
+        // State
+        let base = 3;      // 1..5 (for performance & clarity)
+        let exponent = 2;  // 1, 2, or 3
+        let rotation = { x: -0.5, y: 0.6 };
         
-        const total = Math.pow(base, exp);
-        document.getElementById('eqDisplay').innerHTML = `${base}<span>${exp}</span> = ${total}`;
-        document.getElementById('unitCount').innerText = total;
-        document.getElementById('labelBase').innerText = base;
-        document.getElementById('labelExp').innerText = exp;
-
-        const offset = (base - 1) / 2;
+        // DOM elements
+        const canvas = document.getElementById('powerCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplaySpan = document.getElementById('eqDisplay');
+        const baseValueSpan = document.getElementById('baseValue');
+        const expValueSpan = document.getElementById('expValue');
+        const totalUnitsSpan = document.getElementById('totalUnits');
+        const dimensionHintSpan = document.getElementById('dimensionHint');
+        const powerInput = document.getElementById('powerInput');
+        const toast = document.getElementById('dimensionToast');
         
-        // Loop through dimensions based on exponent
-        for (let i = 0; i < base; i++) {
-            for (let j = 0; j < (exp >= 2 ? base : 1); j++) {
-                for (let k = 0; k < (exp === 3 ? base : 1); k++) {
-                    const color = `rgba(0, 162, 255, ${0.3 + (k/base)*0.5})`;
-                    drawBox(i - offset, -j + offset, k - offset, 0.9, color);
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let scale3D = 38;      // projection scale
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            // dynamic scale based on width
+            scale3D = Math.min(42, canvasWidth / 14);
+            drawScene();
+        }
+        
+        // 3D projection
+        function project(x, y, z) {
+            const cosY = Math.cos(rotation.y);
+            const sinY = Math.sin(rotation.y);
+            const x1 = x * cosY - z * sinY;
+            const z1 = x * sinY + z * cosY;
+            
+            const cosX = Math.cos(rotation.x);
+            const sinX = Math.sin(rotation.x);
+            const y2 = y * cosX - z1 * sinX;
+            
+            return {
+                x: canvasWidth / 2 + x1 * scale3D,
+                y: canvasHeight / 2 - y2 * scale3D
+            };
+        }
+        
+        // Draw a single unit cube/box
+        function drawBox(x, y, z, size, fillColor, strokeColor = "#3b82f6") {
+            const s = size / 2;
+            const p1 = project(x - s, y - s, z - s);
+            const p2 = project(x + s, y - s, z - s);
+            const p3 = project(x + s, y + s, z - s);
+            const p4 = project(x - s, y + s, z - s);
+            const p5 = project(x - s, y - s, z + s);
+            const p6 = project(x + s, y - s, z + s);
+            const p7 = project(x + s, y + s, z + s);
+            const p8 = project(x - s, y + s, z + s);
+            
+            ctx.fillStyle = fillColor;
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 1.2;
+            
+            const drawFace = (pts) => {
+                ctx.beginPath();
+                ctx.moveTo(pts[0].x, pts[0].y);
+                for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            };
+            
+            // order faces for approximate depth (back to front)
+            drawFace([p1, p2, p3, p4]); // back
+            drawFace([p5, p6, p7, p8]); // front
+            drawFace([p1, p2, p6, p5]); // top
+            drawFace([p4, p3, p7, p8]); // bottom
+            drawFace([p1, p4, p8, p5]); // left
+            drawFace([p2, p3, p7, p6]); // right
+        }
+        
+        function drawScene() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const total = Math.pow(base, exponent);
+            eqDisplaySpan.innerHTML = `${base}<span style="font-size:1.2rem; vertical-align:super;">${exponent}</span> = ${total}`;
+            baseValueSpan.innerText = base;
+            expValueSpan.innerText = exponent;
+            totalUnitsSpan.innerText = `units: ${total}`;
+            
+            // dimension hint
+            if (exponent === 1) dimensionHintSpan.innerText = "1D Line";
+            else if (exponent === 2) dimensionHintSpan.innerText = "2D Area";
+            else dimensionHintSpan.innerText = "3D Volume";
+            
+            if (exponent < 1 || exponent > 3) return;
+            
+            const offset = (base - 1) / 2;
+            const boxSize = 0.88;
+            
+            // helper: color gradient based on position
+            const getColor = (i, j, k, maxDim) => {
+                const intensity = (k + 1) / (maxDim + 1);
+                return `rgba(59, 130, 246, ${0.35 + intensity * 0.5})`;
+            };
+            
+            // 1D case: only X axis
+            if (exponent === 1) {
+                for (let i = 0; i < base; i++) {
+                    const xPos = i - offset;
+                    const yPos = 0;
+                    const zPos = 0;
+                    drawBox(xPos, yPos, zPos, boxSize, `rgba(59, 130, 246, 0.55)`, "#2563eb");
+                }
+            }
+            // 2D case: X and Y (grid)
+            else if (exponent === 2) {
+                for (let i = 0; i < base; i++) {
+                    for (let j = 0; j < base; j++) {
+                        const xPos = i - offset;
+                        const yPos = -j + offset;
+                        const zPos = 0;
+                        const color = `rgba(59, 130, 246, ${0.4 + (i+j)/(2*base) * 0.4})`;
+                        drawBox(xPos, yPos, zPos, boxSize, color, "#3b82f6");
+                    }
+                }
+            }
+            // 3D case: full cube
+            else if (exponent === 3) {
+                for (let i = 0; i < base; i++) {
+                    for (let j = 0; j < base; j++) {
+                        for (let k = 0; k < base; k++) {
+                            const xPos = i - offset;
+                            const yPos = -j + offset;
+                            const zPos = k - offset;
+                            const color = `rgba(59, 130, 246, ${0.3 + (k+1)/(base+1) * 0.5})`;
+                            drawBox(xPos, yPos, zPos, boxSize, color, "#2563eb");
+                        }
+                    }
                 }
             }
         }
-    }
-
-    // Controls
-    document.getElementById('valBase').addEventListener('input', (e) => { base = parseInt(e.target.value); draw(); });
-    document.getElementById('valExp').addEventListener('input', (e) => { 
-        let oldExp = exp;
-        exp = parseInt(e.target.value); 
-        if(oldExp !== exp) {
-            alertBox.innerText = exp === 1 ? "1D Line" : exp === 2 ? "2D Area" : "3D Volume!";
-            alertBox.style.display = 'block';
-            setTimeout(() => alertBox.style.display = 'none', 1500);
+        
+        // Parameter updates
+        function setBase(newBase) {
+            newBase = Math.min(5, Math.max(1, newBase));
+            if (newBase === base) return;
+            base = newBase;
+            updateUIAndRedraw();
         }
-        draw(); 
-    });
-
-    // Rotation
-    canvas.addEventListener('mousedown', e => { isDragging = true; lastMouse = {x: e.clientX, y: e.clientY}; });
-    window.addEventListener('mouseup', () => isDragging = false);
-    window.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-        rot.y += (e.clientX - lastMouse.x) * 0.01;
-        rot.x += (e.clientY - lastMouse.y) * 0.01;
-        lastMouse = {x: e.clientX, y: e.clientY};
-        draw();
-    });
-
-    draw();
+        
+        function setExponent(newExp) {
+            newExp = Math.min(3, Math.max(1, newExp));
+            if (newExp === exponent) return;
+            const oldExp = exponent;
+            exponent = newExp;
+            
+            // toast animation on dimension change
+            if (oldExp !== exponent) {
+                toast.classList.add('visible');
+                if (window.toastTimeout) clearTimeout(window.toastTimeout);
+                window.toastTimeout = setTimeout(() => toast.classList.remove('visible'), 1500);
+            }
+            updateUIAndRedraw();
+        }
+        
+        function updateUIAndRedraw() {
+            drawScene();
+        }
+        
+        // Parse "base^exp" like "3^2", "4^3", "2^1"
+        function parsePower(input) {
+            let clean = input.replace(/\s/g, '');
+            let parts = clean.split('^');
+            if (parts.length !== 2) return null;
+            let b = parseInt(parts[0], 10);
+            let e = parseInt(parts[1], 10);
+            if (isNaN(b) || isNaN(e)) return null;
+            if (b < 1 || b > 5) return null;
+            if (e < 1 || e > 3) return null;
+            return { base: b, exponent: e };
+        }
+        
+        function applyFromInput() {
+            let raw = powerInput.value.trim();
+            let parsed = parsePower(raw);
+            if (parsed) {
+                setBase(parsed.base);
+                setExponent(parsed.exponent);
+                powerInput.value = `${parsed.base}^${parsed.exponent}`;
+            } else {
+                powerInput.style.borderColor = "#f87171";
+                setTimeout(() => powerInput.style.borderColor = "#dce3ec", 800);
+            }
+        }
+        
+        function resetToDefault() {
+            setBase(3);
+            setExponent(2);
+            powerInput.value = "3^2";
+            rotation = { x: -0.5, y: 0.6 };
+            drawScene();
+        }
+        
+        // -------- Canvas rotation (touch + mouse) --------
+        let isDragging = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            const pos = getPointerPos(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastPointer.x;
+            const dy = pos.y - lastPointer.y;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                rotation.y += dx * 0.008;
+                rotation.x += dy * 0.008;
+                // clamp to avoid gimbal lock
+                rotation.x = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotation.x));
+                drawScene();
+            }
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            isDragging = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // -------- Stepper buttons --------
+        function bindSteppers() {
+            document.getElementById('baseMinus').addEventListener('click', () => setBase(base - 1));
+            document.getElementById('basePlus').addEventListener('click', () => setBase(base + 1));
+            document.getElementById('expMinus').addEventListener('click', () => setExponent(exponent - 1));
+            document.getElementById('expPlus').addEventListener('click', () => setExponent(exponent + 1));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                drawScene();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindSteppers();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('applyPowerBtn').addEventListener('click', applyFromInput);
+            document.getElementById('resetPowerBtn').addEventListener('click', resetToDefault);
+            drawScene();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

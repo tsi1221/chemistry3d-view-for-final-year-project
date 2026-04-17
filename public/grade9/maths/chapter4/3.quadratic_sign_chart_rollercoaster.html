@@ -2,275 +2,773 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTwin Lab: Sign Chart Rollercoaster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sign Chart Rollercoaster | Quadratic Inequalities</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --accent-blue: #00a2ff;
-            --white: #ffffff;
-            --bg: #f8fafc;
-            --positive: #22c55e;
-            --negative: #ef4444;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1000px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
-            overflow: hidden;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: var(--primary-blue);
-            color: white;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            text-align: center;
         }
 
-        .lab-layout {
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
+            text-align: center;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
             display: grid;
             grid-template-columns: 1fr 320px;
-            padding: 20px;
-            gap: 20px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        @media (max-width: 850px) {
-            .lab-layout { grid-template-columns: 1fr; }
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .viz-box {
+        .canvas-area {
             background: #ffffff;
-            border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            position: relative;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
             overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .inequality-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .inequality-preview span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
         }
 
         canvas {
-            width: 100%;
             display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: crosshair;
+            touch-action: none;
         }
 
-        .formula-card {
-            background: #e7f1ff;
-            padding: 20px;
-            border-radius: 12px;
+        .drag-hint {
+            font-size: 0.7rem;
             text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 4px solid var(--primary-blue);
-        }
-
-        .equation-text {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: var(--primary-blue);
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
         .control-panel {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 16px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1.2rem;
         }
 
-        .slider-group label {
-            display: block;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
             font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--primary-blue);
-        }
-
-        .btn-toggle {
-            padding: 10px;
-            background: var(--white);
-            border: 2px solid var(--primary-blue);
-            border-radius: 8px;
             cursor: pointer;
-            font-weight: bold;
-            color: var(--primary-blue);
-            transition: 0.3s;
+            transition: 0.1s;
+            color: #1e293b;
         }
 
-        .btn-toggle.active {
-            background: var(--primary-blue);
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            background: #f1f5f9;
+            border: none;
+            padding: 10px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #475569;
+        }
+
+        .toggle-btn.active {
+            background: #3b82f6;
             color: white;
         }
 
-        #solutionAlert {
-            padding: 15px;
-            border-radius: 10px;
-            font-weight: bold;
+        .equation-input-area {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .equation-input-area input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 10px 14px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .equation-input-area input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px #f59e0b30;
+        }
+
+        .equation-input-area button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 18px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .solution-card {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 12px;
             text-align: center;
-            margin-top: 10px;
-            display: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.1s;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">Sign Chart Rollercoaster</h2>
-        <p style="margin:5px 0 0">Visualizing Product Properties & Inequalities</p>
-    </header>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🎢 Sign Chart Rollercoaster · Quadratic Inequalities</h1>
+        <p>f(x) = (x − r₁)(x − r₂) &nbsp;|&nbsp; Red = negative, Green = positive</p>
+    </div>
 
-    <div class="lab-layout">
-        <main>
-            <div class="formula-card">
-                <div class="equation-text" id="eqDisplay">(x - 1)(x - 3) < 0</div>
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="inequality-preview">
+                <span id="eqDisplay">(x − 1)(x − 3) < 0</span>
             </div>
-            <div class="viz-box">
-                <canvas id="quadCanvas" width="600" height="400"></canvas>
+            <canvas id="signCanvas" width="600" height="400"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag horizontally on canvas → adjust both roots simultaneously &nbsp;|&nbsp; Touch/move → red line appears below x‑axis
             </div>
-            <div id="solutionAlert"></div>
-        </main>
+        </div>
 
-        <aside class="control-panel">
-            <div class="slider-group">
-                <label>Root 1 (r₁): <span id="labelR1">1</span></label>
-                <input type="range" id="valR1" min="-5" max="5" value="1" step="0.5">
-            </div>
-
-            <div class="slider-group">
-                <label>Root 2 (r₂): <span id="labelR2">3</span></label>
-                <input type="range" id="valR2" min="-5" max="5" value="3" step="0.5">
-            </div>
-
-            <div class="slider-group">
-                <label>Inequality Type</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button class="btn-toggle active" id="btnLess">< 0 (Under)</button>
-                    <button class="btn-toggle" id="btnGreater">> 0 (Above)</button>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📍 Root 1 (r₁)</span>
+                    <span id="r1Hint" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">left crossing</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="r1Minus">−</button>
+                    <span id="r1Value">1.0</span>
+                    <button id="r1Plus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="r1Input" step="0.5" value="1">
                 </div>
             </div>
 
-            <div style="background: #fffbe6; padding: 15px; border-radius: 10px; font-size: 0.85rem; border-left: 5px solid #fbbf24;">
-                <strong>Concept:</strong> The rollercoaster goes <strong>negative (Red)</strong> when it's below the ground. If our goal is < 0, the red section is our solution!
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📍 Root 2 (r₂)</span>
+                    <span id="r2Hint" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">right crossing</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="r2Minus">−</button>
+                    <span id="r2Value">3.0</span>
+                    <button id="r2Plus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="r2Input" step="0.5" value="3">
+                </div>
             </div>
-        </aside>
+
+            <div class="param-card">
+                <div class="param-title">
+                    <span>⚖️ Inequality direction</span>
+                </div>
+                <div class="toggle-group">
+                    <button id="lessBtn" class="toggle-btn active">&lt; 0 (below axis)</button>
+                    <button id="greaterBtn" class="toggle-btn">&gt; 0 (above axis)</button>
+                </div>
+            </div>
+
+            <div class="equation-input-area">
+                <input type="text" id="ineqInput" placeholder="e.g., (x-1)(x-3)<0" value="(x-1)(x-3)<0">
+                <button id="applyIneqBtn">⇄ Set</button>
+            </div>
+
+            <button id="resetIneqBtn" class="reset-btn">⟳ Reset to (x−1)(x−3) < 0</button>
+
+            <div id="solutionBox" class="solution-card">
+                💡 Solution set will appear here
+            </div>
+        </div>
     </div>
+    <footer>⚡ The curve dips below the x‑axis (red) where the product is negative. Touch below axis → red vertical line appears.</footer>
 </div>
 
 <script>
-    const canvas = document.getElementById('quadCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('solutionAlert');
-
-    let r1 = 1, r2 = 3;
-    let mode = 'less'; // 'less' or 'greater'
-    const scale = 40;
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-
-        // 1. Draw Grid & Ground
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.beginPath();
-        for(let i=-7; i<=7; i++) {
-            ctx.moveTo(cx + i*scale, 0); ctx.lineTo(cx + i*scale, canvas.height);
+    (function(){
+        // State
+        let r1 = 1;
+        let r2 = 3;
+        let isLessThan = true;  // true: <0 , false: >0
+        
+        // Touch/pointer position for red line (null = hide)
+        let pointerX = null;
+        let pointerValid = false;
+        
+        // DOM elements
+        const canvas = document.getElementById('signCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplaySpan = document.getElementById('eqDisplay');
+        const r1ValueSpan = document.getElementById('r1Value');
+        const r2ValueSpan = document.getElementById('r2Value');
+        const r1Input = document.getElementById('r1Input');
+        const r2Input = document.getElementById('r2Input');
+        const lessBtn = document.getElementById('lessBtn');
+        const greaterBtn = document.getElementById('greaterBtn');
+        const ineqInputField = document.getElementById('ineqInput');
+        const solutionBox = document.getElementById('solutionBox');
+        
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 400;
+        let scaleX = 35;
+        let scaleY = 35;
+        let originX, originY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.65;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            originX = canvasWidth / 2;
+            originY = canvasHeight / 2;
+            scaleX = (canvasWidth - 80) / 14;
+            scaleY = scaleX * 0.9;
+            draw();
         }
-        ctx.stroke();
-
-        ctx.strokeStyle = '#64748b';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy);
-        ctx.stroke();
-
-        // 2. Draw Quadratic Curve (y = (x-r1)(x-r2))
-        ctx.lineWidth = 4;
-        let lastX, lastY;
-
-        for (let x = -7; x <= 7; x += 0.1) {
-            let y = (x - r1) * (x - r2);
-            let screenX = cx + x * scale;
-            let screenY = cy - y * scale;
-
-            if (lastX !== undefined) {
-                // Color coding based on sign
-                ctx.strokeStyle = y > 0 ? '#22c55e' : '#ef4444'; 
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(screenX, screenY);
-                ctx.stroke();
+        
+        function getQuadraticValue(x) {
+            return (x - r1) * (x - r2);
+        }
+        
+        function updateUI() {
+            const symbol = isLessThan ? '<' : '>';
+            eqDisplaySpan.innerText = `(x − ${r1.toFixed(2)})(x − ${r2.toFixed(2)}) ${symbol} 0`;
+            r1ValueSpan.innerText = r1.toFixed(2);
+            r2ValueSpan.innerText = r2.toFixed(2);
+            r1Input.value = r1;
+            r2Input.value = r2;
+            
+            const lower = Math.min(r1, r2);
+            const upper = Math.max(r1, r2);
+            if (isLessThan) {
+                solutionBox.innerHTML = `✅ Solution: <strong>${lower.toFixed(2)} < x < ${upper.toFixed(2)}</strong><br>🎯 The curve is below the x‑axis (red region)`;
+                solutionBox.style.background = "#fee2e2";
+                solutionBox.style.color = "#991b1b";
+            } else {
+                solutionBox.innerHTML = `✅ Solution: <strong>x < ${lower.toFixed(2)}  or  x > ${upper.toFixed(2)}</strong><br>🎯 The curve is above the x‑axis (green region)`;
+                solutionBox.style.background = "#dcfce7";
+                solutionBox.style.color = "#166534";
             }
-            lastX = screenX;
-            lastY = screenY;
+            draw();
         }
-
-        // 3. Draw Critical Points (Roots)
-        ctx.fillStyle = '#1e293b';
-        [r1, r2].forEach(r => {
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Draw grid
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 1;
+            for (let i = -7; i <= 7; i++) {
+                const xGrid = originX + i * scaleX;
+                if (xGrid > 0 && xGrid < canvasWidth) {
+                    ctx.beginPath();
+                    ctx.moveTo(xGrid, 0);
+                    ctx.lineTo(xGrid, canvasHeight);
+                    ctx.stroke();
+                }
+                const yGrid = originY + i * scaleY;
+                if (yGrid > 0 && yGrid < canvasHeight) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, yGrid);
+                    ctx.lineTo(canvasWidth, yGrid);
+                    ctx.stroke();
+                }
+            }
+            
+            // Draw axes
             ctx.beginPath();
-            ctx.arc(cx + r * scale, cy, 6, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        // 4. Update UI
-        const symbol = mode === 'less' ? '<' : '>';
-        document.getElementById('eqDisplay').innerText = `(x - ${r1})(x - ${r2}) ${symbol} 0`;
-        document.getElementById('labelR1').innerText = r1;
-        document.getElementById('labelR2').innerText = r2;
-
-        // 5. Solution Alert
-        alertBox.style.display = 'block';
-        let lower = Math.min(r1, r2);
-        let upper = Math.max(r1, r2);
-
-        if (mode === 'less') {
-            alertBox.style.backgroundColor = '#fee2e2';
-            alertBox.style.color = '#991b1b';
-            alertBox.innerText = `Solution: ${lower} < x < ${upper}`;
-        } else {
-            alertBox.style.backgroundColor = '#dcfce7';
-            alertBox.style.color = '#166534';
-            alertBox.innerText = `Solution: x < ${lower} OR x > ${upper}`;
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvasWidth, originY);
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, canvasHeight);
+            ctx.strokeStyle = "#64748b";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw parabola with color based on sign
+            ctx.lineWidth = 3;
+            let lastX = null, lastY = null;
+            for (let x = -7; x <= 7; x += 0.08) {
+                let y = getQuadraticValue(x);
+                let screenX = originX + x * scaleX;
+                let screenY = originY - y * scaleY;
+                if (screenY < -200 || screenY > canvasHeight + 200) {
+                    lastX = null;
+                    continue;
+                }
+                let color = y > 0 ? '#22c55e' : (y < 0 ? '#ef4444' : '#3b82f6');
+                if (lastX !== null && lastY !== null) {
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(screenX, screenY);
+                    ctx.strokeStyle = color;
+                    ctx.stroke();
+                }
+                lastX = screenX;
+                lastY = screenY;
+            }
+            
+            // Draw roots as points
+            ctx.fillStyle = "#1e293b";
+            [r1, r2].forEach(root => {
+                const rx = originX + root * scaleX;
+                if (rx > 10 && rx < canvasWidth - 10) {
+                    ctx.beginPath();
+                    ctx.arc(rx, originY, 7, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.arc(rx, originY, 3, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = "#1e293b";
+                }
+            });
+            
+            // Label roots
+            ctx.font = "12px Inter";
+            ctx.fillStyle = "#334155";
+            ctx.fillText(`r₁ = ${r1.toFixed(2)}`, originX + r1*scaleX - 20, originY - 12);
+            ctx.fillText(`r₂ = ${r2.toFixed(2)}`, originX + r2*scaleX - 20, originY - 12);
+            
+            // --- RED LINE when touch below x-axis ---
+            if (pointerX !== null && pointerValid) {
+                // convert pointer screen x to world x
+                const worldX = (pointerX - originX) / scaleX;
+                const yValue = getQuadraticValue(worldX);
+                const screenY = originY - yValue * scaleY;
+                const isBelow = yValue < 0;
+                
+                // vertical line (only if below axis)
+                if (isBelow) {
+                    ctx.beginPath();
+                    ctx.moveTo(pointerX, 0);
+                    ctx.lineTo(pointerX, canvasHeight);
+                    ctx.strokeStyle = "#ef4444";
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([8, 6]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // draw point on curve
+                    ctx.fillStyle = "#ef4444";
+                    ctx.beginPath();
+                    ctx.arc(pointerX, screenY, 6, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = "white";
+                    ctx.beginPath();
+                    ctx.arc(pointerX, screenY, 2.5, 0, 2*Math.PI);
+                    ctx.fill();
+                    
+                    // label value
+                    ctx.font = "bold 12px Inter";
+                    ctx.fillStyle = "#ef4444";
+                    ctx.fillText(`f(x) = ${yValue.toFixed(3)}`, pointerX + 8, screenY - 8);
+                } else {
+                    // optional: show gray line if above but we only want red when below
+                    // but we can draw a faint line for feedback
+                    ctx.beginPath();
+                    ctx.moveTo(pointerX, 0);
+                    ctx.lineTo(pointerX, canvasHeight);
+                    ctx.strokeStyle = "#cbd5e1";
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([4, 6]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = "#64748b";
+                    ctx.beginPath();
+                    ctx.arc(pointerX, screenY, 4, 0, 2*Math.PI);
+                    ctx.fill();
+                }
+                
+                // show x coordinate
+                ctx.font = "12px monospace";
+                ctx.fillStyle = "#1e293b";
+                ctx.fillText(`x = ${worldX.toFixed(2)}`, pointerX + 5, originY - 10);
+            }
         }
-    }
-
-    // Event Listeners
-    document.getElementById('valR1').addEventListener('input', e => { r1 = parseFloat(e.target.value); draw(); });
-    document.getElementById('valR2').addEventListener('input', e => { r2 = parseFloat(e.target.value); draw(); });
-    
-    document.getElementById('btnLess').addEventListener('click', function() {
-        mode = 'less';
-        this.classList.add('active');
-        document.getElementById('btnGreater').classList.remove('active');
-        draw();
-    });
-
-    document.getElementById('btnGreater').addEventListener('click', function() {
-        mode = 'greater';
-        this.classList.add('active');
-        document.getElementById('btnLess').classList.remove('active');
-        draw();
-    });
-
-    draw();
+        
+        // --- Parameter setters ---
+        function setRoot1(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(7, Math.max(-7, newVal));
+            r1 = Math.round(newVal * 100) / 100;
+            updateUI();
+        }
+        
+        function setRoot2(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(7, Math.max(-7, newVal));
+            r2 = Math.round(newVal * 100) / 100;
+            updateUI();
+        }
+        
+        function setInequality(less) {
+            isLessThan = less;
+            if (less) {
+                lessBtn.classList.add('active');
+                greaterBtn.classList.remove('active');
+            } else {
+                greaterBtn.classList.add('active');
+                lessBtn.classList.remove('active');
+            }
+            updateUI();
+        }
+        
+        // --- Equation parser ---
+        function parseQuadraticInequality(eqStr) {
+            let clean = eqStr.replace(/\s/g, '');
+            let regex = /\(x([+-][\d\.]+)\)\(x([+-][\d\.]+)\)([<>])0/;
+            let match = clean.match(regex);
+            if (!match) {
+                let altRegex = /\(x([+-][\d\.]+)\)\(x([+-][\d\.]+)\)([<>])0/;
+                match = clean.match(altRegex);
+            }
+            if (match) {
+                let part1 = match[1];
+                let part2 = match[2];
+                let op = match[3];
+                let r1Val = 0, r2Val = 0;
+                if (part1 === '+') r1Val = -1;
+                else if (part1 === '-') r1Val = 1;
+                else r1Val = -parseFloat(part1);
+                
+                if (part2 === '+') r2Val = -1;
+                else if (part2 === '-') r2Val = 1;
+                else r2Val = -parseFloat(part2);
+                
+                if (isNaN(r1Val) || isNaN(r2Val)) return null;
+                const isLess = (op === '<');
+                return { r1: r1Val, r2: r2Val, isLess: isLess };
+            }
+            return null;
+        }
+        
+        function applyFromInput() {
+            let raw = ineqInputField.value.trim();
+            let parsed = parseQuadraticInequality(raw);
+            if (parsed) {
+                setRoot1(parsed.r1);
+                setRoot2(parsed.r2);
+                setInequality(parsed.isLess);
+                ineqInputField.value = `(x − ${parsed.r1.toFixed(2)})(x − ${parsed.r2.toFixed(2)}) ${parsed.isLess ? '<' : '>'} 0`;
+            } else {
+                ineqInputField.style.borderColor = "#f87171";
+                setTimeout(() => ineqInputField.style.borderColor = "#dce3ec", 800);
+            }
+        }
+        
+        function resetToDefault() {
+            setRoot1(1);
+            setRoot2(3);
+            setInequality(true);
+            ineqInputField.value = "(x-1)(x-3)<0";
+        }
+        
+        // --- Canvas drag to shift roots (preserve original behavior) ---
+        let dragActive = false;
+        let lastPointerX = 0;
+        
+        function getPointerX(e) {
+            let clientX;
+            if (e.touches) clientX = e.touches[0].clientX;
+            else clientX = e.clientX;
+            return clientX;
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const px = getPointerX(e);
+            lastPointerX = px;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const currentX = getPointerX(e);
+            const deltaX = currentX - lastPointerX;
+            if (Math.abs(deltaX) > 0.5) {
+                let deltaRoot = deltaX / scaleX;
+                let newR1 = r1 + deltaRoot;
+                let newR2 = r2 + deltaRoot;
+                newR1 = Math.min(7, Math.max(-7, newR1));
+                newR2 = Math.min(7, Math.max(-7, newR2));
+                setRoot1(newR1);
+                setRoot2(newR2);
+            }
+            lastPointerX = currentX;
+            // also update the pointer line position for visual feedback
+            const rect = canvas.getBoundingClientRect();
+            let clientX = getPointerX(e);
+            if (clientX >= rect.left && clientX <= rect.right) {
+                pointerX = clientX - rect.left;
+                if (canvas.width) pointerX = (pointerX / rect.width) * canvas.width;
+                pointerValid = true;
+            } else {
+                pointerValid = false;
+            }
+            draw();
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+            pointerX = null;
+            pointerValid = false;
+            draw();
+        }
+        
+        // --- Touch/move tracking for red line (independent of drag) ---
+        function onPointerMove(e) {
+            if (dragActive) return; // already handled in drag move
+            const rect = canvas.getBoundingClientRect();
+            let clientX;
+            if (e.touches) clientX = e.touches[0].clientX;
+            else clientX = e.clientX;
+            if (clientX >= rect.left && clientX <= rect.right) {
+                pointerX = clientX - rect.left;
+                if (canvas.width) pointerX = (pointerX / rect.width) * canvas.width;
+                pointerValid = true;
+            } else {
+                pointerValid = false;
+                pointerX = null;
+            }
+            draw();
+        }
+        
+        function onPointerLeave() {
+            pointerX = null;
+            pointerValid = false;
+            draw();
+        }
+        
+        function initCanvasDragAndPointer() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+            
+            // for hover/touch without drag (show red line)
+            canvas.addEventListener('mousemove', onPointerMove);
+            canvas.addEventListener('mouseleave', onPointerLeave);
+            canvas.addEventListener('touchmove', onPointerMove);
+            canvas.addEventListener('touchend', onPointerLeave);
+            canvas.addEventListener('touchcancel', onPointerLeave);
+        }
+        
+        // --- Stepper and numeric inputs ---
+        function bindSteppers() {
+            document.getElementById('r1Minus').addEventListener('click', () => setRoot1(r1 - 0.5));
+            document.getElementById('r1Plus').addEventListener('click', () => setRoot1(r1 + 0.5));
+            document.getElementById('r2Minus').addEventListener('click', () => setRoot2(r2 - 0.5));
+            document.getElementById('r2Plus').addEventListener('click', () => setRoot2(r2 + 0.5));
+            
+            r1Input.addEventListener('change', (e) => setRoot1(e.target.value));
+            r2Input.addEventListener('change', (e) => setRoot2(e.target.value));
+            
+            lessBtn.addEventListener('click', () => setInequality(true));
+            greaterBtn.addEventListener('click', () => setInequality(false));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindSteppers();
+            initCanvasDragAndPointer();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('applyIneqBtn').addEventListener('click', applyFromInput);
+            document.getElementById('resetIneqBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

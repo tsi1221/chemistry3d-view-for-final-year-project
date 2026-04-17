@@ -2,286 +2,673 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade 9 Math Lab: Equation Balance</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Equation Balance Lab | Whiteboard Style</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --accent-blue: #00a2ff;
-            --white: #ffffff;
-            --bg: #f8fafc;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1000px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
-            overflow: hidden;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: white;
-            padding: 20px;
+        /* main container - white background, clean shadows */
+        .lab-card {
+            max-width: 1100px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* header - soft neutral */
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        .lab-layout {
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+            letter-spacing: -0.3px;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        /* two column layout */
+        .dashboard {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            padding: 20px;
-            gap: 20px;
+            grid-template-columns: 1fr 300px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        @media (max-width: 850px) {
-            .lab-layout { grid-template-columns: 1fr; }
+        @media (max-width: 780px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .viz-box {
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 16px;
-            position: relative;
+        /* canvas area */
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #e9edf2;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .equation-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .equation-preview span {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0f3b5c;
+            letter-spacing: 1px;
+            word-break: break-word;
         }
 
         canvas {
+            display: block;
             width: 100%;
             height: auto;
-            display: block;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .formula-card {
-            background: #e7f1ff;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 4px solid var(--primary-blue);
+        canvas:active {
+            cursor: grabbing;
         }
 
-        .equation-text {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: var(--primary-blue);
-        }
-
+        /* right panel - clean white */
         .control-panel {
-            background: #f1f5f9;
-            padding: 20px;
-            border-radius: 16px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1.4rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
         }
 
-        .slider-group label {
-            display: block;
-            font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
+        .input-group {
+            background: #fcfdff;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
         }
 
-        input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .info-box {
+        .input-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+            font-weight: 500;
+            color: #2c3e66;
             font-size: 0.85rem;
-            color: #475569;
-            background: #fffbe6;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 5px solid #fbbf24;
         }
 
-        #balanceAlert {
-            display: none;
+        .input-label span:first-child {
+            background: #f1f5f9;
+            padding: 0.2rem 0.7rem;
+            border-radius: 2rem;
+        }
+
+        .input-label .value-badge {
+            background: #fef3e2;
+            color: #c2410c;
+            padding: 0.2rem 0.7rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        /* equation input */
+        .equation-input-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .equation-input-wrapper input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 12px 14px;
+            border-radius: 60px;
+            color: #1e293b;
+            font-family: monospace;
+            font-size: 0.9rem;
+            outline: none;
+            transition: 0.15s;
+        }
+
+        .equation-input-wrapper input:focus {
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 2px #f59e0b30;
+        }
+
+        button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 20px;
+            border-radius: 60px;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button:active {
+            transform: scale(0.96);
+            background: #f59e0b;
+            color: white;
+        }
+
+        /* numeric x control */
+        .x-stepper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .x-stepper input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 12px;
+            border-radius: 40px;
+            color: #1e293b;
+            font-weight: bold;
+            font-size: 1rem;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .x-stepper button {
+            background: #f1f5f9;
+            padding: 10px 18px;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            color: #6c86a3;
+            text-align: center;
+            margin-top: 8px;
+            background: #f8fafc;
+            padding: 6px;
+            border-radius: 40px;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .balance-toast {
             position: fixed;
-            top: 20px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--primary-blue);
-            color: white;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-weight: bold;
+            background: #f59e0b;
+            color: #2d2a1e;
+            padding: 10px 26px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
             z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .balance-toast.visible {
+            opacity: 1;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
+            background: #ffffff;
         }
     </style>
 </head>
 <body>
 
-<div id="balanceAlert">Perfect Balance! Equation Solved.</div>
-
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">3D Equation Balance</h2>
-        <p style="margin:5px 0 0">Solve for x: Balancing the Scale</p>
-    </header>
-
-    <div class="lab-layout">
-        <main>
-            <div class="formula-card">
-                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 5px;">CURRENT EQUATION</div>
-                <div class="equation-text" id="eqDisplay">2x + 4 = 12</div>
-            </div>
-            <div class="viz-box">
-                <canvas id="balanceCanvas" width="600" height="400"></canvas>
-            </div>
-        </main>
-
-        <aside class="control-panel">
-            <div class="slider-group">
-                <label>Set Constant (b)</label>
-                <input type="range" id="valB" min="0" max="10" value="4">
-                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelB">b = 4</div>
-            </div>
-
-            <div class="slider-group">
-                <label>Target Value (c)</label>
-                <input type="range" id="valC" min="10" max="30" value="12">
-                <div style="text-align:right; font-weight:bold; color:var(--primary-blue)" id="labelC">c = 12</div>
-            </div>
-
-            <hr style="border:0; border-top:1px solid #ddd; margin:10px 0;">
-
-            <div class="slider-group">
-                <label style="color:var(--accent-blue)">Adjust Your Guess for x</label>
-                <input type="range" id="guessX" min="0" max="15" step="0.1" value="0">
-                <div style="text-align:right; font-weight:bold; color:var(--accent-blue)" id="labelX">Your x = 0</div>
-            </div>
-
-            <div class="info-box">
-                <strong>The Goal:</strong> Adjust x until the scale is perfectly level. This value of x is the solution to the equation.
-            </div>
-        </aside>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>⚖️ Equation Balance · Whiteboard Lab</h1>
+        <p>2x + b = c  |  Drag on canvas ➕➖ change x  |  Type your own equation</p>
     </div>
+
+    <div class="dashboard">
+        <!-- canvas visual -->
+        <div class="canvas-area">
+            <div class="equation-preview">
+                <span id="eqDisplay">2x + 4 = 12</span>
+            </div>
+            <canvas id="balanceCanvas" width="600" height="400" style="width:100%; height:auto;"></canvas>
+            <div class="drag-hint">
+                ✨ Touch or drag horizontally on the scale → adjust x value
+            </div>
+        </div>
+
+        <!-- controls (no sliders, clean white) -->
+        <div class="control-panel">
+            <div class="input-group">
+                <div class="input-label">
+                    <span>📐 Equation (ax + b = c)</span>
+                    <span class="value-badge" id="solutionHint">solution → ?</span>
+                </div>
+                <div class="equation-input-wrapper">
+                    <input type="text" id="equationInput" placeholder="e.g., 2x + 4 = 12" value="2x + 4 = 12">
+                    <button id="applyEqBtn">⟳ Set</button>
+                </div>
+                <div style="font-size:0.7rem; color:#8b9bb0; margin-top: 8px;">
+                    Formats: 3x+2=11 , x-5=10 , 4x-7=9
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">
+                    <span>🎚️ Current x (guess)</span>
+                    <span class="value-badge" id="xValueLabel">0.0</span>
+                </div>
+                <div class="x-stepper">
+                    <button id="xMinusBtn" aria-label="decrease x">–</button>
+                    <input type="number" id="xNumberInput" step="0.1" value="0.0">
+                    <button id="xPlusBtn" aria-label="increase x">+</button>
+                </div>
+                <div class="drag-hint" style="margin-top: 8px;">
+                    👆 Drag on canvas (left/right) to smoothly adjust x
+                </div>
+            </div>
+
+            <button id="resetAllBtn" class="reset-btn">⟳ Reset to 2x + 4 = 12 & x = 0</button>
+            <div style="font-size:0.7rem; text-align:center; color:#8b9bb0;">
+                Left side = ax + b &nbsp;&nbsp;|&nbsp;&nbsp; Right side = c
+            </div>
+        </div>
+    </div>
+    <footer>⚡ Touch/Drag the balance beam to find x that makes both sides equal</footer>
 </div>
 
+<div id="balanceToast" class="balance-toast">🎯 Perfect Balance! Equation solved.</div>
+
 <script>
-    const canvas = document.getElementById('balanceCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('balanceAlert');
+    (function(){
+        // ------------------- Equation State -------------------
+        let a = 2;        // coefficient of x
+        let b = 4;        // constant term (left side)
+        let c = 12;       // right side value
+        let xGuess = 0;   // current variable value (user adjustable)
 
-    // Equation State: 2x + b = c
-    let b = 4;
-    let c = 12;
-    let xGuess = 0;
-    const a = 2; 
+        // DOM elements
+        const canvas = document.getElementById('balanceCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplaySpan = document.getElementById('eqDisplay');
+        const xValueSpan = document.getElementById('xValueLabel');
+        const xNumberInput = document.getElementById('xNumberInput');
+        const solutionHintSpan = document.getElementById('solutionHint');
+        const equationInputField = document.getElementById('equationInput');
+        const applyEqBtn = document.getElementById('applyEqBtn');
+        const resetBtn = document.getElementById('resetAllBtn');
+        const xMinus = document.getElementById('xMinusBtn');
+        const xPlus = document.getElementById('xPlusBtn');
+        const toast = document.getElementById('balanceToast');
 
-    // Helper to get CSS variables for Canvas
-    function getColor(name) {
-        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const centerX = canvas.width / 2;
-        const baseY = 350;
-        
-        // Calculate physics/tilt
-        const leftWeight = (a * xGuess) + b;
-        const rightWeight = c;
-        const diff = rightWeight - leftWeight;
-        const tiltAngle = Math.max(-0.4, Math.min(0.4, diff * 0.05));
-
-        // Update UI Text
-        document.getElementById('eqDisplay').innerText = `${a}x + ${b} = ${c}`;
-        document.getElementById('labelB').innerText = `b = ${b}`;
-        document.getElementById('labelC').innerText = `c = ${c}`;
-        document.getElementById('labelX').innerText = `Your x = ${xGuess.toFixed(1)}`;
-
-        // 1. Draw Stand
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 8;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(centerX, baseY);
-        ctx.lineTo(centerX, baseY - 150);
-        ctx.stroke();
-        
-        // 2. Draw Balancing Beam
-        ctx.save();
-        ctx.translate(centerX, baseY - 150);
-        ctx.rotate(tiltAngle);
-        
-        ctx.lineWidth = 6;
-        ctx.beginPath();
-        ctx.moveTo(-180, 0);
-        ctx.lineTo(180, 0);
-        ctx.stroke();
-
-        // 3. Draw Hanging Plates
-        drawPlate(-180, 100, `LEFT (${a}x + ${b})`);
-        drawPlate(180, 100, `RIGHT (${c})`);
-        
-        ctx.restore();
-
-        // 4. Alert Logic (Check if solved)
-        const solution = (c - b) / a;
-        if (Math.abs(xGuess - solution) < 0.15) {
-            alertBox.style.display = 'block';
-        } else {
-            alertBox.style.display = 'none';
+        // helper to update UI and redraw
+        function updateUIAndRedraw() {
+            // update equation display
+            eqDisplaySpan.innerText = `${a}x + ${b} = ${c}`;
+            // update x display
+            const xFormatted = xGuess.toFixed(1);
+            xValueSpan.innerText = xFormatted;
+            xNumberInput.value = xFormatted;
+            // compute solution: ax + b = c  => x = (c - b)/a
+            let solution = (c - b) / a;
+            if (isNaN(solution) || !isFinite(solution)) solution = 0;
+            solutionHintSpan.innerText = `x* = ${solution.toFixed(2)}`;
+            // draw canvas
+            drawBalance();
+            // check perfect balance
+            const leftVal = a * xGuess + b;
+            const rightVal = c;
+            const isPerfect = Math.abs(leftVal - rightVal) < 0.08;
+            if (isPerfect) {
+                toast.classList.add('visible');
+                if (window._toastTimeout) clearTimeout(window._toastTimeout);
+                window._toastTimeout = setTimeout(() => {
+                    toast.classList.remove('visible');
+                }, 1800);
+            } else {
+                toast.classList.remove('visible');
+            }
         }
-    }
 
-    function drawPlate(x, y, label) {
-        // Chains
-        ctx.strokeStyle = '#94a3b8';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x - 50, y);
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x + 50, y);
-        ctx.stroke();
-
-        // Plate Base
-        ctx.fillStyle = getColor('--primary-blue');
-        ctx.fillRect(x - 60, y, 120, 8);
-
-        // Label below plate
-        ctx.fillStyle = '#334155';
-        ctx.font = 'bold 12px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, x, y + 25);
-    }
-
-    // Listeners
-    document.getElementById('valB').addEventListener('input', (e) => { 
-        b = parseInt(e.target.value); 
-        draw(); 
-    });
-    document.getElementById('valC').addEventListener('input', (e) => { 
-        c = parseInt(e.target.value); 
-        draw(); 
-    });
-    document.getElementById('guessX').addEventListener('input', (e) => { 
-        xGuess = parseFloat(e.target.value); 
-        draw(); 
-    });
-
-    // Initial render
-    draw();
+        // ---------- Canvas Drawing with Tilt ----------
+        function drawBalance() {
+            if (!ctx) return;
+            const w = canvas.width;
+            const h = canvas.height;
+            if (w === 0 || h === 0) {
+                resizeCanvas();
+                return;
+            }
+            ctx.clearRect(0, 0, w, h);
+            
+            // compute left vs right weight
+            const leftWeight = a * xGuess + b;
+            const rightWeight = c;
+            const diff = rightWeight - leftWeight;
+            // tilt sensitivity: max tilt 0.4 rad
+            let tilt = diff * 0.045;
+            tilt = Math.min(0.4, Math.max(-0.4, tilt));
+            
+            // Geometry relative to canvas
+            const pivotX = w / 2;
+            const pivotY = h - 48;
+            const beamLength = Math.min(w * 0.65, 260);
+            const leftEnd = -beamLength;
+            const rightEnd = beamLength;
+            
+            // draw pedestal (warm gray)
+            ctx.beginPath();
+            ctx.moveTo(pivotX, pivotY);
+            ctx.lineTo(pivotX, pivotY - 54);
+            ctx.lineWidth = 12;
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.stroke();
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.rect(pivotX - 16, pivotY - 12, 32, 14);
+            ctx.fill();
+            
+            ctx.save();
+            ctx.translate(pivotX, pivotY - 46);
+            ctx.rotate(tilt);
+            
+            // beam line
+            ctx.beginPath();
+            ctx.moveTo(leftEnd, 0);
+            ctx.lineTo(rightEnd, 0);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#b45309';
+            ctx.stroke();
+            // central pivot
+            ctx.beginPath();
+            ctx.arc(0, 0, 9, 0, 2 * Math.PI);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(0, 0, 4, 0, 2 * Math.PI);
+            ctx.fillStyle = '#fbbf24';
+            ctx.fill();
+            
+            // draw plates with chains
+            const drop = 52;
+            drawPlate(ctx, leftEnd, 0, drop, leftWeight.toFixed(1), '#f59e0b');
+            drawPlate(ctx, rightEnd, 0, drop, rightWeight.toFixed(1), '#eab308');
+            
+            ctx.restore();
+            
+            // labels for weights
+            ctx.font = 'bold 13px "Inter", monospace';
+            ctx.fillStyle = '#0f3b5c';
+            ctx.shadowBlur = 0;
+            ctx.fillText(`⚖️ ${leftWeight.toFixed(1)}`, pivotX - beamLength - 24, pivotY - 28);
+            ctx.fillStyle = '#b45309';
+            ctx.fillText(`${rightWeight.toFixed(1)} ⚖️`, pivotX + beamLength + 8, pivotY - 28);
+        }
+        
+        function drawPlate(ctx, x, y, drop, weightText, color) {
+            // chains
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - 24, y + drop);
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + 24, y + drop);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#94a3b8';
+            ctx.stroke();
+            // plate
+            ctx.fillStyle = color;
+            ctx.fillRect(x - 38, y + drop - 8, 76, 10);
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 11px monospace';
+            ctx.fillText(weightText, x - 12, y + drop + 2);
+            ctx.fillStyle = '#fff7ed';
+            ctx.fillText(weightText, x - 12, y + drop + 1);
+        }
+        
+        // resize canvas properly
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 20, 700);
+            const targetWidth = maxWidth;
+            const targetHeight = targetWidth * 0.55;
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            drawBalance();
+        }
+        
+        // ---------- Equation Parser (robust) ----------
+        function parseEquation(eqStr) {
+            let clean = eqStr.replace(/\s/g, '');
+            let sides = clean.split('=');
+            if (sides.length !== 2) return null;
+            let left = sides[0];
+            let right = sides[1];
+            let cVal = parseFloat(right);
+            if (isNaN(cVal)) return null;
+            
+            let aVal = 1;
+            let bVal = 0;
+            let xTermMatch = left.match(/([+-]?[\d\.]*)x/);
+            if (xTermMatch) {
+                let coeffStr = xTermMatch[1];
+                if (coeffStr === '+' || coeffStr === '') aVal = 1;
+                else if (coeffStr === '-') aVal = -1;
+                else aVal = parseFloat(coeffStr);
+                if (isNaN(aVal)) aVal = 1;
+                left = left.replace(xTermMatch[0], '');
+            } else {
+                aVal = 0;
+            }
+            if (left.length > 0) {
+                let constMatch = left.match(/^([+-]?[\d\.]+)/);
+                if (constMatch) {
+                    bVal = parseFloat(constMatch[1]);
+                } else {
+                    bVal = 0;
+                }
+            }
+            if (isNaN(aVal)) aVal = 1;
+            if (isNaN(bVal)) bVal = 0;
+            return { a: aVal, b: bVal, c: cVal };
+        }
+        
+        function setEquationFromString(eqString) {
+            const parsed = parseEquation(eqString);
+            if (parsed) {
+                a = parsed.a;
+                b = parsed.b;
+                c = parsed.c;
+                updateUIAndRedraw();
+                return true;
+            } else {
+                equationInputField.style.borderColor = '#f87171';
+                setTimeout(() => { equationInputField.style.borderColor = '#dce3ec'; }, 800);
+                return false;
+            }
+        }
+        
+        // ---------- x value modification (touch & buttons) ----------
+        function setXValue(newX, fromInput = false) {
+            let clamped = Math.min(20, Math.max(-5, newX));
+            clamped = Math.round(clamped * 10) / 10;
+            if (isNaN(clamped)) clamped = 0;
+            xGuess = clamped;
+            if (!fromInput) {
+                xNumberInput.value = xGuess.toFixed(1);
+            }
+            updateUIAndRedraw();
+        }
+        
+        // ---------- Canvas Drag to adjust X (touch + mouse) ----------
+        let dragActive = false;
+        function handleDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            updateXFromDragEvent(e);
+        }
+        
+        function handleDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            updateXFromDragEvent(e);
+        }
+        
+        function handleDragEnd(e) {
+            dragActive = false;
+        }
+        
+        function updateXFromDragEvent(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+            } else {
+                clientX = e.clientX;
+            }
+            if (clientX === undefined) return;
+            let relativeX = (clientX - rect.left) / rect.width;
+            relativeX = Math.min(1, Math.max(0, relativeX));
+            const minX = -2;
+            const maxX = 18;
+            let newX = minX + relativeX * (maxX - minX);
+            newX = Math.round(newX * 10) / 10;
+            setXValue(newX, false);
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', handleDragStart);
+            window.addEventListener('mousemove', handleDragMove);
+            window.addEventListener('mouseup', handleDragEnd);
+            canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+            canvas.addEventListener('touchmove', handleDragMove, { passive: false });
+            canvas.addEventListener('touchend', handleDragEnd);
+            canvas.addEventListener('touchcancel', handleDragEnd);
+            canvas.addEventListener('click', (e) => {
+                updateXFromDragEvent(e);
+            });
+        }
+        
+        // ---------- Number input sync ----------
+        function bindNumberInput() {
+            xNumberInput.addEventListener('change', (e) => {
+                let val = parseFloat(e.target.value);
+                if (!isNaN(val)) setXValue(val, true);
+                else setXValue(xGuess, true);
+            });
+            xMinus.addEventListener('click', () => {
+                setXValue(xGuess - 0.5, false);
+            });
+            xPlus.addEventListener('click', () => {
+                setXValue(xGuess + 0.5, false);
+            });
+        }
+        
+        function resetToDefault() {
+            a = 2;
+            b = 4;
+            c = 12;
+            xGuess = 0;
+            equationInputField.value = "2x + 4 = 12";
+            updateUIAndRedraw();
+        }
+        
+        function applyEquationFromInput() {
+            let rawEq = equationInputField.value.trim();
+            if (rawEq === "") rawEq = "2x+4=12";
+            const success = setEquationFromString(rawEq);
+            if (success) {
+                equationInputField.value = `${a}x + ${b} = ${c}`;
+            }
+        }
+        
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                resizeCanvas();
+                drawBalance();
+            }, 100);
+        }
+        
+        function init() {
+            resizeCanvas();
+            initCanvasDrag();
+            bindNumberInput();
+            applyEqBtn.addEventListener('click', applyEquationFromInput);
+            resetBtn.addEventListener('click', resetToDefault);
+            window.addEventListener('resize', onWindowResize);
+            // set default values
+            a = 2; b = 4; c = 12; xGuess = 0;
+            equationInputField.value = "2x + 4 = 12";
+            updateUIAndRedraw();
+        }
+        
+        init();
+    })();
 </script>
-
 </body>
 </html>

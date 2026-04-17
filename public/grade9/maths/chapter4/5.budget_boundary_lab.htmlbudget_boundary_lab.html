@@ -2,306 +2,736 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduTwin Lab: Budget Boundary</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Budget Boundary Lab | Linear Inequality Explorer</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --white: #ffffff;
-            --bg: #f8fafc;
-            --danger: #ef4444;
-            --success: #22c55e;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
             margin: 0;
-            display: flex;
-            justify-content: center;
             min-height: 100vh;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1000px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 50px rgba(0, 86, 179, 0.1);
-            overflow: hidden;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: var(--primary-blue);
-            color: white;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            text-align: center;
         }
 
-        .lab-layout {
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
+            text-align: center;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
             display: grid;
             grid-template-columns: 1fr 320px;
-            padding: 20px;
-            gap: 20px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        @media (max-width: 850px) {
-            .lab-layout { grid-template-columns: 1fr; }
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
         }
 
-        .viz-container {
+        .canvas-area {
             background: #ffffff;
-            border: 2px solid #e2e8f0;
-            border-radius: 20px;
-            position: relative;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
             overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .inequality-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .inequality-preview span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .budget-status {
+            margin-top: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
 
         canvas {
+            display: block;
             width: 100%;
             height: auto;
-            display: block;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: crosshair;
+            touch-action: none;
         }
 
-        .formula-card {
-            background: #eef6ff;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 20px;
-            border-left: 6px solid var(--primary-blue);
+        .drag-hint {
+            font-size: 0.7rem;
             text-align: center;
-        }
-
-        .inequality-display {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: var(--primary-blue);
-            font-family: 'Courier New', monospace;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
         .control-panel {
-            background: #f1f5f9;
-            padding: 25px;
-            border-radius: 20px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 1.2rem;
         }
 
-        .slider-group label {
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
             display: flex;
             justify-content: space-between;
-            font-weight: bold;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            color: #475569;
+            color: #334155;
         }
 
-        input[type="range"] {
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .equation-input-area {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .equation-input-area input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 10px 14px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            outline: none;
+        }
+
+        .equation-input-area input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f630;
+        }
+
+        .equation-input-area button {
+            background: #f1f5f9;
+            border: none;
+            padding: 0 18px;
+            border-radius: 60px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
             width: 100%;
-            accent-color: var(--primary-blue);
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
         }
 
         .alert-toast {
             position: fixed;
-            top: 25px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--danger);
+            background: #ef4444;
             color: white;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-weight: bold;
-            display: none;
+            padding: 10px 26px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.9rem;
             z-index: 1000;
-            box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
-            animation: bounce 0.4s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(-10px); }
+        .alert-toast.visible {
+            opacity: 1;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<div id="overBudgetAlert" class="alert-toast">⚠️ OVER BUDGET! Reduce items.</div>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>💰 Budget Boundary · Linear Inequality Lab</h1>
+        <p>A·x + B·y ≤ C &nbsp;|&nbsp; Drag the point (x,y) to test affordability</p>
+    </div>
 
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">Budget Boundary Lab</h2>
-        <p style="margin:5px 0 0">Visualizing Costs & Linear Inequalities</p>
-    </header>
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="inequality-preview">
+                <span id="eqDisplay">30x + 10y ≤ 100</span>
+                <div class="budget-status" id="budgetStatus">💰 Spending: 0 / 100 Birr</div>
+            </div>
+            <canvas id="budgetCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag the red point → change quantities (x, y) &nbsp;|&nbsp; Green = within budget, Red = over budget
+            </div>
+        </div>
 
-    <div class="lab-layout">
-        <main>
-            <div class="formula-card">
-                <div class="inequality-display" id="eqDisplay">30x + 10y ≤ 100</div>
-                <div style="margin-top:10px; color:#64748b">
-                    Spending: <span id="totalSpent" style="font-weight:bold">0</span> / <span id="maxBudget">100</span> Birr
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📘 Price of Book (A)</span>
+                    <span id="aUnit">Birr</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="aMinus">−</button>
+                    <span id="aValue">30</span>
+                    <button id="aPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="aInput" step="5" value="30">
                 </div>
             </div>
-            <div class="viz-container">
-                <canvas id="budgetCanvas" width="600" height="500"></canvas>
-            </div>
-        </main>
 
-        <aside class="control-panel">
-            <h3 style="margin-top:0; font-size:1.1rem">Set Market Prices</h3>
-            <div class="slider-group">
-                <label>Price of Book (A) <span><span id="labelA">30</span> Birr</span></label>
-                <input type="range" id="valA" min="10" max="50" value="30" step="5">
-            </div>
-
-            <div class="slider-group">
-                <label>Price of Pen (B) <span><span id="labelB">10</span> Birr</span></label>
-                <input type="range" id="valB" min="5" max="25" value="10" step="1">
-            </div>
-
-            <div class="slider-group">
-                <label>Wallet Limit (C) <span><span id="labelC">100</span> Birr</span></label>
-                <input type="range" id="valC" min="50" max="300" value="100" step="10">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>✒️ Price of Pen (B)</span>
+                    <span id="bUnit">Birr</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="bMinus">−</button>
+                    <span id="bValue">10</span>
+                    <button id="bPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="bInput" step="1" value="10">
+                </div>
             </div>
 
-            <hr style="border:0; border-top:1px solid #cbd5e1; margin:10px 0;">
-            <h3 style="margin:0; font-size:1.1rem">Your Shopping Cart</h3>
-            
-            <div class="slider-group">
-                <label>Books (x) <span id="labelX">0</span></label>
-                <input type="range" id="valX" min="0" max="10" value="0" step="1">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>💳 Budget Limit (C)</span>
+                    <span id="cUnit">Birr</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="cMinus">−</button>
+                    <span id="cValue">100</span>
+                    <button id="cPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="cInput" step="10" value="100">
+                </div>
             </div>
 
-            <div class="slider-group">
-                <label>Pens (y) <span id="labelY">0</span></label>
-                <input type="range" id="valY" min="0" max="20" value="0" step="1">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🛒 Books (x) &nbsp;|&nbsp; Pens (y)</span>
+                    <span id="xyHint" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">drag point</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="xMinus">−</button>
+                    <span id="xValue">0</span>
+                    <button id="xPlus">+</button>
+                </div>
+                <div class="stepper-control" style="margin-top: 8px;">
+                    <button id="yMinus">−</button>
+                    <span id="yValue">0</span>
+                    <button id="yPlus">+</button>
+                </div>
             </div>
-        </aside>
+
+            <div class="equation-input-area">
+                <input type="text" id="ineqInput" placeholder="e.g., 30x + 10y <= 100" value="30x + 10y <= 100">
+                <button id="applyIneqBtn">⇄ Set</button>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Reset to 30x + 10y ≤ 100, x=0, y=0</button>
+        </div>
     </div>
+    <footer>⚡ The blue shaded area shows affordable combinations. Drag the point to test affordability.</footer>
 </div>
 
+<div id="overBudgetToast" class="alert-toast">⚠️ OVER BUDGET! Reduce items.</div>
+
 <script>
-    const canvas = document.getElementById('budgetCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('overBudgetAlert');
+    (function(){
+        // State: A*x + B*y <= C
+        let A = 30;
+        let B = 10;
+        let C = 100;
+        let x = 0;
+        let y = 0;
 
-    // State Variables: Ax + By <= C
-    let A = 30, B = 10, C = 100;
-    let x = 0, y = 0;
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // DOM elements
+        const canvas = document.getElementById('budgetCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplaySpan = document.getElementById('eqDisplay');
+        const budgetStatusSpan = document.getElementById('budgetStatus');
+        const aValueSpan = document.getElementById('aValue');
+        const bValueSpan = document.getElementById('bValue');
+        const cValueSpan = document.getElementById('cValue');
+        const xValueSpan = document.getElementById('xValue');
+        const yValueSpan = document.getElementById('yValue');
+        const aInput = document.getElementById('aInput');
+        const bInput = document.getElementById('bInput');
+        const cInput = document.getElementById('cInput');
+        const ineqInputField = document.getElementById('ineqInput');
+        const toast = document.getElementById('overBudgetToast');
         
-        const padding = 60;
-        const graphW = canvas.width - padding * 2;
-        const graphH = canvas.height - padding * 2;
-        const unitScale = 25; // pixels per item
-
-        // Update Labels
-        document.getElementById('labelA').innerText = A;
-        document.getElementById('labelB').innerText = B;
-        document.getElementById('labelC').innerText = C;
-        document.getElementById('labelX').innerText = x;
-        document.getElementById('labelY').innerText = y;
-        document.getElementById('maxBudget').innerText = C;
-        document.getElementById('eqDisplay').innerText = `${A}x + ${B}y ≤ ${C}`;
-
-        const totalCost = (A * x) + (B * y);
-        document.getElementById('totalSpent').innerText = totalCost;
-
-        // Origin at bottom-left
-        ctx.save();
-        ctx.translate(padding, canvas.height - padding);
-
-        // 1. Draw Grid
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        for(let i=0; i<=20; i++) {
-            ctx.beginPath();
-            ctx.moveTo(i * unitScale, 0); ctx.lineTo(i * unitScale, -graphH);
-            ctx.moveTo(0, -i * unitScale); ctx.lineTo(graphW, -i * unitScale);
-            ctx.stroke();
-        }
-
-        // 2. Draw Boundary Line: Ax + By = C
-        // x-intercept: C/A, y-intercept: C/B
-        const xIntercept = (C / A) * unitScale;
-        const yIntercept = (C / B) * unitScale;
-
-        // Shade Spending Zone (Inequality Area)
-        ctx.fillStyle = 'rgba(0, 86, 179, 0.1)';
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -yIntercept);
-        ctx.lineTo(xIntercept, 0);
-        ctx.closePath();
-        ctx.fill();
-
-        // The Line itself
-        ctx.strokeStyle = '#0056b3';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(0, -yIntercept);
-        ctx.lineTo(xIntercept, 0);
-        ctx.stroke();
-
-        // 3. Draw Axes
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, 0); ctx.lineTo(graphW, 0); // X axis
-        ctx.moveTo(0, 0); ctx.lineTo(0, -graphH); // Y axis
-        ctx.stroke();
-
-        // 4. Plot current point (Cart)
-        const cartX = x * unitScale;
-        const cartY = y * unitScale;
-        const isOver = totalCost > C;
-
-        if (isOver) {
-            alertBox.style.display = 'block';
-            ctx.fillStyle = '#ef4444';
-            // Flash effect for background
-            ctx.globalAlpha = 0.05;
-            ctx.fillRect(0, 0, graphW, -graphH);
-            ctx.globalAlpha = 1.0;
-        } else {
-            alertBox.style.display = 'none';
-            ctx.fillStyle = '#22c55e';
-        }
-
-        ctx.beginPath();
-        ctx.arc(cartX, -cartY, 10, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        // Tooltip
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 12px Inter';
-        ctx.fillText(`Cart: (${x}, ${y})`, cartX + 15, -cartY - 15);
-
-        ctx.restore();
-    }
-
-    // Interaction logic
-    const inputs = ['valA', 'valB', 'valC', 'valX', 'valY'];
-    inputs.forEach(id => {
-        document.getElementById(id).addEventListener('input', (e) => {
-            if (id === 'valA') A = parseInt(e.target.value);
-            if (id === 'valB') B = parseInt(e.target.value);
-            if (id === 'valC') C = parseInt(e.target.value);
-            if (id === 'valX') x = parseInt(e.target.value);
-            if (id === 'valY') y = parseInt(e.target.value);
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let padding = 60;
+        let graphWidth, graphHeight;
+        let unitScaleX, unitScaleY;
+        let originX, originY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            padding = Math.min(50, canvasWidth * 0.08);
+            graphWidth = canvasWidth - padding * 2;
+            graphHeight = canvasHeight - padding * 2;
+            
+            // scale: x max = 20 units, y max = 20 units
+            unitScaleX = graphWidth / 20;
+            unitScaleY = graphHeight / 20;
+            
+            originX = padding;
+            originY = canvasHeight - padding;
             draw();
-        });
-    });
-
-    draw();
+        }
+        
+        function getTotalCost() {
+            return A * x + B * y;
+        }
+        
+        function updateUI() {
+            const total = getTotalCost();
+            eqDisplaySpan.innerText = `${A}x + ${B}y ≤ ${C}`;
+            budgetStatusSpan.innerHTML = `💰 Spending: ${total} / ${C} Birr ${total > C ? '🔴 OVER' : '✅ OK'}`;
+            aValueSpan.innerText = A;
+            bValueSpan.innerText = B;
+            cValueSpan.innerText = C;
+            xValueSpan.innerText = x;
+            yValueSpan.innerText = y;
+            aInput.value = A;
+            bInput.value = B;
+            cInput.value = C;
+            
+            // toast visibility
+            if (total > C) {
+                toast.classList.add('visible');
+                if (window.toastTimeout) clearTimeout(window.toastTimeout);
+                window.toastTimeout = setTimeout(() => toast.classList.remove('visible'), 2000);
+            } else {
+                toast.classList.remove('visible');
+            }
+            draw();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Draw grid
+            ctx.save();
+            ctx.translate(originX, originY);
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 20; i++) {
+                const gridX = i * unitScaleX;
+                const gridY = -i * unitScaleY;
+                ctx.beginPath();
+                ctx.moveTo(gridX, 0);
+                ctx.lineTo(gridX, -graphHeight);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, gridY);
+                ctx.lineTo(graphWidth, gridY);
+                ctx.stroke();
+            }
+            
+            // Draw axes
+            ctx.strokeStyle = "#64748b";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(graphWidth, 0);
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -graphHeight);
+            ctx.stroke();
+            
+            // Label axes
+            ctx.font = "12px Inter";
+            ctx.fillStyle = "#475569";
+            ctx.fillText("Books (x)", graphWidth - 30, -8);
+            ctx.fillText("Pens (y)", 8, -graphHeight + 15);
+            
+            // Budget line: A*x + B*y = C  =>  y = (C - A*x)/B
+            // Find intercepts
+            const xInterceptWorld = C / A;
+            const yInterceptWorld = C / B;
+            const xInterceptPixel = Math.min(graphWidth, xInterceptWorld * unitScaleX);
+            const yInterceptPixel = -Math.min(graphHeight, yInterceptWorld * unitScaleY);
+            
+            // Shade feasible region (A*x + B*y <= C)
+            ctx.fillStyle = "rgba(59, 130, 246, 0.15)";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(xInterceptPixel, 0);
+            ctx.lineTo(0, yInterceptPixel);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Draw budget line
+            ctx.beginPath();
+            ctx.moveTo(xInterceptPixel, 0);
+            ctx.lineTo(0, yInterceptPixel);
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            // Label intercepts
+            ctx.fillStyle = "#3b82f6";
+            ctx.font = "10px Inter";
+            ctx.fillText(`(${xInterceptWorld.toFixed(1)}, 0)`, xInterceptPixel - 25, -5);
+            ctx.fillText(`(0, ${yInterceptWorld.toFixed(1)})`, 5, yInterceptPixel - 5);
+            
+            // Draw current point (x, y)
+            const pointX = x * unitScaleX;
+            const pointY = -y * unitScaleY;
+            const isOver = getTotalCost() > C;
+            ctx.fillStyle = isOver ? "#ef4444" : "#22c55e";
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, 10, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, 4, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Label point coordinates
+            ctx.fillStyle = "#1e293b";
+            ctx.font = "bold 12px Inter";
+            ctx.fillText(`(${x}, ${y})`, pointX + 12, pointY - 8);
+            ctx.fillText(`Cost: ${getTotalCost()}`, pointX + 12, pointY + 6);
+            
+            ctx.restore();
+        }
+        
+        // --- Setters with clamping ---
+        function setA(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(100, Math.max(1, newVal));
+            A = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setB(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(50, Math.max(1, newVal));
+            B = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setC(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(500, Math.max(10, newVal));
+            C = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setX(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(20, Math.max(0, newVal));
+            x = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setY(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(20, Math.max(0, newVal));
+            y = Math.round(newVal);
+            updateUI();
+        }
+        
+        // --- Inequality parser: "Ax + By <= C" or "Ax+By<=C"---
+        function parseInequality(eqStr) {
+            let clean = eqStr.replace(/\s/g, '');
+            // pattern: number?x + number?y <= number
+            let regex = /^([\d]+)x\+([\d]+)y<=([\d]+)$/;
+            let match = clean.match(regex);
+            if (!match) {
+                // allow spaces? already removed spaces. try with optional +
+                let altRegex = /^([\d]+)x\+([\d]+)y<=([\d]+)$/;
+                match = clean.match(altRegex);
+            }
+            if (match) {
+                let aVal = parseInt(match[1], 10);
+                let bVal = parseInt(match[2], 10);
+                let cVal = parseInt(match[3], 10);
+                if (isNaN(aVal) || isNaN(bVal) || isNaN(cVal)) return null;
+                return { A: aVal, B: bVal, C: cVal };
+            }
+            return null;
+        }
+        
+        function applyFromInput() {
+            let raw = ineqInputField.value.trim();
+            let parsed = parseInequality(raw);
+            if (parsed) {
+                setA(parsed.A);
+                setB(parsed.B);
+                setC(parsed.C);
+                ineqInputField.value = `${parsed.A}x + ${parsed.B}y ≤ ${parsed.C}`;
+            } else {
+                ineqInputField.style.borderColor = "#f87171";
+                setTimeout(() => ineqInputField.style.borderColor = "#dce3ec", 800);
+            }
+        }
+        
+        function resetToDefault() {
+            setA(30);
+            setB(10);
+            setC(100);
+            setX(0);
+            setY(0);
+            ineqInputField.value = "30x + 10y <= 100";
+        }
+        
+        // --- Canvas drag: update x and y based on pointer position ---
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+            let canvasY = (clientY - rect.top) * (canvas.height / rect.height);
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function worldFromCanvas(canvasX, canvasY) {
+            // convert to graph coordinates
+            let graphX = canvasX - originX;
+            let graphY = canvasY - originY;
+            let worldX = graphX / unitScaleX;
+            let worldY = -graphY / unitScaleY;
+            worldX = Math.min(20, Math.max(0, worldX));
+            worldY = Math.min(20, Math.max(0, worldY));
+            return { x: worldX, y: worldY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const { x: canvasX, y: canvasY } = getCanvasCoords(e);
+            lastPointer = { x: canvasX, y: canvasY };
+            const { x: worldX, y: worldY } = worldFromCanvas(canvasX, canvasY);
+            setX(worldX);
+            setY(worldY);
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const { x: canvasX, y: canvasY } = getCanvasCoords(e);
+            const { x: worldX, y: worldY } = worldFromCanvas(canvasX, canvasY);
+            setX(worldX);
+            setY(worldY);
+            lastPointer = { x: canvasX, y: canvasY };
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper buttons and numeric inputs ---
+        function bindControls() {
+            document.getElementById('aMinus').addEventListener('click', () => setA(A - 5));
+            document.getElementById('aPlus').addEventListener('click', () => setA(A + 5));
+            document.getElementById('bMinus').addEventListener('click', () => setB(B - 1));
+            document.getElementById('bPlus').addEventListener('click', () => setB(B + 1));
+            document.getElementById('cMinus').addEventListener('click', () => setC(C - 10));
+            document.getElementById('cPlus').addEventListener('click', () => setC(C + 10));
+            document.getElementById('xMinus').addEventListener('click', () => setX(x - 1));
+            document.getElementById('xPlus').addEventListener('click', () => setX(x + 1));
+            document.getElementById('yMinus').addEventListener('click', () => setY(y - 1));
+            document.getElementById('yPlus').addEventListener('click', () => setY(y + 1));
+            
+            aInput.addEventListener('change', (e) => setA(e.target.value));
+            bInput.addEventListener('change', (e) => setB(e.target.value));
+            cInput.addEventListener('change', (e) => setC(e.target.value));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('applyIneqBtn').addEventListener('click', applyFromInput);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>
