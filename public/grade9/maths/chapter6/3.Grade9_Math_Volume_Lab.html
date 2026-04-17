@@ -2,277 +2,679 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grade 9 Math Lab | Ethiopia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Volume Lab · Cone vs Cylinder | 3 Cones fill the Cylinder</title>
     <style>
-        :root {
-            --primary: #0056b3;
-            --secondary: #00a8ff;
-            --accent: #ff8c00;
-            --bg: #f0f2f5;
-            --white: #ffffff;
-            --note-bg: #fffceb;
-        }
-
-        /* Essential for Mobile Stability */
         * {
             box-sizing: border-box;
-            touch-action: none;
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
-            background: var(--bg);
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--primary);
-            color: white;
-            padding: 12px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            z-index: 100;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        #alert-box {
-            position: fixed;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
         }
 
-        main {
-            display: flex;
-            flex: 1;
-            flex-direction: column;
-        }
-
-        #canvas-wrap {
-            flex: 1;
-            background: white;
-            margin: 10px;
-            border-radius: 12px;
-            position: relative;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        canvas { width: 100%; height: 100%; display: block; }
-
-        #controls {
-            background: white;
-            padding: 15px;
-            border-top: 4px solid var(--primary);
-            overflow-y: auto;
-            max-height: 45vh;
-        }
-
-        .formula-card {
-            background: #eef4ff;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            color: var(--primary);
-            font-weight: bold;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-        }
-
-        .memorize-note {
-            background: var(--note-bg);
-            border-left: 4px solid #f1c40f;
-            padding: 10px;
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
             font-size: 0.85rem;
-            margin-bottom: 15px;
-            line-height: 1.4;
         }
 
-        .slider-group { margin-bottom: 12px; }
-        .slider-label { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; }
-        
-        input[type="range"] { width: 100%; height: 30px; margin: 8px 0; }
-        
-        .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        button {
-            flex: 1;
-            background: var(--primary);
-            color: white;
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .info-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-preview span {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+            margin: 4px 0;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
             border: none;
-            padding: 12px;
-            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
             font-weight: bold;
             cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
         }
-        button:active { transform: scale(0.98); }
 
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #controls { width: 350px; max-height: 100%; border-top: none; border-left: 4px solid var(--primary); }
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: #3b82f6;
+            border: none;
+            padding: 12px;
+            border-radius: 60px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .action-btn:active {
+            transform: scale(0.96);
+            background: #2563eb;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            color: #1e293b;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .volume-calc {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            text-align: center;
+            color: #92400e;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>Grade 9 Digital Math Lab</header>
-<div id="alert-box">Update Applied</div>
-
-<main>
-    <div id="canvas-wrap">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🧪 Volume Lab · Cone vs Cylinder</h1>
+        <p>V_cylinder = πr²h &nbsp;|&nbsp; V_cone = ⅓·πr²h &nbsp;→&nbsp; 3 cones fill the cylinder</p>
     </div>
 
-    <aside id="controls">
-        <div class="formula-card" id="formula">V = 1/3 πr²h</div>
-        
-        <div class="memorize-note" id="note">
-            <strong>Key Insight:</strong> It takes exactly three cones to fill a cylinder of the same size. Geometry is about relationships!
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="info-preview">
+                <span id="volumeInfo">📊 Cylinder volume: 0.00 units³</span>
+                <span id="coneVolumeInfo">🥤 Cone volume: 0.00 units³ (⅓ of cylinder)</span>
+                <span id="waterInfo">💧 Water in cylinder: 0/3 cones</span>
+            </div>
+            <canvas id="volumeCanvas" width="600" height="400"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag on canvas → rotate 3D view &nbsp;|&nbsp; Use controls to adjust size & pour
+            </div>
         </div>
 
-        <div class="btn-row">
-            <button id="fillBtn">POUR CONE</button>
-            <button id="resetBtn" style="background:#6c757d">EMPTY</button>
-        </div>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Radius (r)</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="rMinus">−</button>
+                    <span id="rValue">50</span>
+                    <button id="rPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="rInput" step="5" value="50">
+                </div>
+            </div>
 
-        <div class="slider-group">
-            <div class="slider-label">Radius (r) <span id="rv">60</span></div>
-            <input type="range" id="rs" min="30" max="90" value="60">
-        </div>
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Height (h)</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="hMinus">−</button>
+                    <span id="hValue">150</span>
+                    <button id="hPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="hInput" step="5" value="150">
+                </div>
+            </div>
 
-        <div class="slider-group">
-            <div class="slider-label">Height (h) <span id="hv">120</span></div>
-            <input type="range" id="hs" min="50" max="200" value="120">
+            <div class="action-buttons">
+                <button id="pourBtn" class="action-btn">💧 Pour Cone (⅓)</button>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Empty Cylinder</button>
+
+            <div class="volume-calc">
+                📐 <strong>Formula:</strong><br>
+                Cylinder: V = π × r² × h = π × <span id="rSq">2500</span> × <span id="hValDisplay">150</span> = <span id="cylVolDisplay">0.00</span><br>
+                Cone: V = ⅓ × V_cylinder = <span id="coneVolDisplay">0.00</span><br>
+                ✅ 3 × Cone = Cylinder
+            </div>
         </div>
-        
-        <p style="text-align:center; font-size: 0.8rem; color:#888;">Drag the screen to rotate in 3D</p>
-    </aside>
-</main>
+    </div>
+    <footer>⚡ Each cone has exactly ⅓ the cylinder's volume. Pour 3 cones to fill the cylinder completely.</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('alert-box');
-
-    // Variables
-    let r = 60, h = 120, fills = 0;
-    let rotX = -0.4, rotY = 0.5;
-    let isDragging = false, lastX, lastY;
-
-    function notify(msg) {
-        alertBox.textContent = msg;
-        alertBox.style.display = 'block';
-        clearTimeout(window.t);
-        window.t = setTimeout(() => alertBox.style.display='none', 1200);
-    }
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    function project(x, y, z) {
-        let cx = canvas.width / 2, cy = canvas.height / 2 + 50;
-        let cY = Math.cos(rotY), sY = Math.sin(rotY);
-        let cX = Math.cos(rotX), sX = Math.sin(rotX);
-
-        let tx = x * cY - z * sY;
-        let tz = x * sY + z * cY;
-        let ty = y * cX - tz * sX;
-        const scale = 600 / (600 + (y * sX + tz * cX));
-        return { x: cx + tx * scale, y: cy - ty * scale };
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    (function(){
+        // Dimensions
+        let radius = 50;      // pixels
+        let height = 150;     // pixels
+        let pours = 0;        // 0 to 3 (how many cones poured)
         
-        // Draw Cylinder
-        ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 2;
-        const segments = 20;
-        // Water Level
-        const waterH = h * (fills / 3);
+        // 3D rotation
+        let rotX = -0.4;
+        let rotY = 0.5;
+        let isDragging = false;
+        let lastX = 0, lastY = 0;
         
-        // Draw Cylinder Outline & Water
-        for(let i=0; i<segments; i++) {
-            let a1 = (i/segments) * Math.PI * 2;
-            let a2 = ((i+1)/segments) * Math.PI * 2;
-            
-            let p1 = project(r * Math.cos(a1), 0, r * Math.sin(a1));
-            let p2 = project(r * Math.cos(a2), 0, r * Math.sin(a2));
-            let p3 = project(r * Math.cos(a1), h, r * Math.sin(a1));
-            let p4 = project(r * Math.cos(a2), h, r * Math.sin(a2));
-
-            // Water
-            if(fills > 0) {
-                let w1 = project(r * Math.cos(a1), waterH, r * Math.sin(a1));
-                let w2 = project(r * Math.cos(a2), waterH, r * Math.sin(a2));
-                ctx.fillStyle = 'rgba(52, 152, 219, 0.6)';
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
-                ctx.lineTo(w2.x, w2.y); ctx.lineTo(w1.x, w1.y);
-                ctx.fill();
-            }
-
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
-            ctx.moveTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
-            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p3.x, p3.y);
-            ctx.stroke();
+        // DOM elements
+        const canvas = document.getElementById('volumeCanvas');
+        const ctx = canvas.getContext('2d');
+        const volumeInfoSpan = document.getElementById('volumeInfo');
+        const coneVolumeInfoSpan = document.getElementById('coneVolumeInfo');
+        const waterInfoSpan = document.getElementById('waterInfo');
+        const rValueSpan = document.getElementById('rValue');
+        const hValueSpan = document.getElementById('hValue');
+        const rInput = document.getElementById('rInput');
+        const hInput = document.getElementById('hInput');
+        const rSqSpan = document.getElementById('rSq');
+        const hValDisplaySpan = document.getElementById('hValDisplay');
+        const cylVolDisplaySpan = document.getElementById('cylVolDisplay');
+        const coneVolDisplaySpan = document.getElementById('coneVolDisplay');
+        
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 400;
+        let centerX, centerY;
+        let scaleFactor = 1.0;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.65;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            scaleFactor = Math.min(canvasWidth, canvasHeight) / 280;
+            draw();
         }
         
-        document.getElementById('formula').innerText = `Volume: ${(Math.PI*r*r*h/3000).toFixed(1)} units³`;
-    }
-
-    // Interaction
-    function handleStart(e) { 
-        isDragging = true; 
-        const t = e.touches ? e.touches[0] : e;
-        lastX = t.clientX; lastY = t.clientY; 
-    }
-    function handleMove(e) {
-        if(!isDragging) return;
-        const t = e.touches ? e.touches[0] : e;
-        rotY += (t.clientX - lastX) * 0.01;
-        rotX += (t.clientY - lastY) * 0.01;
-        lastX = t.clientX; lastY = t.clientY;
-        draw();
-    }
-
-    canvas.addEventListener('mousedown', handleStart);
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', () => isDragging = false);
-    canvas.addEventListener('touchstart', handleStart);
-    window.addEventListener('touchmove', handleMove, {passive:false});
-    window.addEventListener('touchend', () => isDragging = false);
-
-    document.getElementById('fillBtn').onclick = () => {
-        if(fills < 3) { fills++; notify(`Poured cone #${fills}`); draw(); }
-        else { notify("Cylinder is FULL!"); }
-    };
-    document.getElementById('resetBtn').onclick = () => { fills = 0; notify("Emptied!"); draw(); };
-    
-    document.getElementById('rs').oninput = (e) => { 
-        r = e.target.value; document.getElementById('rv').innerText = r; draw(); 
-    };
-    document.getElementById('hs').oninput = (e) => { 
-        h = e.target.value; document.getElementById('hv').innerText = h; draw(); 
-    };
-
-    window.addEventListener('resize', resize);
-    resize();
+        // 3D projection
+        function project(x, y, z) {
+            const cosY = Math.cos(rotY);
+            const sinY = Math.sin(rotY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+            
+            const cosX = Math.cos(rotX);
+            const sinX = Math.sin(rotX);
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = y * sinX + z1 * cosX;
+            
+            const scale = 600 / (600 + Math.max(0, z2));
+            return {
+                x: centerX + x1 * scale,
+                y: centerY - y2 * scale
+            };
+        }
+        
+        function getCylinderVolume() {
+            return Math.PI * radius * radius * height;
+        }
+        
+        function getConeVolume() {
+            return getCylinderVolume() / 3;
+        }
+        
+        function updateUI() {
+            const cylVol = getCylinderVolume();
+            const coneVol = getConeVolume();
+            const cylVolDisplay = (cylVol / 1000).toFixed(2);
+            const coneVolDisplay = (coneVol / 1000).toFixed(2);
+            
+            volumeInfoSpan.innerHTML = `📊 Cylinder volume: ${cylVolDisplay} units³`;
+            coneVolumeInfoSpan.innerHTML = `🥤 Cone volume: ${coneVolDisplay} units³ (⅓ of cylinder)`;
+            waterInfoSpan.innerHTML = `💧 Water in cylinder: ${pours}/3 cones (${((pours/3)*100).toFixed(0)}%)`;
+            
+            rValueSpan.innerText = radius;
+            hValueSpan.innerText = height;
+            rInput.value = radius;
+            hInput.value = height;
+            
+            rSqSpan.innerText = radius * radius;
+            hValDisplaySpan.innerText = height;
+            cylVolDisplaySpan.innerText = cylVolDisplay;
+            coneVolDisplaySpan.innerText = coneVolDisplay;
+            
+            draw();
+        }
+        
+        function drawCylinder(centerZ, waterHeight) {
+            const segments = 24;
+            const r = radius;
+            const h = height;
+            const bottomY = -h/2;
+            const topY = h/2;
+            const waterTopY = bottomY + (waterHeight / h) * h;
+            
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                
+                const pBottom = project(x, bottomY, z + centerZ);
+                const pTop = project(x, topY, z + centerZ);
+                
+                if (i === 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(pBottom.x, pBottom.y);
+                } else {
+                    ctx.lineTo(pBottom.x, pBottom.y);
+                }
+            }
+            ctx.stroke();
+            
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                const pTop = project(x, topY, z + centerZ);
+                if (i === 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(pTop.x, pTop.y);
+                } else {
+                    ctx.lineTo(pTop.x, pTop.y);
+                }
+            }
+            ctx.stroke();
+            
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                const pBottom = project(x, bottomY, z + centerZ);
+                const pTop = project(x, topY, z + centerZ);
+                ctx.beginPath();
+                ctx.moveTo(pBottom.x, pBottom.y);
+                ctx.lineTo(pTop.x, pTop.y);
+                ctx.stroke();
+            }
+            
+            // Water fill
+            if (waterHeight > 0) {
+                for (let i = 0; i <= segments; i++) {
+                    const angle = (i / segments) * Math.PI * 2;
+                    const x = r * Math.cos(angle);
+                    const z = r * Math.sin(angle);
+                    const pBottom = project(x, bottomY, z + centerZ);
+                    const pWater = project(x, waterTopY, z + centerZ);
+                    if (i === 0) {
+                        ctx.beginPath();
+                        ctx.moveTo(pBottom.x, pBottom.y);
+                    } else {
+                        ctx.lineTo(pBottom.x, pBottom.y);
+                    }
+                }
+                ctx.fillStyle = "rgba(59, 130, 246, 0.5)";
+                ctx.fill();
+            }
+        }
+        
+        function drawCone(centerZ) {
+            const segments = 24;
+            const r = radius;
+            const h = height;
+            const bottomY = -h/2;
+            const topY = h/2;
+            const apex = project(0, topY, centerZ);
+            
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                const pBase = project(x, bottomY, z + centerZ);
+                if (i === 0) {
+                    ctx.beginPath();
+                    ctx.moveTo(pBase.x, pBase.y);
+                } else {
+                    ctx.lineTo(pBase.x, pBase.y);
+                }
+            }
+            ctx.closePath();
+            ctx.stroke();
+            
+            for (let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * Math.PI * 2;
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                const pBase = project(x, bottomY, z + centerZ);
+                ctx.beginPath();
+                ctx.moveTo(apex.x, apex.y);
+                ctx.lineTo(pBase.x, pBase.y);
+                ctx.stroke();
+            }
+            
+            ctx.fillStyle = "rgba(59, 130, 246, 0.25)";
+            ctx.fill();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const spacing = 120;
+            const coneCenterZ = -spacing;
+            const cylinderCenterZ = spacing;
+            
+            ctx.save();
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 2;
+            
+            drawCone(coneCenterZ);
+            const waterHeight = (pours / 3) * height;
+            drawCylinder(cylinderCenterZ, waterHeight);
+            
+            ctx.restore();
+            
+            // Labels
+            ctx.font = "14px Inter";
+            ctx.fillStyle = "#1e293b";
+            ctx.textAlign = "center";
+            const conePos = project(0, -height/2 - 20, coneCenterZ);
+            const cylPos = project(0, -height/2 - 20, cylinderCenterZ);
+            ctx.fillText("Cone (⅓)", conePos.x, conePos.y);
+            ctx.fillText("Cylinder", cylPos.x, cylPos.y);
+            ctx.fillStyle = "#f59e0b";
+            ctx.font = "bold 16px Inter";
+            const labelPos = project(0, height/2 + 30, cylinderCenterZ);
+            ctx.fillText(`${pours}/3 cones`, labelPos.x, labelPos.y);
+        }
+        
+        // --- Setters ---
+        function setRadius(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(90, Math.max(25, newVal));
+            radius = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setHeight(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(220, Math.max(70, newVal));
+            height = Math.round(newVal);
+            updateUI();
+        }
+        
+        function pourCone() {
+            if (pours < 3) {
+                pours++;
+                updateUI();
+            } else {
+                waterInfoSpan.innerHTML = `✅ Cylinder full! Reset to pour again.`;
+                setTimeout(() => updateUI(), 1200);
+            }
+        }
+        
+        function resetPour() {
+            pours = 0;
+            updateUI();
+        }
+        
+        // --- Canvas drag rotation ---
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            isDragging = true;
+            const pos = getPointerPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastX;
+            const dy = pos.y - lastY;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                rotY += dx * 0.008;
+                rotX += dy * 0.008;
+                rotX = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotX));
+                draw();
+            }
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+        
+        function onDragEnd() {
+            isDragging = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper and numeric controls ---
+        function bindControls() {
+            document.getElementById('rMinus').addEventListener('click', () => setRadius(radius - 5));
+            document.getElementById('rPlus').addEventListener('click', () => setRadius(radius + 5));
+            document.getElementById('hMinus').addEventListener('click', () => setHeight(height - 5));
+            document.getElementById('hPlus').addEventListener('click', () => setHeight(height + 5));
+            
+            rInput.addEventListener('change', (e) => setRadius(e.target.value));
+            hInput.addEventListener('change', (e) => setHeight(e.target.value));
+            
+            document.getElementById('pourBtn').addEventListener('click', pourCone);
+            document.getElementById('resetBtn').addEventListener('click', resetPour);
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

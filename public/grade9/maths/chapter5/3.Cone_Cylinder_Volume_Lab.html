@@ -2,278 +2,576 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Grade 9 Math: Volume Visualizer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>3D Quadratic Visualizer · Parabolic Reflector</title>
     <style>
-        :root {
-            --brand-blue: #0056b3;
-            --water-color: #3498db;
-            --white: #ffffff;
-            --accent: #ff8c00;
-        }
-
-        /* Essential for Mobile Touch */
         * {
             box-sizing: border-box;
-            touch-action: none; 
-            -webkit-user-select: none;
-            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
-            background-color: #f0f4f8;
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--brand-blue);
-            color: white;
-            padding: 15px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            z-index: 10;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        #alert-box {
-            position: fixed;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-weight: bold;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
         }
 
-        main {
-            display: flex;
-            flex: 1;
-            flex-direction: column;
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
         }
 
-        #canvas-wrap {
-            flex: 1;
-            background: white;
-            margin: 10px;
-            border-radius: 15px;
-            position: relative;
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .formula-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .formula-preview span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
         }
 
         canvas {
             display: block;
             width: 100%;
-            height: 100%;
+            height: auto;
+            background: #111827;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        #ui-panel {
-            background: white;
-            padding: 20px;
-            border-top: 3px solid var(--brand-blue);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        canvas:active {
+            cursor: grabbing;
         }
 
-        .formula-box {
-            background: #eef4ff;
-            padding: 12px;
-            border-radius: 10px;
+        .drag-hint {
+            font-size: 0.7rem;
             text-align: center;
-            color: var(--brand-blue);
-            font-weight: bold;
-            font-size: 1.1rem;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
-        .control-row {
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 1.2rem;
         }
 
-        button {
-            background: var(--brand-blue);
-            color: white;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
             border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 1rem;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
+            transition: 0.1s;
+            color: #1e293b;
         }
 
-        button:active { transform: scale(0.95); background: #003d7a; }
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
 
-        input[type="range"] { width: 100%; height: 35px; }
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
 
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #ui-panel { width: 350px; border-top: none; border-left: 3px solid var(--brand-blue); }
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .info-card {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
+            text-align: center;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>Volume Lab: Cylinder vs. Cone</header>
-<div id="alert-box">Update</div>
-
-<main>
-    <div id="canvas-wrap">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>📡 Quadratic Lab · Parabolic Reflector</h1>
+        <p>z = a·(x² + y²) &nbsp;|&nbsp; Satellite dishes focus signals at the focal point</p>
     </div>
 
-    <aside id="ui-panel">
-        <div class="formula-box" id="formula">
-            V = 1/3 × πr²h
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="formula-preview">
+                <span id="eqDisplay">z = 0.0500·(x² + y²)</span>
+            </div>
+            <canvas id="paraboloidCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag on canvas → rotate 3D view &nbsp;|&nbsp; Adjust 'a' to change curvature
+            </div>
         </div>
 
-        <button id="fillBtn">POUR ONE CONE (1/3)</button>
-        <button id="resetBtn" style="background:#666;">EMPTY ALL</button>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📐 Curvature coefficient (a)</span>
+                    <span id="focusHint" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">focal point</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="aMinus">−</button>
+                    <span id="aValue">0.050</span>
+                    <button id="aPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="aInput" step="0.005" value="0.05">
+                </div>
+            </div>
 
-        <div class="control-row">
-            <label>Radius (r): <span id="rVal">50</span></label>
-            <input type="range" id="rSlider" min="30" max="80" value="50">
-        </div>
+            <button id="resetBtn" class="reset-btn">⟳ Reset to a = 0.05 (default dish)</button>
 
-        <div class="control-row">
-            <label>Height (h): <span id="hVal">150</span></label>
-            <input type="range" id="hSlider" min="80" max="200" value="150">
+            <div class="info-card">
+                💡 <strong>Real‑world connection</strong><br>
+                Parabolic reflectors (satellite dishes, headlights) focus parallel rays to the <strong>focal point</strong> (red dot).<br>
+                Formula: z = a·(x² + y²) &nbsp;→&nbsp; Focus at z = 1/(4a).
+            </div>
         </div>
-    </aside>
-</main>
+    </div>
+    <footer>⚡ The red dot is the focus. Steeper curvature (larger a) moves focus closer to the dish.</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('alert-box');
-    
-    // Variables
-    let r = 50, h = 150;
-    let fills = 0; // 0 to 3
-    let waterLevel = 0; // Current water in cylinder
-    let isAnimating = false;
-
-    function notify(msg) {
-        alertBox.textContent = msg;
-        alertBox.style.display = 'block';
-        clearTimeout(window.t);
-        window.t = setTimeout(() => alertBox.style.display = 'none', 1500);
-    }
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    function drawShape(x, y, rad, height, isCone, fillPercent) {
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#333';
+    (function(){
+        // Coefficient a (curvature)
+        let a = 0.05;           // z = a*(x^2 + y^2)
         
-        // Draw the Water inside
-        if (fillPercent > 0) {
-            ctx.fillStyle = 'rgba(52, 152, 219, 0.7)';
-            if (isCone) {
-                // Cone water logic (geometric volume fill is complex, using linear for visual)
+        // 3D rotation angles (radians)
+        let rotX = 0.4;
+        let rotY = 0.8;
+        
+        // DOM elements
+        const canvas = document.getElementById('paraboloidCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplaySpan = document.getElementById('eqDisplay');
+        const aValueSpan = document.getElementById('aValue');
+        const aInput = document.getElementById('aInput');
+        const focusHintSpan = document.getElementById('focusHint');
+        
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let centerX, centerY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            draw();
+        }
+        
+        // 3D projection (perspective)
+        function project(x, y, z) {
+            // Rotate around Y axis
+            const cosY = Math.cos(rotY);
+            const sinY = Math.sin(rotY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+            
+            // Rotate around X axis
+            const cosX = Math.cos(rotX);
+            const sinX = Math.sin(rotX);
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = y * sinX + z1 * cosX;
+            
+            // Simple perspective scaling
+            const scale = 450 / (450 + Math.max(0, z2));
+            return {
+                x: centerX + x1 * scale,
+                y: centerY - y2 * scale
+            };
+        }
+        
+        // Compute focal point: for paraboloid z = a(x²+y²), focus is at (0,0, 1/(4a))
+        function getFocusZ() {
+            return 1 / (4 * a);
+        }
+        
+        function updateUI() {
+            eqDisplaySpan.innerText = `z = ${a.toFixed(4)}·(x² + y²)`;
+            aValueSpan.innerText = a.toFixed(3);
+            aInput.value = a;
+            const focusZ = getFocusZ();
+            focusHintSpan.innerHTML = `focus z = ${focusZ.toFixed(2)}`;
+            draw();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Draw ground grid (XZ plane)
+            ctx.strokeStyle = "#334155";
+            ctx.lineWidth = 0.8;
+            const gridRange = 3.5;      // x and z from -3.5 to 3.5
+            const step = 0.5;
+            for (let i = -gridRange; i <= gridRange; i += step) {
+                // lines parallel to X axis (constant Z)
+                let p1 = project(i, 0, -gridRange);
+                let p2 = project(i, 0, gridRange);
                 ctx.beginPath();
-                ctx.moveTo(x, y);
-                ctx.lineTo(x - (rad * fillPercent), y - (height * fillPercent));
-                ctx.lineTo(x + (rad * fillPercent), y - (height * fillPercent));
-                ctx.fill();
-            } else {
-                ctx.fillRect(x - rad, y - (height * fillPercent), rad * 2, height * fillPercent);
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+                
+                // lines parallel to Z axis (constant X)
+                let p3 = project(-gridRange, 0, i);
+                let p4 = project(gridRange, 0, i);
+                ctx.beginPath();
+                ctx.moveTo(p3.x, p3.y);
+                ctx.lineTo(p4.x, p4.y);
+                ctx.stroke();
             }
+            
+            // Draw axes (X red, Z blue, Y green)
+            ctx.lineWidth = 1.5;
+            // X axis (red)
+            let origin = project(0, 0, 0);
+            let xAxis = project(4, 0, 0);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(xAxis.x, xAxis.y);
+            ctx.strokeStyle = "#ef4444";
+            ctx.stroke();
+            // Z axis (blue)
+            let zAxis = project(0, 0, 4);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(zAxis.x, zAxis.y);
+            ctx.strokeStyle = "#3b82f6";
+            ctx.stroke();
+            // Y axis (green, upward)
+            let yAxis = project(0, 4, 0);
+            ctx.beginPath();
+            ctx.moveTo(origin.x, origin.y);
+            ctx.lineTo(yAxis.x, yAxis.y);
+            ctx.strokeStyle = "#22c55e";
+            ctx.stroke();
+            
+            // Draw paraboloid surface: z = a*(x² + y²)
+            // Draw concentric rings (circles at constant r) and radial lines
+            const maxR = 3.2;
+            const rings = [0.8, 1.6, 2.4, 3.2];
+            const radials = 12;   // number of radial lines
+            
+            ctx.strokeStyle = "#f59e0b";
+            ctx.lineWidth = 1.5;
+            
+            // Draw rings (circles at constant radius)
+            for (let r of rings) {
+                ctx.beginPath();
+                let first = true;
+                for (let ang = 0; ang <= Math.PI * 2 + 0.1; ang += 0.1) {
+                    const x = r * Math.cos(ang);
+                    const z = r * Math.sin(ang);
+                    const y = a * (x*x + z*z);
+                    const p = project(x, y, z);
+                    if (first) {
+                        ctx.moveTo(p.x, p.y);
+                        first = false;
+                    } else {
+                        ctx.lineTo(p.x, p.y);
+                    }
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+            
+            // Draw radial lines
+            for (let i = 0; i < radials; i++) {
+                const angle = (i / radials) * Math.PI * 2;
+                ctx.beginPath();
+                let first = true;
+                for (let r = 0; r <= maxR; r += 0.15) {
+                    const x = r * Math.cos(angle);
+                    const z = r * Math.sin(angle);
+                    const y = a * (x*x + z*z);
+                    const p = project(x, y, z);
+                    if (first) {
+                        ctx.moveTo(p.x, p.y);
+                        first = false;
+                    } else {
+                        ctx.lineTo(p.x, p.y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // Draw focal point (red sphere)
+            const focusZ = getFocusZ();
+            if (focusZ < 8) {  // avoid drawing if too far
+                const fp = project(0, focusZ, 0);
+                ctx.fillStyle = "#ef4444";
+                ctx.shadowBlur = 4;
+                ctx.beginPath();
+                ctx.arc(fp.x, fp.y, 7, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = "white";
+                ctx.beginPath();
+                ctx.arc(fp.x, fp.y, 3, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.font = "12px Inter";
+                ctx.fillStyle = "#dc2626";
+                ctx.fillText("FOCUS", fp.x + 10, fp.y - 4);
+            }
+            
+            // Label axes
+            ctx.font = "11px Inter";
+            ctx.fillStyle = "#ef4444";
+            ctx.fillText("X", xAxis.x + 5, xAxis.y);
+            ctx.fillStyle = "#3b82f6";
+            ctx.fillText("Z", zAxis.x + 5, zAxis.y);
+            ctx.fillStyle = "#22c55e";
+            ctx.fillText("Y", yAxis.x + 5, yAxis.y);
         }
-
-        // Draw Container Outline
-        ctx.beginPath();
-        if (isCone) {
-            ctx.moveTo(x, y);
-            ctx.lineTo(x - rad, y - height);
-            ctx.lineTo(x + rad, y - height);
-            ctx.closePath();
-        } else {
-            ctx.strokeRect(x - rad, y - height, rad * 2, height);
-        }
-        ctx.stroke();
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        const spacing = canvas.width / 3;
-        const groundY = canvas.height * 0.8;
-
-        // Cylinder (Target)
-        drawShape(spacing * 2, groundY, r, h, false, waterLevel / 3);
-        ctx.fillStyle = '#000';
-        ctx.textAlign = 'center';
-        ctx.fillText("CYLINDER (Full)", spacing * 2, groundY + 20);
-
-        // Cone (Source)
-        let coneFill = isAnimating ? 0.5 : 1; 
-        drawShape(spacing * 1, groundY, r, h, true, coneFill);
-        ctx.fillText("CONE (1/3)", spacing * 1, groundY + 20);
-
-        // Update Formula
-        const vol = ( (1/3) * Math.PI * Math.pow(r, 2) * h / 1000).toFixed(1);
-        document.getElementById('formula').innerHTML = `Volume ≈ ${vol} units³<br><small>Water Level: ${fills}/3 Full</small>`;
-    }
-
-    // Interaction Logic
-    document.getElementById('fillBtn').addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (fills < 3) {
-            fills++;
-            waterLevel = fills;
-            notify("Poured 1 Cone into Cylinder");
-            draw();
-        } else {
-            notify("Cylinder is FULL! (3/3)");
+        // --- Setters ---
+        function setA(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(0.2, Math.max(0.008, newVal));
+            a = Math.round(newVal * 10000) / 10000;
+            updateUI();
         }
-    });
-
-    document.getElementById('fillBtn').addEventListener('click', () => {
-        if (fills < 3) {
-            fills++;
-            waterLevel = fills;
+        
+        function resetToDefault() {
+            setA(0.05);
+            // Reset rotation to a nice default view
+            rotX = 0.4;
+            rotY = 0.8;
             draw();
         }
-    });
-
-    document.getElementById('resetBtn').addEventListener('touchstart', () => {
-        fills = 0; waterLevel = 0; notify("Emptied the containers"); draw();
-    });
-
-    document.getElementById('rSlider').oninput = (e) => {
-        r = parseInt(e.target.value);
-        document.getElementById('rVal').textContent = r;
-        draw();
-    };
-
-    document.getElementById('hSlider').oninput = (e) => {
-        h = parseInt(e.target.value);
-        document.getElementById('hVal').textContent = h;
-        draw();
-    };
-
-    // Canvas Touch Support
-    canvas.addEventListener('touchstart', (e) => {
-        notify("Tapped the 3D Lab");
-        draw();
-    }, {passive: false});
-
-    window.addEventListener('resize', resize);
-    resize();
+        
+        // --- Canvas drag rotation (touch + mouse) ---
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const pos = getPointerPos(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastPointer.x;
+            const dy = pos.y - lastPointer.y;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                rotY += dx * 0.008;
+                rotX += dy * 0.008;
+                // Clamp to avoid flipping
+                rotX = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotX));
+                draw();
+            }
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper and numeric inputs ---
+        function bindControls() {
+            document.getElementById('aMinus').addEventListener('click', () => setA(a - 0.005));
+            document.getElementById('aPlus').addEventListener('click', () => setA(a + 0.005));
+            aInput.addEventListener('change', (e) => setA(e.target.value));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

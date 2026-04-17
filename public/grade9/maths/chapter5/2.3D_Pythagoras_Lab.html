@@ -2,278 +2,566 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Pythagoras - Mobile Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>3D Pythagoras · Space Diagonal Explorer</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --white: #ffffff;
-            --accent: #ff8c00;
-        }
-
-        /* Prevent all default mobile behaviors like zooming or scrolling */
         * {
             box-sizing: border-box;
-            -webkit-user-select: none;
-            user-select: none;
-            touch-action: none; 
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
-            background-color: #f4f7f9;
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: white;
-            padding: 15px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
-            font-weight: bold;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-bottom: 1px solid #eef2f8;
         }
 
-        #alert-box {
-            position: fixed;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            display: none;
-            z-index: 1000;
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
         }
 
-        main {
-            display: flex;
-            flex: 1;
-            flex-direction: column;
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
         }
 
-        #canvas-area {
-            flex: 1;
-            background: white;
-            position: relative;
-            margin: 10px;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .formula-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .formula-preview span {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
         }
 
         canvas {
             display: block;
             width: 100%;
-            height: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        #controls {
-            background: white;
-            padding: 20px;
-            border-top: 2px solid var(--primary-blue);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        canvas:active {
+            cursor: grabbing;
         }
 
-        .formula-display {
-            background: #e7f1ff;
-            padding: 12px;
-            border-radius: 8px;
+        .drag-hint {
+            font-size: 0.7rem;
             text-align: center;
-            font-size: 1.1rem;
-            color: var(--primary-blue);
-            font-weight: bold;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
         }
 
-        .slider-box {
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 1.2rem;
         }
 
-        input[type="range"] {
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
             width: 100%;
-            height: 35px; /* Large touch target */
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
         }
 
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #controls { width: 320px; border-top: none; border-left: 2px solid var(--primary-blue); }
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>3D Pythagoras: Space Diagonal</header>
-<div id="alert-box">Action Recorded</div>
-
-<main>
-    <div id="canvas-area">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>📐 3D Pythagoras · Space Diagonal</h1>
+        <p>d² = a² + b² + c² &nbsp;|&nbsp; Drag the box to rotate</p>
     </div>
 
-    <aside id="controls">
-        <div class="formula-display" id="result">
-            d² = a² + b² + c²
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="formula-preview">
+                <span id="formulaDisplay">d = √(80² + 60² + 100²) = 141.4</span>
+            </div>
+            <canvas id="pythagorasCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag on canvas → rotate 3D view &nbsp;|&nbsp; Adjust dimensions with controls
+            </div>
         </div>
 
-        <div class="slider-box">
-            <label>Length (a): <span id="la">80</span></label>
-            <input type="range" id="sa" min="30" max="150" value="80">
-        </div>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Length (a)</span>
+                    <span id="aUnit">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="aMinus">−</button>
+                    <span id="aValue">80</span>
+                    <button id="aPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="aInput" step="5" value="80">
+                </div>
+            </div>
 
-        <div class="slider-box">
-            <label>Width (b): <span id="lb">60</span></label>
-            <input type="range" id="sb" min="30" max="150" value="60">
-        </div>
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Width (b)</span>
+                    <span id="bUnit">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="bMinus">−</button>
+                    <span id="bValue">60</span>
+                    <button id="bPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="bInput" step="5" value="60">
+                </div>
+            </div>
 
-        <div class="slider-box">
-            <label>Height (c): <span id="lc">100</span></label>
-            <input type="range" id="sc" min="30" max="150" value="100">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Height (c)</span>
+                    <span id="cUnit">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="cMinus">−</button>
+                    <span id="cValue">100</span>
+                    <button id="cPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="cInput" step="5" value="100">
+                </div>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Reset to a=80, b=60, c=100</button>
         </div>
-        
-        <p style="text-align: center; color: #666; font-size: 0.8rem;">
-            Touch the box and move your finger to rotate!
-        </p>
-    </aside>
-</main>
+    </div>
+    <footer>⚡ The orange dashed line is the space diagonal. Its length follows d² = a² + b² + c².</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('alert-box');
-
-    let a = 80, b = 60, c = 100;
-    let rotX = -0.5, rotY = 0.5;
-    let isTouching = false;
-    let lastX, lastY;
-
-    function notify(msg) {
-        alertBox.textContent = msg;
-        alertBox.style.display = 'block';
-        clearTimeout(window.timer);
-        window.timer = setTimeout(() => alertBox.style.display = 'none', 1200);
-    }
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    function project(x, y, z) {
-        let cx = Math.cos(rotX), sx = Math.sin(rotX);
-        let cy = Math.cos(rotY), sy = Math.sin(rotY);
-
-        // Rotation
-        let dy = x * sy + z * cy;
-        let dx = x * cy - z * sy;
-        let dz = y * cx - dy * sx;
-        let df = y * sx + dy * cx;
-
-        const scale = 500 / (500 + df);
-        return {
-            x: canvas.width/2 + dx * scale,
-            y: canvas.height/2 - dz * scale
-        };
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    (function(){
+        // Dimensions (a = length x, b = width z, c = height y)
+        let a = 80;   // x-axis extent
+        let b = 60;   // z-axis extent
+        let c = 100;  // y-axis extent
         
-        const w = a/2, h = c/2, d = b/2;
-        const pts = [
-            [-w,-h,-d], [w,-h,-d], [w,h,-d], [-w,h,-d],
-            [-w,-h,d], [w,-h,d], [w,h,d], [-w,h,d]
-        ].map(p => project(p[0], p[1], p[2]));
-
-        const edges = [
-            [0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]
-        ];
-
-        // Draw Box
-        ctx.strokeStyle = '#0056b3';
-        ctx.lineWidth = 1.5;
-        edges.forEach(e => {
-            ctx.beginPath();
-            ctx.moveTo(pts[e[0]].x, pts[e[0]].y);
-            ctx.lineTo(pts[e[1]].x, pts[e[1]].y);
-            ctx.stroke();
-        });
-
-        // Space Diagonal (The "d" line)
-        ctx.beginPath();
-        ctx.setLineDash([6, 4]);
-        ctx.strokeStyle = '#ff8c00';
-        ctx.lineWidth = 3;
-        ctx.moveTo(pts[3].x, pts[3].y);
-        ctx.lineTo(pts[5].x, pts[5].y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Update Formula UI
-        const dist = Math.sqrt(a*a + b*b + c*c).toFixed(1);
-        document.getElementById('result').innerHTML = `d = √(${a}² + ${b}² + ${c}²) = ${dist}`;
-    }
-
-    // --- FIXING TOUCH FOR MOBILE ---
-    function handleStart(e) {
-        isTouching = true;
-        const t = e.touches ? e.touches[0] : e;
-        lastX = t.clientX;
-        lastY = t.clientY;
-        notify("Rotating 3D Object");
-    }
-
-    function handleMove(e) {
-        if (!isTouching) return;
-        if (e.touches) e.preventDefault(); // CRITICAL: Stop mobile scroll
-
-        const t = e.touches ? e.touches[0] : e;
-        const dx = t.clientX - lastX;
-        const dy = t.clientY - lastY;
-
-        rotY += dx * 0.01;
-        rotX += dy * 0.01;
+        // Rotation angles (radians)
+        let rotX = -0.5;
+        let rotY = 0.5;
         
-        lastX = t.clientX;
-        lastY = t.clientY;
-        draw();
-    }
-
-    // Modern Touch Listeners
-    canvas.addEventListener('touchstart', handleStart, { passive: false });
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', () => isTouching = false);
-
-    // Mouse Listeners
-    canvas.addEventListener('mousedown', handleStart);
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', () => isTouching = false);
-
-    // Slider Listeners
-    ['a','b','c'].forEach(id => {
-        const el = document.getElementById('s' + id);
-        el.oninput = (e) => {
-            if(id === 'a') a = e.target.value;
-            if(id === 'b') b = e.target.value;
-            if(id === 'c') c = e.target.value;
-            document.getElementById('l' + id).innerText = e.target.value;
+        // DOM elements
+        const canvas = document.getElementById('pythagorasCanvas');
+        const ctx = canvas.getContext('2d');
+        const formulaSpan = document.getElementById('formulaDisplay');
+        const aValueSpan = document.getElementById('aValue');
+        const bValueSpan = document.getElementById('bValue');
+        const cValueSpan = document.getElementById('cValue');
+        const aInput = document.getElementById('aInput');
+        const bInput = document.getElementById('bInput');
+        const cInput = document.getElementById('cInput');
+        
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let centerX, centerY;
+        let scale = 1.0;  // auto scaling based on dimensions
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
             draw();
-        };
-        el.onchange = () => notify(`Variable ${id.toUpperCase()} updated`);
-    });
-
-    window.addEventListener('resize', resize);
-    resize();
+        }
+        
+        // 3D projection
+        function project(x, y, z) {
+            // Rotate around Y axis (yaw)
+            const cosY = Math.cos(rotY);
+            const sinY = Math.sin(rotY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
+            
+            // Rotate around X axis (pitch)
+            const cosX = Math.cos(rotX);
+            const sinX = Math.sin(rotX);
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = y * sinX + z1 * cosX;
+            
+            // Perspective factor (simple orthographic with scaling based on size)
+            const scaleFactor = Math.min(canvasWidth, canvasHeight) / 350;
+            return {
+                x: centerX + x1 * scaleFactor,
+                y: centerY - y2 * scaleFactor
+            };
+        }
+        
+        function computeDiagonal() {
+            return Math.sqrt(a * a + b * b + c * c);
+        }
+        
+        function updateUI() {
+            const diag = computeDiagonal();
+            formulaSpan.innerHTML = `d = √(${a}² + ${b}² + ${c}²) = ${diag.toFixed(1)}`;
+            aValueSpan.innerText = a;
+            bValueSpan.innerText = b;
+            cValueSpan.innerText = c;
+            aInput.value = a;
+            bInput.value = b;
+            cInput.value = c;
+            draw();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Half extents
+            const hx = a / 2;
+            const hy = c / 2;
+            const hz = b / 2;
+            
+            // 8 corners of the box
+            const corners = [
+                { x: -hx, y: -hy, z: -hz }, // 0 front-bottom-left
+                { x:  hx, y: -hy, z: -hz }, // 1 front-bottom-right
+                { x:  hx, y:  hy, z: -hz }, // 2 front-top-right
+                { x: -hx, y:  hy, z: -hz }, // 3 front-top-left
+                { x: -hx, y: -hy, z:  hz }, // 4 back-bottom-left
+                { x:  hx, y: -hy, z:  hz }, // 5 back-bottom-right
+                { x:  hx, y:  hy, z:  hz }, // 6 back-top-right
+                { x: -hx, y:  hy, z:  hz }  // 7 back-top-left
+            ];
+            
+            const proj = corners.map(p => project(p.x, p.y, p.z));
+            
+            // Edges (12)
+            const edges = [
+                [0,1], [1,2], [2,3], [3,0], // front face
+                [4,5], [5,6], [6,7], [7,4], // back face
+                [0,4], [1,5], [2,6], [3,7]  // connecting edges
+            ];
+            
+            // Draw box edges
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            for (let edge of edges) {
+                ctx.beginPath();
+                ctx.moveTo(proj[edge[0]].x, proj[edge[0]].y);
+                ctx.lineTo(proj[edge[1]].x, proj[edge[1]].y);
+                ctx.stroke();
+            }
+            
+            // Draw space diagonal (from front-bottom-left to back-top-right: corner 0 to corner 6)
+            ctx.beginPath();
+            ctx.setLineDash([8, 6]);
+            ctx.strokeStyle = "#f59e0b";
+            ctx.lineWidth = 3;
+            ctx.moveTo(proj[0].x, proj[0].y);
+            ctx.lineTo(proj[6].x, proj[6].y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Mark the two endpoints with small spheres
+            ctx.fillStyle = "#f59e0b";
+            ctx.beginPath();
+            ctx.arc(proj[0].x, proj[0].y, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(proj[0].x, proj[0].y, 2.5, 0, 2*Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = "#f59e0b";
+            ctx.beginPath();
+            ctx.arc(proj[6].x, proj[6].y, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(proj[6].x, proj[6].y, 2.5, 0, 2*Math.PI);
+            ctx.fill();
+            
+            // Labels
+            ctx.font = "12px Inter";
+            ctx.fillStyle = "#475569";
+            ctx.fillText("space diagonal", (proj[0].x + proj[6].x)/2 + 8, (proj[0].y + proj[6].y)/2);
+        }
+        
+        // --- Dimension setters with clamping (30 to 200) ---
+        function setA(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(200, Math.max(20, newVal));
+            a = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setB(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(200, Math.max(20, newVal));
+            b = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setC(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(200, Math.max(20, newVal));
+            c = Math.round(newVal);
+            updateUI();
+        }
+        
+        function resetToDefault() {
+            setA(80);
+            setB(60);
+            setC(100);
+        }
+        
+        // --- Canvas drag rotation (touch + mouse) ---
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const pos = getPointerPos(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastPointer.x;
+            const dy = pos.y - lastPointer.y;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                rotY += dx * 0.008;
+                rotX += dy * 0.008;
+                // Clamp to avoid flipping
+                rotX = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotX));
+                draw();
+            }
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper buttons and numeric inputs ---
+        function bindControls() {
+            document.getElementById('aMinus').addEventListener('click', () => setA(a - 5));
+            document.getElementById('aPlus').addEventListener('click', () => setA(a + 5));
+            document.getElementById('bMinus').addEventListener('click', () => setB(b - 5));
+            document.getElementById('bPlus').addEventListener('click', () => setB(b + 5));
+            document.getElementById('cMinus').addEventListener('click', () => setC(c - 5));
+            document.getElementById('cPlus').addEventListener('click', () => setC(c + 5));
+            
+            aInput.addEventListener('change', (e) => setA(e.target.value));
+            bInput.addEventListener('change', (e) => setB(e.target.value));
+            cInput.addEventListener('change', (e) => setC(e.target.value));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
-
 </body>
 </html>

@@ -2,294 +2,537 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interactive Math Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Unit Circle & Sine Wave | Interactive Trig Lab</title>
     <style>
-        /* Modern UI Design */
-        :root {
-            --main-blue: #007AFF;
-            --bg-color: #f2f2f7;
-            --card-bg: #ffffff;
-            --text-color: #1c1c1e;
-        }
-
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
-            touch-action: none; /* Disables browser zoom/scroll on the whole app */
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
             margin: 0;
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        /* Responsive Alert Box */
-        #alert-box {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 122, 255, 0.9);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            display: none;
-            z-index: 999;
-        }
-
-        /* App Header */
-        header {
-            background: var(--card-bg);
-            padding: 15px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
-            border-bottom: 1px solid #d1d1d6;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        h1 { margin: 0; font-size: 1.1rem; color: var(--main-blue); }
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
 
-        /* Canvas Area */
-        #container {
-            flex: 1;
-            position: relative;
-            background: white;
-            margin: 10px;
-            border-radius: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .equation-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .equation-preview span {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
         }
 
         canvas {
-            width: 100%;
-            height: 100%;
             display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        /* Controls Area (Optimized for Mobile Thumbs) */
-        #controls {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 20px 20px 0 0;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+        canvas:active {
+            cursor: grabbing;
         }
 
-        .eq-panel {
+        .drag-hint {
+            font-size: 0.7rem;
             text-align: center;
-            font-size: 1.4rem;
-            margin-bottom: 20px;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
             font-weight: bold;
-            color: var(--main-blue);
-        }
-
-        .slider-row {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: #8e8e93;
-            margin-bottom: 5px;
-        }
-
-        input[type="range"] {
-            width: 100%;
-            height: 8px;
-            background: #e5e5ea;
-            border-radius: 5px;
-            outline: none;
-            appearance: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            background: var(--main-blue);
-            border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: 0.1s;
+            color: #1e293b;
         }
 
-        /* Tablet/Desktop Mode */
-        @media (min-width: 768px) {
-            body { flex-direction: row; }
-            #controls { width: 350px; border-radius: 0; border-left: 1px solid #d1d1d6; }
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<div id="alert-box">Action Alert</div>
-
-<header>
-    <h1>Unit Circle & Sine Wave</h1>
-</header>
-
-<main id="container">
-    <canvas id="canvas"></canvas>
-</main>
-
-<section id="controls">
-    <div class="eq-panel" id="equation">sin(0°) = 0.00</div>
-    
-    <div class="slider-row">
-        <label>Drag to Change Angle</label>
-        <input type="range" id="angle" min="0" max="360" value="0">
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🔄 Unit Circle · Sine Wave Lab</h1>
+        <p>sin(θ) = opposite/hypotenuse &nbsp;|&nbsp; Drag the point on the circle</p>
     </div>
 
-    <div class="slider-row">
-        <label>Wave Height (Amplitude)</label>
-        <input type="range" id="amp" min="30" max="100" value="70">
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="equation-preview">
+                <span id="eqDisplay">sin(0°) = 0.00</span>
+            </div>
+            <canvas id="unitCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag the orange point on the circle → change angle &nbsp;|&nbsp; Use steppers for amplitude
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🎚️ Angle θ (degrees)</span>
+                    <span id="angleHint" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">drag circle</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="angleMinus">−</button>
+                    <span id="angleValue">0</span>
+                    <button id="anglePlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="angleInput" step="1" value="0">
+                </div>
+            </div>
+
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Amplitude (wave height)</span>
+                    <span id="ampHint" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">pixels</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="ampMinus">−</button>
+                    <span id="ampValue">70</span>
+                    <button id="ampPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="ampInput" step="5" value="70">
+                </div>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Reset to 0° · Amplitude 70</button>
+        </div>
     </div>
-</section>
+    <footer>⚡ The red vertical line shows the sine projection. The sine wave on the right traces the value.</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('alert-box');
-    const eqDiv = document.getElementById('equation');
-
-    // Data State
-    let angle = 0;
-    let amplitude = 70;
-    let isTouching = false;
-
-    // Show Mobile Notification
-    function notify(text) {
-        alertBox.textContent = text;
-        alertBox.style.display = 'block';
-        clearTimeout(window.alertTimeout);
-        window.alertTimeout = setTimeout(() => alertBox.style.display = 'none', 1000);
-    }
-
-    // Adjust Canvas for Phone Screen
-    function resize() {
-        canvas.width = canvas.parentElement.clientWidth;
-        canvas.height = canvas.parentElement.clientHeight;
-        update();
-    }
-
-    // Draw everything
-    function update() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    (function(){
+        // State
+        let angleDeg = 0;        // 0 to 360
+        let amplitude = 70;      // pixels (radius)
         
-        const cx = canvas.width * 0.3;
-        const cy = canvas.height / 2;
-        const rad = (angle * Math.PI) / 180;
-
-        // Draw Grid lines
-        ctx.strokeStyle = "#f0f0f0";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(0, cy); ctx.lineTo(canvas.width, cy);
-        ctx.moveTo(cx, 0); ctx.lineTo(cx, canvas.height);
-        ctx.stroke();
-
-        // Draw Circle
-        ctx.strokeStyle = "#007AFF";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(cx, cy, amplitude, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Draw Points
-        const px = cx + amplitude * Math.cos(rad);
-        const py = cy - amplitude * Math.sin(rad);
-
-        // Sine Projection (Vertical Red Line)
-        ctx.strokeStyle = "#FF3B30";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(px, cy); ctx.lineTo(px, py);
-        ctx.stroke();
-
-        // The Moving Ball
-        ctx.fillStyle = "#FF9500";
-        ctx.beginPath();
-        ctx.arc(px, py, 10, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Trace the Sine Wave
-        const waveStart = cx + amplitude + 30;
-        ctx.strokeStyle = "#FF3B30";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for(let x = 0; x < (canvas.width - waveStart); x++) {
-            const val = cy - amplitude * Math.sin(rad - (x * 0.04));
-            if(x === 0) ctx.moveTo(waveStart + x, val);
-            else ctx.lineTo(waveStart + x, val);
+        // DOM elements
+        const canvas = document.getElementById('unitCanvas');
+        const ctx = canvas.getContext('2d');
+        const eqDisplaySpan = document.getElementById('eqDisplay');
+        const angleValueSpan = document.getElementById('angleValue');
+        const angleInput = document.getElementById('angleInput');
+        const ampValueSpan = document.getElementById('ampValue');
+        const ampInput = document.getElementById('ampInput');
+        
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let centerX, centerY;
+        let radius = 70;          // will be set to amplitude
+        let waveStartX;           // where sine wave begins
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth * 0.3;
+            centerY = canvasHeight / 2;
+            radius = Math.min(amplitude, centerX - 20, centerY - 20);
+            waveStartX = centerX + radius + 35;
+            draw();
         }
-        ctx.stroke();
-
-        // Equation text
-        eqDiv.innerHTML = `sin(${angle}°) = ${Math.sin(rad).toFixed(2)}`;
-    }
-
-    // --- TOUCH & MOUSE LOGIC ---
-    function handleMove(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
-        const cx = canvas.width * 0.3;
-        const cy = canvas.height / 2;
-
-        // Math to find angle from touch position
-        let a = Math.atan2(cy - y, x - cx) * (180 / Math.PI);
-        if (a < 0) a += 360;
-        
-        angle = Math.round(a);
-        document.getElementById('angle').value = angle;
-        update();
-    }
-
-    // Touch Events
-    canvas.addEventListener('touchstart', (e) => {
-        isTouching = true;
-        handleMove(e);
-        notify("Graph Touched!");
-    }, {passive: false});
-
-    canvas.addEventListener('touchmove', (e) => {
-        if(isTouching) {
-            e.preventDefault(); 
-            handleMove(e);
+        function getRadians() {
+            return angleDeg * Math.PI / 180;
         }
-    }, {passive: false});
-
-    canvas.addEventListener('touchend', () => isTouching = false);
-
-    // Mouse Events
-    canvas.addEventListener('mousedown', (e) => { isTouching = true; handleMove(e); });
-    window.addEventListener('mousemove', (e) => { if(isTouching) handleMove(e); });
-    window.addEventListener('mouseup', () => isTouching = false);
-
-    // Slider Events
-    document.getElementById('angle').oninput = (e) => { 
-        angle = e.target.value; 
-        update(); 
-    };
-    document.getElementById('angle').onchange = () => notify("Variable Changed");
-
-    document.getElementById('amp').oninput = (e) => { 
-        amplitude = parseInt(e.target.value); 
-        update(); 
-    };
-
-    window.addEventListener('resize', resize);
-    resize();
+        
+        function updateUI() {
+            const rad = getRadians();
+            const sinVal = Math.sin(rad);
+            eqDisplaySpan.innerText = `sin(${angleDeg}°) = ${sinVal.toFixed(4)}`;
+            angleValueSpan.innerText = angleDeg;
+            angleInput.value = angleDeg;
+            ampValueSpan.innerText = amplitude;
+            ampInput.value = amplitude;
+            draw();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const rad = getRadians();
+            const sinVal = Math.sin(rad);
+            
+            // Effective radius (use amplitude, but clamp to avoid overflow)
+            let effectiveRadius = Math.min(amplitude, centerX - 20, centerY - 20);
+            if (effectiveRadius < 5) effectiveRadius = 5;
+            
+            // 1. Draw grid lines
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvasWidth, centerY);
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvasHeight);
+            ctx.stroke();
+            
+            // 2. Draw unit circle
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, effectiveRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 3. Draw point on circle
+            const px = centerX + effectiveRadius * Math.cos(rad);
+            const py = centerY - effectiveRadius * Math.sin(rad);
+            
+            // 4. Draw sine projection (vertical line from point to x-axis)
+            ctx.strokeStyle = "#ef4444";
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(px, centerY);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+            
+            // 5. Draw the moving point
+            ctx.fillStyle = "#f59e0b";
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(px, py, 10, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // 6. Draw sine wave (trace)
+            const waveStartXVal = centerX + effectiveRadius + 30;
+            const waveWidth = canvasWidth - waveStartXVal - 15;
+            if (waveWidth > 10) {
+                ctx.beginPath();
+                ctx.strokeStyle = "#ef4444";
+                ctx.lineWidth = 2;
+                let first = true;
+                for (let x = 0; x <= waveWidth; x += 2) {
+                    // phase shift: the wave should match the current angle
+                    // y = centerY - amplitude * sin(angle + (x / waveWidth * 2π))
+                    // But we want to show a static sine wave that highlights the current value.
+                    // Better: show a moving wave that matches the point. Use: y = centerY - effectiveRadius * sin(rad + (x / waveWidth) * 2π)
+                    const phase = rad + (x / waveWidth) * Math.PI * 2;
+                    const y = centerY - effectiveRadius * Math.sin(phase);
+                    if (first) {
+                        ctx.moveTo(waveStartXVal + x, y);
+                        first = false;
+                    } else {
+                        ctx.lineTo(waveStartXVal + x, y);
+                    }
+                }
+                ctx.stroke();
+            }
+            
+            // 7. Draw a vertical marker at the current sine value on the wave
+            const markerX = waveStartXVal;
+            const markerY = centerY - effectiveRadius * Math.sin(rad);
+            ctx.fillStyle = "#ef4444";
+            ctx.beginPath();
+            ctx.arc(markerX, markerY, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(markerX, markerY, 2.5, 0, 2*Math.PI);
+            ctx.fill();
+            
+            // Labels
+            ctx.font = "12px Inter";
+            ctx.fillStyle = "#475569";
+            ctx.fillText("sin θ", px + 10, py - 5);
+            ctx.fillText("θ", centerX + effectiveRadius + 8, centerY - 8);
+            ctx.fillText("sine wave", waveStartXVal + 10, centerY - effectiveRadius - 5);
+        }
+        
+        // --- Angle setters ---
+        function setAngle(deg) {
+            let newDeg = deg % 360;
+            if (newDeg < 0) newDeg += 360;
+            angleDeg = Math.round(newDeg);
+            updateUI();
+        }
+        
+        function setAmplitude(val) {
+            let newAmp = parseFloat(val);
+            if (isNaN(newAmp)) return;
+            newAmp = Math.min(140, Math.max(30, newAmp));
+            amplitude = Math.round(newAmp);
+            updateUI();
+        }
+        
+        // --- Canvas drag: change angle by dragging on the circle (or anywhere) ---
+        let dragActive = false;
+        
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+            let canvasY = (clientY - rect.top) * (canvas.height / rect.height);
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function angleFromCanvasPoint(canvasX, canvasY) {
+            // compute angle relative to circle center
+            const dx = canvasX - centerX;
+            const dy = canvasY - centerY;
+            let angleRad = Math.atan2(-dy, dx); // note: canvas Y is inverted
+            let deg = angleRad * 180 / Math.PI;
+            if (deg < 0) deg += 360;
+            return deg;
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const { x, y } = getCanvasCoords(e);
+            const newAngle = angleFromCanvasPoint(x, y);
+            setAngle(newAngle);
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const { x, y } = getCanvasCoords(e);
+            const newAngle = angleFromCanvasPoint(x, y);
+            setAngle(newAngle);
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper and numeric controls ---
+        function bindControls() {
+            document.getElementById('angleMinus').addEventListener('click', () => setAngle(angleDeg - 1));
+            document.getElementById('anglePlus').addEventListener('click', () => setAngle(angleDeg + 1));
+            document.getElementById('ampMinus').addEventListener('click', () => setAmplitude(amplitude - 5));
+            document.getElementById('ampPlus').addEventListener('click', () => setAmplitude(amplitude + 5));
+            
+            angleInput.addEventListener('change', (e) => setAngle(parseInt(e.target.value)));
+            ampInput.addEventListener('change', (e) => setAmplitude(parseInt(e.target.value)));
+        }
+        
+        function resetToDefault() {
+            setAngle(0);
+            setAmplitude(70);
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
-
 </body>
 </html>
