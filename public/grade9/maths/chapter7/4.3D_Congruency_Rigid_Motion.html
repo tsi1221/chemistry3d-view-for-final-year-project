@@ -2,349 +2,621 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Congruency & Rigid Motion Lab | Ethiopia Grade 9</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Congruency Lab · Rigid Motion Explorer</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --light-blue: #e7f1ff;
-            --accent-orange: #ff8c00;
-            --success-green: #2ecc71;
-            --white: #ffffff;
-            --text-dark: #2c3e50;
-        }
-
         * {
             box-sizing: border-box;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
-            background-color: #f0f4f8;
-            color: var(--text-dark);
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--primary-blue);
-            color: var(--white);
-            padding: 15px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
-            font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 100;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        /* Interaction Alert/Toast */
-        #alert-notification {
-            position: fixed;
-            top: 75px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-orange);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-weight: bold;
-            display: none;
-            z-index: 2000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
+        }
+
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .status-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
             text-align: center;
-            min-width: 250px;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
         }
 
-        main {
-            display: flex;
-            flex: 1;
-            flex-direction: column;
-        }
-
-        #canvas-wrap {
-            flex: 1;
-            background: var(--white);
-            margin: 10px;
-            border-radius: 15px;
-            position: relative;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-            cursor: crosshair;
-        }
-
-        canvas { width: 100%; height: 100%; display: block; border-radius: 15px; }
-
-        #ui-panel {
-            background: var(--white);
-            padding: 20px;
-            border-top: 5px solid var(--primary-blue);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            max-height: 50vh;
-        }
-
-        .status-display {
-            background: var(--light-blue);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #b3d4ff;
-            text-align: center;
-        }
-
-        #match-label {
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: var(--primary-blue);
+        .status-preview span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
             display: block;
-            margin-bottom: 5px;
         }
 
-        .control-group {
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 1.2rem;
         }
 
-        .label-row {
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
             display: flex;
             justify-content: space-between;
-            font-weight: 600;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
             font-size: 0.9rem;
         }
 
-        input[type="range"] {
-            width: 100%;
-            height: 40px;
-            cursor: pointer;
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
         }
 
-        .btn-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        button {
-            background: var(--primary-blue);
-            color: white;
+        .action-btn {
+            flex: 1;
+            background: #3b82f6;
             border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: bold;
+            padding: 12px;
+            border-radius: 60px;
+            font-weight: 600;
+            color: white;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: 0.1s;
         }
 
-        button:active { opacity: 0.8; }
-        .btn-secondary { background: #64748b; }
+        .action-btn:active {
+            transform: scale(0.96);
+            background: #2563eb;
+        }
 
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #ui-panel { width: 360px; max-height: 100%; border-top: none; border-left: 5px solid var(--primary-blue); }
+        .reset-btn {
+            background: #f1f5f9;
+            color: #1e293b;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .info-card {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
+            text-align: center;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>Congruency: Rigid Motion Explorer</header>
-<div id="alert-notification">Feedback Message</div>
-
-<main>
-    <div id="canvas-wrap">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🔷 Congruency · Rigid Motion Explorer</h1>
+        <p>Translate & rotate the blue triangle to match the grey target → Congruent!</p>
     </div>
 
-    <aside id="ui-panel">
-        <div class="status-display">
-            <span id="match-label">Status: Superimpose the triangles</span>
-            <small id="precision-text">Overlap distance: ---</small>
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="status-preview">
+                <span id="statusDisplay">⚪ Not aligned yet</span>
+                <span id="distanceDisplay">Separation: —</span>
+            </div>
+            <canvas id="congruencyCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag the blue triangle → translate &nbsp;|&nbsp; Use sliders for precise control
+            </div>
         </div>
 
-        <div class="control-group">
-            <div class="label-row"><span>Translation (X)</span><span id="val-x">0</span></div>
-            <input type="range" id="range-x" min="-150" max="150" value="0">
-        </div>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>↔️ Translate X</span>
+                    <span id="xHint">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="txMinus">−</button>
+                    <span id="txValue">0</span>
+                    <button id="txPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="txInput" step="5" value="0">
+                </div>
+            </div>
 
-        <div class="control-group">
-            <div class="label-row"><span>Translation (Y)</span><span id="val-y">0</span></div>
-            <input type="range" id="range-y" min="-150" max="150" value="0">
-        </div>
+            <div class="param-card">
+                <div class="param-title">
+                    <span>↕️ Translate Y</span>
+                    <span id="yHint">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="tyMinus">−</button>
+                    <span id="tyValue">0</span>
+                    <button id="tyPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="tyInput" step="5" value="0">
+                </div>
+            </div>
 
-        <div class="control-group">
-            <div class="label-row"><span>Rotation (θ)</span><span id="val-r">0°</span></div>
-            <input type="range" id="range-r" min="0" max="360" value="0">
-        </div>
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🔄 Rotation (θ)</span>
+                    <span id="rotHint">degrees</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="rotMinus">−</button>
+                    <span id="rotValue">0</span>
+                    <button id="rotPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="rotInput" step="5" value="0">
+                </div>
+            </div>
 
-        <div class="btn-row">
-            <button id="btn-new">New Triangle</button>
-            <button id="btn-reset" class="btn-secondary">Reset</button>
-        </div>
+            <div class="action-buttons">
+                <button id="newTargetBtn" class="action-btn">🎲 New Target</button>
+            </div>
 
-        <p style="font-size: 0.8rem; color: #64748b; line-height: 1.4;">
-            <b>Math Tip:</b> Translation and Rotation are "Rigid Motions." They change position but <b>never</b> change the shape or size.
-        </p>
-    </aside>
-</main>
+            <button id="resetBtn" class="reset-btn">⟳ Reset Blue Triangle (0,0,0°)</button>
+
+            <div class="info-card">
+                💡 <strong>Rigid Motion</strong><br>
+                Translation + Rotation = Congruent shapes. Same size, same angles — only position/orientation changes.
+            </div>
+        </div>
+    </div>
+    <footer>⚡ When the blue triangle exactly overlaps the dashed grey triangle → they are congruent.</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('alert-notification');
-
-    // App State
-    let target = { x: 80, y: -60, rot: 35 }; // Goal triangle
-    let player = { x: 0, y: 0, rot: 0 };    // User triangle
-    let isDragging = false;
-    let lastToastTime = 0;
-
-    // Triangle Geometry
-    const size = 60;
-    const shape = [
-        {x: 0, y: -size},
-        {x: -size/1.2, y: size/1.5},
-        {x: size/1.2, y: size/1.5}
-    ];
-
-    function showAlert(msg, color = 'var(--accent-orange)') {
-        alertBox.textContent = msg;
-        alertBox.style.background = color;
-        alertBox.style.display = 'block';
-        clearTimeout(window.alertTimer);
-        window.alertTimer = setTimeout(() => alertBox.style.display = 'none', 1500);
-    }
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    function drawShape(state, color, isDashed) {
-        ctx.save();
-        ctx.translate(canvas.width/2 + state.x, canvas.height/2 + state.y);
-        ctx.rotate(state.rot * Math.PI / 180);
+    (function(){
+        // Triangle geometry (centered at origin)
+        const size = 60;
+        const vertices = [
+            { x: 0, y: -size },                    // top
+            { x: -size / 1.2, y: size / 1.5 },    // bottom-left
+            { x: size / 1.2, y: size / 1.5 }      // bottom-right
+        ];
         
-        ctx.beginPath();
-        if (isDashed) ctx.setLineDash([5, 5]);
-        ctx.moveTo(shape[0].x, shape[0].y);
-        ctx.lineTo(shape[1].x, shape[1].y);
-        ctx.lineTo(shape[2].x, shape[2].y);
-        ctx.closePath();
+        // State: target triangle (fixed, random initially)
+        let target = { x: 80, y: -60, rot: 35 };
+        // State: player triangle (user controls)
+        let player = { x: 0, y: 0, rot: 0 };
         
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.stroke();
+        // DOM elements
+        const canvas = document.getElementById('congruencyCanvas');
+        const ctx = canvas.getContext('2d');
+        const statusSpan = document.getElementById('statusDisplay');
+        const distanceSpan = document.getElementById('distanceDisplay');
+        const txValueSpan = document.getElementById('txValue');
+        const tyValueSpan = document.getElementById('tyValue');
+        const rotValueSpan = document.getElementById('rotValue');
+        const txInput = document.getElementById('txInput');
+        const tyInput = document.getElementById('tyInput');
+        const rotInput = document.getElementById('rotInput');
         
-        if (!isDashed) {
-            ctx.fillStyle = color + '22';
-            ctx.fill();
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let centerX, centerY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            draw();
         }
-        ctx.restore();
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Background Grid
-        ctx.strokeStyle = '#f1f5f9';
-        ctx.lineWidth = 1;
-        for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
-        for(let i=0; i<canvas.height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
-
-        // Draw Target Triangle (Grey Outline)
-        drawShape(target, '#94a3b8', true);
-        
-        // Calculate Distance
-        const dist = Math.sqrt(Math.pow(player.x - target.x, 2) + Math.pow(player.y - target.y, 2));
-        const rotDiff = Math.abs((player.rot % 360) - (target.rot % 360));
-        const isMatched = dist < 12 && (rotDiff < 8 || rotDiff > 352);
-
-        // Draw Player Triangle
-        drawShape(player, isMatched ? 'var(--success-green)' : 'var(--primary-blue)', false);
-
-        // Update Labels
-        document.getElementById('precision-text').textContent = `Separation: ${Math.round(dist)} units`;
-        const label = document.getElementById('match-label');
-        if(isMatched) {
-            label.textContent = "STATUS: CONGRUENT!";
-            label.style.color = "var(--success-green)";
-            if(Date.now() - lastToastTime > 3000) {
-                showAlert("Success! They are Congruent.", 'var(--success-green)');
-                lastToastTime = Date.now();
+        // Draw a triangle given transform (translation + rotation)
+        function drawTriangle(state, strokeColor, fillColor, isDashed = false) {
+            ctx.save();
+            ctx.translate(centerX + state.x, centerY + state.y);
+            ctx.rotate(state.rot * Math.PI / 180);
+            
+            ctx.beginPath();
+            ctx.moveTo(vertices[0].x, vertices[0].y);
+            ctx.lineTo(vertices[1].x, vertices[1].y);
+            ctx.lineTo(vertices[2].x, vertices[2].y);
+            ctx.closePath();
+            
+            if (isDashed) ctx.setLineDash([8, 6]);
+            else ctx.setLineDash([]);
+            
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            
+            if (!isDashed) {
+                ctx.fillStyle = fillColor;
+                ctx.fill();
             }
-        } else {
-            label.textContent = "Status: Not Yet Aligned";
-            label.style.color = "var(--primary-blue)";
+            ctx.restore();
         }
-    }
-
-    // Input Control Sync
-    const rx = document.getElementById('range-x');
-    const ry = document.getElementById('range-y');
-    const rr = document.getElementById('range-r');
-
-    function update() {
-        player.x = parseInt(rx.value);
-        player.y = parseInt(ry.value) * -1; // Screen Y is inverted
-        player.rot = parseInt(rr.value);
         
-        document.getElementById('val-x').textContent = rx.value;
-        document.getElementById('val-y').textContent = ry.value;
-        document.getElementById('val-r').textContent = rr.value + "°";
-        draw();
-    }
-
-    rx.oninput = update;
-    ry.oninput = update;
-    rr.oninput = update;
-
-    // Alert triggers for controls
-    rx.onchange = () => showAlert("You moved the point on the graph.");
-    ry.onchange = () => showAlert("The Y-axis coordinate has been updated.");
-    rr.onchange = () => showAlert("You rotated the geometric shape.");
-
-    // Buttons
-    document.getElementById('btn-new').onclick = () => {
-        target.x = (Math.random() - 0.5) * 200;
-        target.y = (Math.random() - 0.5) * 200;
-        target.rot = Math.floor(Math.random() * 360);
-        showAlert("New challenge generated!");
-        draw();
-    };
-
-    document.getElementById('btn-reset').onclick = () => {
-        rx.value = 0; ry.value = 0; rr.value = 0;
-        showAlert("Visualization reset to center.");
-        update();
-    };
-
-    // Canvas Mouse/Touch Interaction
-    function handlePointer(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        // Compute distance between two triangles (center difference + rotation difference)
+        function computeMatchQuality() {
+            const dx = player.x - target.x;
+            const dy = player.y - target.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            const rotDiff = Math.abs(((player.rot % 360) - (target.rot % 360) + 540) % 360 - 180);
+            const rotError = Math.min(rotDiff, 360 - rotDiff);
+            return { dist, rotError };
+        }
         
-        rx.value = (clientX - rect.left - canvas.width/2);
-        ry.value = (clientY - rect.top - canvas.height/2) * -1;
-        update();
-    }
-
-    canvas.onpointerdown = (e) => { 
-        isDragging = true; 
-        showAlert("You interacted with the visualization.");
-        handlePointer(e);
-    };
-    window.onpointermove = (e) => { if(isDragging) handlePointer(e); };
-    window.onpointerup = () => isDragging = false;
-
-    window.onresize = resize;
-    resize();
+        function updateUI() {
+            const { dist, rotError } = computeMatchQuality();
+            const isMatched = (dist < 12 && rotError < 6);
+            
+            if (isMatched) {
+                statusSpan.innerHTML = "✅ CONGRUENT! Perfect match";
+                statusSpan.style.color = "#16a34a";
+                distanceSpan.innerHTML = `Separation: ${dist.toFixed(1)} px  |  Rotation diff: ${rotError.toFixed(1)}°`;
+            } else {
+                statusSpan.innerHTML = "⚪ Not yet aligned";
+                statusSpan.style.color = "#1e293b";
+                distanceSpan.innerHTML = `Separation: ${dist.toFixed(1)} px  |  Rotation diff: ${rotError.toFixed(1)}°`;
+            }
+            
+            txValueSpan.innerText = player.x;
+            tyValueSpan.innerText = player.y;
+            rotValueSpan.innerText = player.rot;
+            txInput.value = player.x;
+            tyInput.value = player.y;
+            rotInput.value = player.rot;
+            
+            draw();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Draw background grid
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 1;
+            for (let i = 0; i < canvasWidth; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvasHeight);
+                ctx.stroke();
+            }
+            for (let i = 0; i < canvasHeight; i += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(canvasWidth, i);
+                ctx.stroke();
+            }
+            
+            // Draw axes
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvasHeight);
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvasWidth, centerY);
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            // Draw target triangle (dashed grey)
+            drawTriangle(target, "#94a3b8", "rgba(148, 163, 184, 0)", true);
+            
+            // Draw player triangle (blue with fill)
+            const isMatched = computeMatchQuality().dist < 12 && computeMatchQuality().rotError < 6;
+            drawTriangle(player, isMatched ? "#16a34a" : "#3b82f6", isMatched ? "rgba(22, 163, 74, 0.2)" : "rgba(59, 130, 246, 0.2)", false);
+            
+            // Label target
+            ctx.font = "12px Inter";
+            ctx.fillStyle = "#64748b";
+            ctx.fillText("Target (grey)", centerX + target.x + 15, centerY + target.y - 20);
+            ctx.fillStyle = "#3b82f6";
+            ctx.fillText("Your triangle", centerX + player.x + 15, centerY + player.y - 20);
+        }
+        
+        // --- Setters for player ---
+        function setTranslateX(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(180, Math.max(-180, newVal));
+            player.x = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setTranslateY(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(180, Math.max(-180, newVal));
+            player.y = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setRotation(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = ((newVal % 360) + 360) % 360;
+            player.rot = Math.round(newVal);
+            updateUI();
+        }
+        
+        function resetPlayer() {
+            setTranslateX(0);
+            setTranslateY(0);
+            setRotation(0);
+        }
+        
+        function generateRandomTarget() {
+            target.x = Math.round((Math.random() - 0.5) * 220);
+            target.y = Math.round((Math.random() - 0.5) * 200);
+            target.rot = Math.floor(Math.random() * 360);
+            updateUI();
+        }
+        
+        // --- Canvas drag: translate player (direct manipulation) ---
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+            let canvasY = (clientY - rect.top) * (canvas.height / rect.height);
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const pos = getCanvasCoords(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const pos = getCanvasCoords(e);
+            const deltaX = pos.x - lastPointer.x;
+            const deltaY = pos.y - lastPointer.y;
+            if (Math.abs(deltaX) > 0.5 || Math.abs(deltaY) > 0.5) {
+                let newX = player.x + deltaX;
+                let newY = player.y + deltaY;
+                newX = Math.min(180, Math.max(-180, newX));
+                newY = Math.min(180, Math.max(-180, newY));
+                player.x = Math.round(newX);
+                player.y = Math.round(newY);
+                updateUI();
+            }
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper and numeric inputs ---
+        function bindControls() {
+            document.getElementById('txMinus').addEventListener('click', () => setTranslateX(player.x - 5));
+            document.getElementById('txPlus').addEventListener('click', () => setTranslateX(player.x + 5));
+            document.getElementById('tyMinus').addEventListener('click', () => setTranslateY(player.y - 5));
+            document.getElementById('tyPlus').addEventListener('click', () => setTranslateY(player.y + 5));
+            document.getElementById('rotMinus').addEventListener('click', () => setRotation(player.rot - 5));
+            document.getElementById('rotPlus').addEventListener('click', () => setRotation(player.rot + 5));
+            
+            txInput.addEventListener('change', (e) => setTranslateX(e.target.value));
+            tyInput.addEventListener('change', (e) => setTranslateY(e.target.value));
+            rotInput.addEventListener('change', (e) => setRotation(e.target.value));
+            
+            document.getElementById('newTargetBtn').addEventListener('click', generateRandomTarget);
+            document.getElementById('resetBtn').addEventListener('click', resetPlayer);
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            // Set initial random target (but not too extreme)
+            target = { x: 80, y: -60, rot: 35 };
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

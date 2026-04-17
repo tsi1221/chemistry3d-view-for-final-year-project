@@ -2,255 +2,558 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Linear Equations Lab | Ethiopia Grade 9</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Trigonometry Lab · Sine, Cosine, Tangent</title>
     <style>
-        :root {
-            --primary-blue: #0056b3;
-            --light-blue: #e7f1ff;
-            --accent-orange: #ff8c00;
-            --white: #ffffff;
-            --text-dark: #2c3e50;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-
-        * { box-sizing: border-box; touch-action: none; }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            margin: 0; background-color: #f8fafc; color: var(--text-dark);
-            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            margin: 0;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        header {
-            background: var(--primary-blue); color: var(--white);
-            padding: 15px; text-align: center; font-weight: bold;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 100;
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
         }
 
-        #alert-toast {
-            position: fixed; top: 75px; left: 50%; transform: translateX(-50%);
-            background: var(--accent-orange); color: white;
-            padding: 12px 24px; border-radius: 30px; font-weight: bold;
-            display: none; z-index: 2000; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
+            text-align: center;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        main { flex: 1; display: flex; flex-direction: column; }
-
-        #canvas-wrap {
-            flex: 1; background: var(--white); margin: 10px;
-            border-radius: 15px; position: relative;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
         }
 
-        canvas { width: 100%; height: 100%; display: block; border-radius: 15px; }
-
-        #ui-panel {
-            background: var(--white); padding: 20px;
-            border-top: 5px solid var(--primary-blue);
-            display: flex; flex-direction: column; gap: 15px;
-            overflow-y: auto; max-height: 50vh;
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
         }
 
-        .equation-display {
-            background: var(--light-blue); padding: 15px;
-            border-radius: 10px; border: 1px solid #b3d4ff;
-            text-align: center; font-size: 1.2rem;
-            color: var(--primary-blue); font-weight: bold;
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
         }
 
-        .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
 
-        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
 
-        .label-row { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.85rem; }
+        .trig-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
 
-        input[type="range"] { width: 100%; height: 35px; cursor: pointer; }
+        .trig-preview span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+            margin: 4px 0;
+        }
 
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #ui-panel { width: 380px; max-height: 100%; border-top: none; border-left: 5px solid var(--primary-blue); }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .info-card {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
+            text-align: center;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>Linear Equations: 3D Surface Explorer</header>
-<div id="alert-toast">Interaction Recorded</div>
-
-<main>
-    <div id="canvas-wrap">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>📐 Trigonometry · Sine, Cosine, Tangent</h1>
+        <p>sin θ = opposite/hypotenuse &nbsp;|&nbsp; cos θ = adjacent/hypotenuse &nbsp;|&nbsp; tan θ = opposite/adjacent</p>
     </div>
 
-    <aside id="ui-panel">
-        <div class="equation-display" id="eqn-text">
-            1x + 0y + 1z = 50
-        </div>
-
-        <div class="control-grid">
-            <div class="control-group">
-                <div class="label-row"><span>Coeff a (x)</span><span id="va">1.0</span></div>
-                <input type="range" id="ra" min="-2" max="2" step="0.1" value="1">
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="trig-preview">
+                <span id="sinDisplay">sin θ = 0.000</span>
+                <span id="cosDisplay">cos θ = 1.000</span>
+                <span id="tanDisplay">tan θ = 0.000</span>
+                <span id="angleDisplay">θ = 0°</span>
             </div>
-            <div class="control-group">
-                <div class="label-row"><span>Coeff b (y)</span><span id="vb">0.0</span></div>
-                <input type="range" id="rb" min="-2" max="2" step="0.1" value="0">
-            </div>
-            <div class="control-group">
-                <div class="label-row"><span>Coeff c (z)</span><span id="vc">1.0</span></div>
-                <input type="range" id="rc" min="-2" max="2" step="0.1" value="1">
-            </div>
-            <div class="control-group">
-                <div class="label-row"><span>Constant d</span><span id="vd">50</span></div>
-                <input type="range" id="rd" min="-100" max="100" step="5" value="50">
+            <canvas id="trigCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag the orange point on the circle → change angle &nbsp;|&nbsp; See sine, cosine, tangent values
             </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 5px 0;">
-        
-        <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4; margin: 0;">
-            <b>Concept:</b> In 3D space, a linear equation forms a <b>Plane</b>. 
-            Drag the canvas to rotate the 3D axes and see how the coefficients change the tilt.
-        </p>
-        
-        <button id="reset-view" style="background:var(--primary-blue); color:white; border:none; padding:10px; border-radius:5px; font-weight:bold; cursor:pointer;">Reset Camera</button>
-    </aside>
-</main>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🎚️ Angle θ (degrees)</span>
+                    <span id="angleHint">0° – 360°</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="angleMinus">−</button>
+                    <span id="angleValue">0</span>
+                    <button id="anglePlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="angleInput" step="1" value="0">
+                </div>
+            </div>
+
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Triangle size (hypotenuse)</span>
+                    <span id="sizeHint">pixels</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="sizeMinus">−</button>
+                    <span id="sizeValue">140</span>
+                    <button id="sizePlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="sizeInput" step="5" value="140">
+                </div>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Reset to 0° · Size 140</button>
+
+            <div class="info-card">
+                💡 <strong>SOH CAH TOA</strong><br>
+                • Sine = Opposite / Hypotenuse<br>
+                • Cosine = Adjacent / Hypotenuse<br>
+                • Tangent = Opposite / Adjacent<br>
+                Drag the point to see how ratios change!
+            </div>
+        </div>
+    </div>
+    <footer>⚡ The triangle's hypotenuse is fixed. Sine and cosine are the y and x coordinates of the point on the circle.</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const toast = document.getElementById('alert-toast');
-
-    // Coefficients for ax + by + cz = d
-    let a = 1.0, b = 0.0, c = 1.0, d = 50;
-    let rotX = -0.6, rotY = 0.6;
-    let isDragging = false, lastX, lastY;
-
-    function showAlert(msg) {
-        toast.textContent = msg;
-        toast.style.display = 'block';
-        clearTimeout(window.tTimer);
-        window.tTimer = setTimeout(() => toast.style.display = 'none', 1500);
-    }
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    function project(x, y, z) {
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
-        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-
-        let tx = x * cosY - z * sinY;
-        let tz = x * sinY + z * cosY;
-        let ty = y * cosX - tz * sinX;
-        let finalZ = y * sinX + tz * cosX;
-
-        const p = 600 / (600 + finalZ);
-        return { x: cx + tx * p, y: cy - ty * p, z: finalZ };
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const size = 150;
-
-        // 1. Draw Axes
-        const origin = project(0, 0, 0);
-        const xAxis = project(size, 0, 0);
-        const yAxis = project(0, size, 0);
-        const zAxis = project(0, 0, size);
-
-        const drawAxis = (to, color, label) => {
-            ctx.strokeStyle = color; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(to.x, to.y); ctx.stroke();
-            ctx.fillStyle = color; ctx.fillText(label, to.x, to.y);
-        };
-        drawAxis(xAxis, '#e53e3e', 'X');
-        drawAxis(yAxis, '#38a169', 'Y');
-        drawAxis(zAxis, '#3182ce', 'Z');
-
-        // 2. Draw the Plane (Surface)
-        // Find points on the axes: (d/a, 0, 0), (0, d/b, 0), (0, 0, d/c)
-        // We use a grid of points to render a square patch of the plane
-        ctx.fillStyle = 'rgba(0, 86, 179, 0.4)';
-        ctx.strokeStyle = 'rgba(0, 86, 179, 0.8)';
-        ctx.lineWidth = 1;
-
-        const points = [];
-        const step = 40;
-        for (let i = -2; i <= 2; i++) {
-            for (let j = -2; j <= 2; j++) {
-                let px = i * step;
-                let pz = j * step;
-                // Solve for y: by = d - ax - cz => y = (d - ax - cz) / b
-                let py;
-                if (Math.abs(b) < 0.01) {
-                    // Vertical plane case (if b is 0, we swap logic to plot x or z)
-                    py = i * step; px = (d - c*pz)/a;
-                } else {
-                    py = (d - a*px - c*pz) / b;
-                }
-                points.push(project(px, py, pz));
-            }
-        }
-
-        // Draw the mesh grid
-        for(let i=0; i<4; i++){
-            for(let j=0; j<4; j++){
-                const p1 = points[i*5 + j];
-                const p2 = points[i*5 + (j+1)];
-                const p3 = points[(i+1)*5 + (j+1)];
-                const p4 = points[(i+1)*5 + j];
-                
-                ctx.beginPath();
-                ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
-                ctx.lineTo(p3.x, p3.y); ctx.lineTo(p4.x, p4.y);
-                ctx.closePath();
-                ctx.fill(); ctx.stroke();
-            }
-        }
-
-        // Update Formula Display
-        document.getElementById('eqn-text').innerHTML = 
-            `${a}x + ${b}y + ${c}z = ${d}`;
-    }
-
-    // Input Logic
-    const ids = ['a', 'b', 'c', 'd'];
-    ids.forEach(id => {
-        const slider = document.getElementById('r' + id);
-        slider.oninput = (e) => {
-            const val = parseFloat(e.target.value);
-            if(id === 'a') a = val; if(id === 'b') b = val;
-            if(id === 'c') c = val; if(id === 'd') d = val;
-            document.getElementById('v' + id).textContent = val;
+    (function(){
+        // State
+        let angleDeg = 0;        // 0 to 360
+        let radius = 140;        // hypotenuse length (pixels)
+        
+        // DOM elements
+        const canvas = document.getElementById('trigCanvas');
+        const ctx = canvas.getContext('2d');
+        const sinDisplaySpan = document.getElementById('sinDisplay');
+        const cosDisplaySpan = document.getElementById('cosDisplay');
+        const tanDisplaySpan = document.getElementById('tanDisplay');
+        const angleDisplaySpan = document.getElementById('angleDisplay');
+        const angleValueSpan = document.getElementById('angleValue');
+        const angleInput = document.getElementById('angleInput');
+        const sizeValueSpan = document.getElementById('sizeValue');
+        const sizeInput = document.getElementById('sizeInput');
+        
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let centerX, centerY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
             draw();
-        };
-        slider.onchange = () => showAlert("The equation has been updated.");
-    });
-
-    // Interaction
-    canvas.onpointerdown = (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; showAlert("You interacted with the visualization."); };
-    window.onpointermove = (e) => {
-        if (!isDragging) return;
-        rotY += (e.clientX - lastX) * 0.01;
-        rotX += (e.clientY - lastY) * 0.01;
-        lastX = e.clientX; lastY = e.clientY;
-        draw();
-    };
-    window.onpointerup = () => isDragging = false;
-
-    document.getElementById('reset-view').onclick = () => {
-        rotX = -0.6; rotY = 0.6; draw(); showAlert("Camera Reset.");
-    };
-
-    window.onresize = resize;
-    resize();
+        }
+        
+        function getRadians() {
+            return angleDeg * Math.PI / 180;
+        }
+        
+        function updateUI() {
+            const rad = getRadians();
+            const sinVal = Math.sin(rad);
+            const cosVal = Math.cos(rad);
+            const tanVal = Math.tan(rad);
+            
+            sinDisplaySpan.innerHTML = `sin θ = ${sinVal.toFixed(4)}`;
+            cosDisplaySpan.innerHTML = `cos θ = ${cosVal.toFixed(4)}`;
+            tanDisplaySpan.innerHTML = `tan θ = ${Math.abs(tanVal) > 10 ? tanVal.toExponential(4) : tanVal.toFixed(4)}`;
+            angleDisplaySpan.innerHTML = `θ = ${angleDeg}°`;
+            angleValueSpan.innerText = angleDeg;
+            angleInput.value = angleDeg;
+            sizeValueSpan.innerText = radius;
+            sizeInput.value = radius;
+            
+            draw();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const rad = getRadians();
+            const sinVal = Math.sin(rad);
+            const cosVal = Math.cos(rad);
+            
+            // Coordinates of the point on the circle
+            const px = centerX + radius * cosVal;
+            const py = centerY - radius * sinVal;  // Y is inverted in canvas
+            
+            // Draw coordinate axes
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, canvasHeight);
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvasWidth, centerY);
+            ctx.stroke();
+            
+            // Draw unit circle (dashed)
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = "#94a3b8";
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw triangle: adjacent (horizontal) and opposite (vertical) legs
+            // Adjacent leg (cosine projection) - green
+            ctx.strokeStyle = "#22c55e";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(px, centerY);
+            ctx.stroke();
+            
+            // Opposite leg (sine projection) - red
+            ctx.strokeStyle = "#ef4444";
+            ctx.beginPath();
+            ctx.moveTo(px, centerY);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+            
+            // Hypotenuse (from origin to point) - blue
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(px, py);
+            ctx.stroke();
+            
+            // Draw the point on the circle
+            ctx.fillStyle = "#f59e0b";
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(px, py, 9, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Label the sides
+            ctx.font = "11px Inter";
+            ctx.fillStyle = "#22c55e";
+            ctx.fillText("adjacent (cos θ)", centerX + radius/2 - 20, centerY - 8);
+            ctx.fillStyle = "#ef4444";
+            ctx.fillText("opposite (sin θ)", px + 8, centerY - radius * sinVal / 2);
+            ctx.fillStyle = "#3b82f6";
+            ctx.fillText("hypotenuse = 1", centerX + radius/2 + 10, centerY + radius/2 + 5);
+            
+            // Label angle arc
+            ctx.beginPath();
+            const angleArcEnd = rad;
+            const arcRadius = Math.min(30, radius * 0.3);
+            ctx.arc(centerX, centerY, arcRadius, 0, angleArcEnd, false);
+            ctx.strokeStyle = "#f59e0b";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = "#f59e0b";
+            ctx.font = "12px Inter";
+            ctx.fillText("θ", centerX + arcRadius + 8, centerY - 5);
+        }
+        
+        // --- Setters ---
+        function setAngle(deg) {
+            let newDeg = deg % 360;
+            if (newDeg < 0) newDeg += 360;
+            angleDeg = Math.round(newDeg);
+            updateUI();
+        }
+        
+        function setRadius(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(200, Math.max(60, newVal));
+            radius = Math.round(newVal);
+            updateUI();
+        }
+        
+        function resetToDefault() {
+            setAngle(0);
+            setRadius(140);
+        }
+        
+        // --- Canvas drag: change angle by dragging on circle ---
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * (canvas.width / rect.width);
+            let canvasY = (clientY - rect.top) * (canvas.height / rect.height);
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function angleFromCanvasPoint(canvasX, canvasY) {
+            const dx = canvasX - centerX;
+            const dy = canvasY - centerY;
+            let angleRad = Math.atan2(-dy, dx); // invert Y because canvas Y is downward
+            let deg = angleRad * 180 / Math.PI;
+            if (deg < 0) deg += 360;
+            return deg;
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const pos = getCanvasCoords(e);
+            lastPointer = pos;
+            const newAngle = angleFromCanvasPoint(pos.x, pos.y);
+            setAngle(newAngle);
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const pos = getCanvasCoords(e);
+            const newAngle = angleFromCanvasPoint(pos.x, pos.y);
+            setAngle(newAngle);
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper and numeric inputs ---
+        function bindControls() {
+            document.getElementById('angleMinus').addEventListener('click', () => setAngle(angleDeg - 1));
+            document.getElementById('anglePlus').addEventListener('click', () => setAngle(angleDeg + 1));
+            document.getElementById('sizeMinus').addEventListener('click', () => setRadius(radius - 5));
+            document.getElementById('sizePlus').addEventListener('click', () => setRadius(radius + 5));
+            
+            angleInput.addEventListener('change', (e) => setAngle(parseInt(e.target.value)));
+            sizeInput.addEventListener('change', (e) => setRadius(parseInt(e.target.value)));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

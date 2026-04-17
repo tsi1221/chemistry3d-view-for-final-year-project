@@ -2,324 +2,601 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Pythagoras | Space Diagonal Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>3D Pythagoras · Space Diagonal Lab</title>
     <style>
-        :root {
-            --brand-blue: #0056b3;
-            --light-blue: #e7f1ff;
-            --accent-orange: #ff8c00;
-            --accent-green: #28a745;
-            --white: #ffffff;
-            --text: #2c3e50;
-        }
-
         * {
             box-sizing: border-box;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            background: #f8fafc;
-            color: var(--text);
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--brand-blue);
-            color: var(--white);
-            padding: 15px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 10;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        #alert-box {
-            position: fixed;
-            top: 75px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-orange);
-            color: white;
-            padding: 10px 25px;
-            border-radius: 30px;
-            font-weight: bold;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        .lab-header h1 {
+            margin: 0;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: #1e293b;
         }
 
-        main {
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .formula-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .formula-preview span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
-            flex: 1;
             flex-direction: column;
+            gap: 1.2rem;
         }
 
-        #canvas-container {
-            flex: 1;
-            background: var(--white);
-            margin: 10px;
-            border-radius: 12px;
-            position: relative;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.03);
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
         }
 
-        canvas { width: 100%; height: 100%; display: block; }
-
-        #sidebar {
-            background: var(--white);
-            padding: 20px;
-            border-top: 6px solid var(--brand-blue);
-            overflow-y: auto;
-            max-height: 55vh;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .math-card {
-            background: var(--light-blue);
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 5px solid var(--brand-blue);
-        }
-
-        .math-card h3 { margin: 0 0 10px 0; font-size: 1rem; color: var(--brand-blue); }
-
-        .step-box {
-            font-size: 0.95rem;
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .label-row {
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
             display: flex;
             justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
             align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1rem;
             font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
             font-size: 0.9rem;
         }
 
-        input[type="range"] { width: 100%; height: 35px; cursor: pointer; }
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
 
-        .num-box {
-            width: 65px;
-            padding: 5px;
-            border: 2px solid var(--brand-blue);
-            border-radius: 6px;
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .info-card {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
             text-align: center;
-            font-weight: bold;
-            color: var(--brand-blue);
         }
 
-        .legend {
-            display: flex;
-            gap: 15px;
-            font-size: 0.85rem;
-            justify-content: center;
-            padding: 5px;
-            background: #eee;
-            border-radius: 5px;
-        }
-
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #sidebar { width: 380px; max-height: 100%; border-top: none; border-left: 6px solid var(--brand-blue); }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>Grade 9 Math: 3D Space Diagonal (d)</header>
-<div id="alert-box">Action Recorded</div>
-
-<main>
-    <div id="canvas-container">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>📦 3D Pythagoras · Space Diagonal</h1>
+        <p>d² = x² + y² + z² &nbsp;|&nbsp; Floor diagonal (green) + vertical edge (y) = space diagonal (orange)</p>
     </div>
 
-    <aside id="sidebar">
-        <div class="math-card">
-            <h3>Calculations for Diagonal (d)</h3>
-            <div class="step-box">
-                <span style="color:var(--accent-green)">●</span> 
-                <b>Step 1 (Floor):</b> <br>
-                Base Diagonal² = <span id="calc-base">x² + z²</span>
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="formula-preview">
+                <span id="step1Display">Base diagonal² = x² + z² = 120² + 90² = 22500</span>
+                <span id="step2Display">d² = 22500 + y² = 22500 + 70² = 27400</span>
+                <span id="resultDisplay">d = √27400 ≈ 165.5</span>
             </div>
-            <div class="step-box">
-                <span style="color:var(--accent-orange)">●</span> 
-                <b>Step 2 (Space):</b> <br>
-                d² = (Base Diagonal)² + y²
-            </div>
-            <div style="font-size: 1.1rem; border-top: 1px solid #ccc; padding-top: 5px; font-weight: bold;">
-                d = <span id="final-result">0</span>
+            <canvas id="pythagorasCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag on canvas → rotate 3D view &nbsp;|&nbsp; Adjust dimensions with controls
             </div>
         </div>
 
-        <div class="legend">
-            <span><b style="color:var(--accent-green)">---</b> Floor Diagonal</span>
-            <span><b style="color:var(--accent-orange)">---</b> Space Diagonal (d)</span>
-        </div>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Length (x)</span>
+                    <span id="xUnit">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="xMinus">−</button>
+                    <span id="xValue">120</span>
+                    <button id="xPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="xInput" step="5" value="120">
+                </div>
+            </div>
 
-        <div class="control-group">
-            <div class="label-row"><span>Length (x)</span> <input type="number" id="nx" class="num-box" value="120"></div>
-            <input type="range" id="sx" min="30" max="220" value="120">
-        </div>
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Width (z)</span>
+                    <span id="zUnit">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="zMinus">−</button>
+                    <span id="zValue">90</span>
+                    <button id="zPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="zInput" step="5" value="90">
+                </div>
+            </div>
 
-        <div class="control-group">
-            <div class="label-row"><span>Width (z)</span> <input type="number" id="nz" class="num-box" value="90"></div>
-            <input type="range" id="sz" min="30" max="220" value="90">
-        </div>
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Height (y)</span>
+                    <span id="yUnit">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="yMinus">−</button>
+                    <span id="yValue">70</span>
+                    <button id="yPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="yInput" step="5" value="70">
+                </div>
+            </div>
 
-        <div class="control-group">
-            <div class="label-row"><span>Height (y)</span> <input type="number" id="ny" class="num-box" value="70"></div>
-            <input type="range" id="sy" min="30" max="220" value="70">
-        </div>
+            <button id="resetBtn" class="reset-btn">⟳ Reset to x=120, z=90, y=70</button>
 
-        <p style="text-align:center; font-size:0.8rem; color:#666; margin:0;">
-            Rotate the box with your mouse or finger!
-        </p>
-    </aside>
-</main>
+            <div class="info-card">
+                💡 <strong>Step‑by‑step:</strong><br>
+                • Green = floor diagonal: √(x² + z²)<br>
+                • Orange = space diagonal: √(x² + y² + z²)
+            </div>
+        </div>
+    </div>
+    <footer>⚡ The orange line is the space diagonal. The green line is the diagonal of the base.</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('alert-box');
-
-    // Values
-    let xVal = 120, yVal = 70, zVal = 90;
-    let rotX = -0.4, rotY = 0.5;
-    let isDragging = false, lastX, lastY;
-
-    function notify(msg) {
-        alertBox.textContent = msg;
-        alertBox.style.display = 'block';
-        clearTimeout(window.aTimer);
-        window.aTimer = setTimeout(() => alertBox.style.display = 'none', 1500);
-    }
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    // Project 3D points to 2D screen
-    function project(x, y, z) {
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2 + 50;
+    (function(){
+        // Dimensions
+        let x = 120;   // length (X axis)
+        let z = 90;    // width (Z axis)
+        let y = 70;    // height (Y axis)
         
-        // Simple rotation math
-        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
-        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-
-        let tx = x * cosY - z * sinY;
-        let tz = x * sinY + z * cosY;
-        let ty = y * cosX - tz * sinX;
-        let fz = y * sinX + tz * cosX;
-
-        const p = 850 / (850 + fz);
-        return { x: cx + tx * p, y: cy - ty * p };
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 3D rotation angles (radians)
+        let rotX = -0.4;
+        let rotY = 0.5;
         
-        const hx = xVal / 2, hy = yVal, hz = zVal / 2;
+        // DOM elements
+        const canvas = document.getElementById('pythagorasCanvas');
+        const ctx = canvas.getContext('2d');
+        const step1Span = document.getElementById('step1Display');
+        const step2Span = document.getElementById('step2Display');
+        const resultSpan = document.getElementById('resultDisplay');
+        const xValueSpan = document.getElementById('xValue');
+        const zValueSpan = document.getElementById('zValue');
+        const yValueSpan = document.getElementById('yValue');
+        const xInput = document.getElementById('xInput');
+        const zInput = document.getElementById('zInput');
+        const yInput = document.getElementById('yInput');
         
-        // Define corners
-        const p = [
-            [-hx, 0, -hz], [hx, 0, -hz], [hx, 0, hz], [-hx, 0, hz], // Bottom 0,1,2,3
-            [-hx, -hy, -hz], [hx, -hy, -hz], [hx, -hy, hz], [-hx, -hy, hz] // Top 4,5,6,7
-        ].map(pt => project(pt[0], pt[1], pt[2]));
-
-        // Draw Box Edges (Dashed)
-        ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = "#cbd5e0";
-        ctx.lineWidth = 1;
-        const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
-        edges.forEach(e => {
-            ctx.beginPath(); ctx.moveTo(p[e[0]].x, p[e[0]].y); ctx.lineTo(p[e[1]].x, p[e[1]].y); ctx.stroke();
-        });
-
-        // 1. Draw Floor Diagonal (Green)
-        ctx.setLineDash([]);
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = "#28a745";
-        ctx.beginPath(); ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(p[2].x, p[2].y); ctx.stroke();
-
-        // 2. Draw Space Diagonal 'd' (Orange)
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#ff8c00";
-        ctx.beginPath(); ctx.moveTo(p[0].x, p[0].y); ctx.lineTo(p[6].x, p[6].y); ctx.stroke();
-
-        // Label the critical corners for the student
-        ctx.fillStyle = "#0056b3";
-        ctx.font = "bold 16px Arial";
-        ctx.fillText("Start", p[0].x - 40, p[0].y + 10);
-        ctx.fillText("End (d)", p[6].x + 10, p[6].y - 10);
-
-        // Update Math Text in Sidebar
-        const b_sq = (xVal*xVal + zVal*zVal);
-        const d_final = Math.sqrt(b_sq + yVal*yVal).toFixed(1);
-        document.getElementById('calc-base').textContent = `${xVal}² + ${zVal}² = ${b_sq}`;
-        document.getElementById('final-result').textContent = `√(${b_sq} + ${yVal}²) ≈ ${d_final}`;
-    }
-
-    // Input Sync Logic
-    ['x', 'y', 'z'].forEach(dim => {
-        const s = document.getElementById('s' + dim);
-        const n = document.getElementById('n' + dim);
-        const update = (v) => {
-            let val = Math.min(220, Math.max(30, parseInt(v) || 30));
-            if(dim==='x') xVal = val; if(dim==='y') yVal = val; if(dim==='z') zVal = val;
-            s.value = val; n.value = val; draw();
-        };
-        s.oninput = (e) => update(e.target.value);
-        n.onchange = (e) => { update(e.target.value); notify("Variable Changed"); };
-    });
-
-    // Interaction Handlers
-    function start(e) { 
-        isDragging = true; 
-        const t = e.touches ? e.touches[0] : e;
-        lastX = t.clientX; lastY = t.clientY; 
-        notify("You moved the graph.");
-    }
-    function move(e) {
-        if(!isDragging) return;
-        const t = e.touches ? e.touches[0] : e;
-        rotY += (t.clientX - lastX) * 0.007;
-        rotX += (t.clientY - lastY) * 0.007;
-        lastX = t.clientX; lastY = t.clientY;
-        draw();
-    }
-
-    canvas.addEventListener('mousedown', start);
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', () => isDragging = false);
-    canvas.addEventListener('touchstart', start);
-    window.addEventListener('touchmove', (e) => { if(isDragging) e.preventDefault(); move(e); }, {passive:false});
-    window.addEventListener('touchend', () => isDragging = false);
-
-    window.addEventListener('resize', resize);
-    resize();
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let centerX, centerY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2 + 50;
+            draw();
+        }
+        
+        // 3D projection
+        function project(xCoord, yCoord, zCoord) {
+            const cosY = Math.cos(rotY);
+            const sinY = Math.sin(rotY);
+            let x1 = xCoord * cosY - zCoord * sinY;
+            let z1 = xCoord * sinY + zCoord * cosY;
+            
+            const cosX = Math.cos(rotX);
+            const sinX = Math.sin(rotX);
+            let y2 = yCoord * cosX - z1 * sinX;
+            let z2 = yCoord * sinX + z1 * cosX;
+            
+            const scale = 850 / (850 + Math.max(0, z2));
+            return {
+                x: centerX + x1 * scale,
+                y: centerY - y2 * scale
+            };
+        }
+        
+        function computeBaseDiagonal() {
+            return Math.sqrt(x * x + z * z);
+        }
+        
+        function computeSpaceDiagonal() {
+            return Math.sqrt(x * x + y * y + z * z);
+        }
+        
+        function updateUI() {
+            const baseDiag = computeBaseDiagonal();
+            const spaceDiag = computeSpaceDiagonal();
+            const baseSq = x*x + z*z;
+            const totalSq = baseSq + y*y;
+            
+            step1Span.innerHTML = `Base diagonal² = x² + z² = ${x}² + ${z}² = ${baseSq}`;
+            step2Span.innerHTML = `d² = ${baseSq} + y² = ${baseSq} + ${y}² = ${totalSq}`;
+            resultSpan.innerHTML = `d = √${totalSq} ≈ ${spaceDiag.toFixed(1)}`;
+            
+            xValueSpan.innerText = x;
+            zValueSpan.innerText = z;
+            yValueSpan.innerText = y;
+            xInput.value = x;
+            zInput.value = z;
+            yInput.value = y;
+            
+            draw();
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const hx = x / 2;
+            const hy = y;
+            const hz = z / 2;
+            
+            // 8 corners of the box (bottom y=0, top y=-hy)
+            const corners = [
+                { x: -hx, y: 0, z: -hz },    // 0 front-bottom-left
+                { x:  hx, y: 0, z: -hz },    // 1 front-bottom-right
+                { x:  hx, y: 0, z:  hz },    // 2 back-bottom-right
+                { x: -hx, y: 0, z:  hz },    // 3 back-bottom-left
+                { x: -hx, y: -hy, z: -hz },  // 4 front-top-left
+                { x:  hx, y: -hy, z: -hz },  // 5 front-top-right
+                { x:  hx, y: -hy, z:  hz },  // 6 back-top-right
+                { x: -hx, y: -hy, z:  hz }   // 7 back-top-left
+            ];
+            
+            const proj = corners.map(p => project(p.x, p.y, p.z));
+            
+            // Edges (12)
+            const edges = [
+                [0,1], [1,2], [2,3], [3,0], // bottom face
+                [4,5], [5,6], [6,7], [7,4], // top face
+                [0,4], [1,5], [2,6], [3,7]  // vertical edges
+            ];
+            
+            // Draw box edges (dashed)
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 1.5;
+            for (let edge of edges) {
+                ctx.beginPath();
+                ctx.moveTo(proj[edge[0]].x, proj[edge[0]].y);
+                ctx.lineTo(proj[edge[1]].x, proj[edge[1]].y);
+                ctx.stroke();
+            }
+            
+            // Draw floor diagonal (green) from corner 0 to corner 2
+            ctx.setLineDash([]);
+            ctx.strokeStyle = "#22c55e";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(proj[0].x, proj[0].y);
+            ctx.lineTo(proj[2].x, proj[2].y);
+            ctx.stroke();
+            
+            // Draw space diagonal (orange) from corner 0 to corner 6
+            ctx.strokeStyle = "#f59e0b";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(proj[0].x, proj[0].y);
+            ctx.lineTo(proj[6].x, proj[6].y);
+            ctx.stroke();
+            
+            // Labels
+            ctx.font = "12px Inter";
+            ctx.fillStyle = "#22c55e";
+            ctx.fillText("floor diagonal", (proj[0].x + proj[2].x)/2 + 10, (proj[0].y + proj[2].y)/2);
+            ctx.fillStyle = "#f59e0b";
+            ctx.fillText("space diagonal", (proj[0].x + proj[6].x)/2 + 10, (proj[0].y + proj[6].y)/2 - 10);
+            
+            // Mark corners
+            ctx.fillStyle = "#3b82f6";
+            ctx.beginPath();
+            ctx.arc(proj[0].x, proj[0].y, 5, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(proj[0].x, proj[0].y, 2, 0, 2*Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = "#f59e0b";
+            ctx.beginPath();
+            ctx.arc(proj[6].x, proj[6].y, 5, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(proj[6].x, proj[6].y, 2, 0, 2*Math.PI);
+            ctx.fill();
+        }
+        
+        // --- Setters with clamping ---
+        function setX(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(220, Math.max(30, newVal));
+            x = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setZ(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(220, Math.max(30, newVal));
+            z = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setY(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(220, Math.max(30, newVal));
+            y = Math.round(newVal);
+            updateUI();
+        }
+        
+        function resetToDefault() {
+            setX(120);
+            setZ(90);
+            setY(70);
+        }
+        
+        // --- Canvas drag rotation (touch + mouse) ---
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const pos = getPointerPos(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastPointer.x;
+            const dy = pos.y - lastPointer.y;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                rotY += dx * 0.007;
+                rotX += dy * 0.007;
+                rotX = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotX));
+                draw();
+            }
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper buttons and numeric inputs ---
+        function bindControls() {
+            document.getElementById('xMinus').addEventListener('click', () => setX(x - 5));
+            document.getElementById('xPlus').addEventListener('click', () => setX(x + 5));
+            document.getElementById('zMinus').addEventListener('click', () => setZ(z - 5));
+            document.getElementById('zPlus').addEventListener('click', () => setZ(z + 5));
+            document.getElementById('yMinus').addEventListener('click', () => setY(y - 5));
+            document.getElementById('yPlus').addEventListener('click', () => setY(y + 5));
+            
+            xInput.addEventListener('change', (e) => setX(e.target.value));
+            zInput.addEventListener('change', (e) => setZ(e.target.value));
+            yInput.addEventListener('change', (e) => setY(e.target.value));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

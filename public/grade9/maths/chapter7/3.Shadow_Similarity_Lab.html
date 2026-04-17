@@ -2,335 +2,587 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shadow Similarity Lab | Grade 9 Math</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Shadow Similarity Lab · Similar Triangles</title>
     <style>
-        :root {
-            --brand-blue: #0056b3;
-            --light-blue: #e7f1ff;
-            --accent-orange: #ff8c00;
-            --white: #ffffff;
-            --dark-text: #1a202c;
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        * { box-sizing: border-box; touch-action: none; }
-
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             margin: 0;
-            background-color: #f1f5f9;
-            color: var(--dark-text);
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--brand-blue);
-            color: var(--white);
-            padding: 1rem;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .lab-header h1 {
+            margin: 0;
             font-weight: 700;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            z-index: 10;
+            font-size: 1.6rem;
+            color: #1e293b;
         }
 
-        #notification {
-            position: fixed;
-            top: 4.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-orange);
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            display: none;
-            z-index: 100;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
         }
 
-        main { display: flex; flex: 1; flex-direction: column; overflow: hidden; }
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
 
-        #canvas-area {
-            flex: 1;
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
             background: #ffffff;
-            position: relative;
-            margin: 10px;
-            border-radius: 12px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
         }
 
-        canvas { width: 100%; height: 100%; display: block; }
+        .formula-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
 
-        #ui-panel {
-            background: var(--white);
-            padding: 20px;
-            border-top: 4px solid var(--brand-blue);
+        .formula-preview span {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            display: block;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            max-height: 45vh;
+            gap: 1.2rem;
         }
 
-        .formula-box {
-            background: var(--light-blue);
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #bdd7ff;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
+        }
+
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            justify-content: space-between;
+            color: #334155;
+        }
+
+        .stepper-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
             text-align: center;
         }
 
-        .ratio-text {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            color: var(--brand-blue);
-            font-size: 1.1rem;
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
         }
 
-        .control-group { display: flex; flex-direction: column; gap: 8px; }
-        
-        .label-row {
-            display: flex;
-            justify-content: space-between;
-            font-weight: 600;
+        .numeric-input input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
+            text-align: center;
             font-size: 0.9rem;
         }
 
-        input[type="range"] { width: 100%; height: 30px; cursor: pointer; }
-
-        .btn-toggle {
-            background: var(--brand-blue);
-            color: white;
-            border: none;
+        .reset-btn {
+            background: #f1f5f9;
+            width: 100%;
             padding: 12px;
-            border-radius: 6px;
-            font-weight: bold;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
             cursor: pointer;
+            margin-top: 6px;
         }
 
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #ui-panel { width: 350px; max-height: 100%; border-top: none; border-left: 4px solid var(--brand-blue); }
+        .reset-btn:active {
+            background: #e2e8f0;
+            transform: scale(0.97);
+        }
+
+        .info-card {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
+            text-align: center;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>Similar Triangles & Shadow Projection</header>
-<div id="notification">Action Recorded</div>
-
-<main>
-    <div id="canvas-area">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>🔦 Shadow Similarity · Similar Triangles</h1>
+        <p>Light source creates similar triangles → Shadow ∝ Object height × (Light dist / (Light dist − Object dist))</p>
     </div>
 
-    <aside id="ui-panel">
-        <div class="formula-box">
-            <div style="font-size: 0.85rem; margin-bottom: 5px;">Similarity Ratio (Shadow / Object)</div>
-            <div class="ratio-text" id="ratio-display">k = 1.00</div>
-        </div>
-
-        <div class="control-group">
-            <div class="label-row">
-                <span>Light Distance (Source)</span>
-                <span id="v-light">300</span>
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="formula-preview">
+                <span id="ratioDisplay">Similarity ratio k = 1.00</span>
+                <span id="shadowDisplay">Shadow height = 0.0 px</span>
             </div>
-            <input type="range" id="lightRange" min="150" max="600" value="300">
-        </div>
-
-        <div class="control-group">
-            <div class="label-row">
-                <span>Object Distance</span>
-                <span id="v-obj">150</span>
+            <canvas id="similarityCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag the triangle horizontally → change object distance &nbsp;|&nbsp; Use controls to adjust light, object, height
             </div>
-            <input type="range" id="objRange" min="50" max="250" value="150">
         </div>
 
-        <div class="control-group">
-            <div class="label-row">
-                <span>Object Height</span>
-                <span id="v-height">80</span>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>💡 Light distance (from wall)</span>
+                    <span id="lightHint">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="lightMinus">−</button>
+                    <span id="lightValue">300</span>
+                    <button id="lightPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="lightInput" step="10" value="300">
+                </div>
             </div>
-            <input type="range" id="heightRange" min="40" max="150" value="80">
-        </div>
 
-        <button class="btn-toggle" id="resetBtn">Reset Perspective</button>
-        
-        <p style="font-size: 0.8rem; color: #666; line-height: 1.4;">
-            <b>Explanation:</b> Moving the light closer increases the shadow size, but the <b>angles</b> remain equal to the original triangle. This is the Angle-Angle (AA) similarity criterion.
-        </p>
-    </aside>
-</main>
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📍 Object distance (from wall)</span>
+                    <span id="objHint">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="objMinus">−</button>
+                    <span id="objValue">150</span>
+                    <button id="objPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="objInput" step="10" value="150">
+                </div>
+            </div>
+
+            <div class="param-card">
+                <div class="param-title">
+                    <span>📏 Object height</span>
+                    <span id="heightHint">px</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="heightMinus">−</button>
+                    <span id="heightValue">80</span>
+                    <button id="heightPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="heightInput" step="5" value="80">
+                </div>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Reset to default values</button>
+
+            <div class="info-card">
+                💡 <strong>Angle‑Angle (AA) similarity</strong><br>
+                The light rays create two similar triangles (object triangle and shadow triangle).<br>
+                Ratio k = Light distance / (Light distance − Object distance)<br>
+                Shadow height = k × Object height
+            </div>
+        </div>
+    </div>
+    <footer>⚡ Drag the blue triangle horizontally to change its distance from the wall. The shadow grows as you move closer to the light.</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const note = document.getElementById('notification');
-
-    // App State
-    let lightDist = 300; // X position of light from "wall"
-    let objDist = 150;   // X position of object from "wall"
-    let objHeight = 80;  // Height of triangle
-    let isDragging = false;
-
-    function showNote(text) {
-        note.textContent = text;
-        note.style.display = 'block';
-        clearTimeout(window.noteTimer);
-        window.noteTimer = setTimeout(() => note.style.display = 'none', 1500);
-    }
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    (function(){
+        // State
+        let lightDist = 300;   // distance from light to wall (pixels)
+        let objDist = 150;     // distance from object to wall (pixels)
+        let objHeight = 80;    // height of object (pixels)
         
-        const wallX = canvas.width - 60;
-        const groundY = canvas.height - 80;
-        const lightX = wallX - lightDist;
-        const lightY = groundY - 120; // Fixed light height
-        const triangleX = wallX - objDist;
-
-        // 1. Calculate Shadow Height using Similarity Ratios
-        // Ratio formula: ShadowHeight / objHeight = lightDist / (lightDist - objDist)
-        const ratio = lightDist / (lightDist - objDist);
-        const shadowHeight = objHeight * ratio;
-
-        // 2. Draw Ground and Wall
-        ctx.strokeStyle = '#cbd5e0';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(50, groundY); ctx.lineTo(canvas.width - 20, groundY); // Ground
-        ctx.moveTo(wallX, groundY); ctx.lineTo(wallX, 50); // Wall
-        ctx.stroke();
-
-        // 3. Draw Shadow (on the wall)
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
-        ctx.beginPath();
-        ctx.moveTo(wallX, groundY);
-        ctx.lineTo(wallX, groundY - shadowHeight);
-        ctx.lineTo(wallX - 20, groundY); // Tapered shadow base for 3D effect
-        ctx.fill();
-
-        // 4. Draw Light Rays (Dashed)
-        ctx.setLineDash([5, 5]);
-        ctx.strokeStyle = '#f6ad55';
-        ctx.beginPath();
-        ctx.moveTo(lightX, lightY);
-        ctx.lineTo(wallX, groundY - shadowHeight); // Top ray
-        ctx.moveTo(lightX, lightY);
-        ctx.lineTo(wallX, groundY); // Bottom ray
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // 5. Draw the Light Source
-        ctx.fillStyle = '#ecc94b';
-        ctx.beginPath();
-        ctx.arc(lightX, lightY, 12, 0, Math.PI * 2);
-        ctx.fill();
-        // Light Glow
-        const gradient = ctx.createRadialGradient(lightX, lightY, 5, lightX, lightY, 30);
-        gradient.addColorStop(0, 'rgba(236, 201, 75, 0.4)');
-        gradient.addColorStop(1, 'rgba(236, 201, 75, 0)');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(lightX, lightY, 30, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 6. Draw the Physical Triangle (The Object)
-        ctx.fillStyle = varToHex('--brand-blue');
-        ctx.beginPath();
-        ctx.moveTo(triangleX, groundY);
-        ctx.lineTo(triangleX, groundY - objHeight);
-        ctx.lineTo(triangleX + 30, groundY);
-        ctx.fill();
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // 7. Update UI Labels
-        document.getElementById('ratio-display').textContent = `k = ${ratio.toFixed(2)}`;
-        document.getElementById('v-light').textContent = lightDist;
-        document.getElementById('v-obj').textContent = objDist;
-        document.getElementById('v-height').textContent = objHeight;
-    }
-
-    // Helper to get CSS variables in JS
-    function varToHex(varName) {
-        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-    }
-
-    // Controls Logic
-    const lightRange = document.getElementById('lightRange');
-    const objRange = document.getElementById('objRange');
-    const heightRange = document.getElementById('heightRange');
-
-    lightRange.addEventListener('input', (e) => {
-        lightDist = parseInt(e.target.value);
-        if (objDist >= lightDist - 20) {
-            objDist = lightDist - 25;
-            objRange.value = objDist;
+        // Canvas geometry (updated on resize)
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let wallX, groundY, lightX, lightY;
+        
+        // DOM elements
+        const canvas = document.getElementById('similarityCanvas');
+        const ctx = canvas.getContext('2d');
+        const ratioDisplaySpan = document.getElementById('ratioDisplay');
+        const shadowDisplaySpan = document.getElementById('shadowDisplay');
+        const lightValueSpan = document.getElementById('lightValue');
+        const objValueSpan = document.getElementById('objValue');
+        const heightValueSpan = document.getElementById('heightValue');
+        const lightInput = document.getElementById('lightInput');
+        const objInput = document.getElementById('objInput');
+        const heightInput = document.getElementById('heightInput');
+        
+        function updateCanvasGeometry() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            
+            wallX = canvasWidth - 60;
+            groundY = canvasHeight - 70;
+            lightY = groundY - 120;   // fixed height of light source
+            lightX = wallX - lightDist;
         }
-        draw();
-    });
-    
-    lightRange.addEventListener('change', () => showNote("Light source moved."));
-
-    objRange.addEventListener('input', (e) => {
-        let val = parseInt(e.target.value);
-        if (val >= lightDist - 20) val = lightDist - 25;
-        objDist = val;
-        objRange.value = val;
-        draw();
-    });
-
-    objRange.addEventListener('change', () => showNote("Object position updated."));
-
-    heightRange.addEventListener('input', (e) => {
-        objHeight = parseInt(e.target.value);
-        draw();
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-        lightDist = 300; objDist = 150; objHeight = 80;
-        lightRange.value = 300; objRange.value = 150; heightRange.value = 80;
-        showNote("Perspective Reset.");
-        draw();
-    });
-
-    // Touch/Mouse Interaction on Canvas
-    function handleInteraction(e) {
-        const rect = canvas.getBoundingClientRect();
-        const touchX = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-        const wallX = canvas.width - 60;
         
-        // Simple drag to move object distance
-        let newDist = wallX - touchX;
-        if (newDist > 10 && newDist < lightDist - 20) {
-            objDist = newDist;
-            objRange.value = objDist;
+        function computeRatio() {
+            // similarity ratio = lightDist / (lightDist - objDist)
+            // object must be between light and wall (objDist < lightDist)
+            let safeObjDist = Math.min(objDist, lightDist - 5);
+            if (safeObjDist < 5) safeObjDist = 5;
+            return lightDist / (lightDist - safeObjDist);
+        }
+        
+        function computeShadowHeight() {
+            const ratio = computeRatio();
+            return objHeight * ratio;
+        }
+        
+        function updateUI() {
+            const ratio = computeRatio();
+            const shadow = computeShadowHeight();
+            ratioDisplaySpan.innerHTML = `Similarity ratio k = ${ratio.toFixed(2)}`;
+            shadowDisplaySpan.innerHTML = `Shadow height = ${shadow.toFixed(1)} px`;
+            
+            lightValueSpan.innerText = lightDist;
+            objValueSpan.innerText = objDist;
+            heightValueSpan.innerText = objHeight;
+            lightInput.value = lightDist;
+            objInput.value = objDist;
+            heightInput.value = objHeight;
+            
             draw();
         }
-    }
-
-    canvas.addEventListener('mousedown', () => { isDragging = true; showNote("Dragging object..."); });
-    window.addEventListener('mousemove', (e) => { if(isDragging) handleInteraction(e); });
-    window.addEventListener('mouseup', () => isDragging = false);
-    
-    canvas.addEventListener('touchstart', (e) => { isDragging = true; handleInteraction(e); });
-    canvas.addEventListener('touchmove', (e) => { if(isDragging) { e.preventDefault(); handleInteraction(e); } });
-    canvas.addEventListener('touchend', () => isDragging = false);
-
-    window.addEventListener('resize', resize);
-    resize();
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Recalculate positions based on current dimensions
+            wallX = canvasWidth - 60;
+            groundY = canvasHeight - 70;
+            lightY = groundY - 120;
+            lightX = wallX - lightDist;
+            
+            // Ensure object distance is valid (must be less than lightDist)
+            let validObjDist = Math.min(objDist, lightDist - 5);
+            if (validObjDist < 5) validObjDist = 5;
+            const triangleX = wallX - validObjDist;
+            
+            const ratio = computeRatio();
+            const shadowHeight = objHeight * ratio;
+            
+            // 1. Draw ground and wall
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(40, groundY);
+            ctx.lineTo(canvasWidth - 20, groundY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(wallX, groundY);
+            ctx.lineTo(wallX, 40);
+            ctx.stroke();
+            
+            // 2. Draw shadow on wall (semi-transparent)
+            ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+            ctx.beginPath();
+            ctx.moveTo(wallX, groundY);
+            ctx.lineTo(wallX, groundY - shadowHeight);
+            ctx.lineTo(wallX - 20, groundY);
+            ctx.fill();
+            
+            // 3. Draw light rays (dashed)
+            ctx.setLineDash([6, 6]);
+            ctx.strokeStyle = "#fbbf24";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(lightX, lightY);
+            ctx.lineTo(wallX, groundY - shadowHeight);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(lightX, lightY);
+            ctx.lineTo(wallX, groundY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 4. Draw light source (glow effect)
+            ctx.fillStyle = "#facc15";
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.arc(lightX, lightY, 12, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(lightX, lightY, 5, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // 5. Draw the object triangle (blue)
+            ctx.fillStyle = "#3b82f6";
+            ctx.beginPath();
+            ctx.moveTo(triangleX, groundY);
+            ctx.lineTo(triangleX, groundY - objHeight);
+            ctx.lineTo(triangleX + 28, groundY);
+            ctx.fill();
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 6. Labels
+            ctx.font = "12px Inter";
+            ctx.fillStyle = "#3b82f6";
+            ctx.fillText("Object", triangleX + 5, groundY - objHeight - 8);
+            ctx.fillStyle = "#f59e0b";
+            ctx.fillText("Shadow", wallX - 35, groundY - shadowHeight - 5);
+            ctx.fillStyle = "#facc15";
+            ctx.fillText("Light", lightX - 15, lightY - 10);
+            
+            // 7. Draw a small marker for object distance (optional)
+            ctx.fillStyle = "#64748b";
+            ctx.font = "10px monospace";
+            ctx.fillText(`dist = ${validObjDist}`, triangleX + 5, groundY + 15);
+        }
+        
+        // --- Setters with clamping ---
+        function setLightDist(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(550, Math.max(100, newVal));
+            lightDist = Math.round(newVal);
+            // Ensure object distance is valid
+            if (objDist >= lightDist - 5) {
+                objDist = lightDist - 5;
+                if (objDist < 5) objDist = 5;
+            }
+            updateUI();
+        }
+        
+        function setObjDist(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            // object must be between light and wall, and at least 5px from light
+            let maxObj = lightDist - 5;
+            if (maxObj < 5) maxObj = 5;
+            newVal = Math.min(maxObj, Math.max(5, newVal));
+            objDist = Math.round(newVal);
+            updateUI();
+        }
+        
+        function setObjHeight(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(140, Math.max(30, newVal));
+            objHeight = Math.round(newVal);
+            updateUI();
+        }
+        
+        function resetToDefault() {
+            setLightDist(300);
+            setObjDist(150);
+            setObjHeight(80);
+        }
+        
+        // --- Canvas drag: adjust object distance (horizontal drag) ---
+        let dragActive = false;
+        let lastPointerX = 0;
+        
+        function getPointerX(e) {
+            let clientX;
+            if (e.touches) clientX = e.touches[0].clientX;
+            else clientX = e.clientX;
+            return clientX;
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            lastPointerX = getPointerX(e);
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            e.preventDefault();
+            const currentX = getPointerX(e);
+            const deltaX = currentX - lastPointerX;
+            if (Math.abs(deltaX) > 0.5) {
+                // Map delta to object distance change (pixels)
+                let deltaDist = -deltaX * 0.8;
+                let newObjDist = objDist + deltaDist;
+                setObjDist(newObjDist);
+            }
+            lastPointerX = currentX;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper and numeric inputs ---
+        function bindControls() {
+            document.getElementById('lightMinus').addEventListener('click', () => setLightDist(lightDist - 10));
+            document.getElementById('lightPlus').addEventListener('click', () => setLightDist(lightDist + 10));
+            document.getElementById('objMinus').addEventListener('click', () => setObjDist(objDist - 10));
+            document.getElementById('objPlus').addEventListener('click', () => setObjDist(objDist + 10));
+            document.getElementById('heightMinus').addEventListener('click', () => setObjHeight(objHeight - 5));
+            document.getElementById('heightPlus').addEventListener('click', () => setObjHeight(objHeight + 5));
+            
+            lightInput.addEventListener('change', (e) => setLightDist(e.target.value));
+            objInput.addEventListener('change', (e) => setObjDist(e.target.value));
+            heightInput.addEventListener('change', (e) => setObjHeight(e.target.value));
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasGeometry();
+                updateUI();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasGeometry();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>

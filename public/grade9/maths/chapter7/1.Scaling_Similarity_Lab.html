@@ -2,477 +2,616 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scaling Law Lab | Grade 9 Math</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Scaling Law Lab · Similarity & 3D Volume</title>
     <style>
-        :root {
-            --brand-blue: #0056b3;
-            --brand-light: #e7f1ff;
-            --brand-white: #ffffff;
-            --accent-orange: #ff8c00;
-            --text-dark: #2c3e50;
-        }
-
-        /* Mobile-First Reset & Touch Optimizations */
         * {
             box-sizing: border-box;
-            touch-action: none;
-            -webkit-user-select: none;
-            user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
-            background-color: #f4f7f9;
-            color: var(--text-dark);
-            height: 100vh;
+            min-height: 100vh;
+            background: #f5f7fb;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .lab-card {
+            max-width: 1200px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
         }
 
-        header {
-            background: var(--brand-blue);
-            color: var(--brand-white);
-            padding: 15px;
+        .lab-header {
+            background: #fafcff;
+            padding: 1.2rem 1.8rem;
             text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            z-index: 100;
+            border-bottom: 1px solid #eef2f8;
         }
 
-        /* Real-Time Alert System */
-        #interaction-alert {
-            position: fixed;
-            top: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent-orange);
-            color: var(--brand-white);
-            padding: 10px 24px;
-            border-radius: 30px;
-            font-size: 0.95rem;
+        .lab-header h1 {
+            margin: 0;
             font-weight: 700;
-            display: none;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            white-space: nowrap;
+            font-size: 1.6rem;
+            color: #1e293b;
         }
 
-        main {
-            display: flex;
-            flex: 1;
-            flex-direction: column;
+        .lab-header p {
+            margin: 0.4rem 0 0;
+            color: #5b6e8c;
+            font-size: 0.85rem;
         }
 
-        #canvas-wrapper {
-            flex: 1;
-            background: var(--brand-white);
-            margin: 10px;
-            border-radius: 12px;
-            position: relative;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+        }
+
+        .canvas-area {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
             overflow: hidden;
+            padding: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .stats-preview {
+            background: #f8fafc;
+            padding: 0.8rem;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .stats-preview div {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 4px 0;
         }
 
         canvas {
-            width: 100%;
-            height: 100%;
             display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: grab;
+            touch-action: none;
         }
 
-        #controls-panel {
-            background: var(--brand-white);
-            padding: 20px;
-            border-top: 4px solid var(--brand-blue);
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .drag-hint {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 8px;
+            color: #6c86a3;
+            background: #f8fafc;
+            margin-top: 0.6rem;
+            border-radius: 40px;
+        }
+
+        .control-panel {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #eef2f8;
+            padding: 1.2rem;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            max-height: 50vh;
+            gap: 1.2rem;
         }
 
-        .formula-board {
-            background: var(--brand-light);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #b3d4ff;
-            text-align: left;
+        .param-card {
+            background: #fcfdff;
+            border-radius: 1rem;
+            padding: 1rem;
+            border: 1px solid #eef2f8;
         }
 
-        .formula-board h3 { margin: 0 0 10px 0; color: var(--brand-blue); text-align: center; }
-        
-        .stat-row {
+        .param-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.6rem;
             display: flex;
             justify-content: space-between;
-            font-size: 1rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-            padding: 5px;
-            border-bottom: 1px dashed #ccc;
+            color: #334155;
         }
 
-        .memorization-aid {
-            background: #fffceb;
-            border-left: 4px solid #f1c40f;
-            padding: 12px;
-            font-size: 0.85rem;
-            line-height: 1.5;
-            color: #555;
-            border-radius: 4px;
-        }
-
-        .control-group {
+        .stepper-control {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            justify-content: space-between;
+        }
+
+        .stepper-control button {
+            background: #f1f5f9;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 44px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            color: #1e293b;
+        }
+
+        .stepper-control button:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+
+        .stepper-control span {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: #f1f5f9;
+            padding: 6px 20px;
+            border-radius: 40px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .numeric-input {
+            margin-top: 8px;
+            display: flex;
             gap: 8px;
         }
 
-        .control-group label {
-            font-weight: bold;
-            font-size: 0.95rem;
-        }
-
-        .input-row {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        /* Fat-finger optimized slider */
-        input[type="range"] {
+        .numeric-input input {
             flex: 1;
-            height: 40px;
-            cursor: pointer;
-        }
-
-        /* Number input field styling */
-        input[type="number"] {
-            width: 80px;
-            height: 40px;
-            font-size: 1.1rem;
-            font-weight: bold;
+            background: #ffffff;
+            border: 1px solid #dce3ec;
+            padding: 8px 12px;
+            border-radius: 60px;
+            font-family: monospace;
             text-align: center;
-            border: 2px solid var(--brand-blue);
-            border-radius: 8px;
-            color: var(--brand-blue);
-            background: var(--brand-light);
-            outline: none;
-        }
-        
-        input[type="number"]:focus {
-            border-color: var(--accent-orange);
-            background: var(--brand-white);
+            font-size: 0.9rem;
         }
 
-        /* Large touch buttons */
-        button {
-            background: var(--brand-blue);
-            color: var(--brand-white);
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .action-btn {
+            flex: 1;
+            background: #3b82f6;
             border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
+            padding: 12px;
+            border-radius: 60px;
+            font-weight: 600;
+            color: white;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
+            transition: 0.1s;
         }
 
-        button:active {
+        .action-btn:active {
+            transform: scale(0.96);
+            background: #2563eb;
+        }
+
+        .reset-btn {
+            background: #f1f5f9;
+            color: #1e293b;
+            width: 100%;
+            padding: 12px;
+            border-radius: 60px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .reset-btn:active {
+            background: #e2e8f0;
             transform: scale(0.97);
-            background: #004494;
         }
 
-        .help-text {
+        .info-card {
+            background: #fef9e3;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.75rem;
+            color: #92400e;
             text-align: center;
-            font-size: 0.8rem;
-            color: #888;
-            margin-top: -5px;
         }
 
-        @media (min-width: 768px) {
-            main { flex-direction: row; }
-            #controls-panel { width: 380px; max-height: 100%; border-top: none; border-left: 4px solid var(--brand-blue); }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            border-top: 1px solid #eef2f8;
+            color: #7e8ba3;
         }
     </style>
 </head>
 <body>
 
-<header>Similarity & Scaling Law Visualization</header>
-<div id="interaction-alert">Action Recorded</div>
-
-<main>
-    <div id="canvas-wrapper">
-        <canvas id="mathCanvas"></canvas>
+<div class="lab-card">
+    <div class="lab-header">
+        <h1>📐 Scaling Law · 3D Similarity</h1>
+        <p>Scale factor k → Length ∝ k, Area ∝ k², Volume ∝ k³</p>
     </div>
 
-    <aside id="controls-panel">
-        <div class="formula-board">
-            <h3>Scale Factor (k = <span id="k-display">1.0</span>)</h3>
-            <div class="stat-row">
-                <span>Side Length (1D):</span> 
-                <span id="l-val" style="color:var(--brand-blue)">1.0 L</span>
+    <div class="dashboard">
+        <div class="canvas-area">
+            <div class="stats-preview">
+                <div>📏 Scale factor: <strong id="kValueDisplay">1.0</strong></div>
+                <div>📐 Length (1D): <strong id="lengthDisplay">1.0</strong> × base</div>
+                <div>📐 Area (2D): <strong id="areaDisplay">1.0</strong> × base²</div>
+                <div>🧊 Volume (3D): <strong id="volumeDisplay">1.0</strong> × base³</div>
             </div>
-            <div class="stat-row">
-                <span>Surface Area (2D):</span> 
-                <span id="a-val" style="color:#2ecc71">1.0 A</span>
-            </div>
-            <div class="stat-row">
-                <span>Total Volume (3D):</span> 
-                <span id="v-val" style="color:var(--accent-orange)">1.0 V</span>
+            <canvas id="scaleCanvas" width="600" height="450"></canvas>
+            <div class="drag-hint">
+                🖱️ Drag on canvas → rotate 3D view &nbsp;|&nbsp; Adjust k to see scaling effect
             </div>
         </div>
 
-        <div class="memorization-aid">
-            <strong>Memorization Aid:</strong> When you scale a shape by a factor of <strong>k</strong>:<br>
-            • Lengths grow by <strong>k</strong>.<br>
-            • Areas grow by <strong>k²</strong>.<br>
-            • Volumes grow by <strong>k³</strong>.
-        </div>
+        <div class="control-panel">
+            <div class="param-card">
+                <div class="param-title">
+                    <span>🎚️ Scale Factor (k)</span>
+                    <span id="kHint" style="background:#eef2ff; padding:2px 8px; border-radius:40px;">1.0 – 5.0</span>
+                </div>
+                <div class="stepper-control">
+                    <button id="kMinus">−</button>
+                    <span id="kValue">1.0</span>
+                    <button id="kPlus">+</button>
+                </div>
+                <div class="numeric-input">
+                    <input type="number" id="kInput" step="0.1" value="1.0" min="1.0" max="5.0">
+                </div>
+            </div>
 
-        <div class="control-group">
-            <label>Set Scale Factor (k)</label>
-            <div class="input-row">
-                <input type="range" id="k-slider" min="1" max="5" step="0.1" value="1.0">
-                <input type="number" id="k-input" min="1" max="5" step="0.1" value="1.0">
+            <div class="action-buttons">
+                <button id="toggleViewBtn" class="action-btn">🔲 Switch to 2D Net</button>
+            </div>
+
+            <button id="resetBtn" class="reset-btn">⟳ Reset to k = 1.0</button>
+
+            <div class="info-card">
+                💡 <strong>Memorization Aid</strong><br>
+                When you scale a 3D shape by factor k:<br>
+                • Length grows by <strong>k</strong><br>
+                • Area grows by <strong>k²</strong><br>
+                • Volume grows by <strong>k³</strong>
             </div>
         </div>
-
-        <button id="toggle-view">SWITCH TO 2D NET</button>
-        
-        <div class="help-text">Swipe or drag the canvas to rotate the 3D space!</div>
-    </aside>
-</main>
+    </div>
+    <footer>⚡ The larger cube shows scaling. The wireframe inner cube is the original (k=1).</footer>
+</div>
 
 <script>
-    const canvas = document.getElementById('mathCanvas');
-    const ctx = canvas.getContext('2d');
-    const alertBox = document.getElementById('interaction-alert');
-
-    // App State
-    let k = 1.0;
-    let baseSize = 40; // Smaller base to allow k=5 to fit on screen
-    let viewMode = '3D'; // '3D' or '2D'
-    let rotX = -0.5, rotY = 0.6;
-    let isDragging = false;
-    let lastX, lastY;
-
-    // Trigger Notification function
-    function showAlert(message) {
-        alertBox.textContent = message;
-        alertBox.style.display = 'block';
-        clearTimeout(window.alertTimer);
-        window.alertTimer = setTimeout(() => alertBox.style.display = 'none', 1500);
-    }
-
-    function resizeCanvas() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-
-    // Basic 3D Projection
-    function project(x, y, z) {
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2 + (viewMode === '3D' ? 50 : 0);
-
-        let cosY = Math.cos(rotY), sinY = Math.sin(rotY);
-        let cosX = Math.cos(rotX), sinX = Math.sin(rotX);
-
-        let tx = x * cosY - z * sinY;
-        let tz = x * sinY + z * cosY;
-        let ty = y * cosX - tz * sinX;
-        let finalZ = y * sinX + tz * cosX;
-
-        const scale = 700 / (700 + finalZ);
+    (function(){
+        // State
+        let k = 1.0;                 // scale factor (1.0 to 5.0)
+        let viewMode = '3D';         // '3D' or '2D'
+        let baseSize = 40;           // original cube half-extent = 40 (total 80)
         
-        return {
-            x: cx + tx * scale,
-            y: cy - ty * scale,
-            z: finalZ
-        };
-    }
-
-    function drawGrid() {
-        if(viewMode !== '3D') return;
-        const axisLen = 150;
-        const origin = project(0, 0, 0);
+        // 3D rotation angles (radians)
+        let rotX = -0.5;
+        let rotY = 0.6;
         
-        ctx.lineWidth = 1;
-        let px = project(axisLen, 0, 0);
-        ctx.strokeStyle = '#ccc'; ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(px.x, px.y); ctx.stroke();
-        let py = project(0, -axisLen, 0);
-        ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(py.x, py.y); ctx.stroke();
-        let pz = project(0, 0, axisLen);
-        ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(pz.x, pz.y); ctx.stroke();
-    }
-
-    function draw3DCube(size, isOutline) {
-        const s = size / 2;
-        const vertices = [
-            [-s, -s, -s], [s, -s, -s], [s, s, -s], [-s, s, -s], 
-            [-s, -s, s],  [s, -s, s],  [s, s, s],  [-s, s, s]   
-        ].map(p => project(p[0], p[1], p[2]));
-
-        const edges = [
-            [0,1], [1,2], [2,3], [3,0], [4,5], [5,6], [6,7], [7,4], [0,4], [1,5], [2,6], [3,7]
-        ];
-
-        if (!isOutline) {
-            ctx.fillStyle = 'rgba(0, 86, 179, 0.15)'; 
-            const drawFace = (v1, v2, v3, v4) => {
-                ctx.beginPath();
-                ctx.moveTo(v1.x, v1.y); ctx.lineTo(v2.x, v2.y);
-                ctx.lineTo(v3.x, v3.y); ctx.lineTo(v4.x, v4.y);
-                ctx.closePath();
-                ctx.fill();
-            };
-            drawFace(vertices[0], vertices[1], vertices[2], vertices[3]); 
-            drawFace(vertices[1], vertices[5], vertices[6], vertices[2]); 
-            drawFace(vertices[3], vertices[2], vertices[6], vertices[7]); 
+        // DOM elements
+        const canvas = document.getElementById('scaleCanvas');
+        const ctx = canvas.getContext('2d');
+        const kValueSpan = document.getElementById('kValue');
+        const kValueDisplaySpan = document.getElementById('kValueDisplay');
+        const lengthDisplaySpan = document.getElementById('lengthDisplay');
+        const areaDisplaySpan = document.getElementById('areaDisplay');
+        const volumeDisplaySpan = document.getElementById('volumeDisplay');
+        const kInput = document.getElementById('kInput');
+        const toggleBtn = document.getElementById('toggleViewBtn');
+        
+        // Canvas geometry
+        let canvasWidth = 600;
+        let canvasHeight = 450;
+        let centerX, centerY;
+        
+        function updateCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(container.clientWidth - 24, 700);
+            canvasWidth = maxWidth;
+            canvasHeight = maxWidth * 0.7;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2 + 40;
+            draw();
         }
-
-        ctx.strokeStyle = isOutline ? '#999' : '#0056b3';
-        ctx.setLineDash(isOutline ? [4, 4] : []);
-        ctx.lineWidth = isOutline ? 1 : 2;
-
-        edges.forEach(([i, j]) => {
-            ctx.beginPath();
-            ctx.moveTo(vertices[i].x, vertices[i].y);
-            ctx.lineTo(vertices[j].x, vertices[j].y);
-            ctx.stroke();
-        });
-        ctx.setLineDash([]);
-    }
-
-    function draw2DNet(size) {
-        const s = size;
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
         
-        ctx.fillStyle = 'rgba(0, 86, 179, 0.15)';
-        ctx.strokeStyle = '#0056b3';
-        ctx.lineWidth = 2;
-
-        const faces = [
-            {x: 0, y: 0}, {x: 0, y: -s}, {x: 0, y: s}, {x: 0, y: s*2}, {x: -s, y: 0}, {x: s, y: 0}
-        ];
-
-        faces.forEach(f => {
-            ctx.fillRect(cx + f.x - s/2, cy + f.y - s/2, s, s);
-            ctx.strokeRect(cx + f.x - s/2, cy + f.y - s/2, s, s);
-        });
-
-        if(Number.isInteger(parseFloat(k))) {
-            ctx.strokeStyle = 'rgba(0, 86, 179, 0.3)';
-            ctx.lineWidth = 1;
-            const subSize = s / k;
+        // 3D projection
+        function project(x, y, z) {
+            const cosY = Math.cos(rotY);
+            const sinY = Math.sin(rotY);
+            let x1 = x * cosY - z * sinY;
+            let z1 = x * sinY + z * cosY;
             
-            faces.forEach(f => {
-                for(let i=1; i<k; i++) {
-                    let lx = cx + f.x - s/2 + (i*subSize);
-                    let ty = cy + f.y - s/2;
-                    ctx.beginPath(); ctx.moveTo(lx, ty); ctx.lineTo(lx, ty+s); ctx.stroke();
-                    let ly = cy + f.y - s/2 + (i*subSize);
-                    let tx = cx + f.x - s/2;
-                    ctx.beginPath(); ctx.moveTo(tx, ly); ctx.lineTo(tx+s, ly); ctx.stroke();
+            const cosX = Math.cos(rotX);
+            const sinX = Math.sin(rotX);
+            let y2 = y * cosX - z1 * sinX;
+            let z2 = y * sinX + z1 * cosX;
+            
+            const scale = 700 / (700 + Math.max(0, z2));
+            return {
+                x: centerX + x1 * scale,
+                y: centerY - y2 * scale
+            };
+        }
+        
+        function updateUI() {
+            kValueSpan.innerText = k.toFixed(2);
+            kValueDisplaySpan.innerText = k.toFixed(2);
+            kInput.value = k;
+            lengthDisplaySpan.innerText = k.toFixed(2);
+            areaDisplaySpan.innerText = (k * k).toFixed(2);
+            volumeDisplaySpan.innerText = (k * k * k).toFixed(2);
+            draw();
+        }
+        
+        // Draw a cube (wireframe or filled) with given half-size
+        function drawCube(halfSize, isWireframe = false, strokeColor = "#3b82f6", fillAlpha = 0.15) {
+            const s = halfSize;
+            const vertices = [
+                { x: -s, y: -s, z: -s }, // 0
+                { x:  s, y: -s, z: -s }, // 1
+                { x:  s, y:  s, z: -s }, // 2
+                { x: -s, y:  s, z: -s }, // 3
+                { x: -s, y: -s, z:  s }, // 4
+                { x:  s, y: -s, z:  s }, // 5
+                { x:  s, y:  s, z:  s }, // 6
+                { x: -s, y:  s, z:  s }  // 7
+            ];
+            const proj = vertices.map(v => project(v.x, v.y, v.z));
+            const edges = [
+                [0,1], [1,2], [2,3], [3,0], // back face
+                [4,5], [5,6], [6,7], [7,4], // front face
+                [0,4], [1,5], [2,6], [3,7]  // connectors
+            ];
+            
+            if (!isWireframe) {
+                ctx.fillStyle = `rgba(59, 130, 246, ${fillAlpha})`;
+                // simple face drawing: just fill the visible quads (approximate)
+                const faceIndices = [[0,1,2,3], [4,5,6,7], [0,1,5,4], [2,3,7,6], [0,3,7,4], [1,2,6,5]];
+                for (let face of faceIndices) {
+                    ctx.beginPath();
+                    ctx.moveTo(proj[face[0]].x, proj[face[0]].y);
+                    for (let i = 1; i < face.length; i++) ctx.lineTo(proj[face[i]].x, proj[face[i]].y);
+                    ctx.closePath();
+                    ctx.fill();
                 }
-            });
-        }
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawGrid();
-
-        if (viewMode === '3D') {
-            draw3DCube(baseSize, true);
-            draw3DCube(baseSize * k, false);
-        } else {
-            draw2DNet(baseSize * k);
-        }
-
-        document.getElementById('k-display').textContent = k.toFixed(1);
-        document.getElementById('l-val').textContent = k.toFixed(1) + " L";
-        document.getElementById('a-val').innerHTML = (k * k).toFixed(2) + " A";
-        document.getElementById('v-val').innerHTML = (k * k * k).toFixed(2) + " V";
-    }
-
-    // Sync Slider and Input Box
-    const slider = document.getElementById('k-slider');
-    const numInput = document.getElementById('k-input');
-
-    function updateScale(val) {
-        // Ensure the value stays within the 1.0 to 5.0 range
-        let newK = Math.max(1, Math.min(5, parseFloat(val) || 1));
-        k = newK;
-        
-        slider.value = k;
-        
-        // Only update the input text if it's not actively being typed in,
-        // or format it if it was updated via slider
-        if (document.activeElement !== numInput) {
-            numInput.value = k;
+            }
+            
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = isWireframe ? 1.5 : 2.5;
+            if (isWireframe) ctx.setLineDash([6, 6]);
+            else ctx.setLineDash([]);
+            for (let edge of edges) {
+                ctx.beginPath();
+                ctx.moveTo(proj[edge[0]].x, proj[edge[0]].y);
+                ctx.lineTo(proj[edge[1]].x, proj[edge[1]].y);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
         }
         
-        draw();
-    }
-
-    slider.addEventListener('input', (e) => {
-        updateScale(e.target.value);
-        numInput.value = k; // Force sync text box while sliding
-    });
-    
-    slider.addEventListener('change', () => showAlert("Scale variable updated via slider."));
-
-    numInput.addEventListener('input', (e) => {
-        updateScale(e.target.value);
-    });
-
-    numInput.addEventListener('change', (e) => {
-        // When they hit enter or click away, format the number cleanly
-        numInput.value = k.toFixed(1);
-        showAlert(`Scale variable set to ${k}.`);
-    });
-
-    // --- Interaction Listeners (Touch & Mouse) ---
-    function startInteraction(x, y) {
-        isDragging = true; lastX = x; lastY = y;
-        showAlert("You interacted with the visualization.");
-    }
-
-    function moveInteraction(x, y) {
-        if (!isDragging || viewMode !== '3D') return;
-        let dx = x - lastX; let dy = y - lastY;
-        rotY += dx * 0.01; rotX += dy * 0.01;
-        lastX = x; lastY = y; draw();
-    }
-
-    canvas.addEventListener('touchstart', (e) => startInteraction(e.touches[0].clientX, e.touches[0].clientY), {passive: false});
-    window.addEventListener('touchmove', (e) => {
-        if(isDragging) e.preventDefault();
-        moveInteraction(e.touches[0].clientX, e.touches[0].clientY);
-    }, {passive: false});
-    window.addEventListener('touchend', () => isDragging = false);
-
-    canvas.addEventListener('mousedown', (e) => startInteraction(e.clientX, e.clientY));
-    window.addEventListener('mousemove', (e) => moveInteraction(e.clientX, e.clientY));
-    window.addEventListener('mouseup', () => isDragging = false);
-
-    const toggleBtn = document.getElementById('toggle-view');
-    toggleBtn.addEventListener('click', () => {
-        viewMode = viewMode === '3D' ? '2D' : '3D';
-        toggleBtn.textContent = viewMode === '3D' ? 'SWITCH TO 2D NET' : 'SWITCH TO 3D SOLID';
-        if(viewMode === '3D') { rotX = -0.5; rotY = 0.6; }
-        showAlert(`View switched to ${viewMode === '3D' ? 'Solid Cube' : 'Unfolded Net'}.`);
-        draw();
-    });
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
+        // Draw 2D net (cross shape) for the scaled cube
+        function draw2DNet(size) {
+            const s = size;           // side length
+            const cx = canvasWidth / 2;
+            const cy = canvasHeight / 2;
+            const offsetX = s / 2;
+            const offsetY = s / 2;
+            
+            // positions of 6 faces in a cross layout
+            const positions = [
+                { x: 0, y: -1 },  // top
+                { x: 0, y: 0 },   // center
+                { x: 0, y: 1 },   // bottom
+                { x: -1, y: 0 },  // left
+                { x: 1, y: 0 },   // right
+                { x: 0, y: 2 }    // extra bottom for cube net (simplified)
+            ];
+            
+            ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 2;
+            
+            for (let pos of positions) {
+                const xPos = cx + pos.x * s;
+                const yPos = cy + pos.y * s;
+                ctx.fillRect(xPos - offsetX, yPos - offsetY, s, s);
+                ctx.strokeRect(xPos - offsetX, yPos - offsetY, s, s);
+            }
+            
+            // Draw subdivision lines if k is integer? Not needed, but show scale effect by text
+            ctx.font = "14px Inter";
+            ctx.fillStyle = "#1e293b";
+            ctx.textAlign = "center";
+            ctx.fillText(`Scale k = ${k.toFixed(2)}`, cx, cy - s - 10);
+            ctx.fillText(`Area = ${(k*k).toFixed(2)} × base²`, cx, cy + s * 2.5);
+        }
+        
+        function draw() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            if (viewMode === '3D') {
+                // Draw original cube (k=1) as wireframe
+                drawCube(baseSize, true, "#94a3b8", 0);
+                // Draw scaled cube (size = baseSize * k)
+                drawCube(baseSize * k, false, "#f59e0b", 0.2);
+                // Draw axes hint
+                const origin = project(0, 0, 0);
+                const xAxis = project(baseSize * k + 20, 0, 0);
+                const yAxis = project(0, baseSize * k + 20, 0);
+                const zAxis = project(0, 0, baseSize * k + 20);
+                ctx.beginPath();
+                ctx.moveTo(origin.x, origin.y);
+                ctx.lineTo(xAxis.x, xAxis.y);
+                ctx.strokeStyle = "#ef4444";
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(origin.x, origin.y);
+                ctx.lineTo(yAxis.x, yAxis.y);
+                ctx.strokeStyle = "#22c55e";
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(origin.x, origin.y);
+                ctx.lineTo(zAxis.x, zAxis.y);
+                ctx.strokeStyle = "#3b82f6";
+                ctx.stroke();
+                
+                ctx.font = "11px Inter";
+                ctx.fillStyle = "#ef4444";
+                ctx.fillText("X", xAxis.x + 5, xAxis.y);
+                ctx.fillStyle = "#22c55e";
+                ctx.fillText("Y", yAxis.x + 5, yAxis.y);
+                ctx.fillStyle = "#3b82f6";
+                ctx.fillText("Z", zAxis.x + 5, zAxis.y);
+            } else {
+                draw2DNet(baseSize * k * 1.2);
+            }
+        }
+        
+        // --- Setters ---
+        function setK(val) {
+            let newVal = parseFloat(val);
+            if (isNaN(newVal)) return;
+            newVal = Math.min(5.0, Math.max(1.0, newVal));
+            k = Math.round(newVal * 100) / 100;
+            updateUI();
+        }
+        
+        function resetToDefault() {
+            setK(1.0);
+            if (viewMode !== '3D') {
+                viewMode = '3D';
+                toggleBtn.innerText = "🔲 Switch to 2D Net";
+            }
+            rotX = -0.5;
+            rotY = 0.6;
+            draw();
+        }
+        
+        function toggleView() {
+            if (viewMode === '3D') {
+                viewMode = '2D';
+                toggleBtn.innerText = "🧊 Switch to 3D Cube";
+            } else {
+                viewMode = '3D';
+                toggleBtn.innerText = "🔲 Switch to 2D Net";
+            }
+            draw();
+        }
+        
+        // --- Canvas drag rotation (only for 3D mode) ---
+        let dragActive = false;
+        let lastPointer = { x: 0, y: 0 };
+        
+        function getPointerPos(e) {
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX, y: clientY };
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            dragActive = true;
+            const pos = getPointerPos(e);
+            lastPointer = pos;
+            canvas.setPointerCapture?.(e.pointerId);
+        }
+        
+        function onDragMove(e) {
+            if (!dragActive) return;
+            if (viewMode !== '3D') return; // no rotation in 2D mode
+            e.preventDefault();
+            const pos = getPointerPos(e);
+            const dx = pos.x - lastPointer.x;
+            const dy = pos.y - lastPointer.y;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+                rotY += dx * 0.008;
+                rotX += dy * 0.008;
+                rotX = Math.min(Math.PI / 2.2, Math.max(-Math.PI / 2.2, rotX));
+                draw();
+            }
+            lastPointer = pos;
+        }
+        
+        function onDragEnd() {
+            dragActive = false;
+        }
+        
+        function initCanvasDrag() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            canvas.addEventListener('touchmove', onDragMove, { passive: false });
+            canvas.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('touchcancel', onDragEnd);
+        }
+        
+        // --- Stepper buttons and numeric inputs ---
+        function bindControls() {
+            document.getElementById('kMinus').addEventListener('click', () => setK(k - 0.1));
+            document.getElementById('kPlus').addEventListener('click', () => setK(k + 0.1));
+            kInput.addEventListener('change', (e) => setK(e.target.value));
+            document.getElementById('toggleViewBtn').addEventListener('click', toggleView);
+            document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+        }
+        
+        // Resize handler
+        let resizeTimer;
+        function onWindowResize() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                updateCanvasSize();
+                draw();
+            }, 100);
+        }
+        
+        function init() {
+            updateCanvasSize();
+            bindControls();
+            initCanvasDrag();
+            window.addEventListener('resize', onWindowResize);
+            updateUI();
+        }
+        
+        init();
+    })();
 </script>
 </body>
 </html>
