@@ -1,605 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Chemistry – The Central Science</title>
-<style>
-:root {
-  --bg-dark: #0a0a1a;
-  --gold: #ffd166;
-  --blue: #00d9ff;
-  --purple: #9d4edd;
-  --green: #4ade80;
-  --red: #ff6b6b;
-  --orange: #fb923c;
-  --teal: #2dd4bf;
-  --indigo: #a78bfa;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🧪 chemistry · central science</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", Inter, system-ui, sans-serif;
-}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-body {
-  background: var(--bg-dark);
-  background-image: 
-    radial-gradient(circle at 10% 20%, rgba(157, 78, 221, 0.15) 0%, transparent 20%),
-    radial-gradient(circle at 90% 80%, rgba(0, 217, 255, 0.1) 0%, transparent 20%),
-    radial-gradient(circle at 50% 50%, rgba(255, 209, 102, 0.05) 0%, transparent 30%);
-  color: white;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #ffffff;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
 
-header {
-  text-align: center;
-  padding: 40px 20px 30px;
-  position: relative;
-  z-index: 10;
-}
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      background: #ffffff;
+    }
 
-header h1 {
-  font-size: 4rem;
-  background: linear-gradient(135deg, var(--gold), var(--blue), var(--purple));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  margin-bottom: 10px;
-  text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-  letter-spacing: 1px;
-  position: relative;
-  display: inline-block;
-}
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+    }
 
-header h1::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200px;
-  height: 4px;
-  background: linear-gradient(90deg, transparent, var(--blue), transparent);
-}
+    .info-card {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 20px 24px;
+      border-radius: 24px;
+      border: 1px solid #d0e2ff;
+      max-width: 320px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+    }
 
-header p {
-  margin-top: 20px;
-  color: #b0b0ff;
-  font-size: 1.4rem;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.6;
-}
+    .info-title {
+      font-weight: 700;
+      color: #1a6eeb;
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
 
-.main {
-  height: 75vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-}
+    .info-text {
+      color: #3a628c;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
 
-canvas {
-  display: block;
-  filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.7));
-  z-index: 5;
-}
+    .control-dock {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      gap: 10px;
+    }
 
-.controls {
-  position: absolute;
-  bottom: 30px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  z-index: 10;
-}
+    .btn {
+      padding: 12px 20px;
+      border-radius: 40px;
+      border: 1px solid #d0e2ff;
+      background: white;
+      font-weight: 600;
+      cursor: pointer;
+      color: #1a6eeb;
+    }
 
-.control-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(0, 217, 255, 0.5);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 50px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(5px);
-}
+    .legend {
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 10px 18px;
+      border-radius: 40px;
+      border: 1px solid #d0e2ff;
+      display: flex;
+      gap: 16px;
+      font-size: 0.8rem;
+    }
 
-.control-btn:hover {
-  background: rgba(0, 217, 255, 0.2);
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 217, 255, 0.3);
-}
+    .legend-dot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
-.info-panel {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  padding: 20px;
-  max-width: 300px;
-  backdrop-filter: blur(10px);
-  z-index: 10;
-  display: none;
-}
-
-.info-panel h3 {
-  color: var(--gold);
-  margin-bottom: 10px;
-  font-size: 1.3rem;
-}
-
-.info-panel p {
-  color: #ccc;
-  line-height: 1.5;
-  font-size: 0.95rem;
-}
-
-.info-panel.active {
-  display: block;
-  animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-@media (max-width: 768px) {
-  header h1 {
-    font-size: 2.8rem;
-  }
-  
-  header p {
-    font-size: 1.1rem;
-    padding: 0 20px;
-  }
-  
-  .controls {
-    flex-direction: column;
-    align-items: center;
-    padding: 0 20px;
-  }
-  
-  .control-btn {
-    width: 100%;
-    max-width: 300px;
-  }
-}
-</style>
+    @media (max-width: 700px) {
+      .info-card { left: 16px; right: 16px; max-width: none; }
+      .control-dock { flex-direction: column; }
+      .legend { top: 16px; right: 16px; flex-wrap: wrap; }
+    }
+  </style>
 </head>
-
 <body>
 
-<header>
-  <h1>CHEMISTRY</h1>
-  <p>The Central Science that connects all disciplines through atoms, molecules, and reactions</p>
-</header>
+<div id="canvas-container"></div>
 
-<div class="main">
-  <canvas id="canvas"></canvas>
-  <div id="infoPanel" class="info-panel">
-    <h3 id="infoTitle">Chemistry</h3>
-    <p id="infoText">The central science that connects all other scientific disciplines. Click on any discipline to learn more about its connection to chemistry.</p>
-  </div>
+<div class="legend">
+  <div class="legend-dot"><span style="color:#10b981;">●</span> biology</div>
+  <div class="legend-dot"><span style="color:#ef4444;">●</span> physics</div>
+  <div class="legend-dot"><span style="color:#f97316;">●</span> geology</div>
+  <div class="legend-dot"><span style="color:#14b8a6;">●</span> medicine</div>
+  <div class="legend-dot"><span style="color:#8b5cf6;">●</span> engineering</div>
+  <div class="legend-dot"><span style="color:#a78bfa;">●</span> astronomy</div>
 </div>
 
-<div class="controls">
-  <button class="control-btn" id="toggleAnimation">Pause Animation</button>
-  <button class="control-btn" id="toggleParticles">Hide Particles</button>
-  <button class="control-btn" id="resetView">Reset View</button>
+<div class="info-card" id="infoCard">
+  <div class="info-title" id="infoTitle">Chemistry</div>
+  <div class="info-text" id="infoText">The central science · tap any field to learn its connection.</div>
 </div>
 
-<script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const infoPanel = document.getElementById("infoPanel");
-const infoTitle = document.getElementById("infoTitle");
-const infoText = document.getElementById("infoText");
+<div class="control-dock">
+  <button class="btn" id="pauseBtn">⏸️</button>
+  <button class="btn" id="resetBtn">↻</button>
+</div>
 
-// Button elements
-const toggleAnimationBtn = document.getElementById("toggleAnimation");
-const toggleParticlesBtn = document.getElementById("toggleParticles");
-const resetViewBtn = document.getElementById("resetView");
-
-// State variables
-let animationEnabled = true;
-let particlesEnabled = true;
-let particles = [];
-let time = 0;
-let hoveredNode = null;
-let centralPulse = 0;
-
-// Central Chemistry
-const center = {
-  x: 0,
-  y: 0,
-  r: 90,
-  color: "#ffd166"
-};
-
-// Surrounding disciplines with additional info
-const nodes = [
-  { 
-    name: "Biology", 
-    color: "#4ade80", 
-    angle: 0,
-    info: "Chemistry explains biological processes like photosynthesis, cellular respiration, and DNA replication at the molecular level."
-  },
-  { 
-    name: "Physics", 
-    color: "#ff6b6b", 
-    angle: 60,
-    info: "Chemical bonds, reactions, and material properties are governed by physical laws like quantum mechanics and thermodynamics."
-  },
-  { 
-    name: "Geology", 
-    color: "#fb923c", 
-    angle: 120,
-    info: "Chemistry helps understand mineral formation, rock cycles, and earth's geochemical processes."
-  },
-  { 
-    name: "Medicine", 
-    color: "#2dd4bf", 
-    angle: 180,
-    info: "Drug design, metabolism, and diagnostic tests rely heavily on chemical principles and molecular interactions."
-  },
-  { 
-    name: "Engineering", 
-    color: "#9d4edd", 
-    angle: 240,
-    info: "Materials science, chemical engineering, and nanotechnology bridge chemistry with practical applications."
-  },
-  { 
-    name: "Astronomy", 
-    color: "#a78bfa", 
-    angle: 300,
-    info: "Astrochemistry studies molecules in space, star formation, and the chemical composition of planets."
-  }
-];
-
-const radius = 240;
-
-// Initialize particles
-function initParticles(count = 100) {
-  particles = [];
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.5,
-      vy: (Math.random() - 0.5) * 0.5,
-      size: Math.random() * 3 + 1,
-      color: `rgba(${Math.floor(Math.random() * 100 + 155)}, ${Math.floor(Math.random() * 100 + 155)}, 255, ${Math.random() * 0.5 + 0.2})`,
-      life: Math.random() * 100 + 50
-    });
-  }
-}
-
-// Update particles
-function updateParticles() {
-  if (!particlesEnabled) return;
-  
-  for (let i = 0; i < particles.length; i++) {
-    const p = particles[i];
-    
-    // Move particles
-    p.x += p.vx;
-    p.y += p.vy;
-    
-    // Bounce off edges
-    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-    if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-    
-    // Keep within bounds
-    p.x = Math.max(0, Math.min(canvas.width, p.x));
-    p.y = Math.max(0, Math.min(canvas.height, p.y));
-    
-    // Life cycle
-    p.life -= 0.5;
-    if (p.life <= 0) {
-      // Reset particle
-      p.x = Math.random() * canvas.width;
-      p.y = Math.random() * canvas.height;
-      p.life = Math.random() * 100 + 50;
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
     }
   }
-}
+</script>
 
-// Draw particles
-function drawParticles() {
-  if (!particlesEnabled) return;
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+  const container = document.getElementById('canvas-container');
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#ffffff');
   
-  for (const p of particles) {
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fillStyle = p.color;
-    ctx.fill();
+  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+  camera.position.set(0, 3, 14);
+  
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(container.clientWidth, container.clientHeight);
+  labelRenderer.domElement.style.position = 'absolute';
+  labelRenderer.domElement.style.top = '0';
+  labelRenderer.domElement.style.left = '0';
+  labelRenderer.domElement.style.pointerEvents = 'none';
+  container.appendChild(labelRenderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.8;
+  controls.enableZoom = true;
+  controls.enablePan = false;
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight.position.set(5, 8, 6);
+  scene.add(dirLight);
+
+  // central chemistry
+  const centerGroup = new THREE.Group();
+  const core = new THREE.Mesh(new THREE.SphereGeometry(1.4, 32), new THREE.MeshStandardMaterial({ color: '#f59e0b', emissive: '#f59e0b', emissiveIntensity: 0.15 }));
+  centerGroup.add(core);
+  
+  for (let i = 0; i < 3; i++) {
+    const orbit = new THREE.Mesh(new THREE.TorusGeometry(1.9 + i*0.6, 0.03, 8, 48), new THREE.MeshStandardMaterial({ color: '#3b82f6' }));
+    orbit.rotation.x = Math.PI/2;
+    orbit.rotation.z = i * 0.7;
+    centerGroup.add(orbit);
   }
-}
+  scene.add(centerGroup);
 
-// Draw animated connections
-function drawConnection(node) {
-  const angle = node.angle + (animationEnabled ? Math.sin(time * 0.01 + node.angle) * 5 : 0);
-  const x = center.x + Math.cos(angle * Math.PI / 180) * radius;
-  const y = center.y + Math.sin(angle * Math.PI / 180) * radius;
+  const centerLabel = new CSS2DObject(document.createElement('div'));
+  centerLabel.element.textContent = 'CHEMISTRY';
+  centerLabel.element.style.color = '#f59e0b';
+  centerLabel.element.style.fontWeight = 'bold';
+  centerLabel.element.style.fontSize = '16px';
+  centerLabel.position.y = 2.2;
+  centerGroup.add(centerLabel);
 
-  // Draw animated connection line with gradient
-  const gradient = ctx.createLinearGradient(center.x, center.y, x, y);
-  gradient.addColorStop(0, center.color);
-  gradient.addColorStop(1, node.color);
-  
-  ctx.beginPath();
-  ctx.moveTo(center.x, center.y);
-  ctx.lineTo(x, y);
-  ctx.strokeStyle = gradient;
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.stroke();
-  
-  // Draw animated particles along connection
-  if (animationEnabled) {
-    const particleCount = 5;
-    for (let i = 0; i < particleCount; i++) {
-      const t = (Date.now() * 0.002 + i / particleCount) % 1;
-      const px = center.x + (x - center.x) * t;
-      const py = center.y + (y - center.y) * t;
-      
-      ctx.beginPath();
-      ctx.arc(px, py, 3, 0, Math.PI * 2);
-      ctx.fillStyle = node.color;
-      ctx.fill();
-    }
-  }
+  // surrounding fields
+  const fields = [
+    { name: 'Biology', color: '#10b981', info: 'Life processes: photosynthesis, respiration, DNA replication — all chemistry.' },
+    { name: 'Physics', color: '#ef4444', info: 'Quantum mechanics and thermodynamics explain bonding and reactivity.' },
+    { name: 'Geology', color: '#f97316', info: 'Mineral formation, weathering, and Earth\'s geochemical cycles.' },
+    { name: 'Medicine', color: '#14b8a6', info: 'Drug design, metabolism, and diagnostics rely on molecular interactions.' },
+    { name: 'Engineering', color: '#8b5cf6', info: 'Materials, chemical processes, and nanotechnology.' },
+    { name: 'Astronomy', color: '#a78bfa', info: 'Molecules in space, star formation, planetary atmospheres.' }
+  ];
 
-  return { x, y, angle };
-}
-
-// Draw node with animation
-function drawNode(x, y, r, color, text, isHovered) {
-  const nodeSize = isHovered ? r + 5 : r;
-  const glowIntensity = isHovered ? 30 : 15;
+  const fieldGroups = [];
+  const radius = 5.2;
   
-  // Glow effect
-  ctx.beginPath();
-  ctx.arc(x, y, nodeSize + 10, 0, Math.PI * 2);
-  const gradient = ctx.createRadialGradient(x, y, nodeSize, x, y, nodeSize + 10);
-  gradient.addColorStop(0, color);
-  gradient.addColorStop(1, 'transparent');
-  ctx.fillStyle = gradient;
-  ctx.fill();
-  
-  // Node circle
-  ctx.beginPath();
-  ctx.arc(x, y, nodeSize, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-  
-  // Node text
-  ctx.fillStyle = "white";
-  ctx.font = `bold ${isHovered ? '16px' : '14px'} Segoe UI`;
-  ctx.textAlign = "center";
-  ctx.fillText(text, x, y + 5);
-  
-  // Add orbiting electrons for hovered nodes
-  if (isHovered && animationEnabled) {
-    const electronCount = 3;
-    for (let i = 0; i < electronCount; i++) {
-      const angle = Date.now() * 0.002 + (i * Math.PI * 2 / electronCount);
-      const ex = x + Math.cos(angle) * (nodeSize + 15);
-      const ey = y + Math.sin(angle) * (nodeSize + 10);
-      
-      ctx.beginPath();
-      ctx.arc(ex, ey, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#00d9ff';
-      ctx.fill();
-    }
-  }
-}
-
-// Draw central chemistry node
-function drawCentral() {
-  // Pulsing effect
-  const pulse = animationEnabled ? Math.sin(time * 0.02) * 5 : 0;
-  const currentSize = center.r + pulse + centralPulse;
-  
-  // Glow effect
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, currentSize + 20, 0, Math.PI * 2);
-  const gradient = ctx.createRadialGradient(center.x, center.y, currentSize, center.x, center.y, currentSize + 20);
-  gradient.addColorStop(0, center.color);
-  gradient.addColorStop(1, 'transparent');
-  ctx.fillStyle = gradient;
-  ctx.fill();
-  
-  // Central circle
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, currentSize, 0, Math.PI * 2);
-  ctx.fillStyle = center.color;
-  ctx.fill();
-  
-  // Central text
-  ctx.fillStyle = "#000";
-  ctx.font = "bold 22px Segoe UI";
-  ctx.textAlign = "center";
-  ctx.fillText("CHEMISTRY", center.x, center.y + 8);
-  
-  // Animated atomic orbitals
-  if (animationEnabled) {
-    const orbitalCount = 3;
-    for (let i = 0; i < orbitalCount; i++) {
-      const orbitalRadius = currentSize + 25 + i * 20;
-      const orbitalAngle = time * 0.005 + i * Math.PI / orbitalCount;
-      
-      ctx.beginPath();
-      ctx.ellipse(
-        center.x, 
-        center.y, 
-        orbitalRadius, 
-        orbitalRadius * 0.7, 
-        orbitalAngle, 
-        0, 
-        Math.PI * 2
-      );
-      ctx.strokeStyle = `rgba(0, 217, 255, ${0.5 - i * 0.15})`;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-  }
-}
-
-// Handle mouse movement
-function handleMouseMove(e) {
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = e.clientX - rect.left;
-  const mouseY = e.clientY - rect.top;
-  
-  // Reset hover state
-  hoveredNode = null;
-  
-  // Check if mouse is over central node
-  const distToCenter = Math.sqrt(
-    Math.pow(mouseX - center.x, 2) + Math.pow(mouseY - center.y, 2)
-  );
-  
-  if (distToCenter < center.r) {
-    hoveredNode = { name: "Chemistry", info: "The central science that studies matter, its properties, composition, and transformations. Chemistry connects all scientific disciplines through atoms and molecules." };
-    centralPulse = 10;
-  } else {
-    centralPulse = 0;
+  fields.forEach((f, i) => {
+    const g = new THREE.Group();
+    const angle = (i / fields.length) * Math.PI * 2;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
     
-    // Check if mouse is over any node
-    for (const node of nodes) {
-      const angle = node.angle + (animationEnabled ? Math.sin(time * 0.01 + node.angle) * 5 : 0);
-      const x = center.x + Math.cos(angle * Math.PI / 180) * radius;
-      const y = center.y + Math.sin(angle * Math.PI / 180) * radius;
-      
-      const dist = Math.sqrt(Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2));
-      
-      if (dist < 55) {
-        hoveredNode = node;
-        break;
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24), new THREE.MeshStandardMaterial({ color: f.color }));
+    g.add(sphere);
+    
+    const label = new CSS2DObject(document.createElement('div'));
+    label.element.textContent = f.name;
+    label.element.style.color = f.color;
+    label.element.style.fontWeight = '600';
+    label.element.style.fontSize = '13px';
+    label.position.y = 1.3;
+    g.add(label);
+    
+    g.position.set(x, 0, z);
+    g.userData = { name: f.name, info: f.info };
+    
+    scene.add(g);
+    fieldGroups.push(g);
+  });
+
+  // connecting lines
+  fieldGroups.forEach(g => {
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), g.position.clone()]),
+      new THREE.LineBasicMaterial({ color: '#cbd5e1' })
+    );
+    scene.add(line);
+  });
+
+  // particles
+  const particles = [];
+  for (let i = 0; i < 150; i++) {
+    const p = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4), new THREE.MeshStandardMaterial({ color: '#3b82f6' }));
+    p.position.set((Math.random()-0.5)*12, (Math.random()-0.5)*8, (Math.random()-0.5)*8);
+    scene.add(p);
+    particles.push({ mesh: p, vel: new THREE.Vector3((Math.random()-0.5)*0.015, (Math.random()-0.5)*0.015, (Math.random()-0.5)*0.015) });
+  }
+
+  // interaction
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+  const infoTitle = document.getElementById('infoTitle');
+  const infoText = document.getElementById('infoText');
+  
+  container.addEventListener('click', (e) => {
+    const rect = container.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    
+    if (intersects.length) {
+      let obj = intersects[0].object;
+      while (obj && !obj.parent?.userData?.info) obj = obj.parent;
+      const data = obj?.parent?.userData;
+      if (data) {
+        infoTitle.textContent = data.name;
+        infoText.textContent = data.info;
+      } else if (obj === core || obj.parent === centerGroup) {
+        infoTitle.textContent = 'Chemistry';
+        infoText.textContent = 'The central science · matter, properties, transformations. Connects all disciplines.';
       }
     }
+  });
+
+  let isPlaying = true;
+  document.getElementById('pauseBtn').addEventListener('click', (e) => {
+    isPlaying = !isPlaying;
+    e.target.textContent = isPlaying ? '⏸️' : '▶️';
+    controls.autoRotate = isPlaying;
+  });
+  
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    camera.position.set(0, 3, 14);
+    controls.target.set(0, 0, 0);
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    
+    if (isPlaying) {
+      centerGroup.rotation.y += 0.008;
+      
+      particles.forEach(p => {
+        p.mesh.position.x += p.vel.x;
+        p.mesh.position.y += p.vel.y;
+        p.mesh.position.z += p.vel.z;
+        if (Math.abs(p.mesh.position.x) > 8) p.vel.x *= -0.9;
+        if (Math.abs(p.mesh.position.y) > 6) p.vel.y *= -0.9;
+        if (Math.abs(p.mesh.position.z) > 6) p.vel.z *= -0.9;
+      });
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
   }
-  
-  // Update info panel
-  if (hoveredNode) {
-    infoTitle.textContent = hoveredNode.name;
-    infoText.textContent = hoveredNode.info;
-    infoPanel.classList.add('active');
-  } else {
-    infoPanel.classList.remove('active');
-  }
-}
+  animate();
 
-// Handle canvas click
-function handleCanvasClick() {
-  if (hoveredNode) {
-    // Animate a pulse effect
-    centralPulse = 20;
-    setTimeout(() => {
-      centralPulse = 0;
-    }, 300);
-  }
-}
-
-// Resize canvas
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight * 0.75;
-  center.x = canvas.width / 2;
-  center.y = canvas.height / 2;
-  
-  // Reinitialize particles
-  initParticles(150);
-}
-
-// Main render function
-function render() {
-  // Clear canvas with fade effect
-  ctx.fillStyle = 'rgba(10, 10, 26, 0.1)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  // Update and draw particles
-  updateParticles();
-  drawParticles();
-  
-  // Draw connections and nodes
-  const nodePositions = [];
-  for (const node of nodes) {
-    const pos = drawConnection(node);
-    const isHovered = hoveredNode === node;
-    nodePositions.push({...pos, node, isHovered});
-  }
-  
-  // Draw nodes
-  for (const np of nodePositions) {
-    drawNode(np.x, np.y, 55, np.node.color, np.node.name, np.isHovered);
-  }
-  
-  // Draw central node
-  drawCentral();
-  
-  // Update time for animations
-  if (animationEnabled) {
-    time += 1;
-  }
-  
-  // Continue animation loop
-  requestAnimationFrame(render);
-}
-
-// Button event handlers
-toggleAnimationBtn.addEventListener('click', function() {
-  animationEnabled = !animationEnabled;
-  this.textContent = animationEnabled ? 'Pause Animation' : 'Play Animation';
-});
-
-toggleParticlesBtn.addEventListener('click', function() {
-  particlesEnabled = !particlesEnabled;
-  this.textContent = particlesEnabled ? 'Hide Particles' : 'Show Particles';
-});
-
-resetViewBtn.addEventListener('click', function() {
-  // Reset all animations and states
-  animationEnabled = true;
-  particlesEnabled = true;
-  hoveredNode = null;
-  centralPulse = 0;
-  toggleAnimationBtn.textContent = 'Pause Animation';
-  toggleParticlesBtn.textContent = 'Hide Particles';
-  infoPanel.classList.remove('active');
-});
-
-// Initialize
-resize();
-window.addEventListener('resize', resize);
-canvas.addEventListener('mousemove', handleMouseMove);
-canvas.addEventListener('click', handleCanvasClick);
-
-// Start animation
-render();
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth, h = container.clientHeight;
+    renderer.setSize(w, h); labelRenderer.setSize(w, h);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  });
 </script>
 </body>
 </html>
