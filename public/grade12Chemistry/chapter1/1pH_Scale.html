@@ -1,134 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D pH Scale Visualizer</title>
-    <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #1a1a1a; color: white; }
-        #ui {
-            position: absolute; top: 20px; left: 20px; z-index: 10;
-            background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 12px;
-            width: 300px; border: 1px solid #444;
-        }
-        input[type=range] { width: 100%; cursor: pointer; }
-        .data-display { font-size: 24px; font-weight: bold; margin: 10px 0; }
-        .item-label { color: #aaa; font-style: italic; min-height: 1.2em; }
-        .legend { margin-top: 15px; font-size: 12px; opacity: 0.8; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🌈 pH scale · 3D</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;height:100dvh;display:flex;flex-direction:column}
+    #canvas-container{flex:1;background:#f8fafc}
+    .control-panel{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:30px;padding:16px 20px;border:1px solid #d0e2ff;max-width:450px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .ph-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px}
+    .ph-value{font-size:2.2rem;font-weight:700;color:#3b82f6}
+    .substance{display:flex;justify-content:space-between;color:#3a628c;font-weight:500;margin-bottom:12px}
+    input[type=range]{width:100%;height:6px;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981,#3b82f6,#8b5cf6);border-radius:10px;-webkit-appearance:none;appearance:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;background:#fff;border-radius:24px;border:3px solid #3b82f6;cursor:grab}
+    .marks{display:flex;justify-content:space-between;font-size:0.7rem;color:#3a628c;margin-top:4px}
+    .hint{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:40px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
 <body>
-
-    <div id="ui">
-        <h2>pH Visualizer</h2>
-        <div class="item-label" id="typeLabel">Neutral</div>
-        <div class="data-display" id="phVal">pH: 7.0</div>
-        <input type="range" id="phSlider" min="0" max="14" step="0.1" value="7">
-        <div class="item-label" id="itemLabel">Pure Water</div>
-        
-        <div class="legend">
-            <p><strong>Instructions:</strong> Drag the slider to see the molecular color change. Use your mouse to rotate the 3D "Liquid" cylinder.</p>
-        </div>
-    </div>
-
-    <script type="module">
-        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
-        import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
-
-        // 1. Setup Scene
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
-
-        // 2. Data Mapping (pH to Color and Items)
-        const phData = [
-            { ph: 0, color: 0xff0000, label: "Strong Acid", item: "Battery Acid" },
-            { ph: 2, color: 0xff4500, label: "Strong Acid", item: "Lemon Juice" },
-            { ph: 4, color: 0xffa500, label: "Weak Acid", item: "Tomato Juice" },
-            { ph: 6, color: 0xffff00, label: "Weak Acid", item: "Milk" },
-            { ph: 7, color: 0x00ff00, label: "Neutral", item: "Pure Water" },
-            { ph: 8, color: 0x00ffff, label: "Weak Base", item: "Baking Soda" },
-            { ph: 10, color: 0x0000ff, label: "Strong Base", item: "Milk of Magnesia" },
-            { ph: 12, color: 0x4b0082, label: "Strong Base", item: "Bleach" },
-            { ph: 14, color: 0x8b00ff, label: "Strong Base", item: "Drain Cleaner" }
-        ];
-
-        function getInterpolatedColor(ph) {
-            for (let i = 0; i < phData.length - 1; i++) {
-                if (ph >= phData[i].ph && ph <= phData[i + 1].ph) {
-                    const t = (ph - phData[i].ph) / (phData[i+1].ph - phData[i].ph);
-                    const c1 = new THREE.Color(phData[i].color);
-                    const c2 = new THREE.Color(phData[i+1].color);
-                    return c1.lerp(c2, t);
-                }
-            }
-            return new THREE.Color(phData[phData.length-1].color);
-        }
-
-        // 3. Create 3D Objects
-        const geometry = new THREE.CylinderGeometry(2, 2, 6, 32);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: 0x00ff00, 
-            transparent: true, 
-            opacity: 0.8,
-            shininess: 100 
-        });
-        const cylinder = new THREE.Mesh(geometry, material);
-        scene.add(cylinder);
-
-        // Glass Shell
-        const shellGeo = new THREE.CylinderGeometry(2.2, 2.2, 6.2, 32);
-        const shellMat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, wireframe: false });
-        const shell = new THREE.Mesh(shellGeo, shellMat);
-        scene.add(shell);
-
-        // Lighting
-        const light = new THREE.PointLight(0xffffff, 1, 100);
-        light.position.set(10, 10, 10);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040));
-
-        camera.position.z = 10;
-
-        // 4. Interaction Logic
-        const slider = document.getElementById('phSlider');
-        const phValText = document.getElementById('phVal');
-        const typeLabel = document.getElementById('typeLabel');
-        const itemLabel = document.getElementById('itemLabel');
-
-        slider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
-            phValText.innerText = `pH: ${val.toFixed(1)}`;
-            
-            // Update Color
-            const newColor = getInterpolatedColor(val);
-            material.color.copy(newColor);
-
-            // Update Text Labels
-            let closest = phData.reduce((prev, curr) => 
-                Math.abs(curr.ph - val) < Math.abs(prev.ph - val) ? curr : prev
-            );
-            typeLabel.innerText = closest.label;
-            itemLabel.innerText = closest.item;
-        });
-
-        // 5. Controls & Animation
-        const controls = new OrbitControls(camera, renderer.domElement);
-        
-        function animate() {
-            requestAnimationFrame(animate);
-            cylinder.rotation.y += 0.01;
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
+<div id="canvas-container"></div>
+<div class="hint">🖱️ drag to rotate</div>
+<div class="control-panel">
+  <div class="ph-header"><span>pH scale</span><span class="ph-value" id="phDisplay">7.0</span></div>
+  <div class="substance"><span id="typeDisplay">neutral</span><span id="itemDisplay">pure water</span></div>
+  <input type="range" id="phSlider" min="0" max="14" value="7" step="0.1">
+  <div class="marks"><span>acidic</span><span>neutral</span><span>basic</span></div>
+</div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.128.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}</script>
+<script type="module">
+import*as THREE from'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+const container=document.getElementById('canvas-container'),scene=new THREE.Scene();scene.background=new THREE.Color('#f8fafc');
+const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);camera.position.set(4,3,8);camera.lookAt(0,0,0);
+const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=!0;container.appendChild(renderer.domElement);
+new OrbitControls(camera,renderer.domElement).enableDamping=!0;
+scene.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,8,5);scene.add(dl);
+const liquid=new THREE.Mesh(new THREE.CylinderGeometry(1.8,1.8,4.5,32),new THREE.MeshPhongMaterial({color:'#10b981',transparent:!0,opacity:0.7}));liquid.position.y=0;liquid.castShadow=!0;liquid.receiveShadow=!0;scene.add(liquid);
+const glass=new THREE.Mesh(new THREE.CylinderGeometry(2,2,4.8,32),new THREE.MeshPhongMaterial({color:'#cbd5e1',transparent:!0,opacity:0.15,side:THREE.DoubleSide}));glass.position.y=0;scene.add(glass);
+const phData=[{ph:0,color:'#ef4444',label:'strong acid',item:'battery acid'},{ph:2,color:'#f97316',label:'acidic',item:'lemon juice'},{ph:4,color:'#f59e0b',label:'weak acid',item:'tomato juice'},{ph:6,color:'#eab308',label:'slightly acidic',item:'milk'},{ph:7,color:'#10b981',label:'neutral',item:'pure water'},{ph:8,color:'#06b6d4',label:'slightly basic',item:'baking soda'},{ph:10,color:'#3b82f6',label:'weak base',item:'milk of magnesia'},{ph:12,color:'#6366f1',label:'basic',item:'bleach'},{ph:14,color:'#8b5cf6',label:'strong base',item:'drain cleaner'}];
+function getColor(p){for(let i=0;i<phData.length-1;i++)if(p>=phData[i].ph&&p<=phData[i+1].ph){const t=(p-phData[i].ph)/(phData[i+1].ph-phData[i].ph);return new THREE.Color(phData[i].color).lerp(new THREE.Color(phData[i+1].color),t)}return new THREE.Color(phData[phData.length-1].color)}
+function getInfo(p){let c=phData[0],d=Math.abs(p-phData[0].ph);for(const x of phData){const diff=Math.abs(p-x.ph);if(diff<d){d=diff;c=x}}return{label:c.label,item:c.item}}
+const slider=document.getElementById('phSlider'),phD=document.getElementById('phDisplay'),typeD=document.getElementById('typeDisplay'),itemD=document.getElementById('itemDisplay');
+slider.addEventListener('input',()=>{const v=parseFloat(slider.value);phD.textContent=v.toFixed(1);liquid.material.color.set(getColor(v));const i=getInfo(v);typeD.textContent=i.label;itemD.textContent=i.item});
+function animate(){requestAnimationFrame(animate);liquid.rotation.y+=0.005;renderer.render(scene,camera)}animate();
+window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()});
+</script>
 </body>
 </html>

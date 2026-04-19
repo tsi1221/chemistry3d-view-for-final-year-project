@@ -1,172 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Isotope Builder</title>
-    <style>
-        :root {
-            --bg: #030712;
-            --panel: #111827;
-            --proton: #f87171;
-            --neutron: #94a3b8;
-            --electron: #38bdf8;
-            --text: #f9fafb;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .viewport { flex-grow: 1; position: relative; overflow: hidden; background: radial-gradient(circle, #1e1b4b 0%, #030712 100%); }
-        canvas { width: 100%; height: 100%; }
-
-        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
-        .controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-        
-        button {
-            width: 35px; height: 35px; border-radius: 50%; border: none;
-            cursor: pointer; font-weight: bold; font-size: 1.2rem;
-        }
-        .btn-p { background: var(--proton); }
-        .btn-n { background: var(--neutron); }
-        .btn-e { background: var(--electron); }
-
-        .symbol-box {
-            font-size: 2.5rem; font-weight: 800; text-align: center;
-            border: 2px solid var(--text); width: 80px; margin: 10px auto; padding: 10px;
-        }
-        .instability-warning { color: #facc15; font-weight: bold; text-align: center; display: none; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ isotope builder</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
+    @media(min-width:700px){.grid{grid-template-columns:1fr 220px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    canvas{display:block;width:100%;aspect-ratio:1/1;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff}
+    .ctrl-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #e2e8f0}
+    .ctrl-label{display:flex;align-items:center;gap:8px;font-weight:600}
+    .ctrl-btns{display:flex;gap:8px}
+    .btn{width:40px;height:40px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-size:1.3rem;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center}
+    .btn-p{color:#ef4444}.btn-n{color:#3b82f6}.btn-e{color:#10b981}
+    .isotope-card{background:#f0f6ff;border-radius:18px;padding:18px;text-align:center;margin:16px 0}
+    .symbol{font-size:3rem;font-weight:800;color:#3b82f6}
+    .stats{display:flex;justify-content:center;gap:20px;margin:8px 0}
+    .warning{background:#fef3c7;color:#92400e;padding:8px;border-radius:20px;font-size:0.8rem;font-weight:600;display:none}
+    .warning.show{display:block}
+  </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2 style="margin:0; font-size: 1.2rem;">Atomic Architect</h2>
-    
-    <div class="card">
-        <div class="controls">
-            <span>Protons (Z)</span>
-            <div>
-                <button class="btn-p" onclick="change('p', -1)">-</button>
-                <button class="btn-p" onclick="change('p', 1)">+</button>
-            </div>
-        </div>
-        <div class="controls">
-            <span>Neutrons (N)</span>
-            <div>
-                <button class="btn-n" onclick="change('n', -1)">-</button>
-                <button class="btn-n" onclick="change('n', 1)">+</button>
-            </div>
-        </div>
-        <div class="controls">
-            <span>Electrons</span>
-            <div>
-                <button class="btn-e" onclick="change('e', -1)">-</button>
-                <button class="btn-e" onclick="change('e', 1)">+</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div id="isotopeName" style="text-align:center; font-weight:bold;">Hydrogen-1</div>
-        <div class="symbol-box" id="symbol">H</div>
-        <div style="text-align:center; font-size: 0.9rem;">
-            Mass Number (A): <span id="massNum">1</span><br>
-            Net Charge: <span id="charge">0</span>
-        </div>
-    </div>
-
-    <div id="warning" class="instability-warning">⚠️ UNSTABLE NUCLEUS</div>
-</div>
-
-<div class="viewport">
+<div class="grid">
+  <div class="panel">
+    <h2>⚛️ atomic architect</h2>
     <canvas id="atomCanvas"></canvas>
+    <div style="display:flex;gap:16px;margin-top:12px;font-size:0.8rem"><span style="color:#ef4444">● proton</span><span style="color:#3b82f6">● neutron</span><span style="color:#10b981">● electron</span></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="ctrl-row"><span class="ctrl-label"><span style="color:#ef4444">●</span> protons</span><div class="ctrl-btns"><button class="btn btn-p" id="pDown">−</button><span id="pCount" style="min-width:24px;text-align:center;font-weight:700">1</span><button class="btn btn-p" id="pUp">+</button></div></div>
+      <div class="ctrl-row"><span class="ctrl-label"><span style="color:#3b82f6">●</span> neutrons</span><div class="ctrl-btns"><button class="btn btn-n" id="nDown">−</button><span id="nCount" style="min-width:24px;text-align:center;font-weight:700">0</span><button class="btn btn-n" id="nUp">+</button></div></div>
+      <div class="ctrl-row"><span class="ctrl-label"><span style="color:#10b981">●</span> electrons</span><div class="ctrl-btns"><button class="btn btn-e" id="eDown">−</button><span id="eCount" style="min-width:24px;text-align:center;font-weight:700">1</span><button class="btn btn-e" id="eUp">+</button></div></div>
+      <div class="isotope-card"><div id="isotopeName" style="font-weight:700">Hydrogen-1</div><div class="symbol" id="symbol">H</div>
+      <div class="stats"><div>mass <span id="massNum">1</span></div><div>charge <span id="charge">0</span></div></div></div>
+      <div class="warning" id="warning">⚠️ unstable · n/p ratio off</div>
+    </div>
+  </div>
 </div>
-
 <script>
-    const canvas = document.getElementById('atomCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    let p = 1, n = 0, e = 1;
-    const elements = ["","H","He","Li","Be","B","C","N","O","F","Ne"];
-
-    function change(type, amt) {
-        if (type === 'p') p = Math.max(1, Math.min(10, p + amt));
-        if (type === 'n') n = Math.max(0, Math.min(12, n + amt));
-        if (type === 'e') e = Math.max(0, Math.min(10, e + amt));
-        updateUI();
-    }
-
-    function updateUI() {
-        document.getElementById('symbol').innerText = elements[p];
-        document.getElementById('isotopeName').innerText = `${elements[p]}-${p + n}`;
-        document.getElementById('massNum').innerText = p + n;
-        document.getElementById('charge').innerText = p - e;
-        
-        // Stability Logic: N/P ratio
-        const ratio = n / p;
-        const unstable = (p > 1 && (ratio < 0.5 || ratio > 1.5));
-        document.getElementById('warning').style.display = unstable ? 'block' : 'none';
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        const ratio = n / p;
-        const shake = (p > 1 && (ratio < 0.5 || ratio > 1.5)) ? Math.random() * 5 : 0;
-
-        // Draw Nucleus
-        for (let i = 0; i < p + n; i++) {
-            const angle = (i / (p + n)) * Math.PI * 2;
-            const dist = 10 + Math.random() * 15;
-            ctx.fillStyle = i < p ? '#f87171' : '#94a3b8';
-            ctx.beginPath();
-            ctx.arc(cx + Math.cos(angle) * dist + shake, cy + Math.sin(angle) * dist + shake, 8, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Draw Electrons
-        const time = Date.now() * 0.002;
-        for (let i = 0; i < e; i++) {
-            const orbit = i < 2 ? 60 : 100;
-            const speed = i < 2 ? time : time * 0.6;
-            const ex = cx + Math.cos(speed + (i * 2)) * orbit;
-            const ey = cy + Math.sin(speed + (i * 2)) * orbit;
-            
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
-            ctx.beginPath(); ctx.arc(cx, cy, orbit, 0, Math.PI * 2); ctx.stroke();
-            
-            ctx.fillStyle = '#38bdf8';
-            ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
-        }
-        requestAnimationFrame(draw);
-    }
-
-    window.addEventListener('resize', () => {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    });
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    updateUI();
-    draw();
+(function(){
+  const canvas=document.getElementById('atomCanvas'),ctx=canvas.getContext('2d');
+  let w=0,h=0,DPR=devicePixelRatio||1,p=1,n=0,e=1,time=0;
+  const elements=["","H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg"];
+  const pCount=document.getElementById('pCount'),nCount=document.getElementById('nCount'),eCount=document.getElementById('eCount');
+  const isotopeName=document.getElementById('isotopeName'),symbol=document.getElementById('symbol'),massNum=document.getElementById('massNum'),charge=document.getElementById('charge'),warning=document.getElementById('warning');
+  
+  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=w;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+  
+  function updateUI(){
+    pCount.textContent=p; nCount.textContent=n; eCount.textContent=e;
+    const sym=elements[p]||'?'; symbol.textContent=sym; isotopeName.textContent=`${sym}-${p+n}`; massNum.textContent=p+n; charge.textContent=p-e;
+    const ratio=n/p; warning.classList.toggle('show',p>1&&(ratio<0.6||ratio>1.6));
+  }
+  
+  function draw(){
+    ctx.clearRect(0,0,w,h); const cx=w/2,cy=h/2,total=p+n,ratio=n/p,unstable=p>1&&(ratio<0.6||ratio>1.6),shake=unstable?Math.sin(time*8)*2:0;
+    time+=0.015; ctx.beginPath(); ctx.arc(cx+shake,cy+shake,38,0,2*Math.PI); ctx.fillStyle='#3b82f610'; ctx.fill();
+    for(let i=0;i<total;i++){const angle=(i/total)*2*Math.PI+time*0.01,rad=12+(i%3)*7,x=cx+Math.cos(angle)*rad+shake,y=cy+Math.sin(angle)*rad+shake; ctx.beginPath(); ctx.arc(x,y,6,0,2*Math.PI); ctx.fillStyle=i<p?'#ef4444':'#3b82f6'; ctx.shadowColor=i<p?'#ef444480':'#3b82f680'; ctx.shadowBlur=10; ctx.fill()}
+    ctx.shadowBlur=0;
+    for(let i=0;i<e;i++){const shell=Math.floor(i/2)+1,rad=48+shell*24,spd=(i%2===0?time:time*0.8)*(1/shell); const ex=cx+Math.cos(spd+i)*rad,ey=cy+Math.sin(spd+i)*rad;
+      ctx.beginPath(); ctx.arc(cx,cy,rad,0,2*Math.PI); ctx.strokeStyle='#10b98130'; ctx.lineWidth=1.5; ctx.setLineDash([3,6]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(ex,ey,4,0,2*Math.PI); ctx.fillStyle='#10b981'; ctx.shadowColor='#10b98180'; ctx.shadowBlur=8; ctx.fill()} ctx.shadowBlur=0;
+    requestAnimationFrame(draw);
+  }
+  
+  function change(type,d){if(type==='p')p=Math.max(1,Math.min(12,p+d)); else if(type==='n')n=Math.max(0,Math.min(14,n+d)); else e=Math.max(0,Math.min(12,e+d)); updateUI()}
+  document.getElementById('pUp').onclick=()=>change('p',1); document.getElementById('pDown').onclick=()=>change('p',-1);
+  document.getElementById('nUp').onclick=()=>change('n',1); document.getElementById('nDown').onclick=()=>change('n',-1);
+  document.getElementById('eUp').onclick=()=>change('e',1); document.getElementById('eDown').onclick=()=>change('e',-1);
+  window.onresize=resize; resize(); updateUI(); draw();
+})();
 </script>
 </body>
 </html>

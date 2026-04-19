@@ -1,225 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Lewis Builder</title>
-    <style>
-        :root {
-            --bg: #020617;
-            --panel: #0f172a;
-            --primary: #38bdf8;
-            --dot: #fbbf24;
-            --text: #f1f5f9;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-        }
-
-        .viewport { flex-grow: 1; position: relative; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #1e293b 0%, #020617 100%); }
-        
-        .atom-container {
-            position: relative;
-            width: 320px;
-            height: 320px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid rgba(56, 189, 248, 0.1);
-            border-radius: 50%;
-        }
-
-        .symbol {
-            font-size: 90px;
-            font-weight: 900;
-            color: var(--text);
-            text-shadow: 0 0 20px rgba(255,255,255,0.1);
-        }
-
-        .dot {
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            background: var(--dot);
-            border-radius: 50%;
-            box-shadow: 0 0 15px var(--dot);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
-        
-        select, button {
-            width: 100%; padding: 12px; border-radius: 8px; border: none;
-            cursor: pointer; font-weight: bold; font-family: inherit;
-        }
-
-        select { background: #1e293b; color: white; border: 1px solid #334155; margin-bottom: 10px; }
-        button { background: var(--primary); color: #000; margin-top: 8px; }
-        button:active { transform: scale(0.98); }
-
-        .status {
-            text-align: center; font-weight: 800; padding: 10px; border-radius: 8px;
-            margin-top: 10px; text-transform: uppercase; font-size: 0.8rem;
-        }
-        .stable { background: #059669; color: white; box-shadow: 0 0 15px rgba(5,150,105,0.4); }
-        .unstable { background: #475569; color: #fff; }
-
-        .charge-tag {
-            position: absolute;
-            top: 40px;
-            right: 40px;
-            font-size: 2rem;
-            font-weight: 900;
-            color: var(--dot);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ lewis dot · octet</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:700px;margin:0 auto}
+    @media(min-width:600px){.grid{grid-template-columns:1fr 220px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:16px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .lewis{position:relative;width:240px;height:240px;margin:0 auto;display:flex;align-items:center;justify-content:center}
+    .symbol{font-size:4rem;font-weight:800;color:#3b82f6}
+    .dot{position:absolute;width:18px;height:18px;background:#3b82f6;border-radius:50%;box-shadow:0 4px 10px rgba(59,130,246,0.3)}
+    .charge{position:absolute;top:10px;right:10px;font-size:1.8rem;font-weight:700;color:#f59e0b}
+    select{width:100%;padding:12px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-size:0.9rem;margin-bottom:12px}
+    .btn{width:100%;padding:12px;border-radius:40px;border:none;font-weight:600;cursor:pointer;background:#3b82f6;color:#fff;margin-bottom:8px}
+    .btn-outline{background:#fff;border:1.5px solid #d0e2ff;color:#3a628c}
+    .stats{background:#f0f6ff;border-radius:16px;padding:14px;text-align:center;margin:16px 0}
+    .valence{font-size:1.8rem;font-weight:700;color:#3b82f6}
+    .status{padding:8px;border-radius:20px;font-weight:700;font-size:0.8rem}
+    .stable{background:#d1fae5;color:#065f46}.unstable{background:#e2e8f0;color:#475569}
+  </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2 style="color:var(--primary); margin:0;">Lewis Dot Lab</h2>
-    
-    <div class="card">
-        <label style="font-size:0.7rem; color:#94a3b8;">SELECT ELEMENT</label>
-        <select id="elSelect" onchange="initAtom()">
-            <optgroup label="Period 1 & 2">
-                <option value="H">Hydrogen (1)</option>
-                <option value="He">Helium (2)</option>
-                <option value="Li">Lithium (1)</option>
-                <option value="Be">Beryllium (2)</option>
-                <option value="B">Boron (3)</option>
-                <option value="C">Carbon (4)</option>
-                <option value="N">Nitrogen (5)</option>
-                <option value="O" selected>Oxygen (6)</option>
-                <option value="F">Fluorine (7)</option>
-                <option value="Ne">Neon (8)</option>
-            </optgroup>
-            <optgroup label="Period 3">
-                <option value="Na">Sodium (1)</option>
-                <option value="Mg">Magnesium (2)</option>
-                <option value="Al">Aluminum (3)</option>
-                <option value="Si">Silicon (4)</option>
-                <option value="P">Phosphorus (5)</option>
-                <option value="S">Sulfur (6)</option>
-                <option value="Cl">Chlorine (7)</option>
-                <option value="Ar">Argon (8)</option>
-                <option value="K">Potassium (1)</option>
-                <option value="Ca">Calcium (2)</option>
-            </optgroup>
-        </select>
-        <button onclick="addDot()">Add Electron</button>
-        <button onclick="resetDots()" style="background:#475569; color:white;">Reset to Neutral</button>
+<div class="grid">
+  <div class="panel">
+    <h2>⚛️ lewis dot lab</h2>
+    <div class="lewis" id="lewisContainer"><div class="symbol" id="symbol">O</div><div class="charge" id="chargeDisp"></div></div>
+    <div style="text-align:center;margin-top:8px;font-size:0.8rem;color:#3a628c">● valence electron</div>
+  </div>
+  <div>
+    <div class="panel">
+      <select id="elSelect"><optgroup label="period 1-2"><option value="H">Hydrogen (1)</option><option value="He">Helium (2)</option><option value="Li">Lithium (1)</option><option value="Be">Beryllium (2)</option><option value="B">Boron (3)</option><option value="C">Carbon (4)</option><option value="N">Nitrogen (5)</option><option value="O" selected>Oxygen (6)</option><option value="F">Fluorine (7)</option><option value="Ne">Neon (8)</option></optgroup><optgroup label="period 3"><option value="Na">Sodium (1)</option><option value="Mg">Magnesium (2)</option><option value="Al">Aluminum (3)</option><option value="Si">Silicon (4)</option><option value="P">Phosphorus (5)</option><option value="S">Sulfur (6)</option><option value="Cl">Chlorine (7)</option><option value="Ar">Argon (8)</option></optgroup></select>
+      <button class="btn" id="addBtn">➕ add electron</button>
+      <button class="btn-outline" id="resetBtn">↻ reset</button>
+      <div class="stats"><div style="font-size:0.7rem;color:#3a628c">valence</div><div class="valence" id="dotCount">6</div><div id="statusDisp" class="status unstable">unstable</div></div>
+      <div style="font-size:0.8rem;color:#3a628c">octet: 8 e⁻ (2 for H,He)</div>
     </div>
-
-    <div class="card">
-        <div style="font-size:0.8rem; margin-bottom:5px;">Current Valence: <span id="count" style="color:var(--dot)">0</span></div>
-        <div id="octStatus" class="status unstable">Unstable</div>
-    </div>
-
-    <div class="card" style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5;">
-        <b>The Goal:</b> Noble Gases (far right) are naturally stable. All other elements want to reach 8 electrons (or 2 for H/He) to satisfy the <b>Octet Rule</b>.
-    </div>
+  </div>
 </div>
-
-<div class="viewport">
-    <div class="atom-container" id="container">
-        <div class="symbol" id="symbol">O</div>
-        <div class="charge-tag" id="chargeDisp"></div>
-    </div>
-</div>
-
 <script>
-    let dots = 0;
-    const elements = {
-        'H': 1, 'He': 2, 'Li': 1, 'Be': 2, 'B': 3, 'C': 4, 'N': 5, 'O': 6, 'F': 7, 'Ne': 8,
-        'Na': 1, 'Mg': 2, 'Al': 3, 'Si': 4, 'P': 5, 'S': 6, 'Cl': 7, 'Ar': 8, 'K': 1, 'Ca': 2
-    };
-
-    const positions = [
-        {t: '15%', l: '42%'}, {t: '15%', l: '54%'}, // Top pair
-        {t: '42%', r: '15%'}, {t: '54%', r: '15%'}, // Right pair
-        {b: '15%', l: '42%'}, {b: '15%', l: '54%'}, // Bottom pair
-        {t: '42%', l: '15%'}, {t: '54%', l: '15%'}  // Left pair
-    ];
-
-    function initAtom() {
-        const el = document.getElementById('elSelect').value;
-        document.getElementById('symbol').innerText = el;
-        resetDots();
-    }
-
-    function addDot() {
-        if (dots >= 8) return;
-        
-        const dot = document.createElement('div');
-        dot.className = 'dot';
-        const pos = positions[dots];
-        
-        if (pos.t) dot.style.top = pos.t;
-        if (pos.b) dot.style.bottom = pos.b;
-        if (pos.l) dot.style.left = pos.l;
-        if (pos.r) dot.style.right = pos.r;
-        
-        document.getElementById('container').appendChild(dot);
-        dots++;
-        updateUI();
-    }
-
-    function resetDots() {
-        const container = document.getElementById('container');
-        container.querySelectorAll('.dot').forEach(d => d.remove());
-        dots = 0;
-        updateUI();
-    }
-
-    function updateUI() {
-        const symbol = document.getElementById('elSelect').value;
-        const naturalValence = elements[symbol];
-        const status = document.getElementById('octStatus');
-        const chargeDisp = document.getElementById('chargeDisp');
-        document.getElementById('count').innerText = dots;
-
-        // Stability check
-        const isOctet = (dots === 8) || (dots === 2 && (symbol === 'H' || symbol === 'He' || symbol === 'Li' || symbol === 'Be'));
-        
-        if (isOctet) {
-            status.innerText = "Stable (Octet/Duet)";
-            status.className = "status stable";
-        } else {
-            status.innerText = "Unstable Shell";
-            status.className = "status unstable";
-        }
-
-        // Charge calculation
-        const charge = naturalValence - dots;
-        if (charge === 0) {
-            chargeDisp.innerText = "";
-        } else {
-            const sign = charge < 0 ? "-" : "+";
-            const num = Math.abs(charge) === 1 ? "" : Math.abs(charge);
-            chargeDisp.innerText = `${num}${sign}`;
-        }
-    }
-
-    initAtom();
+(function(){
+  const elements={H:1,He:2,Li:1,Be:2,B:3,C:4,N:5,O:6,F:7,Ne:8,Na:1,Mg:2,Al:3,Si:4,P:5,S:6,Cl:7,Ar:8};
+  const pos=[{t:'15%',l:'42%'},{t:'15%',l:'54%'},{t:'42%',r:'15%'},{t:'54%',r:'15%'},{b:'15%',l:'42%'},{b:'15%',l:'54%'},{t:'42%',l:'15%'},{t:'54%',l:'15%'}];
+  let dots=6,el='O'; const container=document.getElementById('lewisContainer'),symbol=document.getElementById('symbol'),chargeD=document.getElementById('chargeDisp'),dotC=document.getElementById('dotCount'),statusD=document.getElementById('statusDisp'),select=document.getElementById('elSelect');
+  
+  function render(){
+    container.querySelectorAll('.dot').forEach(d=>d.remove());
+    for(let i=0;i<Math.min(dots,8);i++){const d=document.createElement('div');d.className='dot'; const p=pos[i]; if(p.t)d.style.top=p.t; if(p.b)d.style.bottom=p.b; if(p.l)d.style.left=p.l; if(p.r)d.style.right=p.r; container.appendChild(d)}
+    dotC.textContent=dots; const val=elements[el],stable=(dots===8)||(dots===2&&(el==='H'||el==='He'||el==='Li'||el==='Be')); statusD.textContent=stable?'✨ stable':'⚡ unstable'; statusD.className=stable?'status stable':'status unstable';
+    const ch=val-dots; chargeD.textContent=ch===0?'':(ch>0?'+':'-')+(Math.abs(ch)===1?'':Math.abs(ch));
+  }
+  
+  function reset(){el=select.value; symbol.textContent=el; dots=elements[el]; render()}
+  
+  select.onchange=reset; document.getElementById('addBtn').onclick=()=>{if(dots<8){dots++; render()}}; document.getElementById('resetBtn').onclick=reset;
+  render();
+})();
 </script>
 </body>
 </html>

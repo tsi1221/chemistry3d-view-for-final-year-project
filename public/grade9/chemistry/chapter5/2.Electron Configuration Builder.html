@@ -1,233 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Electron Configuration Builder</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --primary: #38bdf8;
-            --electron: #fbbf24;
-            --text: #f1f5f9;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-            width: 95%;
-            max-width: 1000px;
-        }
-
-        .orbital-stack {
-            background: var(--panel);
-            padding: 30px;
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column-reverse;
-            gap: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .subshell {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .label { width: 40px; font-weight: bold; color: var(--primary); }
-
-        .slots { display: flex; gap: 10px; }
-
-        .slot {
-            width: 60px;
-            height: 60px;
-            border: 2px dashed #475569;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            background: rgba(0,0,0,0.2);
-            transition: 0.2s;
-        }
-
-        .slot.filled { border-style: solid; border-color: var(--primary); }
-
-        .electron {
-            font-size: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .up { color: #4ade80; }
-        .down { color: #f87171; }
-
-        .sidebar { display: flex; flex-direction: column; gap: 20px; }
-
-        .card {
-            background: var(--panel);
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .config-out {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.4rem;
-            color: var(--electron);
-            text-align: center;
-            letter-spacing: 2px;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            background: var(--primary);
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        button:hover { filter: brightness(1.1); }
-        .btn-reset { background: #475569; color: white; }
-        
-        .error-msg { color: #f87171; font-size: 0.8rem; height: 20px; text-align: center; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ electron config · builder</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:700px;margin:0 auto}
+    @media(min-width:600px){.grid{grid-template-columns:1fr 200px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:16px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .stack{display:flex;flex-direction:column-reverse;gap:16px}
+    .subshell{display:flex;align-items:center;gap:16px}
+    .label{width:36px;font-weight:700;color:#3b82f6}
+    .boxes{display:flex;gap:8px}
+    .box{width:48px;height:48px;border:2px solid #d0e2ff;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative}
+    .box.filled{border-color:#3b82f6;background:#f0f6ff}
+    .arrow{font-size:24px;font-weight:700}.up{color:#10b981}.down{color:#ef4444;margin-left:-6px}
+    .config{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:700;color:#3b82f6;text-align:center;margin:16px 0}
+    .btn{width:100%;padding:14px;border-radius:40px;border:none;font-weight:700;font-size:1rem;cursor:pointer;background:#3b82f6;color:#fff;margin-bottom:8px}
+    .btn-outline{background:#fff;border:1.5px solid #d0e2ff;color:#3a628c}
+    .error{color:#ef4444;font-size:0.8rem;text-align:center;min-height:20px}
+    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem}
+  </style>
 </head>
 <body>
-
-<h1 style="margin-bottom:10px;">Configuration Builder</h1>
-
-<div class="container">
-    <div class="orbital-stack">
-        <div class="subshell" data-limit="6" id="2p">
-            <div class="label">2p</div>
-            <div class="slots">
-                <div class="slot" data-index="0"></div>
-                <div class="slot" data-index="1"></div>
-                <div class="slot" data-index="2"></div>
-            </div>
-        </div>
-        <div class="subshell" data-limit="2" id="2s">
-            <div class="label">2s</div>
-            <div class="slots">
-                <div class="slot" data-index="0"></div>
-            </div>
-        </div>
-        <div class="subshell" data-limit="2" id="1s">
-            <div class="label">1s</div>
-            <div class="slots">
-                <div class="slot" data-index="0"></div>
-            </div>
-        </div>
+<div class="grid">
+  <div class="panel">
+    <h2>⚛️ configuration builder</h2>
+    <div class="stack">
+      <div class="subshell" id="shell-2p"><span class="label">2p</span><div class="boxes"><div class="box" data-shell="2p" data-idx="0"></div><div class="box" data-shell="2p" data-idx="1"></div><div class="box" data-shell="2p" data-idx="2"></div></div></div>
+      <div class="subshell" id="shell-2s"><span class="label">2s</span><div class="boxes"><div class="box" data-shell="2s" data-idx="0"></div></div></div>
+      <div class="subshell" id="shell-1s"><span class="label">1s</span><div class="boxes"><div class="box" data-shell="1s" data-idx="0"></div></div></div>
     </div>
-
-    <div class="sidebar">
-        <div class="card">
-            <button onclick="addElectron()">+ Add Electron</button>
-            <button class="btn-reset" onclick="resetAll()">Reset</button>
-            <div id="error" class="error-msg"></div>
-        </div>
-
-        <div class="card">
-            <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px;">CONFIGURATION</div>
-            <div class="config-out" id="output">1s⁰</div>
-        </div>
-
-        <div class="card" style="font-size:0.85rem; line-height:1.5; color:#cbd5e1;">
-            <b>The Rules:</b>
-            <ul style="padding-left:15px; margin-top:5px;">
-                <li><b>Aufbau:</b> Fill bottom to top.</li>
-                <li><b>Pauli:</b> Max 2 per box (Opposite spins).</li>
-                <li><b>Hund:</b> Don't pair in 'p' until boxes have one.</li>
-            </ul>
-        </div>
+    <div class="legend"><span>↑ spin up</span><span>↓ spin down</span></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="config" id="configOut">1s⁰</div>
+      <button class="btn" id="addBtn">➕ add electron</button>
+      <button class="btn-outline" id="resetBtn">↻ reset</button>
+      <div class="error" id="errorMsg"></div>
+      <div style="font-size:0.8rem;color:#3a628c;margin-top:16px">aufbau · pauli · hund</div>
     </div>
+  </div>
 </div>
-
 <script>
-    let electrons = 0;
-    const subshells = [
-        { id: '1s', limit: 2, count: 0 },
-        { id: '2s', limit: 2, count: 0 },
-        { id: '2p', limit: 6, count: 0 }
-    ];
-
-    function addElectron() {
-        const target = subshells.find(s => s.count < s.limit);
-        if (!target) {
-            document.getElementById('error').innerText = "Atom full for this demo!";
-            return;
-        }
-        
-        target.count++;
-        electrons++;
-        render();
-    }
-
-    function resetAll() {
-        electrons = 0;
-        subshells.forEach(s => s.count = 0);
-        document.getElementById('error').innerText = "";
-        render();
-    }
-
-    function render() {
-        subshells.forEach(s => {
-            const slots = document.querySelectorAll(`#${s.id} .slot`);
-            slots.forEach((slot, idx) => {
-                slot.innerHTML = '';
-                slot.classList.remove('filled');
-                
-                // Logic for Hund's rule and Pauli Exclusion
-                if (s.id === '2p') {
-                    // Fill all ups first
-                    if (s.count > idx) {
-                        slot.innerHTML += '<span class="electron up">↑</span>';
-                        slot.classList.add('filled');
-                    }
-                    // Then fill downs
-                    if (s.count > idx + 3) {
-                        slot.innerHTML += '<span class="electron down">↓</span>';
-                    }
-                } else {
-                    // Simple s-orbital logic
-                    if (s.count > 0 && idx === 0) {
-                        slot.innerHTML += '<span class="electron up">↑</span>';
-                        slot.classList.add('filled');
-                    }
-                    if (s.count > 1 && idx === 0) {
-                        slot.innerHTML += '<span class="electron down">↓</span>';
-                    }
-                }
-            });
-        });
-
-        // Update Text Output
-        const text = subshells
-            .filter(s => s.count > 0)
-            .map(s => `${s.id}<sup>${s.count}</sup>`)
-            .join(' ');
-        document.getElementById('output').innerHTML = text || '1s⁰';
-    }
+(function(){
+  const order=[{sh:'1s',idx:0,sp:'up'},{sh:'1s',idx:0,sp:'down'},{sh:'2s',idx:0,sp:'up'},{sh:'2s',idx:0,sp:'down'},{sh:'2p',idx:0,sp:'up'},{sh:'2p',idx:1,sp:'up'},{sh:'2p',idx:2,sp:'up'},{sh:'2p',idx:0,sp:'down'},{sh:'2p',idx:1,sp:'down'},{sh:'2p',idx:2,sp:'down'}];
+  let step=0;
+  const boxes=document.querySelectorAll('.box'),configOut=document.getElementById('configOut'),errorMsg=document.getElementById('errorMsg');
+  const subs=[{id:'1s',lim:2},{id:'2s',lim:2},{id:'2p',lim:6}];
+  
+  function getCounts(){const c={}; boxes.forEach(b=>{const sh=b.dataset.shell; c[sh]=(c[sh]||0)+b.querySelectorAll('.arrow').length}); return c}
+  
+  function updateConfig(){const c=getCounts(),p=[]; if(c['1s'])p.push(`1s${c['1s']}`); if(c['2s'])p.push(`2s${c['2s']}`); if(c['2p'])p.push(`2p${c['2p']}`); configOut.textContent=p.join(' ')||'1s⁰'}
+  
+  function reset(){step=0; boxes.forEach(b=>{b.innerHTML=''; b.classList.remove('filled')}); errorMsg.textContent=''; updateConfig()}
+  
+  function add(){
+    if(step>=order.length){errorMsg.textContent='atom full · neon'; return}
+    errorMsg.textContent=''; const cur=order[step],target=Array.from(boxes).find(b=>b.dataset.shell===cur.sh&&parseInt(b.dataset.idx)===cur.idx);
+    if(target){const a=document.createElement('span'); a.className=`arrow ${cur.sp}`; a.textContent=cur.sp==='up'?'↑':'↓'; target.appendChild(a); target.classList.add('filled')}
+    step++; updateConfig(); if(step===order.length)errorMsg.textContent='✨ neon · stable';
+  }
+  
+  document.getElementById('addBtn').onclick=add; document.getElementById('resetBtn').onclick=reset;
+  updateConfig();
+})();
 </script>
 </body>
 </html>

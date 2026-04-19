@@ -1,175 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Octet Rule Simulator</title>
-    <style>
-        :root {
-            --bg: #020617;
-            --panel: #111827;
-            --primary: #a855f7; /* Purple for stability */
-            --electron: #38bdf8;
-            --text: #f1f5f9;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .viewport { flex-grow: 1; position: relative; background: radial-gradient(circle, #1e1b4b 0%, #020617 100%); display: flex; align-items: center; justify-content: center; }
-        canvas { width: 100%; height: 100%; }
-
-        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        
-        .controls { display: flex; gap: 10px; margin-top: 10px; }
-        button {
-            flex: 1; padding: 12px; border: none; border-radius: 8px;
-            cursor: pointer; font-weight: bold; transition: 0.2s;
-        }
-        .btn-add { background: var(--electron); color: #000; }
-        .btn-sub { background: #f87171; color: #000; }
-        
-        .status-badge {
-            text-align: center; padding: 10px; border-radius: 8px;
-            font-weight: 800; margin-top: 10px; text-transform: uppercase;
-        }
-        .stable { background: #22c55e; color: #fff; box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
-        .reactive { background: #eab308; color: #000; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ octet rule · valence</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
+    @media(min-width:700px){.grid{grid-template-columns:1fr 220px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    canvas{display:block;width:100%;aspect-ratio:1/1;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff}
+    .btn{flex:1;padding:16px;border-radius:40px;border:none;font-weight:700;font-size:1.2rem;cursor:pointer}
+    .btn-add{background:#3b82f6;color:#fff}.btn-remove{background:#ef4444;color:#fff}
+    .btn-group{display:flex;gap:8px;margin:16px 0}
+    .status{padding:12px;border-radius:40px;text-align:center;font-weight:700;margin:8px 0}
+    .stable{background:#d1fae5;color:#065f46}.reactive{background:#fef3c7;color:#92400e}
+    .config{font-size:1.3rem;font-weight:700;color:#3b82f6;text-align:center;margin:8px 0}
+    .element{font-size:0.9rem;color:#3a628c;text-align:center}
+    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem}
+  </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2 style="color:var(--primary); margin:0;">Octet Simulator</h2>
-    
-    <div class="card">
-        <label style="font-size: 0.75rem; color: #94a3b8;">VALENCE ELECTRONS</label>
-        <div class="controls">
-            <button class="btn-sub" onclick="changeE(-1)">Remove</button>
-            <button class="btn-add" onclick="changeE(1)">Add</button>
-        </div>
-        <div id="status" class="status-badge reactive">Reactive</div>
+<div class="grid">
+  <div class="panel">
+    <h2>⚛️ octet simulator</h2>
+    <canvas id="atomCanvas"></canvas>
+    <div class="legend"><span style="color:#ef4444">● nucleus</span><span style="color:#3b82f6">● electron</span><span style="color:#10b981">● stable octet</span></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="btn-group"><button class="btn btn-remove" id="removeBtn">−</button><button class="btn btn-add" id="addBtn">+</button></div>
+      <div id="statusDisp" class="status reactive">⚡ reactive</div>
+      <div class="config" id="configDisp">2, 8, 1</div>
+      <div class="element" id="elementDisp">sodium atom</div>
+      <div style="font-size:0.85rem;color:#3a628c;margin-top:16px">goal: 8 valence e⁻ for stability</div>
     </div>
-
-    <div class="card">
-        <div style="font-size: 0.9rem;">Current State:</div>
-        <div style="font-size: 1.2rem; font-weight: bold; color: var(--primary);" id="configDisplay">2, 8, 1</div>
-        <div style="font-size: 0.8rem; margin-top: 5px;" id="ionLabel">Sodium Atom (Neutral)</div>
-    </div>
-
-    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
-        <b>Goal:</b> Adjust the electrons until the outermost shell has exactly <b>8</b>. This represents a full, stable valence shell.
-    </div>
+  </div>
 </div>
-
-<div class="viewport">
-    <canvas id="octetCanvas"></canvas>
-</div>
-
 <script>
-    const canvas = document.getElementById('octetCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Starting with Sodium (2, 8, 1)
-    let coreShells = [2, 8];
-    let valence = 1;
-
-    function changeE(amt) {
-        valence += amt;
-        if (valence < 0) {
-            if (coreShells.length > 0) {
-                valence = coreShells.pop() - 1;
-            } else {
-                valence = 0;
-            }
-        }
-        if (valence > 8) {
-            coreShells.push(8);
-            valence = 1;
-        }
-        updateUI();
-    }
-
-    function updateUI() {
-        const status = document.getElementById('status');
-        const config = [...coreShells, valence].join(', ');
-        document.getElementById('configDisplay').innerText = config;
-        
-        const isStable = valence === 8 || (valence === 2 && coreShells.length === 0);
-        status.innerText = isStable ? "Stable (Octet)" : "Reactive";
-        status.className = `status-badge ${isStable ? 'stable' : 'reactive'}`;
-        
-        // Simple naming logic
-        let name = "Ion";
-        if (coreShells.length === 2 && valence === 1) name = "Sodium Atom";
-        if (coreShells.length === 2 && valence === 0) name = "Sodium Ion (Na+)";
-        if (coreShells.length === 1 && valence === 7) name = "Fluorine Atom";
-        if (coreShells.length === 1 && valence === 8) name = "Fluoride Ion (F-)";
-        document.getElementById('ionLabel').innerText = name;
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        const time = Date.now() * 0.001;
-
-        // Draw Nucleus
-        ctx.fillStyle = "#f87171";
-        ctx.shadowBlur = 15; ctx.shadowColor = "#f87171";
-        ctx.beginPath(); ctx.arc(cx, cy, 20, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
-
-        const allShells = [...coreShells, valence];
-        
-        allShells.forEach((count, sIdx) => {
-            const radius = 60 + (sIdx * 50);
-            const isValence = sIdx === allShells.length - 1;
-            
-            // Draw Orbit path
-            ctx.strokeStyle = isValence ? 'rgba(168, 85, 247, 0.4)' : 'rgba(255,255,255,0.1)';
-            ctx.lineWidth = isValence ? 3 : 1;
-            ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
-
-            // Draw Electrons
-            for (let i = 0; i < count; i++) {
-                const angle = (i / count) * Math.PI * 2 + (time * (1 / (sIdx + 1)));
-                const ex = cx + Math.cos(angle) * radius;
-                const ey = cy + Math.sin(angle) * radius;
-
-                ctx.fillStyle = isValence && count === 8 ? "#22c55e" : "#38bdf8";
-                ctx.beginPath(); ctx.arc(ex, ey, 6, 0, Math.PI * 2); ctx.fill();
-            }
-        });
-
-        requestAnimationFrame(draw);
-    }
-
-    window.addEventListener('resize', () => {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    });
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    updateUI();
-    draw();
+(function(){
+  const canvas=document.getElementById('atomCanvas'),ctx=canvas.getContext('2d');
+  let w=0,h=0,DPR=devicePixelRatio||1,core=[2,8],valence=1,time=0;
+  const statusD=document.getElementById('statusDisp'),configD=document.getElementById('configDisp'),elementD=document.getElementById('elementDisp');
+  
+  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=w;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+  
+  function updateUI(){
+    const cfg=[...core,valence].join(', '); configD.textContent=cfg;
+    const stable=valence===8||(valence===2&&core.length===0); statusD.textContent=stable?'✨ stable · octet':'⚡ reactive'; statusD.className=stable?'status stable':'status reactive';
+    let name=''; if(core.length===2&&valence===1)name='sodium atom'; else if(core.length===2&&valence===0)name='sodium ion (Na⁺)'; else if(core.length===1&&valence===7)name='fluorine atom'; else if(core.length===1&&valence===8)name='fluoride ion (F⁻)'; else if(valence===8)name='noble gas'; else name='atom/ion'; elementD.textContent=name;
+  }
+  
+  function change(d){
+    valence+=d; if(valence<0){if(core.length){valence=core.pop()-1}else valence=0} if(valence>8){core.push(8); valence=1} updateUI();
+  }
+  
+  function draw(){
+    ctx.clearRect(0,0,w,h); const cx=w/2,cy=h/2; time+=0.012;
+    ctx.beginPath(); ctx.arc(cx,cy,16,0,2*Math.PI); ctx.fillStyle='#ef4444'; ctx.shadowColor='#ef444480'; ctx.shadowBlur=14; ctx.fill(); ctx.shadowBlur=0;
+    const shells=[...core,valence]; shells.forEach((cnt,i)=>{const rad=42+i*36,isVal=i===shells.length-1;
+      ctx.beginPath(); ctx.arc(cx,cy,rad,0,2*Math.PI); ctx.strokeStyle=isVal?'#8b5cf640':'#cbd5e140'; ctx.lineWidth=isVal?2:1; ctx.setLineDash(isVal?[]:[3,5]); ctx.stroke(); ctx.setLineDash([]);
+      for(let j=0;j<cnt;j++){const a=(j/Math.max(cnt,1))*2*Math.PI+time*(1/(i+1)),ex=cx+Math.cos(a)*rad,ey=cy+Math.sin(a)*rad;
+        ctx.beginPath(); ctx.arc(ex,ey,4,0,2*Math.PI); ctx.fillStyle=isVal&&cnt===8?'#10b981':'#3b82f6'; ctx.shadowColor=isVal&&cnt===8?'#10b981':'#3b82f6'; ctx.shadowBlur=8; ctx.fill()} ctx.shadowBlur=0});
+    requestAnimationFrame(draw);
+  }
+  
+  document.getElementById('addBtn').onclick=()=>change(1); document.getElementById('removeBtn').onclick=()=>change(-1);
+  window.onresize=resize; resize(); updateUI(); draw();
+})();
 </script>
 </body>
 </html>
