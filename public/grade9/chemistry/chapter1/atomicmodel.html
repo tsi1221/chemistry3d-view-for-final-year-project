@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>⚛️ ChemLab · Grade 12</title>
+  <title>⚛️ ChemLab · Interactive Definitions</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -39,7 +39,6 @@
       min-height: 100dvh;
     }
 
-    /* sidebar */
     .sidebar {
       background: var(--surface);
       border-right: 1px solid var(--border-light);
@@ -99,7 +98,6 @@
       color: white;
     }
 
-    /* main */
     .main-content {
       padding: 28px 32px;
       display: flex;
@@ -240,6 +238,29 @@
       pointer-events: auto;
     }
 
+    /* Definition Alert */
+    .definition-alert {
+      background: var(--surface);
+      border-left: 6px solid var(--accent);
+      padding: 16px 20px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-card);
+      margin-top: 16px;
+      border: 1px solid var(--border-light);
+    }
+
+    .definition-title {
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .definition-text {
+      color: var(--text-soft);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
     @keyframes slideToast {
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -272,13 +293,19 @@
   <main class="main-content">
     <header class="header-card">
       <h1>Chemistry Simulation Lab</h1>
-      <p>Grade 12 · interactive learning platform</p>
+      <p>Grade 12 · tap atoms for definitions</p>
     </header>
 
     <input type="text" class="search-bar" placeholder="🔍 search experiments · covalent bonds, orbitals...">
 
     <div class="canvas-wrapper">
       <canvas id="chemCanvas"></canvas>
+    </div>
+
+    <!-- Definition panel appears here dynamically -->
+    <div id="definitionPanel" class="definition-alert" style="display: none;">
+      <div class="definition-title" id="defTitle">Hydrogen</div>
+      <div class="definition-text" id="defText">The lightest element. Atomic number 1.</div>
     </div>
 
     <div class="info-grid">
@@ -298,7 +325,7 @@
       <div class="info-card">
         <h3>📋 observation log</h3>
         <ul class="log-list" id="logList">
-          <li>✨ system ready</li>
+          <li>✨ system ready · tap atoms</li>
         </ul>
       </div>
     </div>
@@ -313,6 +340,9 @@
     const logList = document.getElementById('logList');
     const energySlider = document.getElementById('energySlider');
     const energyValue = document.getElementById('energyValue');
+    const definitionPanel = document.getElementById('definitionPanel');
+    const defTitle = document.getElementById('defTitle');
+    const defText = document.getElementById('defText');
     
     let width = 0, height = 0;
     const DPR = devicePixelRatio || 1;
@@ -321,6 +351,14 @@
     let selectedAtom = null;
     let isDragging = false;
     let currentMode = 'atomic';
+    
+    // Element definitions
+    const elementDefinitions = {
+      'H': { title: 'Hydrogen (H)', text: 'Atomic number 1. The most abundant element in the universe. Forms diatomic H₂ molecules.' },
+      'O': { title: 'Oxygen (O)', text: 'Atomic number 8. Essential for respiration. Highly electronegative, forms double bonds.' },
+      'C': { title: 'Carbon (C)', text: 'Atomic number 6. The backbone of organic chemistry. Forms four covalent bonds.' },
+      '●': { title: 'Gas Particle', text: 'Represents an ideal gas molecule. Motion increases with temperature.' }
+    };
     
     function showToast(msg) {
       const toast = document.createElement('div');
@@ -337,6 +375,23 @@
       if (logList.children.length > 5) {
         logList.removeChild(logList.children[0]);
       }
+    }
+    
+    function showDefinition(atom) {
+      const def = elementDefinitions[atom.label] || { 
+        title: `${atom.label} Atom`, 
+        text: 'A fundamental particle in this simulation. Drag to explore interactions.' 
+      };
+      defTitle.textContent = def.title;
+      defText.textContent = def.text;
+      definitionPanel.style.display = 'block';
+      
+      // auto-hide after 8 seconds
+      setTimeout(() => {
+        if (definitionPanel.style.display === 'block') {
+          definitionPanel.style.display = 'none';
+        }
+      }, 8000);
     }
     
     function resizeCanvas() {
@@ -419,6 +474,7 @@
       document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === mode);
       });
+      definitionPanel.style.display = 'none';
       initAtoms();
       showToast(`switched to ${mode} simulation`);
       addLog(`📌 mode: ${mode}`);
@@ -480,8 +536,11 @@
           selectedAtom = atom;
           isDragging = true;
           canvas.setPointerCapture(e.pointerId);
+          
+          // Show definition when atom is tapped
+          showDefinition(atom);
           showToast(`selected: ${atom.label}`);
-          addLog(`🔬 selected ${atom.label} atom`);
+          addLog(`🔬 ${atom.label} · ${elementDefinitions[atom.label]?.title || 'atom'}`);
           break;
         }
       }
@@ -513,6 +572,7 @@
     
     document.getElementById('resetBtn').addEventListener('click', () => {
       initAtoms();
+      definitionPanel.style.display = 'none';
       showToast('positions reset');
       addLog('🔄 reset positions');
     });
