@@ -1,170 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crystal Lattice Systems - Exploding & Slicing Visualizer</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: #000814; font-family: 'Segoe UI', Tahoma, sans-serif; color: white; }
-        
-        #ui-layer {
-            position: absolute; top: 20px; left: 20px; padding: 25px; width: 300px;
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 100;
-        }
-
-        h2 { margin: 0 0 15px 0; color: #007AFF; font-size: 1.3rem; letter-spacing: 1px; text-transform: uppercase; }
-        .description { font-size: 0.9rem; line-height: 1.5; color: rgba(255,255,255,0.8); margin-bottom: 20px; }
-        .stat { font-size: 0.85rem; padding: 8px; border-radius: 4px; background: rgba(0,0,0,0.3); margin-bottom: 8px; border-left: 3px solid transparent; }
-        .stat.active { border-left-color: #007AFF; background: rgba(0, 122, 255, 0.1); }
-        .stat b { color: #007AFF; }
-
-        button {
-            width: 100%; padding: 14px; background: #ffffff; border: none;
-            border-radius: 8px; color: #001d3d; font-weight: 700; text-transform: uppercase;
-            cursor: pointer; margin-top: 15px; transition: 0.3s;
-        }
-
-        button:hover { background: #007AFF; color: white; box-shadow: 0 0 15px rgba(0, 122, 255, 0.5); }
-
-        #alert {
-            position: absolute; bottom: 20px; left: 20px; padding: 15px; background: #007AFF;
-            color: white; border-radius: 8px; font-weight: bold; font-size: 0.9rem;
-            display: none; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>💨 CO₂ · IR active</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    #canvas-container{width:100%;height:100dvh;position:relative;background:#f8fafc}
+    .panel{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:30px;padding:16px 20px;border:1px solid #d0e2ff;max-width:300px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .eq{text-align:center;font-weight:600;color:#3b82f6;margin-bottom:12px}
+    .btn{width:100%;padding:16px;border-radius:40px;border:none;font-weight:700;font-size:1rem;cursor:pointer;background:#3b82f6;color:#fff}
+    .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.8rem;color:#3a628c}
+    .hint{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:40px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
 <body>
-
-    <div id="ui-layer">
-        <h2>FCC Lattice Visualizer</h2>
-        <div class="description">Calculate total atoms ($Z$) in a Face-Centered Cubic cell by visualizing the shared volume.</div>
-        
-        <div class="stat"><b>8x</b> Corner Atoms: (Shared by 8 Cells)</div>
-        <div id="stat1" class="stat active">8 × 1/8 = <b>1 Atom Contribution</b></div>
-        
-        <div class="stat"><b>6x</b> Face Atoms: (Shared by 2 Cells)</div>
-        <div id="stat2" class="stat active">6 × 1/2 = <b>3 Atom Contribution</b></div>
-
-        <div class="stat"><b>Total Atoms ($Z$): 4</b></div>
-
-        <button onclick="toggleVisual()">Toggle Exploded View</button>
-    </div>
-
-    <div id="alert">Slicing atoms at the unit cell boundary...</div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <script>
-        let scene, camera, renderer, cubeFrame, atoms = [];
-        let isExploded = false;
-        let originalPositions = [];
-
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(2.5, 2.5, 4);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.localClippingEnabled = true; // Required for slicing!
-            document.body.appendChild(renderer.domElement);
-
-            // Studio Lighting
-            const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(5, 10, 7);
-            const ambient = new THREE.AmbientLight(0x404040, 2);
-            scene.add(light, ambient);
-
-            // Unit Cell Boundary (The Cube Frame)
-            const boxGeom = new THREE.BoxGeometry(2, 2, 2);
-            const edges = new THREE.EdgesGeometry(boxGeom);
-            cubeFrame = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x007AFF, linewidth: 2 }));
-            scene.add(cubeFrame);
-
-            // Define Clipping Planes (These perform the slicing)
-            const planes = [
-                new THREE.Plane(new THREE.Vector3(1, 0, 0), 1),  // Right (+X)
-                new THREE.Plane(new THREE.Vector3(-1, 0, 0), 1), // Left (-X)
-                new THREE.Plane(new THREE.Vector3(0, 1, 0), 1),  // Top (+Y)
-                new THREE.Plane(new THREE.Vector3(0, -1, 0), 1), // Bottom (-Y)
-                new THREE.Plane(new THREE.Vector3(0, 0, 1), 1),  // Front (+Z)
-                new THREE.Plane(new THREE.Vector3(0, 0, -1), 1)  // Back (-Z)
-            ];
-
-            // Materials
-            const cornerMat = new THREE.MeshStandardMaterial({ 
-                color: 0xffffff, metalness: 0.1, roughness: 0.4, 
-                clippingPlanes: planes, clipShadows: true // Slicing enabled
-            });
-            const faceMat = new THREE.MeshStandardMaterial({ 
-                color: 0x007AFF, metalness: 0.3, roughness: 0.2, 
-                clippingPlanes: planes, clipShadows: true // Slicing enabled
-            });
-
-            const sphereGeom = new THREE.SphereGeometry(0.5, 64, 64);
-
-            // Generate FCC Atom Positions
-            // 8 Corners (White)
-            [
-                [-1,-1,-1], [1,-1,-1], [-1,1,-1], [1,1,-1],
-                [-1,-1,1], [1,-1,1], [-1,1,1], [1,1,1]
-            ].forEach(p => createAtom(p, sphereGeom, cornerMat, 'corner'));
-
-            // 6 Faces (Blue)
-            [
-                [0,0,1], [0,0,-1], [0,1,0], [0,-1,0], [1,0,0], [-1,0,0]
-            ].forEach(p => createAtom(p, sphereGeom, faceMat, 'face'));
-
-            animate();
-        }
-
-        function createAtom(pos, geom, mat, type) {
-            const mesh = new THREE.Mesh(geom, mat);
-            mesh.position.set(...pos);
-            mesh.userData.origin = new THREE.Vector3(...pos);
-            mesh.userData.type = type;
-            atoms.push(mesh);
-            scene.add(mesh);
-        }
-
-        function toggleVisual() {
-            isExploded = !isExploded;
-            
-            // UI Feedback
-            const alertBox = document.getElementById('alert');
-            alertBox.style.display = 'block';
-            alertBox.innerText = isExploded ? "Exploding View: Showing shared volume segments." : "Contracting View: Resetting Unit Cell.";
-            setTimeout(() => { alertBox.style.display = 'none'; }, 2500);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            atoms.forEach(atom => {
-                const target = atom.userData.origin.clone();
-                if (isExploded) {
-                    target.multiplyScalar(1.6); // Pull atoms away from the boundary
-                }
-                atom.position.lerp(target, 0.1); // Smooth transition
-            });
-
-            // Gentle rotation for 3D context
-            scene.rotation.y += 0.003;
-            scene.rotation.x = 0.2; // Fixed tilt
-
-            renderer.render(scene, camera);
-        }
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        init();
-    </script>
+<div id="canvas-container"></div>
+<div class="hint">🖱️ drag to rotate</div>
+<div class="panel">
+  <div class="eq">O = C = O</div>
+  <button class="btn" id="irBtn">✨ emit IR photon</button>
+  <div class="legend"><span style="color:#475569">● C</span><span style="color:#ef4444">● O</span><span style="color:#94a3b8">‖ bond</span></div>
+</div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.128.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}</script>
+<script type="module">
+import*as THREE from'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+const container=document.getElementById('canvas-container'),scene=new THREE.Scene();scene.background=new THREE.Color('#f8fafc');
+const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);camera.position.set(2,1.5,6);camera.lookAt(0,0,0);
+const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(container.clientWidth,container.clientHeight);container.appendChild(renderer.domElement);
+new OrbitControls(camera,renderer.domElement).enableDamping=!0;
+scene.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(3,5,4);scene.add(dl);
+const c=new THREE.Mesh(new THREE.SphereGeometry(0.4,20),new THREE.MeshStandardMaterial({color:'#475569'}));scene.add(c);
+const oL=new THREE.Mesh(new THREE.SphereGeometry(0.34,20),new THREE.MeshStandardMaterial({color:'#ef4444'}));oL.position.x=-1.5;scene.add(oL);
+const oR=oL.clone();oR.position.x=1.5;scene.add(oR);
+function bondGroup(s,e,off){const g=[];for(let i=0;i<2;i++){const b=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,1,6),new THREE.MeshStandardMaterial({color:'#94a3b8'}));scene.add(b);g.push({m:b,off:i===0?off:-off})}return g}
+const lB=bondGroup(c,oL,0.1),rB=bondGroup(c,oR,0.1);
+function updateBond(g,s,e){const mid=s.position.clone().lerp(e.position,0.5),d=s.position.distanceTo(e.position),dir=e.position.clone().sub(s).normalize();g.forEach(({m,off})=>{m.position.copy(mid);const perp=new THREE.Vector3(-dir.y,dir.x,dir.z);if(perp.length()<0.1)perp.set(0,1,0);perp.normalize();m.position.addScaledVector(perp,off);m.scale.set(1,d,1);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir)})}
+let vib=!1,t=0;const btn=document.getElementById('irBtn');btn.onclick=()=>{vib=!0;t=0; btn.textContent='💫 vibrating'; setTimeout(()=>{vib=!1; btn.textContent='✨ emit IR photon'},3500)};
+function animate(){requestAnimationFrame(animate);const time=performance.now()*0.01;
+  if(vib){const off=Math.sin(time)*0.35; oL.position.x=-1.5+off; oR.position.x=1.5+off; c.position.x=Math.sin(time*0.5)*0.06; scene.background=new THREE.Color(Math.sin(time*2)>0.6?'#fef3c7':'#f8fafc')}
+  else{scene.background=new THREE.Color('#f8fafc'); oL.position.x+=-1.5-oL.position.x*0.08; oR.position.x+=1.5-oR.position.x*0.08}
+  updateBond(lB,c,oL); updateBond(rB,c,oR); renderer.render(scene,camera)}animate();
+window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()});
+</script>
 </body>
 </html>

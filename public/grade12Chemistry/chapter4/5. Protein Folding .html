@@ -1,153 +1,52 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Protein Folding 3D</title>
-
-<style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-  }
-
-  #ui {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-  }
-
-  button {
-    margin: 5px;
-    padding: 10px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #2563eb;
-    color: white;
-  }
-
-  button:hover {
-    background: #1d4ed8;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🧬 protein folding · α helix & β sheet</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    #canvas-container{width:100%;height:100dvh;position:relative;background:#f8fafc}
+    .panel{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:30px;padding:12px 16px;border:1px solid #d0e2ff;max-width:360px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,0.04);display:flex;gap:8px}
+    .btn{flex:1;padding:12px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-weight:600;cursor:pointer;color:#3a628c;font-size:0.8rem}
+    .btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .legend{display:flex;gap:16px;justify-content:center;margin-top:8px;font-size:0.75rem;color:#3a628c}
+    .hint{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:40px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
-
 <body>
-
-<div id="ui">
-  <button onclick="showHelix()">Alpha Helix</button>
-  <button onclick="showSheet()">Beta Sheet</button>
-  <button onclick="toggleColors()">Hydrophobic Mode</button>
+<div id="canvas-container"></div>
+<div class="hint">🖱️ drag to rotate</div>
+<div class="panel">
+  <button class="btn active" data-mode="helix">🧬 α helix</button>
+  <button class="btn" data-mode="sheet">📐 β sheet</button>
+  <button class="btn" id="toggleColor">💧 hydrophobic</button>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-
-<script>
-let scene, camera, renderer, controls;
-let proteinGroup;
-let hydrophobic = false;
-
-init();
-animate();
-
-function init() {
-  scene = new THREE.Scene();
-
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-  camera.position.z = 20;
-
-  renderer = new THREE.WebGLRenderer({antialias: true});
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-  const light = new THREE.PointLight(0xffffff, 1);
-  light.position.set(10, 10, 10);
-  scene.add(light);
-
-  proteinGroup = new THREE.Group();
-  scene.add(proteinGroup);
-
-  showHelix();
+<div style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);display:flex;gap:16px" class="legend"><span style="color:#3b82f6">● hydrophilic</span><span style="color:#f59e0b">● hydrophobic</span><span>— H‑bond</span></div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.128.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}</script>
+<script type="module">
+import*as THREE from'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+const container=document.getElementById('canvas-container'),scene=new THREE.Scene();scene.background=new THREE.Color('#f8fafc');
+const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);camera.position.set(8,4,14);camera.lookAt(0,0,0);
+const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(container.clientWidth,container.clientHeight);container.appendChild(renderer.domElement);
+new OrbitControls(camera,renderer.domElement).enableDamping=!0;
+scene.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,10,6);scene.add(dl);
+const protein=new THREE.Group();scene.add(protein);
+let mode='helix',hydro=!1;
+function build(){
+  while(protein.children.length)protein.remove(protein.children[0]);
+  if(mode==='helix'){
+    const pts=[]; for(let i=0;i<45;i++){const a=i*0.5,x=Math.cos(a)*2.6,y=i*0.25-5,z=Math.sin(a)*2.6;pts.push(new THREE.Vector3(x,y,z))}
+    pts.forEach((p,i)=>{const col=hydro?(i%2?'#f59e0b':'#3b82f6'):'#3b82f6';const s=new THREE.Mesh(new THREE.SphereGeometry(0.28,10),new THREE.MeshStandardMaterial({color:col}));s.position.copy(p);protein.add(s); if(i>0){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pts[i-1],p]),new THREE.LineBasicMaterial({color:'#94a3b8'}));protein.add(l)} if(i>3){const hb=new THREE.Line(new THREE.BufferGeometry().setFromPoints([pts[i-4],p]),new THREE.LineDashedMaterial({color:'#10b981',dashSize:0.05,gapSize:0.04}));hb.computeLineDistances();protein.add(hb)}})
+  }else{
+    for(let i=0;i<16;i++)for(let j=0;j<4;j++){const x=i*0.9-7,y=j*0.8-1.2,z=i%2?0.6:-0.6;const col=hydro?(j%2?'#f59e0b':'#3b82f6'):'#3b82f6';const b=new THREE.Mesh(new THREE.BoxGeometry(0.7,0.25,0.25),new THREE.MeshStandardMaterial({color:col}));b.position.set(x,y,z);protein.add(b); if(j>0){const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,y-0.4,z),new THREE.Vector3(x,y+0.4,z)]),new THREE.LineBasicMaterial({color:'#94a3b8'}));protein.add(l)}}}
 }
-
-function clearScene() {
-  while(proteinGroup.children.length > 0) {
-    proteinGroup.remove(proteinGroup.children[0]);
-  }
-}
-
-function showHelix() {
-  clearScene();
-
-  for (let i = 0; i < 50; i++) {
-    let angle = i * 0.3;
-    let x = Math.cos(angle) * 3;
-    let y = i * 0.3 - 7;
-    let z = Math.sin(angle) * 3;
-
-    let geometry = new THREE.SphereGeometry(0.4);
-    let color = hydrophobic ? (i % 2 === 0 ? 0xff4444 : 0x44aaff) : 0x00ffcc;
-    let material = new THREE.MeshStandardMaterial({color});
-    let sphere = new THREE.Mesh(geometry, material);
-
-    sphere.position.set(x, y, z);
-    proteinGroup.add(sphere);
-
-    // hydrogen bonds (lines)
-    if (i > 3) {
-      let prev = proteinGroup.children[i-3];
-      let points = [];
-      points.push(prev.position);
-      points.push(sphere.position);
-
-      let geometryLine = new THREE.BufferGeometry().setFromPoints(points);
-      let line = new THREE.Line(geometryLine, new THREE.LineBasicMaterial({color: 0xffffff}));
-      proteinGroup.add(line);
-    }
-  }
-}
-
-function showSheet() {
-  clearScene();
-
-  for (let i = 0; i < 20; i++) {
-    for (let j = 0; j < 5; j++) {
-      let geometry = new THREE.BoxGeometry(0.8, 0.3, 0.3);
-      let color = hydrophobic ? (j % 2 === 0 ? 0xff4444 : 0x44aaff) : 0x00ffcc;
-      let material = new THREE.MeshStandardMaterial({color});
-      let cube = new THREE.Mesh(geometry, material);
-
-      cube.position.set(i - 10, j - 2, (i % 2 === 0 ? 1 : -1));
-      proteinGroup.add(cube);
-    }
-  }
-}
-
-function toggleColors() {
-  hydrophobic = !hydrophobic;
-  showHelix();
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;build()});
+document.getElementById('toggleColor').onclick=()=>{hydro=!hydro;build()};
+function animate(){requestAnimationFrame(animate);renderer.render(scene,camera)}animate();
+window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()});
+build();
 </script>
-
 </body>
 </html>

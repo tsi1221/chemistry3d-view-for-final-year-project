@@ -1,151 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atom Economy Visualizer</title>
-
-<style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    font-family: Arial;
-    background: #0f172a;
-    color: white;
-  }
-
-  #ui {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 10;
-  }
-
-  button {
-    margin: 5px;
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    background: #2563eb;
-    color: white;
-  }
-
-  button:hover {
-    background: #1d4ed8;
-  }
-
-  #info {
-    margin-top: 10px;
-    font-size: 14px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ atom economy · green chemistry</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    #canvas-container{width:100%;height:100dvh;position:relative;background:#f8fafc}
+    .panel{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:30px;padding:12px 16px;border:1px solid #d0e2ff;max-width:360px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,0.04);display:flex;gap:8px}
+    .btn{flex:1;padding:14px;border-radius:40px;border:none;font-weight:700;font-size:0.9rem;cursor:pointer;color:#fff}
+    .btn-high{background:#10b981}.btn-low{background:#ef4444}
+    .stats{display:flex;gap:12px;margin-top:8px;justify-content:center}
+    .stat{background:#f0f6ff;border-radius:20px;padding:6px 14px;font-size:0.8rem}
+    .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.8rem;color:#3a628c}
+    .hint{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:40px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
-
 <body>
-
-<div id="ui">
-  <button onclick="highEconomy()">High Atom Economy</button>
-  <button onclick="lowEconomy()">Low Atom Economy</button>
-  <div id="info"></div>
+<div id="canvas-container"></div>
+<div class="hint">🖱️ drag to rotate</div>
+<div class="panel">
+  <button class="btn btn-high" id="highBtn">🟢 high · 87%</button>
+  <button class="btn btn-low" id="lowBtn">🔴 low · 19%</button>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-
-<script>
-let scene, camera, renderer, controls;
-let group;
-
-init();
-animate();
-
-function init() {
-  scene = new THREE.Scene();
-
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-  camera.position.z = 20;
-
-  renderer = new THREE.WebGLRenderer({antialias: true});
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
-
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-  const light = new THREE.PointLight(0xffffff, 1);
-  light.position.set(10,10,10);
-  scene.add(light);
-
-  group = new THREE.Group();
-  scene.add(group);
-
-  highEconomy();
+<div style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%)" class="stats"><span class="stat">product <span id="prodCount">20</span></span><span class="stat">waste <span id="wasteCount">3</span></span></div>
+<div class="legend"><span style="color:#10b981">● product</span><span style="color:#ef4444">● waste</span></div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.128.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}</script>
+<script type="module">
+import*as THREE from'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+const container=document.getElementById('canvas-container'),scene=new THREE.Scene();scene.background=new THREE.Color('#f8fafc');
+const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);camera.position.set(6,3,14);camera.lookAt(0,0,0);
+const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(container.clientWidth,container.clientHeight);container.appendChild(renderer.domElement);
+new OrbitControls(camera,renderer.domElement).enableDamping=!0;
+scene.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,8,5);scene.add(dl);
+const atoms=new THREE.Group();scene.add(atoms);
+const prodD=document.getElementById('prodCount'),wasteD=document.getElementById('wasteCount');
+function build(high){
+  while(atoms.children.length)atoms.remove(atoms.children[0]);
+  if(high){for(let i=0;i<20;i++){const a=i*0.5,x=Math.cos(a)*2.5,y=Math.sin(a)*1.5,z=Math.sin(a)*1.2;const s=new THREE.Mesh(new THREE.SphereGeometry(0.3,8),new THREE.MeshStandardMaterial({color:'#10b981'}));s.position.set(x,y,z);atoms.add(s)} for(let i=0;i<3;i++){const s=new THREE.Mesh(new THREE.SphereGeometry(0.26,6),new THREE.MeshStandardMaterial({color:'#ef4444'}));s.position.set(5+i*0.5,-1+i*0.6,i*0.4);atoms.add(s)} prodD.textContent='20'; wasteD.textContent='3'}
+  else{for(let i=0;i<5;i++){const a=i*1.2,x=Math.cos(a)*1.8-1,y=Math.sin(a)*1,z=Math.sin(a)*0.7;const s=new THREE.Mesh(new THREE.SphereGeometry(0.3,8),new THREE.MeshStandardMaterial({color:'#10b981'}));s.position.set(x,y,z);atoms.add(s)} for(let i=0;i<22;i++){const a=i*0.9,x=Math.cos(a)*2.8*0.7+3.5,y=Math.sin(a)*2.8*0.5,z=Math.cos(a*1.2)*1.5;const s=new THREE.Mesh(new THREE.SphereGeometry(0.26,6),new THREE.MeshStandardMaterial({color:'#ef4444'}));s.position.set(x,y,z);atoms.add(s)} prodD.textContent='5'; wasteD.textContent='22'}
 }
-
-function clearScene() {
-  while(group.children.length > 0) {
-    group.remove(group.children[0]);
-  }
-}
-
-function createAtom(x,y,z,color) {
-  let geometry = new THREE.SphereGeometry(0.6);
-  let material = new THREE.MeshStandardMaterial({color});
-  let sphere = new THREE.Mesh(geometry, material);
-  sphere.position.set(x,y,z);
-  group.add(sphere);
-}
-
-function highEconomy() {
-  clearScene();
-
-  // PRODUCT cluster (almost all atoms)
-  for(let i=0; i<20; i++) {
-    let angle = i * 0.5;
-    createAtom(Math.cos(angle)*3, Math.sin(angle)*3, 0, 0x22c55e); // green
-  }
-
-  // small waste
-  for(let i=0; i<3; i++) {
-    createAtom(8, i, 0, 0xef4444); // red
-  }
-
-  document.getElementById("info").innerHTML =
-    "High Atom Economy 🟢<br>Most atoms become product → Less waste";
-}
-
-function lowEconomy() {
-  clearScene();
-
-  // small product
-  for(let i=0; i<5; i++) {
-    let angle = i * 1;
-    createAtom(Math.cos(angle)*2, Math.sin(angle)*2, 0, 0x22c55e);
-  }
-
-  // large waste pile
-  for(let i=0; i<20; i++) {
-    let x = 6 + Math.random()*3;
-    let y = Math.random()*4 - 2;
-    createAtom(x, y, 0, 0xef4444);
-  }
-
-  document.getElementById("info").innerHTML =
-    "Low Atom Economy 🔴<br>Many atoms wasted → Inefficient reaction";
-}
-
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+document.getElementById('highBtn').onclick=()=>build(!0); document.getElementById('lowBtn').onclick=()=>build(!1);
+function animate(){requestAnimationFrame(animate);renderer.render(scene,camera)}animate();
+window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()});
+build(!0);
 </script>
-
 </body>
 </html>
