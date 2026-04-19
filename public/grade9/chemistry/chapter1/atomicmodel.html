@@ -1,277 +1,535 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ChemLab | Grade 12 Interactive Platform</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #2563eb;
-            --secondary: #3b82f6;
-            --bg-main: #ffffff;
-            --bg-soft: #eff6ff;
-            --glass: rgba(255, 255, 255, 0.7);
-            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ ChemLab · Grade 12</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-soft); color: var(--primary); overflow-x: hidden; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        /* --- Layout --- */
-        .app-container { display: flex; min-height: 100vh; }
-        
-        .sidebar {
-            width: 260px;
-            background: var(--bg-main);
-            border-right: 1px solid rgba(37, 99, 235, 0.1);
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            transition: transform 0.3s ease;
-        }
+    :root {
+      --bg-page: #f8fafc;
+      --surface: #ffffff;
+      --border-light: #d0e2ff;
+      --text-dark: #0a1e3c;
+      --text-soft: #3a628c;
+      --accent: #1a6eeb;
+      --accent-light: #e1edff;
+      --shadow-card: 0 12px 30px rgba(0, 60, 130, 0.06);
+      --radius: 24px;
+    }
 
-        .main-content { flex: 1; padding: 2rem; display: flex; flex-direction: column; gap: 2rem; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-dark);
+      min-height: 100dvh;
+    }
 
-        /* --- UI Components --- */
-        .header-gradient {
-            background: linear-gradient(135deg, #2563eb, #3b82f6);
-            padding: 2rem;
-            border-radius: 20px;
-            color: white;
-            box-shadow: var(--shadow);
-            animation: gradientMove 6s infinite alternate;
-        }
+    .app-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100dvh;
+    }
 
-        @keyframes gradientMove { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+    /* sidebar */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border-light);
+      padding: 28px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      overflow-y: auto;
+    }
 
-        .glass-card {
-            background: var(--glass);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 20px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            transition: transform 0.3s ease;
-        }
+    .logo {
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+      padding: 0 8px;
+    }
 
-        .glass-card:hover { transform: translateY(-5px); }
+    .nav-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
 
-        .search-bar {
-            width: 100%;
-            padding: 12px 20px;
-            border-radius: 12px;
-            border: 1px solid var(--secondary);
-            background: var(--bg-main);
-            outline: none;
-        }
+    .nav-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-soft);
+      padding: 0 8px;
+      margin-bottom: 4px;
+    }
 
-        /* --- Canvas Section --- */
-        #canvas-container {
-            width: 100%;
-            height: 400px;
-            background: #fff;
-            border-radius: 20px;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(37, 99, 235, 0.1);
-        }
+    .nav-btn {
+      background: transparent;
+      border: 1.5px solid transparent;
+      padding: 14px 16px;
+      border-radius: 16px;
+      cursor: pointer;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-soft);
+      transition: 0.12s;
+      font-size: 0.95rem;
+    }
 
-        canvas { width: 100%; height: 100%; touch-action: none; }
+    .nav-btn:hover {
+      background: #f0f6ff;
+    }
 
-        /* --- Custom Alert --- */
-        #alert-box {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .nav-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
 
-        .alert-item {
-            background: var(--primary);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 10px;
-            box-shadow: var(--shadow);
-            animation: slideIn 0.3s ease forwards;
-        }
+    /* main */
+    .main-content {
+      padding: 28px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
 
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .header-card {
+      background: linear-gradient(145deg, var(--accent), #3b82f6);
+      border-radius: var(--radius);
+      padding: 32px 30px;
+      color: white;
+      box-shadow: var(--shadow-card);
+    }
 
-        /* --- Responsive Grid --- */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-        }
+    .header-card h1 {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
 
-        /* --- Media Queries --- */
-        @media (max-width: 1024px) { .sidebar { width: 200px; } }
-        @media (max-width: 768px) {
-            .app-container { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; padding: 1rem; flex-direction: row; overflow-x: auto; }
-            .main-content { padding: 1rem; }
-        }
-    </style>
+    .header-card p {
+      opacity: 0.9;
+      font-weight: 500;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 16px 20px;
+      border-radius: 60px;
+      border: 1.5px solid var(--border-light);
+      background: white;
+      font-size: 0.95rem;
+      outline: none;
+      transition: 0.15s;
+    }
+
+    .search-bar:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(26, 110, 235, 0.1);
+    }
+
+    .canvas-wrapper {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      aspect-ratio: 16 / 9;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 22px 20px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-card);
+    }
+
+    .info-card h3 {
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--accent);
+    }
+
+    .slider-block {
+      margin: 16px 0;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #d4e2fa;
+      border-radius: 10px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 20px;
+      border: 3px solid white;
+      cursor: grab;
+    }
+
+    .log-list {
+      list-style: none;
+      font-size: 0.9rem;
+      color: var(--text-soft);
+    }
+
+    .log-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--accent);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 60px;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(26, 110, 235, 0.25);
+      animation: slideToast 0.3s ease;
+      pointer-events: auto;
+    }
+
+    @keyframes slideToast {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @media (max-width: 800px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border-light); }
+      .info-grid { grid-template-columns: 1fr; }
+      .main-content { padding: 20px 16px; }
+    }
+  </style>
 </head>
 <body>
 
-    <div id="alert-box"></div>
+<div class="toast-container" id="toastContainer"></div>
 
-    <div class="app-container">
-        <aside class="sidebar">
-            <h2 style="font-weight: 600;">ChemLab</h2>
-            <nav style="display: flex; flex-direction: column; gap: 10px;">
-                <p style="font-size: 0.8rem; opacity: 0.7;">CATEGORIES</p>
-                <button class="glass-card" onclick="setMode('atomic')" style="text-align: left; cursor: pointer;">Atomic Structure</button>
-                <button class="glass-card" onclick="setMode('bonding')" style="text-align: left; cursor: pointer;">Bonding</button>
-                <button class="glass-card" onclick="setMode('gas')" style="text-align: left; cursor: pointer;">Gas Laws</button>
-            </nav>
-        </aside>
+<div class="app-grid">
+  <aside class="sidebar">
+    <div class="logo">⚛️ ChemLab</div>
+    
+    <div class="nav-section">
+      <div class="nav-label">simulations</div>
+      <button class="nav-btn active" data-mode="atomic">🔬 atomic structure</button>
+      <button class="nav-btn" data-mode="bonding">🔗 chemical bonding</button>
+      <button class="nav-btn" data-mode="gas">☁️ gas laws</button>
+    </div>
+  </aside>
 
-        <main class="main-content">
-            <header class="header-gradient">
-                <h1>Chemistry Simulation Lab</h1>
-                <p>Grade 12 Advanced Learning Platform</p>
-            </header>
+  <main class="main-content">
+    <header class="header-card">
+      <h1>Chemistry Simulation Lab</h1>
+      <p>Grade 12 · interactive learning platform</p>
+    </header>
 
-            <input type="text" class="search-bar" placeholder="Search experiments (e.g. Covalent Bonds)...">
+    <input type="text" class="search-bar" placeholder="🔍 search experiments · covalent bonds, orbitals...">
 
-            <div id="canvas-container" class="glass-card">
-                <canvas id="chemCanvas"></canvas>
-            </div>
-
-            <div class="grid-container">
-                <div class="glass-card">
-                    <h3>Simulation Controls</h3>
-                    <p style="font-size: 0.9rem; margin: 10px 0;">Drag atoms to interact. Use mouse or touch.</p>
-                    <input type="range" style="width: 100%;" min="1" max="10" value="5">
-                </div>
-                <div class="glass-card">
-                    <h3>Observation Log</h3>
-                    <ul id="log" style="list-style: none; font-size: 0.85rem;">
-                        <li>• System Ready.</li>
-                    </ul>
-                </div>
-            </div>
-        </main>
+    <div class="canvas-wrapper">
+      <canvas id="chemCanvas"></canvas>
     </div>
 
-    <script>
-        // --- Core Application State ---
-        const canvas = document.getElementById('chemCanvas');
-        const ctx = canvas.getContext('2d');
-        const alertBox = document.getElementById('alert-box');
-        let atoms = [];
-        let isDragging = false;
-        let selectedAtom = null;
+    <div class="info-grid">
+      <div class="info-card">
+        <h3>🎛️ simulation controls</h3>
+        <p style="color:var(--text-soft); margin-bottom:16px;">drag atoms to interact · pinch to zoom</p>
+        <div class="slider-block">
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+            <span>energy level</span>
+            <span id="energyValue">5.0</span>
+          </div>
+          <input type="range" id="energySlider" min="1" max="10" value="5" step="0.5">
+        </div>
+        <button class="nav-btn" id="resetBtn" style="width:100%; margin-top:8px;">↻ reset positions</button>
+      </div>
 
-        // --- Alert System ---
-        function showAlert(message) {
-            const div = document.createElement('div');
-            div.className = 'alert-item';
-            div.innerText = message;
-            alertBox.appendChild(div);
-            setTimeout(() => {
-                div.style.opacity = '0';
-                setTimeout(() => div.remove(), 500);
-            }, 3000);
+      <div class="info-card">
+        <h3>📋 observation log</h3>
+        <ul class="log-list" id="logList">
+          <li>✨ system ready</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  (function(){
+    const canvas = document.getElementById('chemCanvas');
+    const ctx = canvas.getContext('2d');
+    const toastContainer = document.getElementById('toastContainer');
+    const logList = document.getElementById('logList');
+    const energySlider = document.getElementById('energySlider');
+    const energyValue = document.getElementById('energyValue');
+    
+    let width = 0, height = 0;
+    const DPR = devicePixelRatio || 1;
+    
+    let atoms = [];
+    let selectedAtom = null;
+    let isDragging = false;
+    let currentMode = 'atomic';
+    
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.textContent = msg;
+      toastContainer.appendChild(toast);
+      setTimeout(() => toast.remove(), 2500);
+    }
+    
+    function addLog(msg) {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      logList.appendChild(li);
+      if (logList.children.length > 5) {
+        logList.removeChild(logList.children[0]);
+      }
+    }
+    
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      width = rect.width;
+      height = rect.height;
+      canvas.width = width * DPR;
+      canvas.height = height * DPR;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+    
+    class Atom {
+      constructor(x, y, radius, label, color) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.label = label;
+        this.color = color;
+        this.angle = Math.random() * 2 * Math.PI;
+      }
+      
+      draw() {
+        // electron cloud
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + 16, 0, 2 * Math.PI);
+        ctx.fillStyle = this.color + '15';
+        ctx.fill();
+        
+        // orbit
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius + 12, 0, 2 * Math.PI);
+        ctx.strokeStyle = this.color + '30';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // nucleus
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 14;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // label
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.label, this.x, this.y);
+      }
+      
+      hitTest(px, py) {
+        return Math.hypot(this.x - px, this.y - py) < this.radius + 20;
+      }
+    }
+    
+    function initAtoms() {
+      atoms = [];
+      if (currentMode === 'atomic') {
+        atoms.push(new Atom(width * 0.3, height * 0.5, 22, 'H', '#3b82f6'));
+        atoms.push(new Atom(width * 0.65, height * 0.5, 30, 'O', '#1e4a7a'));
+      } else if (currentMode === 'bonding') {
+        atoms.push(new Atom(width * 0.25, height * 0.5, 22, 'H', '#3b82f6'));
+        atoms.push(new Atom(width * 0.45, height * 0.5, 30, 'O', '#1e4a7a'));
+        atoms.push(new Atom(width * 0.7, height * 0.5, 22, 'H', '#3b82f6'));
+      } else {
+        for (let i = 0; i < 18; i++) {
+          atoms.push(new Atom(60 + Math.random() * (width - 120), 60 + Math.random() * (height - 120), 10, '●', '#3b82f6'));
         }
-
-        // --- Canvas Engine ---
-        function resize() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+      }
+    }
+    
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      initAtoms();
+      showToast(`switched to ${mode} simulation`);
+      addLog(`📌 mode: ${mode}`);
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      
+      // subtle grid
+      ctx.strokeStyle = '#d0e2ff';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < width; i += 35) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < height; i += 35) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(width, i);
+        ctx.stroke();
+      }
+      
+      atoms.forEach(atom => atom.draw());
+      
+      if (currentMode === 'bonding') {
+        const d = Math.hypot(atoms[1].x - atoms[0].x, atoms[1].y - atoms[0].y);
+        if (d < 120) {
+          ctx.beginPath();
+          ctx.moveTo(atoms[0].x, atoms[0].y);
+          ctx.lineTo(atoms[1].x, atoms[1].y);
+          ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 4;
+          ctx.stroke();
         }
-        window.addEventListener('resize', resize);
-        resize();
-
-        class Atom {
-            constructor(x, y, radius, label) {
-                this.x = x;
-                this.y = y;
-                this.radius = radius;
-                this.label = label;
-                this.angle = Math.random() * Math.PI * 2;
-            }
-
-            draw() {
-                // Glow effect
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = '#3b82f6';
-                
-                // Nucleus
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = '#2563eb';
-                ctx.fill();
-                ctx.closePath();
-
-                // Electron Orbit
-                ctx.shadowBlur = 0;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius + 20, 0, Math.PI * 2);
-                ctx.strokeStyle = 'rgba(37, 99, 235, 0.2)';
-                ctx.stroke();
-
-                // Label
-                ctx.fillStyle = 'white';
-                ctx.textAlign = 'center';
-                ctx.fillText(this.label, this.x, this.y + 5);
-            }
+        const d2 = Math.hypot(atoms[1].x - atoms[2].x, atoms[1].y - atoms[2].y);
+        if (d2 < 120) {
+          ctx.beginPath();
+          ctx.moveTo(atoms[1].x, atoms[1].y);
+          ctx.lineTo(atoms[2].x, atoms[2].y);
+          ctx.stroke();
         }
-
-        // Initialize Atoms
-        atoms.push(new Atom(100, 100, 20, 'H'));
-        atoms.push(new Atom(250, 200, 25, 'O'));
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            atoms.forEach(atom => atom.draw());
-            requestAnimationFrame(animate);
+      }
+      
+      requestAnimationFrame(draw);
+    }
+    
+    // interaction
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = width / rect.width;
+      const scaleY = height / rect.height;
+      const x = (e.clientX - rect.left) * scaleX;
+      const y = (e.clientY - rect.top) * scaleY;
+      
+      for (let atom of atoms) {
+        if (atom.hitTest(x, y)) {
+          selectedAtom = atom;
+          isDragging = true;
+          canvas.setPointerCapture(e.pointerId);
+          showToast(`selected: ${atom.label}`);
+          addLog(`🔬 selected ${atom.label} atom`);
+          break;
         }
-        animate();
-
-        // --- Interaction Logic (Pointer Events) ---
-        canvas.addEventListener('pointerdown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            atoms.forEach(atom => {
-                const dist = Math.hypot(atom.x - mouseX, atom.y - mouseY);
-                if (dist < atom.radius + 10) {
-                    selectedAtom = atom;
-                    isDragging = true;
-                    showAlert("Element selected: " + atom.label);
-                }
-            });
-        });
-
-        window.addEventListener('pointermove', (e) => {
-            if (isDragging && selectedAtom) {
-                const rect = canvas.getBoundingClientRect();
-                selectedAtom.x = e.clientX - rect.left;
-                selectedAtom.y = e.clientY - rect.top;
-            }
-        });
-
-        window.addEventListener('pointerup', () => {
-            if (isDragging) {
-                showAlert("Atom moved successfully");
-                isDragging = false;
-                selectedAtom = null;
-            }
-        });
-
-        function setMode(mode) {
-            showAlert("Switched to " + mode + " simulation");
-        }
-    </script>
+      }
+    });
+    
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isDragging || !selectedAtom) return;
+      e.preventDefault();
+      
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = width / rect.width;
+      const scaleY = height / rect.height;
+      selectedAtom.x = Math.min(width - 20, Math.max(20, (e.clientX - rect.left) * scaleX));
+      selectedAtom.y = Math.min(height - 20, Math.max(20, (e.clientY - rect.top) * scaleY));
+    });
+    
+    canvas.addEventListener('pointerup', (e) => {
+      if (isDragging) {
+        addLog(`📍 atom moved`);
+        isDragging = false;
+        selectedAtom = null;
+        canvas.releasePointerCapture(e.pointerId);
+      }
+    });
+    
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      initAtoms();
+      showToast('positions reset');
+      addLog('🔄 reset positions');
+    });
+    
+    energySlider.addEventListener('input', () => {
+      energyValue.textContent = parseFloat(energySlider.value).toFixed(1);
+    });
+    
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      initAtoms();
+    });
+    
+    resizeCanvas();
+    initAtoms();
+    draw();
+  })();
+</script>
 </body>
 </html>
