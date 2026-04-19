@@ -1,297 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Scientific Notation Visualizer</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --primary: #38bdf8;
-            --accent: #fbbf24;
-            --danger: #ef4444;
-            --text: #f8fafc;
-            --success: #22c55e;
-        }
-
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-
-        body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            background: var(--bg); 
-            color: var(--text); 
-            display: flex; 
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 15px;
-        }
-
-        .app-container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--panel);
-            padding: clamp(20px, 5vw, 40px);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-
-        header { text-align: center; margin-bottom: 30px; }
-        h1 { font-size: 1.8rem; margin: 0; color: var(--primary); }
-        p { color: #94a3b8; font-size: 0.95rem; }
-
-        /* The Magnitude Visualizer (3D Canvas) */
-        #magnitudeCanvas {
-            width: 100%;
-            height: 120px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 16px;
-            margin-bottom: 25px;
-        }
-
-        .number-strip-container {
-            position: relative;
-            background: #020617;
-            padding: 30px 15px;
-            border-radius: 16px;
-            overflow-x: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 2px solid #334155;
-            margin-bottom: 25px;
-        }
-
-        .digit-slot {
-            display: flex;
-            align-items: center;
-            font-family: 'JetBrains Mono', 'Courier New', monospace;
-            font-size: clamp(1.8rem, 5vw, 3rem);
-            font-weight: 700;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .gap {
-            width: 20px;
-            height: 60px;
-            margin: 0 2px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 4px;
-        }
-
-        .gap:hover { background: rgba(56, 189, 248, 0.2); }
-
-        .decimal-dot {
-            width: 12px;
-            height: 12px;
-            background: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 15px var(--accent);
-            z-index: 10;
-        }
-
-        .result-card {
-            background: rgba(56, 189, 248, 0.05);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            padding: 25px;
-            border-radius: 16px;
-            text-align: center;
-        }
-
-        .sci-notation {
-            font-size: clamp(1.5rem, 4vw, 2.5rem);
-            font-weight: 800;
-            color: var(--text);
-            margin-bottom: 10px;
-        }
-
-        .exponent { color: var(--accent); vertical-align: super; font-size: 0.6em; }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        button {
-            padding: 10px 24px;
-            border-radius: 10px;
-            border: 1px solid #334155;
-            background: #1e293b;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        button.active {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: var(--bg);
-        }
-
-        .status-msg {
-            font-size: 0.9rem;
-            margin-top: 15px;
-            font-weight: 500;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🔢 scientific notation</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:12px}
+    .card{max-width:600px;width:100%;background:#fafcff;border-radius:28px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    h2{font-weight:700;font-size:1.4rem;color:#0a1e3c;margin-bottom:4px}
+    .sub{color:#3a628c;font-size:0.8rem;margin-bottom:16px}
+    .modes{display:flex;gap:8px;margin-bottom:16px}
+    .mode{flex:1;padding:12px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-weight:600;cursor:pointer;color:#3a628c}
+    .mode.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    canvas{display:block;width:100%;height:70px;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff;margin-bottom:16px}
+    .digits{background:#f0f6ff;border-radius:40px;padding:12px 16px;border:1.5px solid #d0e2ff;overflow-x:auto;display:flex;justify-content:center;margin-bottom:20px}
+    .digit-container{display:flex;align-items:center}
+    .digit{font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;color:#0a1e3c;padding:0 2px}
+    .gap{width:20px;height:40px;margin:0 4px;display:flex;align-items:center;justify-content:center;border-radius:8px;cursor:pointer}
+    .gap:active{background:#d0e2ff}
+    .dot{width:12px;height:12px;background:#3b82f6;border-radius:50%;box-shadow:0 0 0 3px rgba(59,130,246,0.2)}
+    .result{background:#f0f6ff;border-radius:20px;padding:20px;text-align:center;border-left:4px solid #3b82f6}
+    .sci{font-size:1.8rem;font-weight:700;color:#0a1e3c}
+    .exp{color:#f59e0b;font-size:1.2rem;vertical-align:super}
+    .status{font-size:0.8rem;font-weight:600;padding:4px 12px;border-radius:40px;display:inline-block;margin-top:8px}
+    .ok{background:#d1fae5;color:#065f46}
+    .warn{background:#fef3c7;color:#92400e}
+    @media(max-width:500px){.digit{font-size:1.4rem}.sci{font-size:1.4rem}}
+  </style>
 </head>
 <body>
-
-<div class="app-container">
-    <header>
-        <h1>Scientific Notation Explorer</h1>
-        <p>Interactive tool to visualize decimal movement and powers of 10</p>
-    </header>
-
-    <div class="controls">
-        <button id="modeLarge" class="active">(Large)</button>
-        <button id="modeSmall">(Small)</button>
-    </div>
-
-    <canvas id="magnitudeCanvas"></canvas>
-
-    <div class="number-strip-container" id="strip">
-        </div>
-
-    <div class="result-card">
-        <div class="sci-notation" id="output">1.0 &times; 10<span class="exponent">0</span></div>
-        <div id="status" class="status-msg"></div>
-    </div>
+<div class="card">
+  <h2>🔢 scientific notation</h2>
+  <div class="sub">tap gaps · move decimal</div>
+  <div class="modes">
+    <button class="mode active" data-mode="large">📈 large</button>
+    <button class="mode" data-mode="small">📉 small</button>
+  </div>
+  <canvas id="magCanvas"></canvas>
+  <div class="digits"><div class="digit-container" id="digitStrip"></div></div>
+  <div class="result">
+    <div class="sci" id="sciOutput">6.022 × 10<span class="exp" id="expValue">9</span></div>
+    <div id="statusMsg" class="status ok">✓ proper notation</div>
+  </div>
 </div>
-
 <script>
-    const strip = document.getElementById('strip');
-    const output = document.getElementById('output');
-    const status = document.getElementById('status');
-    const canvas = document.getElementById('magnitudeCanvas');
-    const ctx = canvas.getContext('2d');
-
-    let digits = [];
-    let currentIdx = 1; // Position of decimal
-    let firstSigIdx = 0;
-    let baseExponent = 0;
-
-    function init(mode) {
-        if(mode === 'large') {
-            digits = "6022000000".split("");
-            baseExponent = digits.length - 1;
-            currentIdx = digits.length;
-        } else {
-            digits = "0000000125".split("");
-            baseExponent = -1;
-            currentIdx = 1;
-        }
-        render();
-    }
-
-    function render() {
-        strip.innerHTML = "";
-        
-        // Add initial gap
-        createGap(0);
-
-        digits.forEach((d, i) => {
-            const digit = document.createElement('div');
-            digit.className = 'digit-slot';
-            digit.innerText = d;
-            strip.appendChild(digit);
-            createGap(i + 1);
-        });
-
-        updateLogic();
-        drawMagnitude();
-    }
-
-    function createGap(idx) {
-        const gap = document.createElement('div');
-        gap.className = 'gap';
-        if (currentIdx === idx) {
-            const dot = document.createElement('div');
-            dot.className = 'decimal-dot';
-            gap.appendChild(dot);
-        }
-        gap.onclick = () => { currentIdx = idx; render(); };
-        strip.appendChild(gap);
-    }
-
-    function updateLogic() {
-        firstSigIdx = digits.findIndex(d => d !== "0");
-        const properIdx = firstSigIdx + 1;
-        
-        // Calculate exponent relative to standard position
-        let exponent = (currentIdx <= firstSigIdx) 
-            ? (firstSigIdx - currentIdx + 1) * -1 
-            : (currentIdx - (firstSigIdx + 1));
-
-        // Adjust for "Small" mode leading zeros
-        let displayExp = currentIdx - (digits.length);
-        if (btnSmall.classList.contains('active')) {
-            displayExp = currentIdx - (firstSigIdx + 1);
-        } else {
-            displayExp = currentIdx - (firstSigIdx + 1);
-        }
-
-        // Generate Mantissa
-        let mantissa = digits[firstSigIdx] + "." + digits.slice(firstSigIdx+1).join("").replace(/0+$/, "");
-        if (mantissa.endsWith(".")) mantissa = mantissa.slice(0, -1);
-
-        output.innerHTML = `${mantissa} &times; 10<span class="exponent">${displayExp}</span>`;
-
-        if (currentIdx === properIdx) {
-            status.innerHTML = "✓ Proper Scientific Notation";
-            status.style.color = "var(--success)";
-        } else {
-            status.innerHTML = `⚠ Move decimal after '${digits[firstSigIdx]}' for proper format`;
-            status.style.color = "var(--accent)";
-        }
-    }
-
-    function drawMagnitude() {
-        const w = canvas.width = canvas.offsetWidth;
-        const h = canvas.height = canvas.offsetHeight;
-        ctx.clearRect(0, 0, w, h);
-        
-        const exponent = currentIdx - (firstSigIdx + 1);
-        const count = Math.abs(exponent);
-        const radius = 15;
-        const spacing = 40;
-        
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = exponent >= 0 ? "var(--primary)" : "var(--danger)";
-        ctx.fillStyle = exponent >= 0 ? "var(--primary)" : "var(--danger)";
-
-        // Draw representational bubbles for each "Power of Ten"
-        const startX = (w - (count * spacing)) / 2;
-        for(let i = 0; i < count; i++) {
-            ctx.beginPath();
-            ctx.arc(startX + (i * spacing), h/2, radius, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "#94a3b8";
-        ctx.font = "14px Inter";
-        ctx.textAlign = "center";
-        ctx.fillText(exponent === 0 ? "Unity (10⁰)" : `Magnitude: 10^${exponent}`, w/2, h - 20);
-    }
-
-    const btnLarge = document.getElementById('modeLarge');
-    const btnSmall = document.getElementById('modeSmall');
-
-    btnLarge.onclick = () => { btnLarge.className = 'active'; btnSmall.className = ''; init('large'); };
-    btnSmall.onclick = () => { btnSmall.className = 'active'; btnLarge.className = ''; init('small'); };
-
-    init('large');
-    window.onresize = drawMagnitude;
+(function(){
+  const canvas=document.getElementById('magCanvas'),ctx=canvas.getContext('2d');
+  const strip=document.getElementById('digitStrip'),sciOut=document.getElementById('sciOutput');
+  const expSpan=document.getElementById('expValue'),statusMsg=document.getElementById('statusMsg');
+  let mode='large',digits=[],decimal=9,DPR=devicePixelRatio||1;
+  
+  function setMode(m){
+    mode=m;
+    document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+    digits=m==='large'?"6022000000".split(""):"0000000125".split("");
+    decimal=m==='large'?digits.length:1;
+    render();
+  }
+  
+  function firstSig(){return digits.findIndex(d=>d!=='0')}
+  
+  function compute(){
+    const sig=firstSig();
+    if(sig===-1)return{mantissa:'0',exponent:0};
+    const mantDigits=digits.slice(sig);
+    const exp=mode==='large'?decimal-(sig+1):decimal-(sig+1);
+    let mant=mantDigits[0];
+    if(mantDigits.length>1)mant+='.'+mantDigits.slice(1).join('').replace(/0+$/,'');
+    if(mant.endsWith('.'))mant=mant.slice(0,-1);
+    return{mantissa:mant,exponent:exp};
+  }
+  
+  function update(){
+    const {mantissa,exponent}=compute(),sig=firstSig(),proper=sig+1;
+    sciOut.innerHTML=`${mantissa} × 10<span class="exp">${exponent}</span>`;
+    expSpan.textContent=exponent;
+    if(decimal===proper){statusMsg.textContent='✓ proper notation';statusMsg.className='status ok'}
+    else{statusMsg.textContent=`⚠ move after '${digits[sig]}'`;statusMsg.className='status warn'}
+    drawMag(exponent);
+  }
+  
+  function drawMag(exp){
+    const w=canvas.width=canvas.offsetWidth*DPR,h=canvas.height=canvas.offsetHeight*DPR;
+    canvas.style.width=canvas.offsetWidth+'px';canvas.style.height=canvas.offsetHeight+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    ctx.clearRect(0,0,w/DPR,h/DPR);
+    const cnt=Math.abs(exp),r=12,sp=32,start=(w/DPR-cnt*sp)/2;
+    ctx.shadowBlur=12;ctx.shadowColor=exp>=0?'#3b82f6':'#ef4444';ctx.fillStyle=exp>=0?'#3b82f6':'#ef4444';
+    for(let i=0;i<cnt;i++){ctx.beginPath();ctx.arc(start+i*sp,h/DPR/2,r,0,2*Math.PI);ctx.fill()}
+    ctx.shadowBlur=0;ctx.fillStyle='#64748b';ctx.font='11px system-ui';ctx.textAlign='center';
+    ctx.fillText(exp===0?'10⁰':`10${exp>0?'⁺':''}${exp}`,w/DPR/2,h/DPR-8);
+  }
+  
+  function render(){
+    strip.innerHTML='';
+    const addGap=p=>{
+      const g=document.createElement('div');g.className='gap';g.dataset.pos=p;
+      if(p===decimal){const d=document.createElement('div');d.className='dot';g.appendChild(d)}
+      g.addEventListener('click',()=>{decimal=+g.dataset.pos;render()});
+      strip.appendChild(g);
+    };
+    addGap(0);
+    digits.forEach((d,i)=>{const s=document.createElement('span');s.className='digit';s.textContent=d;strip.appendChild(s);addGap(i+1)});
+    update();
+  }
+  
+  document.querySelectorAll('.mode').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+  window.addEventListener('resize',()=>{const exp=compute().exponent;drawMag(exp)});
+  setMode('large');
+})();
 </script>
-
 </body>
 </html>

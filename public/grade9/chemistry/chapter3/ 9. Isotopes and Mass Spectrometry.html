@@ -1,200 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mass Spectrometry Visualizer</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --primary: #38bdf8;
-            --secondary: #fbbf24;
-            --text: #f1f5f9;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 350px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 10;
-        }
-
-        .viewport {
-            flex-grow: 1;
-            position: relative;
-            background: #000;
-        }
-
-        canvas { width: 100%; height: 100%; }
-
-        .card {
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        h1 { font-size: 1.2rem; color: var(--primary); margin: 0; }
-        .stat-row { display: flex; justify-content: space-between; margin: 5px 0; font-family: monospace; }
-        
-        .btn-group { display: flex; gap: 10px; margin-top: 10px; }
-        button {
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            transition: opacity 0.2s;
-        }
-        .add { background: var(--primary); color: #000; }
-        .fire { background: #22c55e; color: #000; }
-        
-        .magnetic-field {
-            position: absolute;
-            top: 10%; left: 30%; width: 60%; height: 80%;
-            border: 2px dashed rgba(56, 189, 248, 0.3);
-            pointer-events: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(56, 189, 248, 0.2);
-            font-size: 5rem;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🧬 mass spec · isotopes</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:900px;margin:0 auto}
+    @media(min-width:700px){.grid{grid-template-columns:280px 1fr}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:16px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .isotope-card{background:#f0f6ff;border-radius:18px;padding:18px;border-left:4px solid #3b82f6}
+    .row{display:flex;justify-content:space-between;padding:8px 0;font-weight:500}
+    .val{font-weight:700;color:#3b82f6;font-size:1.2rem}
+    .btn-group{display:flex;gap:8px;margin:16px 0}
+    .btn{flex:1;padding:14px;border-radius:40px;border:none;font-weight:700;font-size:1rem;cursor:pointer;background:#3b82f6;color:#fff}
+    .btn-outline{background:#fff;border:1.5px solid #d0e2ff;color:#3a628c}
+    .btn-fire{background:#ef4444;color:#fff}
+    .btn:active{scale:0.97}
+    canvas{display:block;width:100%;aspect-ratio:16/10;background:#f8fcff;border-radius:20px;border:1px solid #d0e2ff}
+    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem}
+    .formula{font-size:0.8rem;color:#3a628c;margin-top:12px}
+  </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h1>Mass Spectrometer</h1>
-    
-    <div class="card">
-        <h2 style="font-size: 0.9rem; margin-top: 0;">Isotope Configuration</h2>
-        <div class="stat-row"><span>Protons (Fixed):</span> <span>6 (Carbon)</span></div>
-        <div class="stat-row"><span>Neutrons:</span> <span id="nLabel" style="color:var(--secondary)">6</span></div>
-        <div class="stat-row"><span>Mass (u):</span> <span id="mLabel">12</span></div>
-        
-        <div class="btn-group">
-            <button class="add" onclick="changeNeutrons(1)">+ Neutron</button>
-            <button class="add" onclick="changeNeutrons(-1)">- Neutron</button>
-        </div>
+<div class="grid">
+  <div class="panel">
+    <h2>⚛️ carbon isotopes</h2>
+    <div class="isotope-card">
+      <div class="row"><span>protons</span><span class="val">6</span></div>
+      <div class="row"><span>neutrons</span><span class="val" id="nDisplay">6</span></div>
+      <div class="row"><span>mass (A)</span><span class="val" id="mDisplay">12</span></div>
+      <div class="row"><span>isotope</span><span class="val" id="isoDisplay" style="color:#3b82f6">¹²C</span></div>
     </div>
-
-    <div class="card">
-        <button class="fire" style="width:100%" onclick="fireIon()">FIRE ION</button>
-        <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 10px;">
-            <b>Magnetic Force:</b> $F = qvB$ <br>
-            <b>Centripetal Radius:</b> $r = \frac{mv}{qB}$
-        </p>
+    <div class="btn-group">
+      <button class="btn-outline" id="nDown">− neutron</button>
+      <button class="btn-outline" id="nUp">+ neutron</button>
     </div>
-
-    <div class="card" style="font-size: 0.85rem; color: #94a3b8;">
-        Notice: <b>C-12</b> (Lighter) takes a sharp turn. <br>
-        <b>C-14</b> (Heavier) takes a wider turn.
-    </div>
+    <button class="btn btn-fire" id="fireBtn">🔥 fire ion</button>
+    <button class="btn-outline" id="clearBtn" style="margin-top:8px">🗑️ clear</button>
+    <div class="formula">r = mv/qB · heavier = wider arc</div>
+    <div class="legend"><span style="color:#3b82f6">● ¹²C</span><span style="color:#f59e0b">● ¹³C</span><span style="color:#8b5cf6">● ¹⁴C</span></div>
+  </div>
+  <div class="panel" style="padding:12px"><canvas id="specCanvas"></canvas></div>
 </div>
-
-<div class="viewport">
-    <div class="magnetic-field">× × ×</div>
-    <canvas id="specCanvas"></canvas>
-</div>
-
 <script>
-    const canvas = document.getElementById('specCanvas');
-    const ctx = canvas.getContext('2d');
+(function(){
+  const canvas=document.getElementById('specCanvas'),ctx=canvas.getContext('2d');
+  let neutrons=6,particles=[],DPR=devicePixelRatio||1,w=0,h=0;
+  const nDisplay=document.getElementById('nDisplay'),mDisplay=document.getElementById('mDisplay'),isoDisplay=document.getElementById('isoDisplay');
+  
+  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=r.width*10/16;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+  
+  function updateUI(){
+    const mass=6+neutrons; nDisplay.textContent=neutrons; mDisplay.textContent=mass;
+    let iso='¹²C',col='#3b82f6'; if(neutrons===7){iso='¹³C';col='#f59e0b'}else if(neutrons===8){iso='¹⁴C';col='#8b5cf6'}
+    isoDisplay.textContent=iso; isoDisplay.style.color=col;
+  }
+  
+  function fire(){
+    const mass=6+neutrons,color=neutrons===6?'#3b82f6':(neutrons===7?'#f59e0b':'#8b5cf6');
+    particles.push({x:30,y:h*0.75,vx:5.5,vy:0,mass,color,trail:[],active:true});
+  }
+  
+  function draw(){
+    ctx.clearRect(0,0,w,h); ctx.fillStyle='#e8f2ff'; ctx.fillRect(0,0,w*0.22,h);
+    ctx.fillStyle='#f0f6ff'; ctx.fillRect(w*0.22,0,w*0.78,h);
+    ctx.strokeStyle='#3b82f6'; ctx.lineWidth=2; ctx.setLineDash([6,6]); ctx.beginPath(); ctx.moveTo(w*0.22,0); ctx.lineTo(w*0.22,h); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#10b981'; ctx.fillRect(w-12,h*0.2,8,h*0.6);
     
-    let neutrons = 6;
-    let particles = [];
-    const protons = 6;
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    function changeNeutrons(amt) {
-        neutrons = Math.max(4, Math.min(8, neutrons + amt));
-        document.getElementById('nLabel').innerText = neutrons;
-        document.getElementById('mLabel').innerText = protons + neutrons;
-    }
-
-    function fireIon() {
-        particles.push({
-            x: 50,
-            y: canvas.height * 0.8,
-            vx: 6,
-            vy: 0,
-            mass: (protons + neutrons),
-            history: [],
-            active: true,
-            color: neutrons === 6 ? '#38bdf8' : (neutrons === 7 ? '#fbbf24' : '#f472b6')
-        });
-    }
-
-    function update() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Draw Detector Plate
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(canvas.width - 20, 0, 20, canvas.height);
-
-        particles.forEach((p, i) => {
-            if (!p.active) return;
-
-            // Magnetic field region logic
-            if (p.x > canvas.width * 0.3) {
-                // Apply a force perpendicular to velocity
-                const magneticStrength = 0.08;
-                const acceleration = (magneticStrength * p.vx) / (p.mass * 0.1);
-                p.vy -= acceleration;
-            }
-
-            p.x += p.vx;
-            p.y += p.vy;
-            p.history.push({x: p.x, y: p.y});
-
-            // Draw Tail
-            ctx.beginPath();
-            ctx.strokeStyle = p.color;
-            ctx.lineWidth = 2;
-            p.history.forEach((pos, idx) => {
-                if (idx === 0) ctx.moveTo(pos.x, pos.y);
-                else ctx.lineTo(pos.x, pos.y);
-            });
-            ctx.stroke();
-
-            // Draw Ion
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
-            ctx.fill();
-
-            if (p.x > canvas.width || p.y < 0) p.active = false;
-        });
-
-        requestAnimationFrame(update);
-    }
-
-    update();
+    particles=particles.filter(p=>{if(!p.active)return false; if(p.x>w+20||p.y<-20||p.y>h+20){p.active=false;return false} return true});
+    particles.forEach(p=>{
+      if(p.x>w*0.22){const B=0.1;p.vy-=(1*B)/p.mass*p.vx*0.45}
+      p.x+=p.vx; p.y+=p.vy; p.trail.push({x:p.x,y:p.y}); if(p.trail.length>50)p.trail.shift();
+      ctx.beginPath(); ctx.strokeStyle=p.color+'80'; ctx.lineWidth=2;
+      p.trail.forEach((pt,i)=>i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y)); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x,p.y,5,0,2*Math.PI); ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0;
+    });
+    requestAnimationFrame(draw);
+  }
+  
+  document.getElementById('nUp').onclick=()=>{neutrons=Math.min(8,neutrons+1);updateUI()};
+  document.getElementById('nDown').onclick=()=>{neutrons=Math.max(6,neutrons-1);updateUI()};
+  document.getElementById('fireBtn').onclick=fire;
+  document.getElementById('clearBtn').onclick=()=>{particles=[]};
+  window.onresize=()=>{resize()};
+  resize(); updateUI(); draw();
+})();
 </script>
 </body>
 </html>

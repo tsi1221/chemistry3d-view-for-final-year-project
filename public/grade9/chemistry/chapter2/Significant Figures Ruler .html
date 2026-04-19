@@ -1,173 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Significant Figures Lab</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --primary: #38bdf8;
-            --highlight: #fbbf24;
-        }
-
-        body { 
-            font-family: 'Inter', system-ui, sans-serif; 
-            background: var(--bg); 
-            color: white; 
-            margin: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            padding: 20px;
-        }
-
-        .tool-container {
-            width: 100%;
-            max-width: 800px;
-            background: var(--panel);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        canvas { 
-            width: 100%; 
-            height: 200px; 
-            background: #f8fafc; 
-            border-radius: 8px; 
-            margin: 20px 0;
-        }
-
-        .controls {
-            display: grid;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .readout {
-            text-align: center;
-            font-size: 1.5rem;
-            padding: 15px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            border: 1px solid var(--primary);
-        }
-
-        .sig-fig-digit { display: inline-block; padding: 2px 5px; }
-        .certain { color: var(--primary); border-bottom: 2px solid var(--primary); }
-        .uncertain { color: var(--highlight); border-bottom: 2px solid var(--highlight); font-style: italic; }
-
-        input[type=range] { width: 100%; accent-color: var(--primary); }
-        label { font-weight: bold; font-size: 0.9rem; color: #94a3b8; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>📏 sig figs · measurement</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:12px}
+    .card{max-width:600px;width:100%;background:#fafcff;border-radius:28px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
+    canvas{display:block;width:100%;aspect-ratio:16/5;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff;margin:16px 0}
+    .readout{background:#f0f6ff;border-radius:40px;padding:18px;text-align:center;font-size:1.8rem;font-weight:600;margin:16px 0}
+    .certain{color:#3b82f6;border-bottom:3px solid #3b82f6}
+    .uncertain{color:#f59e0b;border-bottom:3px dashed #f59e0b}
+    select{width:100%;padding:14px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-size:1rem;margin:12px 0}
+    .slider-item{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .slider-head{display:flex;justify-content:space-between;font-weight:500}
+    input[type=range]{width:100%;height:5px;background:#d4e2fa;border-radius:10px;-webkit-appearance:none;appearance:none}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:#3b82f6;border-radius:22px;border:3px solid #fff;cursor:grab}
+    .legend{display:flex;gap:20px;justify-content:center;margin-top:16px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
 <body>
-
-    <div class="tool-container">
-        <h2>📏 Measurement & Significant Figures</h2>
-        <p style="color: #94a3b8;">Move the arrow to measure the blue object. Change the ruler's resolution to see how "Certainty" changes.</p>
-
-        <canvas id="rulerCanvas"></canvas>
-
-        <div class="readout" id="measurementReadout">
-            Measure: <span class="certain">0</span><span class="uncertain">.0</span> cm
-        </div>
-
-        <div class="controls">
-            <div>
-                <label>Ruler Resolution (Markings Every...)</label>
-                <select id="resolutionSelect" style="width: 100%; padding: 10px; border-radius: 5px; margin-top:5px;">
-                    <option value="10">10 units (Low Precision)</option>
-                    <option value="1">1 unit (Standard)</option>
-                    <option value="0.1" selected>0.1 units (High Precision)</option>
-                </select>
-            </div>
-            
-            <div>
-                <label>Move Measurement Arrow</label>
-                <input type="range" id="measurePos" min="0" max="100" step="0.01" value="42.35">
-            </div>
-        </div>
-    </div>
-
+<div class="card">
+  <h2>📏 significant figures</h2>
+  <canvas id="rulerCanvas"></canvas>
+  <div class="readout" id="readout"><span class="certain" id="certainPart">42.3</span><span class="uncertain" id="uncertainPart">5</span> cm</div>
+  <select id="precisionSelect">
+    <option value="10">10 units · low precision</option>
+    <option value="1">1 unit · standard</option>
+    <option value="0.1" selected>0.1 units · high precision</option>
+  </select>
+  <div class="slider-item">
+    <div class="slider-head"><span>📍 measurement</span><span id="sliderValue">42.35</span></div>
+    <input type="range" id="measureSlider" min="0" max="100" value="42.35" step="0.01">
+  </div>
+  <div class="legend"><span>● certain</span><span style="color:#f59e0b">● estimated</span></div>
+</div>
 <script>
-    const canvas = document.getElementById('rulerCanvas');
-    const ctx = canvas.getContext('2d');
-    const posSlider = document.getElementById('measurePos');
-    const resSelect = document.getElementById('resolutionSelect');
-    const readout = document.getElementById('measurementReadout');
-
-    function draw() {
-        const w = canvas.width = canvas.offsetWidth * 2;
-        const h = canvas.height = canvas.offsetHeight * 2;
-        ctx.scale(2, 2); // Sharper rendering for mobile
-        
-        const drawW = w/2;
-        const drawH = h/2;
-        const res = parseFloat(resSelect.value);
-        const val = parseFloat(posSlider.value);
-
-        ctx.clearRect(0,0, drawW, drawH);
-
-        // 1. Draw Object to Measure (The Blue Bar)
-        ctx.fillStyle = "#3b82f6";
-        ctx.fillRect(0, 40, val * (drawW/100), 40);
-
-        // 2. Draw Ruler Base
-        ctx.fillStyle = "#334155";
-        ctx.fillRect(0, 100, drawW, 60);
-
-        // 3. Draw Markings
-        ctx.strokeStyle = "white";
-        ctx.fillStyle = "white";
-        ctx.textAlign = "center";
-        ctx.font = "12px sans-serif";
-
-        for (let i = 0; i <= 100; i += res) {
-            let x = i * (drawW / 100);
-            let tickH = 10;
-            
-            if (i % 10 === 0) tickH = 30; // Large markings
-            else if (i % 1 === 0) tickH = 20; // Medium markings
-
-            ctx.beginPath();
-            ctx.moveTo(x, 100);
-            ctx.lineTo(x, 100 + tickH);
-            ctx.stroke();
-
-            if (i % 10 === 0) {
-                ctx.fillText(i, x, 145);
-            }
-        }
-
-        // 4. Draw Measurement Indicator (The Red Arrow)
-        let arrowX = val * (drawW / 100);
-        ctx.strokeStyle = "#e94560";
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(arrowX, 20);
-        ctx.lineTo(arrowX, 110);
-        ctx.stroke();
-
-        updateReadout(val, res);
+(function(){
+  const canvas=document.getElementById('rulerCanvas'),ctx=canvas.getContext('2d');
+  const slider=document.getElementById('measureSlider'),sliderVal=document.getElementById('sliderValue');
+  const select=document.getElementById('precisionSelect'),certainSpan=document.getElementById('certainPart'),uncertainSpan=document.getElementById('uncertainPart');
+  let w=0,h=0,DPR=devicePixelRatio||1;
+  
+  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=r.width*5/16;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+  
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    const val=parseFloat(slider.value),prec=parseFloat(select.value);
+    sliderVal.textContent=val.toFixed(2);
+    
+    ctx.fillStyle='#3b82f6';ctx.fillRect(0,h*0.25,(val/100)*w,h*0.25);
+    ctx.fillStyle='#1e293b';ctx.fillRect(0,h*0.6,w,h*0.3);
+    
+    ctx.strokeStyle='#fff';ctx.fillStyle='#fff';ctx.font='11px system-ui';ctx.textAlign='center';
+    for(let i=0;i<=100;i+=prec){
+      const x=(i/100)*w;let tick=8;
+      if(i%10===0)tick=20;
+      ctx.beginPath();ctx.moveTo(x,h*0.6);ctx.lineTo(x,h*0.6+tick);ctx.stroke();
+      if(i%10===0)ctx.fillText(i,x,h*0.6+32);
     }
-
-    function updateReadout(val, res) {
-        // Logic: Which digits are we sure of?
-        // If resolution is 0.1, we are sure of tenths, estimate hundredths.
-        let valStr = val.toFixed(res < 1 ? 2 : (res < 10 ? 1 : 0));
-        let certainPart = valStr.slice(0, -1);
-        let uncertainDigit = valStr.slice(-1);
-
-        readout.innerHTML = `Measure: <span class="certain">${certainPart}</span><span class="uncertain">${uncertainDigit}</span> units`;
-    }
-
-    posSlider.oninput = draw;
-    resSelect.onchange = draw;
-    window.onresize = draw;
-    draw();
+    
+    const arrowX=(val/100)*w;
+    ctx.strokeStyle='#ef4444';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(arrowX,h*0.15);ctx.lineTo(arrowX,h*0.65);ctx.stroke();
+    
+    let decimals=prec===0.1?2:(prec===1?1:0),formatted=val.toFixed(decimals);
+    if(decimals===0){certainSpan.textContent=formatted;uncertainSpan.textContent=''}else{certainSpan.textContent=formatted.slice(0,-1);uncertainSpan.textContent=formatted.slice(-1)}
+  }
+  
+  slider.addEventListener('input',draw);select.addEventListener('change',draw);
+  window.addEventListener('resize',()=>{resize();draw()});
+  resize();draw();
+})();
 </script>
 </body>
 </html>

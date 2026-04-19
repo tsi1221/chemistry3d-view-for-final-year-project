@@ -1,204 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atomic Emission Piano</title>
-    <style>
-        :root {
-            --bg: #0a0a0c;
-            --panel: #17171a;
-            --primary: #6366f1;
-            --text: #e2e8f0;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .container {
-            width: 90%;
-            max-width: 900px;
-            background: var(--panel);
-            padding: 30px;
-            border-radius: 24px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            border: 1px solid #27272a;
-        }
-
-        h1 { text-align: center; margin-bottom: 25px; color: var(--primary); font-weight: 300; letter-spacing: 2px; }
-
-        canvas {
-            width: 100%;
-            height: 150px;
-            background: #000;
-            border-radius: 8px;
-            display: block;
-            margin-bottom: 30px;
-            box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
-        }
-
-        .keyboard {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .key {
-            padding: 15px 25px;
-            background: #27272a;
-            border: 1px solid #3f3f46;
-            color: white;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .key:hover { background: #3f3f46; transform: translateY(-2px); }
-        .key.active { background: var(--primary); border-color: #818cf8; box-shadow: 0 0 15px rgba(99, 102, 241, 0.4); }
-
-        .controls {
-            margin-top: 30px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 50px;
-        }
-
-        .toggle-btn {
-            background: none;
-            border: none;
-            color: #71717a;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-
-        .toggle-btn.active { color: var(--primary); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ orbital config · 4f</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
+    @media(min-width:700px){.grid{grid-template-columns:1fr 220px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:16px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .stack{display:flex;flex-direction:column-reverse;gap:6px}
+    .subshell{display:flex;align-items:center;padding:4px 0}
+    .label{width:42px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#3b82f6}
+    .boxes{display:flex;gap:4px;flex-wrap:wrap}
+    .box{width:34px;height:34px;border:2px solid #d0e2ff;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .box:active{background:#eef4ff}
+    .arrow{font-size:18px;font-weight:700}.up{color:#10b981}.down{color:#ef4444;margin-left:-4px}
+    .stat-card{background:#f0f6ff;border-radius:16px;padding:16px;margin-top:12px}
+    .electron-count{font-size:2rem;font-weight:700;color:#3b82f6}
+    .config{font-family:'JetBrains Mono',monospace;font-size:0.85rem;background:#fff;padding:10px;border-radius:12px;margin:10px 0}
+    .status{padding:8px 12px;border-radius:20px;font-weight:600;font-size:0.8rem;text-align:center}
+    .noble{background:#d1fae5;color:#065f46}.reactive{background:#fef3c7;color:#92400e}
+    .btn{width:100%;padding:12px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-weight:600;color:#3a628c;cursor:pointer;margin-top:8px}
+    .btn-primary{background:#3b82f6;border-color:#3b82f6;color:#fff}
+  </style>
 </head>
 <body>
-
-<div class="container">
-    <h1>Emission Spectrum Piano</h1>
-    
-    <canvas id="spectrumCanvas"></canvas>
-
-    <div class="keyboard">
-        <button class="key" onclick="setElement('H', this)">Hydrogen</button>
-        <button class="key" onclick="setElement('He', this)">Helium</button>
-        <button class="key" onclick="setElement('Ne', this)">Neon</button>
-        <button class="key" onclick="setElement('Hg', this)">Mercury</button>
+<div class="grid">
+  <div class="panel">
+    <h2>⚛️ electron configuration</h2>
+    <div class="stack" id="orbitalStack"></div>
+    <div style="display:flex;gap:12px;margin-top:12px;font-size:0.75rem;color:#3a628c"><span>↑ spin up</span><span>↓ spin down</span></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="stat-card"><div style="font-size:0.7rem;color:#3a628c">electrons</div><div class="electron-count" id="eCount">0</div>
+      <div style="font-size:0.7rem;color:#3a628c;margin-top:8px">configuration</div><div class="config" id="configDisplay">—</div>
+      <div id="statusDisplay" class="status reactive">reactive</div></div>
+      <button class="btn" id="clearBtn">🗑️ clear</button>
+      <button class="btn btn-primary" id="feBtn">Fe (26)</button>
+      <button class="btn" id="krBtn">Kr (36)</button>
     </div>
-
-    <div class="controls">
-        <button id="modeEmission" class="toggle-btn active" onclick="setMode('emission')">EMISSION</button>
-        <span style="color:#3f3f46">|</span>
-        <button id="modeAbsorption" class="toggle-btn" onclick="setMode('absorption')">ABSORPTION</button>
-    </div>
+  </div>
 </div>
-
 <script>
-    const canvas = document.getElementById('spectrumCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    let currentElement = 'H';
-    let mode = 'emission'; // 'emission' or 'absorption'
-
-    // Real spectral data (wavelengths in nm)
-    const elements = {
-        'H': [410, 434, 486, 656],
-        'He': [447, 471, 492, 501, 587, 667, 706],
-        'Ne': [540, 585, 588, 603, 607, 614, 621, 626, 633, 638, 640, 650, 659, 692, 703],
-        'Hg': [404, 435, 546, 577, 579]
-    };
-
-    function nmToRGB(wavelength) {
-        let r, g, b, factor;
-        if (wavelength >= 380 && wavelength < 440) { r = -(wavelength - 440) / (440 - 380); g = 0; b = 1; }
-        else if (wavelength >= 440 && wavelength < 490) { r = 0; g = (wavelength - 440) / (490 - 440); b = 1; }
-        else if (wavelength >= 490 && wavelength < 510) { r = 0; g = 1; b = -(wavelength - 510) / (510 - 490); }
-        else if (wavelength >= 510 && wavelength < 580) { r = (wavelength - 510) / (580 - 510); g = 1; b = 0; }
-        else if (wavelength >= 580 && wavelength < 645) { r = 1; g = -(wavelength - 645) / (645 - 580); b = 0; }
-        else if (wavelength >= 645 && wavelength <= 780) { r = 1; g = 0; b = 0; }
-        else { r = 0; g = 0; b = 0; }
-        return `rgb(${r * 255}, ${g * 255}, ${b * 255})`;
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const w = canvas.width;
-        const h = canvas.height;
-
-        if (mode === 'absorption') {
-            // Draw rainbow background for absorption
-            for (let x = 0; x < w; x++) {
-                const nm = 380 + (x / w) * (780 - 380);
-                ctx.fillStyle = nmToRGB(nm);
-                ctx.fillRect(x, 0, 1, h);
-            }
-            ctx.fillStyle = 'rgba(0,0,0,0.85)'; // Black lines
-        } else {
-            // Black background for emission
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, w, h);
-        }
-
-        // Draw spectral lines
-        const lines = elements[currentElement];
-        lines.forEach(nm => {
-            const x = ((nm - 380) / (780 - 380)) * w;
-            if (mode === 'emission') {
-                ctx.shadowBlur = 15;
-                ctx.shadowColor = nmToRGB(nm);
-                ctx.fillStyle = nmToRGB(nm);
-            } else {
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = '#000'; // Absorption lines are black
-            }
-            ctx.fillRect(x, 0, 3, h);
-        });
-        ctx.shadowBlur = 0;
-    }
-
-    function setElement(el, btn) {
-        currentElement = el;
-        document.querySelectorAll('.key').forEach(k => k.classList.remove('active'));
-        btn.classList.add('active');
-        draw();
-    }
-
-    function setMode(m) {
-        mode = m;
-        document.getElementById('modeEmission').classList.toggle('active', m === 'emission');
-        document.getElementById('modeAbsorption').classList.toggle('active', m === 'absorption');
-        draw();
-    }
-
-    window.addEventListener('resize', () => {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    });
-
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    draw();
+(function(){
+  const subs=[{id:'1s',sz:1},{id:'2s',sz:1},{id:'2p',sz:3},{id:'3s',sz:1},{id:'3p',sz:3},{id:'4s',sz:1},{id:'3d',sz:5},{id:'4p',sz:3},{id:'5s',sz:1},{id:'4d',sz:5},{id:'4f',sz:11}];
+  let state={}; subs.forEach(s=>state[s.id]=Array(s.sz).fill(0));
+  const noble=new Set([2,10,18,36,54,86,118]);
+  const stack=document.getElementById('orbitalStack'),eCount=document.getElementById('eCount'),configD=document.getElementById('configDisplay'),statusD=document.getElementById('statusDisplay');
+  
+  function render(){
+    stack.innerHTML=''; subs.forEach(s=>{const r=document.createElement('div');r.className='subshell';
+      const l=document.createElement('div');l.className='label';l.textContent=s.id;
+      const b=document.createElement('div');b.className='boxes';b.id=`b-${s.id}`; r.appendChild(l);r.appendChild(b);stack.appendChild(r);
+      for(let i=0;i<s.sz;i++){const box=document.createElement('div');box.className='box';box.onclick=()=>click(s.id,i);b.appendChild(box)}}); update()
+  }
+  
+  function click(id,i){
+    const a=state[id],v=a[i]; if(v===0)a[i]=1; else if(v===1){if(a.some(x=>x===0)){alert('Hund: fill each orbital once first');return}a[i]=2}else a[i]=0; update()
+  }
+  
+  function update(){
+    let total=0,parts=[]; subs.forEach(s=>{const a=state[s.id];let cnt=0; const boxes=document.getElementById(`b-${s.id}`).children;
+      a.forEach((v,i)=>{const b=boxes[i]; b.innerHTML=''; if(v>=1){const u=document.createElement('span');u.className='arrow up';u.textContent='↑';b.appendChild(u)} if(v===2){const d=document.createElement('span');d.className='arrow down';d.textContent='↓';b.appendChild(d)} cnt+=v});
+      total+=cnt; if(cnt)parts.push(`${s.id}${cnt}`)});
+    eCount.textContent=total; configD.textContent=parts.join(' · ')||'—';
+    statusD.textContent=noble.has(total)?'✨ noble':'⚡ reactive'; statusD.className=noble.has(total)?'status noble':'status reactive';
+  }
+  
+  function clear(){Object.keys(state).forEach(k=>state[k].fill(0)); update()}
+  function aufbau(n){clear(); const order=['1s','2s','2p','3s','3p','4s','3d','4p','5s','4d']; let rem=n;
+    for(let id of order){const a=state[id]; if(!a)continue; for(let i=0;i<a.length&&rem>0;i++){if(rem>=2){if(a[i]===0){a[i]=1;rem--} if(a[i]===1){a[i]=2;rem--}}else if(rem===1){if(a[i]===0){a[i]=1;rem--}}}} update()}
+  
+  document.getElementById('clearBtn').onclick=clear;
+  document.getElementById('feBtn').onclick=()=>aufbau(26);
+  document.getElementById('krBtn').onclick=()=>aufbau(36);
+  render();
+})();
 </script>
 </body>
 </html>

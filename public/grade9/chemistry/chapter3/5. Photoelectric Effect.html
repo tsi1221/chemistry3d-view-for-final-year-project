@@ -1,212 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Photoelectric Lab</title>
-    <style>
-        :root {
-            --bg: #020617;
-            --panel: #1e293b;
-            --primary: #38bdf8;
-            --accent: #fbbf24;
-            --text: #f1f5f9;
-            --success: #22c55e;
-            --danger: #ef4444;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .lab-container {
-            width: 100%;
-            max-width: 1200px;
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-        }
-
-        .viewport {
-            background: var(--panel);
-            padding: 25px;
-            border-radius: 24px;
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        canvas {
-            width: 100%;
-            height: 500px;
-            background: radial-gradient(circle at center, #0f172a 0%, #000 100%);
-            border-radius: 12px;
-            display: block;
-        }
-
-        .sidebar { display: flex; flex-direction: column; gap: 15px; }
-
-        .card {
-            background: rgba(30, 41, 59, 0.7);
-            padding: 20px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-        }
-
-        h2 { color: var(--primary); margin: 0 0 15px 0; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
-        label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; font-weight: 600; }
-
-        input[type=range] { width: 100%; accent-color: var(--primary); cursor: pointer; margin-bottom: 20px; }
-
-        .energy-bar-bg { background: #0f172a; height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; border: 1px solid #334155; }
-        .energy-bar-fill { height: 100%; width: 0%; transition: width 0.3s, background 0.3s; }
-
-        .indicator {
-            padding: 12px; border-radius: 8px; text-align: center; font-weight: 800; font-size: 0.8rem; margin-top: 10px;
-        }
-        .success { background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid var(--success); }
-        .fail { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-
-        .keep-note { background: #26272b; border-left: 4px solid var(--accent); padding: 15px; font-size: 0.85rem; }
-        .keep-note ul { padding-left: 15px; margin: 5px 0; color: #94a3b8; }
-        .keep-note b { color: var(--accent); }
-
-        @media (max-width: 950px) { .lab-container { grid-template-columns: 1fr; } }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>💡 photoelectric · quantum</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:900px;margin:0 auto}
+    @media(min-width:700px){.grid{grid-template-columns:1fr 260px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    canvas{display:block;width:100%;aspect-ratio:16/10;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff}
+    .color-select{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+    .color-btn{aspect-ratio:1;border-radius:12px;border:3px solid transparent;cursor:pointer}
+    .color-btn.active{border-color:#3b82f6;box-shadow:0 0 0 2px #fff,0 0 0 4px #3b82f6}
+    .violet{background:#8b5cf6}.blue{background:#3b82f6}.green{background:#10b981}.yellow{background:#f59e0b}.orange{background:#f97316}.red{background:#ef4444}
+    .intensity-select{display:flex;gap:6px;margin:12px 0}
+    .intensity-btn{flex:1;padding:10px;border-radius:30px;border:1.5px solid #d0e2ff;background:#fff;font-weight:600;cursor:pointer}
+    .intensity-btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    .energy-bar{height:8px;background:#e2e8f0;border-radius:8px;margin:12px 0;overflow:hidden}
+    .energy-fill{height:100%;width:0;transition:0.2s}
+    .status{padding:12px;border-radius:16px;text-align:center;font-weight:700}
+    .status-ok{background:#d1fae5;color:#065f46}.status-fail{background:#fee2e2;color:#991b1b}
+    .notes{font-size:0.85rem;color:#3a628c;margin-top:12px}
+    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem}
+  </style>
 </head>
 <body>
-
-<div class="lab-container">
-    <div class="viewport">
-        <h2>Quantum Simulation: Photoelectric Effect</h2>
-        <canvas id="photoCanvas"></canvas>
+<div class="grid">
+  <div class="panel">
+    <h2>💡 photoelectric effect</h2>
+    <canvas id="peCanvas"></canvas>
+    <div class="legend"><span style="color:#fbbf24">● photon</span><span style="color:#3b82f6">● electron</span><span style="color:#64748b">▬ metal</span></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div style="font-weight:600;margin-bottom:8px">🌈 photon color</div>
+      <div class="color-select">
+        <div class="color-btn violet active" data-nm="400"></div><div class="color-btn blue" data-nm="480"></div><div class="color-btn green" data-nm="540"></div><div class="color-btn yellow" data-nm="590"></div><div class="color-btn orange" data-nm="620"></div><div class="color-btn red" data-nm="700"></div>
+      </div>
+      <div style="font-weight:600;margin:12px 0 6px">☀️ intensity</div>
+      <div class="intensity-select">
+        <button class="intensity-btn" data-i="2">low</button><button class="intensity-btn active" data-i="5">med</button><button class="intensity-btn" data-i="9">high</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin:12px 0"><span>photon energy</span><span id="eVal" style="font-weight:700">3.10 eV</span></div>
+      <div class="energy-bar"><div class="energy-fill" id="eFill"></div></div>
+      <div id="statusBox" class="status status-fail">🔴 below threshold</div>
+      <div class="notes">Φ = 3.8 eV · higher frequency → more energy</div>
     </div>
-
-    <div class="sidebar">
-        <div class="card">
-            <h2>Source Controls</h2>
-            <label>Wavelength: <span id="nmDisp" style="color:var(--primary)">700</span> nm</label>
-            <input type="range" id="freq" min="300" max="800" value="700">
-            
-            <label>Intensity (Photon Count)</label>
-            <input type="range" id="intensity" min="1" max="20" value="5">
-        </div>
-
-        <div class="card">
-            <h2>Energy Analysis</h2>
-            <div style="display:flex; justify-content:space-between; font-family:monospace; font-size:0.9rem;">
-                <span>Photon Energy:</span>
-                <span id="eText">1.77 eV</span>
-            </div>
-            <div class="energy-bar-bg">
-                <div id="energyFill" class="energy-bar-fill"></div>
-            </div>
-            <div id="statusBox" class="indicator fail">BELOW THRESHOLD</div>
-        </div>
-
-        <div class="card keep-note">
-            <h2 style="color: var(--accent); margin-bottom: 5px;">Study Notes</h2>
-            <ul>
-                <li><b>🔴 Red:</b> "Weak" photons. No ejection even at high brightness.</li>
-                <li><b>🔵 Violet:</b> "Strong" photons. High Kinetic Energy ($K.E.$).</li>
-                <li><b>Threshold:</b> $E_{photon} > \Phi$ (3.5 eV)</li>
-            </ul>
-        </div>
-    </div>
+  </div>
 </div>
-
 <script>
-    const canvas = document.getElementById('photoCanvas');
-    const ctx = canvas.getContext('2d');
-    let photons = [], electrons = [], frame = 0;
-    const workFunction = 3.5; // eV
-
-    function init() {
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = canvas.offsetWidth * dpr;
-        canvas.height = canvas.offsetHeight * dpr;
-        ctx.scale(dpr, dpr);
-        animate();
-    }
-
-    function wavelengthToRGB(nm) {
-        if (nm < 440) return "#a855f7"; // Violet
-        if (nm < 490) return "#3b82f6"; // Blue
-        if (nm < 570) return "#22c55e"; // Green
-        if (nm < 610) return "#eab308"; // Yellow
-        return "#ef4444"; // Red
-    }
-
-    function animate() {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const nm = parseFloat(document.getElementById('freq').value);
-        const intensity = parseFloat(document.getElementById('intensity').value);
-        const photonEnergy = 1240 / nm;
-        const color = wavelengthToRGB(nm);
-        const canEject = photonEnergy > workFunction;
-
-        // UI Updates
-        document.getElementById('nmDisp').innerText = nm;
-        document.getElementById('eText').innerText = photonEnergy.toFixed(2) + " eV";
-        const fill = document.getElementById('energyFill');
-        fill.style.width = Math.min(100, (photonEnergy/6)*100) + "%";
-        fill.style.background = canEject ? "var(--success)" : "var(--danger)";
-        
-        const statusBox = document.getElementById('statusBox');
-        statusBox.innerText = canEject ? "EJECTION ACTIVE" : "ENERGY TOO LOW";
-        statusBox.className = "indicator " + (canEject ? "success" : "fail");
-
-        // Draw Metal (Cathode)
-        ctx.fillStyle = '#334155';
-        ctx.fillRect(canvas.offsetWidth - 50, 50, 30, canvas.offsetHeight - 100);
-        ctx.strokeStyle = canEject ? 'var(--success)' : '#475569';
-        ctx.strokeRect(canvas.offsetWidth - 50, 50, 30, canvas.offsetHeight - 100);
-
-        // Spawn Photons
-        if (frame % Math.max(1, Math.floor(25 / intensity)) === 0) {
-            photons.push({ x: 0, y: 100 + Math.random() * (canvas.offsetHeight - 200), c: color });
-        }
-
-        // Draw Photons
-        photons.forEach((p, i) => {
-            p.x += 7;
-            ctx.shadowBlur = 15; ctx.shadowColor = p.c;
-            ctx.fillStyle = p.c;
-            ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
-            
-            if (p.x > canvas.offsetWidth - 50) {
-                if (canEject) {
-                    const speed = (photonEnergy - workFunction) * 5 + 1.5;
-                    electrons.push({ x: p.x, y: p.y, v: speed });
-                }
-                photons.splice(i, 1);
-            }
-        });
-
-        // Draw Electrons
-        ctx.shadowBlur = 0;
-        electrons.forEach((e, i) => {
-            e.x -= e.v;
-            ctx.fillStyle = '#38bdf8';
-            ctx.beginPath(); ctx.arc(e.x, e.y, 3, 0, Math.PI*2); ctx.fill();
-            if (e.x < 0) electrons.splice(i, 1);
-        });
-
-        frame++;
-        requestAnimationFrame(animate);
-    }
-
-    window.onload = init;
+(function(){
+  const canvas=document.getElementById('peCanvas'),ctx=canvas.getContext('2d');
+  let w=0,h=0,DPR=devicePixelRatio||1,photons=[],electrons=[];
+  let nm=400,intensity=5,WF=3.8;
+  const eVal=document.getElementById('eVal'),eFill=document.getElementById('eFill'),statusBox=document.getElementById('statusBox');
+  const colorMap={400:'#8b5cf6',480:'#3b82f6',540:'#10b981',590:'#f59e0b',620:'#f97316',700:'#ef4444'};
+  
+  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=r.width*10/16;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+  
+  function updateUI(){
+    const E=1240/nm; eVal.textContent=E.toFixed(2)+' eV';
+    const can=E>WF; eFill.style.width=Math.min(100,(E/5)*100)+'%'; eFill.style.background=can?'#10b981':'#ef4444';
+    statusBox.textContent=can?'🟢 ejection active':'🔴 below threshold'; statusBox.className=can?'status status-ok':'status status-fail';
+    return{can,E};
+  }
+  
+  function draw(){
+    ctx.fillStyle='#f8fcff'; ctx.fillRect(0,0,w,h);
+    const {can}=updateUI(),color=colorMap[nm]||'#3b82f6',cathodeX=w*0.55;
+    ctx.fillStyle='#64748b'; ctx.fillRect(cathodeX,h*0.2,16,h*0.6); ctx.strokeStyle=can?'#10b981':'#94a3b8'; ctx.lineWidth=2; ctx.strokeRect(cathodeX,h*0.2,16,h*0.6);
+    if(Math.random()<intensity/14)photons.push({x:10,y:h*0.25+Math.random()*h*0.5,color});
+    photons=photons.filter(p=>{p.x+=7; ctx.beginPath(); ctx.arc(p.x,p.y,4,0,2*Math.PI); ctx.fillStyle=p.color; ctx.shadowColor=p.color; ctx.shadowBlur=12; ctx.fill();
+      if(p.x>=cathodeX-5){if(can)for(let i=0;i<2;i++)electrons.push({x:p.x,y:p.y+(Math.random()-0.5)*6,vx:-(1240/nm-WF)*2.5-2,vy:(Math.random()-0.5)*1.5}); return false} return true});
+    ctx.shadowBlur=0;
+    electrons=electrons.filter(e=>{e.x+=e.vx; e.y+=e.vy; ctx.beginPath(); ctx.arc(e.x,e.y,3.5,0,2*Math.PI); ctx.fillStyle='#3b82f6'; ctx.shadowColor='#3b82f6'; ctx.shadowBlur=10; ctx.fill(); return e.x>-10&&e.x<w+10});
+    requestAnimationFrame(draw);
+  }
+  
+  document.querySelectorAll('.color-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.color-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');nm=parseInt(b.dataset.nm)});
+  document.querySelectorAll('.intensity-btn').forEach(b=>b.onclick=()=>{document.querySelectorAll('.intensity-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');intensity=parseInt(b.dataset.i)});
+  window.onresize=resize; resize(); draw();
+})();
 </script>
 </body>
 </html>

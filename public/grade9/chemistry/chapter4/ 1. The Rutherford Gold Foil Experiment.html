@@ -1,227 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atomic Orbital Lab - up to 4d</title>
-<style>
-:root{
-    --bg:#020617;
-    --panel:#0f172a;
-    --primary:#38bdf8;
-    --accent:#fbbf24;
-    --text:#f1f5f9;
-    --spin-up:#22c55e;
-    --spin-down:#ef4444;
-}
-body{
-    font-family:system-ui,-apple-system,sans-serif;
-    background:var(--bg);
-    color:var(--text);
-    margin:0;
-    display:flex;
-    justify-content:center;
-    padding:20px 10px; /* reduced padding */
-}
-.lab-wrapper{
-    max-width:900px;
-    width:100%;
-    display:grid;
-    grid-template-columns:1fr 300px; /* slightly smaller sidebar */
-    gap:15px; /* reduced gap */
-}
-.main-lab,.card{
-    background:var(--panel);
-    padding:15px; /* reduced padding */
-    border-radius:16px; /* smaller radius */
-    border:1px solid rgba(255,255,255,.05);
-    box-shadow:0 15px 30px -8px rgba(0,0,0,.5);
-}
-.shell-stack{
-    display:flex;
-    flex-direction:column-reverse;
-    gap:10px; /* smaller gap */
-    padding:10px; /* reduced padding */
-    background:rgba(0,0,0,.2);
-    border-radius:12px; /* smaller radius */
-}
-.subshell{
-    display:flex;
-    align-items:center;
-    padding:6px; /* reduced padding */
-    border-radius:6px;
-}
-.subshell:hover{background:rgba(255,255,255,.03)}
-.label{
-    width:50px;
-    font-weight:800;
-    color:var(--primary);
-    font-family:monospace;
-}
-.boxes{display:flex;gap:6px} /* smaller gap */
-.box{
-    width:40px; /* smaller boxes */
-    height:40px;
-    border:2px solid #334155;
-    background:#020617;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    cursor:pointer;
-}
-.box:hover{border-color:var(--accent)}
-.arrow{
-    font-size:24px; /* smaller arrows */
-    font-weight:bold;
-    user-select:none;
-}
-.up{color:var(--spin-up);margin-right:-8px}
-.down{color:var(--spin-down);margin-left:-8px}
-.sidebar{display:flex;flex-direction:column;gap:10px}
-.config-display{
-    font-family:monospace;
-    font-size:1rem;
-    color:var(--accent);
-    word-wrap:break-word;
-}
-button{
-    width:100%;
-    padding:8px; /* smaller padding */
-    border-radius:6px;
-    border:none;
-    background:#334155;
-    color:white;
-    font-weight:bold;
-    cursor:pointer;
-}
-button:hover{background:#475569}
-@media(max-width:900px){
-    .lab-wrapper{grid-template-columns:1fr;}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚛️ orbital config · 4d</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
+    @media(min-width:700px){.grid{grid-template-columns:1fr 220px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:16px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .stack{display:flex;flex-direction:column-reverse;gap:6px}
+    .subshell{display:flex;align-items:center;padding:4px 0}
+    .label{width:42px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#3b82f6}
+    .boxes{display:flex;gap:4px;flex-wrap:wrap}
+    .box{width:34px;height:34px;border:2px solid #d0e2ff;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .box:active{background:#eef4ff}
+    .arrow{font-size:18px;font-weight:700}.up{color:#10b981}.down{color:#ef4444;margin-left:-4px}
+    .stat-card{background:#f0f6ff;border-radius:16px;padding:16px;margin-top:12px}
+    .electron-count{font-size:2rem;font-weight:700;color:#3b82f6}
+    .config{font-family:'JetBrains Mono',monospace;font-size:0.85rem;background:#fff;padding:10px;border-radius:12px;margin:10px 0}
+    .status{padding:8px 12px;border-radius:20px;font-weight:600;font-size:0.8rem;text-align:center}
+    .noble{background:#d1fae5;color:#065f46}.reactive{background:#fef3c7;color:#92400e}
+    .btn{width:100%;padding:12px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-weight:600;color:#3a628c;cursor:pointer;margin-top:8px}
+    .btn-primary{background:#3b82f6;border-color:#3b82f6;color:#fff}
+  </style>
 </head>
 <body>
-
-<div class="lab-wrapper">
-
-<div class="main-lab">
-<h2 style="margin-top:0;margin-bottom:10px;color:var(--primary)">Atomic Orbital Stack</h2>
-<div class="shell-stack" id="stack"></div>
+<div class="grid">
+  <div class="panel">
+    <h2>⚛️ electron configuration</h2>
+    <div class="stack" id="orbitalStack"></div>
+    <div style="display:flex;gap:12px;margin-top:12px;font-size:0.75rem;color:#3a628c"><span>↑ spin up</span><span>↓ spin down</span></div>
+  </div>
+  <div>
+    <div class="panel">
+      <div class="stat-card"><div style="font-size:0.7rem;color:#3a628c">electrons</div><div class="electron-count" id="eCount">0</div>
+      <div style="font-size:0.7rem;color:#3a628c;margin-top:8px">configuration</div><div class="config" id="configDisplay">—</div>
+      <div id="statusDisplay" class="status reactive">reactive</div></div>
+      <button class="btn" id="clearBtn">🗑️ clear</button>
+      <button class="btn btn-primary" id="feBtn">Fe (26)</button>
+      <button class="btn" id="krBtn">Kr (36)</button>
+    </div>
+  </div>
 </div>
-
-<div class="sidebar">
-
-<div class="card">
-<h3 style="margin-top:0;margin-bottom:5px">Telemetry</h3>
-<label style="font-size:.8rem;color:#94a3b8">ELECTRON COUNT</label>
-<div style="font-size:1.5rem;font-weight:800;" id="totalE">0</div>
-
-<label style="font-size:.8rem;color:#94a3b8;margin-top:10px;display:block;">
-CONFIGURATION</label>
-<div class="config-display" id="configStr">Empty</div>
-</div>
-
-<div class="card">
-<h3 style="margin-top:0;margin-bottom:5px;font-size:.9rem;">ATOMIC STATUS</h3>
-<div id="statusText">Neutral</div>
-</div>
-
-<button onclick="resetLab()">Clear All Electrons</button>
-
-</div>
-</div>
-
 <script>
-const subshells=[
-    { id:'1s', size:1 },
-    { id:'2s', size:1 },
-    { id:'2p', size:3 },
-    { id:'3s', size:1 },
-    { id:'3p', size:3 },
-    { id:'4s', size:1 },
-    { id:'3d', size:5 },
-    { id:'4p', size:3 },
-    { id:'5s', size:1 },
-    { id:'4d', size:5 } // stops at 4d
-];
-
-let state={};
-subshells.forEach(ss=>state[ss.id]=Array(ss.size).fill(0));
-
-function init(){
-    const stack=document.getElementById('stack');
-    stack.innerHTML='';
-    subshells.forEach(ss=>{
-        const row=document.createElement('div');
-        row.className='subshell';
-        const label=document.createElement('div');
-        label.className='label';
-        label.textContent=ss.id;
-        const boxes=document.createElement('div');
-        boxes.className='boxes';
-        boxes.id=`shell-${ss.id}`;
-        row.appendChild(label);
-        row.appendChild(boxes);
-        stack.appendChild(row);
-
-        for(let i=0;i<ss.size;i++){
-            const box=document.createElement('div');
-            box.className='box';
-            box.onclick=()=>handleBoxClick(ss.id,i);
-            boxes.appendChild(box);
-        }
-    });
-    updateUI();
-}
-
-function handleBoxClick(shell,index){
-    let value=state[shell][index];
-    if(value===0){ state[shell][index]=1; }
-    else if(value===1){
-        const emptyExists=state[shell].some(v=>v===0);
-        if(emptyExists){
-            alert("Hund's Rule: Fill every orbital once before pairing.");
-            return;
-        }
-        state[shell][index]=2;
-    }else{ state[shell][index]=0; }
-    updateUI();
-}
-
-function updateUI(){
-    let total=0;
-    let config=[];
-    subshells.forEach(ss=>{
-        let count=0;
-        const boxes=document.getElementById(`shell-${ss.id}`).children;
-        state[ss.id].forEach((v,i)=>{
-            const box=boxes[i]; box.innerHTML='';
-            if(v>=1) box.innerHTML+='<span class="arrow up">↑</span>';
-            if(v===2) box.innerHTML+='<span class="arrow down">↓</span>';
-            count+=v;
-        });
-        if(count>0) config.push(`${ss.id}<sup>${count}</sup>`);
-        total+=count;
-    });
-    document.getElementById('totalE').textContent=total;
-    document.getElementById('configStr').innerHTML=config.join(' ')||'Empty';
-    const status=document.getElementById('statusText');
-    if([2,10,18,36,54,86,118].includes(total)){
-        status.innerHTML="✨ Noble Gas Configuration (Stable)";
-        status.style.color="var(--primary)";
-    } else {
-        status.innerHTML="Reactive Element";
-        status.style.color="white";
-    }
-}
-
-function resetLab(){
-    Object.keys(state).forEach(k=>state[k].fill(0));
-    updateUI();
-}
-
-init();
+(function(){
+  const subs=[{id:'1s',sz:1},{id:'2s',sz:1},{id:'2p',sz:3},{id:'3s',sz:1},{id:'3p',sz:3},{id:'4s',sz:1},{id:'3d',sz:5},{id:'4p',sz:3},{id:'5s',sz:1},{id:'4d',sz:5}];
+  let state={}; subs.forEach(s=>state[s.id]=Array(s.sz).fill(0));
+  const noble=new Set([2,10,18,36,54,86,118]);
+  const stack=document.getElementById('orbitalStack'),eCount=document.getElementById('eCount'),configD=document.getElementById('configDisplay'),statusD=document.getElementById('statusDisplay');
+  
+  function render(){
+    stack.innerHTML=''; subs.forEach(s=>{const r=document.createElement('div');r.className='subshell';
+      const l=document.createElement('div');l.className='label';l.textContent=s.id;
+      const b=document.createElement('div');b.className='boxes';b.id=`b-${s.id}`; r.appendChild(l);r.appendChild(b);stack.appendChild(r);
+      for(let i=0;i<s.sz;i++){const box=document.createElement('div');box.className='box';box.onclick=()=>click(s.id,i);b.appendChild(box)}}); update()
+  }
+  
+  function click(id,i){
+    const a=state[id],v=a[i]; if(v===0)a[i]=1; else if(v===1){if(a.some(x=>x===0)){alert('Hund: fill each orbital once first');return}a[i]=2}else a[i]=0; update()
+  }
+  
+  function update(){
+    let total=0,parts=[]; subs.forEach(s=>{const a=state[s.id];let cnt=0; const boxes=document.getElementById(`b-${s.id}`).children;
+      a.forEach((v,i)=>{const b=boxes[i]; b.innerHTML=''; if(v>=1){const u=document.createElement('span');u.className='arrow up';u.textContent='↑';b.appendChild(u)} if(v===2){const d=document.createElement('span');d.className='arrow down';d.textContent='↓';b.appendChild(d)} cnt+=v});
+      total+=cnt; if(cnt)parts.push(`${s.id}${cnt}`)});
+    eCount.textContent=total; configD.textContent=parts.join(' · ')||'—';
+    statusD.textContent=noble.has(total)?'✨ noble':'⚡ reactive'; statusD.className=noble.has(total)?'status noble':'status reactive';
+  }
+  
+  function clear(){Object.keys(state).forEach(k=>state[k].fill(0)); update()}
+  function aufbau(n){clear(); const order=['1s','2s','2p','3s','3p','4s','3d','4p','5s','4d']; let rem=n;
+    for(let id of order){const a=state[id]; if(!a)continue; for(let i=0;i<a.length&&rem>0;i++){if(rem>=2){if(a[i]===0){a[i]=1;rem--} if(a[i]===1){a[i]=2;rem--}}else if(rem===1){if(a[i]===0){a[i]=1;rem--}}}} update()}
+  
+  document.getElementById('clearBtn').onclick=clear;
+  document.getElementById('feBtn').onclick=()=>aufbau(26);
+  document.getElementById('krBtn').onclick=()=>aufbau(36);
+  render();
+})();
 </script>
-
 </body>
 </html>

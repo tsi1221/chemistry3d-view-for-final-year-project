@@ -1,245 +1,385 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>High-Precision Rounding Lab</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --primary: #38bdf8;
-            --accent: #fbbf24;
-            --text: #f8fafc;
-            --danger: #ef4444;
-            --success: #22c55e;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🔢 precision rounding · touch lab</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 15px;
-        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        .lab-container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--panel);
-            padding: clamp(20px, 5vw, 40px);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-        }
+    :root {
+      --bg-page: #ffffff;
+      --surface: #fafcff;
+      --border-light: #d0e2ff;
+      --text-dark: #0a1e3c;
+      --text-soft: #3a628c;
+      --accent: #3b82f6;
+      --marker: #f59e0b;
+      --success: #10b981;
+      --shadow-card: 0 8px 24px rgba(0,0,0,0.04);
+    }
 
-        header { text-align: center; margin-bottom: 25px; }
-        h1 { color: var(--primary); margin: 0; font-size: 1.8rem; }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-dark);
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
 
-        .input-box {
-            display: grid;
-            grid-template-columns: 2fr 1fr auto;
-            gap: 12px;
-            margin-bottom: 30px;
-            background: rgba(0,0,0,0.3);
-            padding: 20px;
-            border-radius: 16px;
-        }
+    .app-card {
+      width: 100%;
+      max-width: 700px;
+      background: var(--surface);
+      border-radius: 32px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-card);
+      padding: 24px;
+    }
 
-        input, select {
-            background: #020617;
-            border: 1px solid #334155;
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-        }
+    h2 {
+      font-weight: 700;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+      color: var(--text-dark);
+      margin-bottom: 4px;
+    }
 
-        /* The Visualizer Track */
-        .number-line-container {
-            position: relative;
-            height: 160px;
-            background: #020617;
-            border-radius: 16px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            padding: 0 80px;
-            border: 2px solid #334155;
-        }
+    .subhead {
+      color: var(--text-soft);
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
 
-        .line {
-            width: 100%;
-            height: 4px;
-            background: #334155;
-            position: relative;
-        }
+    .input-area {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
 
-        .endpoint {
-            position: absolute;
-            top: -45px;
-            transform: translateX(-50%);
-            text-align: center;
-            font-weight: 700;
-            font-size: 0.85rem;
-            color: var(--primary);
-            white-space: nowrap;
-        }
+    .number-input {
+      display: flex;
+      align-items: center;
+      background: #f0f6ff;
+      border-radius: 60px;
+      padding: 4px 4px 4px 20px;
+      border: 1.5px solid var(--border-light);
+    }
 
-        .midpoint {
-            position: absolute;
-            top: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            color: #64748b;
-            font-size: 0.75rem;
-            border-left: 1px dashed #64748b;
-            height: 40px;
-            padding-left: 5px;
-        }
+    .number-input input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      font-size: 1.2rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 12px 0;
+      outline: none;
+      color: var(--text-dark);
+    }
 
-        #marker {
-            position: absolute;
-            top: -13px;
-            width: 30px;
-            height: 30px;
-            background: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 20px var(--accent);
-            transition: left 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 10;
-        }
+    .number-input button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px 24px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+    }
 
-        .result-card {
-            background: rgba(56, 189, 248, 0.05);
-            border: 1px solid rgba(56, 189, 248, 0.2);
-            padding: 25px;
-            border-radius: 16px;
-            text-align: center;
-        }
+    .precision-selector {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 4px;
+    }
 
-        .final-val { font-size: clamp(1.2rem, 4vw, 2.2rem); font-weight: 800; margin: 15px 0; font-family: 'JetBrains Mono', monospace; color: var(--success); }
-        .explanation { font-size: 0.95rem; color: #94a3b8; line-height: 1.6; min-height: 3em; }
+    .precision-label {
+      font-weight: 500;
+      color: var(--text-soft);
+    }
 
-        button {
-            background: var(--primary);
-            color: var(--bg);
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-        }
+    .precision-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-        @media (max-width: 600px) {
-            .input-box { grid-template-columns: 1fr; }
-            .endpoint { font-size: 0.7rem; }
-        }
-    </style>
+    .precision-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 30px;
+      border: 1.5px solid var(--border-light);
+      background: white;
+      font-size: 22px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .precision-btn:active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .precision-value {
+      font-weight: 700;
+      font-size: 1.1rem;
+      min-width: 70px;
+      text-align: center;
+      color: var(--accent);
+    }
+
+    .number-line {
+      position: relative;
+      height: 120px;
+      background: #f8fcff;
+      border-radius: 20px;
+      margin: 20px 0;
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+      border: 1px solid var(--border-light);
+    }
+
+    .line-track {
+      width: 100%;
+      height: 4px;
+      background: #d0e2ff;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .endpoint {
+      position: absolute;
+      top: -28px;
+      transform: translateX(-50%);
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .midpoint {
+      position: absolute;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.7rem;
+      color: var(--text-soft);
+    }
+
+    #marker {
+      position: absolute;
+      top: -14px;
+      width: 32px;
+      height: 32px;
+      background: var(--marker);
+      border-radius: 50%;
+      box-shadow: 0 4px 16px var(--marker);
+      border: 3px solid white;
+      transition: left 0.4s ease;
+      z-index: 10;
+      transform: translateX(-50%);
+    }
+
+    .result-panel {
+      background: #f0f6ff;
+      border-radius: 24px;
+      padding: 20px;
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    .rounded-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--success);
+      margin: 8px 0;
+    }
+
+    .explanation {
+      color: var(--text-soft);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .insight-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 40px;
+      border: 1.5px solid var(--border-light);
+      background: white;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--accent);
+    }
+
+    .insight-btn:active {
+      background: #f0f6ff;
+    }
+
+    @media (max-width: 500px) {
+      .number-input { flex-direction: column; padding: 12px; gap: 8px; }
+      .number-input input { text-align: center; }
+      .number-input button { width: 100%; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="lab-container">
-    <header>
-        <h1>Precision Rounding Lab</h1>
-        <p>Explore proximity from 0 to 10 decimal places</p>
-    </header>
+<div class="app-card">
+  <h2>🔢 precision rounding</h2>
+  <div class="subhead">zoom in · see the rounding decision</div>
 
-    <div class="input-box">
-        <input type="text" id="numInput" value="3.1415926535">
-        <select id="precisionInput">
-            </select>
-        <button onclick="calculate()">Analyze</button>
+  <div class="input-area">
+    <div class="number-input">
+      <input type="text" id="numberInput" value="3.1415926535" inputmode="decimal">
+      <button id="analyzeBtn">analyze</button>
     </div>
 
-    <div class="number-line-container">
-        <div class="line">
-            <div id="leftEnd" class="endpoint" style="left: 0;">0.0</div>
-            <div id="rightEnd" class="endpoint" style="left: 100%;">1.0</div>
-            <div class="midpoint">Midpoint (5)</div>
-            <div id="marker"></div>
-        </div>
+    <div class="precision-selector">
+      <span class="precision-label">decimal places</span>
+      <div class="precision-control">
+        <div class="precision-btn" id="precDown">−</div>
+        <span class="precision-value" id="precDisplay">2 places</span>
+        <div class="precision-btn" id="precUp">+</div>
+      </div>
     </div>
+  </div>
 
-    <div class="result-card">
-        <div class="explanation" id="logicText">Enter a number to see the rounding logic.</div>
-        <div class="final-val" id="resultDisplay">0.00</div>
-        <button onclick="showLearning()" style="background:transparent; color:var(--primary); border: 1px solid var(--primary); margin-top: 15px;">💡 View Learning Insight</button>
+  <div class="number-line">
+    <div class="line-track">
+      <span class="endpoint" id="leftEndpoint" style="left:0;">0.00</span>
+      <span class="endpoint" id="rightEndpoint" style="left:100%;">1.00</span>
+      <span class="midpoint">⚫ midpoint (5)</span>
+      <div id="marker"></div>
     </div>
+  </div>
+
+  <div class="result-panel">
+    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--text-soft);">rounded value</div>
+    <div class="rounded-value" id="roundedDisplay">3.14</div>
+    <div class="explanation" id="explanationText">
+      Looking at the thousandths place (1) → round down
+    </div>
+  </div>
+
+  <button class="insight-btn" id="insightBtn">💡 learning insight</button>
 </div>
 
 <script>
-    // Populate Select options up to 10
-    const select = document.getElementById('precisionInput');
-    const names = ["Whole Number", "Tenths", "Hundredths", "Thousandths", "10-Thousandths", "100-Thousandths", "Millionths", "10-Millionths", "100-Millionths", "Billionths", "10-Billionths"];
-    for(let i=0; i<=10; i++) {
-        let opt = document.createElement('option');
-        opt.value = i;
-        opt.innerHTML = `${i} Places (${names[i]})`;
-        if(i === 2) opt.selected = true;
-        select.appendChild(opt);
+  (function(){
+    const numberInput = document.getElementById('numberInput');
+    const precDisplay = document.getElementById('precDisplay');
+    const leftEndpoint = document.getElementById('leftEndpoint');
+    const rightEndpoint = document.getElementById('rightEndpoint');
+    const marker = document.getElementById('marker');
+    const roundedDisplay = document.getElementById('roundedDisplay');
+    const explanationText = document.getElementById('explanationText');
+    
+    let currentPrecision = 2;
+    const maxPrecision = 8;
+    
+    const placeNames = ['whole', 'tenths', 'hundredths', 'thousandths', 'ten-thousandths', 'hundred-thousandths', 'millionths', 'ten-millionths', 'hundred-millionths'];
+    
+    function updatePrecisionDisplay() {
+      precDisplay.textContent = `${currentPrecision} ${currentPrecision === 1 ? 'place' : 'places'}`;
     }
-
-    function calculate() {
-        // Use BigInt/String handling for higher precision to avoid JS float errors
-        let inputStr = document.getElementById('numInput').value.trim();
-        let p = parseInt(document.getElementById('precisionInput').value);
+    
+    function analyze() {
+      const inputStr = numberInput.value.trim();
+      const val = parseFloat(inputStr);
+      
+      if (isNaN(val)) {
+        roundedDisplay.textContent = '—';
+        explanationText.textContent = 'Please enter a valid number';
+        return;
+      }
+      
+      // calculate rounded value
+      const rounded = val.toFixed(currentPrecision);
+      roundedDisplay.textContent = rounded;
+      
+      // calculate boundaries for zoomed view
+      const factor = Math.pow(10, currentPrecision);
+      const floor = Math.floor(val * factor) / factor;
+      const ceil = floor + 1 / factor;
+      
+      leftEndpoint.textContent = floor.toFixed(currentPrecision);
+      rightEndpoint.textContent = ceil.toFixed(currentPrecision);
+      
+      // marker position
+      const range = ceil - floor;
+      let percent = range > 0 ? ((val - floor) / range) * 100 : 50;
+      percent = Math.max(-2, Math.min(102, percent));
+      marker.style.left = percent + '%';
+      
+      // explanation
+      const parts = inputStr.split('.');
+      let msg = '';
+      
+      if (parts.length < 2 || parts[1].length <= currentPrecision) {
+        msg = `The number already has ≤ ${currentPrecision} decimal places. No rounding needed.`;
+      } else {
+        const criticalDigit = parts[1][currentPrecision];
+        const criticalNum = parseInt(criticalDigit);
+        const direction = criticalNum >= 5 ? 'up' : 'down';
+        const placeName = placeNames[currentPrecision] || `${currentPrecision}th`;
         
-        let val = parseFloat(inputStr);
-        if (isNaN(val)) {
-            alert("Please enter a valid number");
-            return;
-        }
-
-        // Calculate Rounded Value
-        let rounded = val.toFixed(p);
-        
-        // Calculate Boundaries for the "Zoomed" Number Line
-        let factor = Math.pow(10, p);
-        let floor = Math.floor(val * factor) / factor;
-        let ceil = floor + (1 / factor);
-
-        // Update UI Text
-        document.getElementById('resultDisplay').innerText = rounded;
-        document.getElementById('leftEnd').innerText = floor.toFixed(p);
-        document.getElementById('rightEnd').innerText = ceil.toFixed(p);
-
-        // Calculate Marker Percentage
-        let range = ceil - floor;
-        let position = ((val - floor) / range) * 100;
-        
-        // Clamp position between -5 and 105 for visual safety
-        let clampedPos = Math.max(-5, Math.min(105, position));
-        document.getElementById('marker').style.left = `calc(${clampedPos}% - 15px)`;
-
-        // Detailed Explanation
-        let parts = inputStr.split('.');
-        let msg = "";
-        
-        if (parts.length < 2 || parts[1].length <= p) {
-            msg = `The number already fits within ${p} decimal places. No rounding needed!`;
-        } else {
-            let criticalDigit = parts[1][p];
-            let decision = parseInt(criticalDigit) >= 5 ? "UP" : "DOWN";
-            msg = `To round to ${p} places, we look at the digit in the <b>${p+1}th</b> place: <b style="color:var(--accent)">${criticalDigit}</b>.<br> 
-                   Since this is ${parseInt(criticalDigit) >= 5 ? '5 or greater' : 'less than 5'}, we round <b>${decision}</b>.`;
-        }
-        document.getElementById('logicText').innerHTML = msg;
+        msg = `Looking at the ${placeName} place: <strong>${criticalDigit}</strong> → round ${direction}.`;
+      }
+      
+      explanationText.innerHTML = msg;
     }
-
-    function showLearning() {
-        alert("PRO-LEVEL LEARNING:\n\n" + 
-              "1. MAGNIFICATION: As you increase decimals, you are zooming into a smaller and smaller 'slice' of the number line.\n\n" +
-              "2. FLOATING POINT: Computers sometimes struggle with tiny decimals. This lab uses .toFixed() to ensure your rounding stays mathematically accurate up to 10 places.\n\n" +
-              "3. THE TIE-BREAKER: In this lab, .5 always rounds UP. This is the 'Standard Rounding' method used in most schools and businesses.");
-    }
-
-    // Initialize
-    calculate();
+    
+    document.getElementById('precUp').addEventListener('click', () => {
+      if (currentPrecision < maxPrecision) {
+        currentPrecision++;
+        updatePrecisionDisplay();
+        analyze();
+      }
+    });
+    
+    document.getElementById('precDown').addEventListener('click', () => {
+      if (currentPrecision > 0) {
+        currentPrecision--;
+        updatePrecisionDisplay();
+        analyze();
+      }
+    });
+    
+    document.getElementById('analyzeBtn').addEventListener('click', analyze);
+    numberInput.addEventListener('change', analyze);
+    
+    document.getElementById('insightBtn').addEventListener('click', () => {
+      alert('📐 ROUNDING INSIGHT\n\n' +
+            '• As you increase decimal places, you are "zooming in" on a smaller slice of the number line.\n\n' +
+            '• The marker shows exactly where your number falls between two possible rounded values.\n\n' +
+            '• Standard rounding: ≥ 5 rounds up, < 5 rounds down.\n\n' +
+            '• This is the same logic used in calculators, spreadsheets, and scientific measurements.');
+    });
+    
+    // initial
+    updatePrecisionDisplay();
+    analyze();
+  })();
 </script>
 </body>
 </html>

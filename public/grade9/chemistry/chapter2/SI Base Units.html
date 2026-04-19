@@ -1,744 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SI Base Units · 3D Explorer</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: radial-gradient(circle at 20% 30%, #0b1a3a, #030614);
-            font-family: 'Exo 2', sans-serif;
-            color: #f0f4ff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .app-wrapper {
-            max-width: 1400px;
-            width: 100%;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2.5rem;
-            background: linear-gradient(135deg, #a0e9ff, #4d9eff);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 20px #4d9eff80;
-            letter-spacing: 1px;
-        }
-
-        .subhead {
-            color: #9bb5ff;
-            font-size: 1.1rem;
-            margin-top: 8px;
-        }
-
-        .main-panel {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-        }
-
-        /* left: 3D units grid */
-        .scene-panel {
-            flex: 2;
-            min-width: 400px;
-            background: rgba(10, 20, 45, 0.7);
-            backdrop-filter: blur(4px);
-            border-radius: 32px;
-            padding: 25px;
-            border: 1px solid #4d9eff40;
-            box-shadow: 0 20px 30px -10px #00000080;
-        }
-
-        .scene-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .scene-header h2 {
-            font-family: 'Orbitron', sans-serif;
-            color: #a0e9ff;
-            font-size: 1.8rem;
-        }
-
-        .units-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 25px;
-        }
-
-        .unit-card {
-            background: rgba(20, 40, 70, 0.6);
-            border-radius: 24px;
-            padding: 20px 10px;
-            backdrop-filter: blur(2px);
-            border: 2px solid #2f4f9f;
-            transition: 0.25s ease;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-
-        .unit-card:hover {
-            border-color: #ffd966;
-            transform: translateY(-6px);
-            box-shadow: 0 16px 24px #00000060;
-        }
-
-        .unit-card.selected {
-            border-color: #ffaa33;
-            box-shadow: 0 0 25px #ffaa33;
-        }
-
-        /* 3D cube */
-        .cube-container {
-            width: 100px;
-            height: 100px;
-            margin: 10px auto;
-            perspective: 600px;
-        }
-
-        .cube {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.8s;
-        }
-
-        .cube-face {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 160, 255, 0.25);
-            border: 2px solid #4d9eff;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 1.8rem;
-            color: white;
-            text-shadow: 0 0 8px cyan;
-            backdrop-filter: blur(4px);
-            box-shadow: inset 0 0 20px #00a0ff40;
-        }
-
-        .front  { transform: translateZ(50px); }
-        .back   { transform: rotateY(180deg) translateZ(50px); }
-        .right  { transform: rotateY(90deg) translateZ(50px); }
-        .left   { transform: rotateY(-90deg) translateZ(50px); }
-        .top    { transform: rotateX(90deg) translateZ(50px); }
-        .bottom { transform: rotateX(-90deg) translateZ(50px); }
-
-        .unit-name {
-            font-weight: 600;
-            margin-top: 10px;
-            font-size: 1.3rem;
-            color: #ccdeff;
-        }
-
-        .unit-symbol {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.8rem;
-            color: #ffd966;
-            line-height: 1;
-        }
-
-        .speaker-icon {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            color: #9bb5ff;
-            font-size: 1.2rem;
-            cursor: pointer;
-            z-index: 10;
-        }
-        .speaker-icon:hover { color: #ffd966; }
-
-        /* right panel: controls & info */
-        .control-panel {
-            flex: 1.2;
-            min-width: 300px;
-            background: rgba(8, 18, 38, 0.8);
-            backdrop-filter: blur(6px);
-            border-radius: 32px;
-            padding: 25px;
-            border: 1px solid #ffaa3380;
-            box-shadow: 0 20px 30px -10px black;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        .info-card {
-            background: #112240;
-            border-radius: 20px;
-            padding: 18px;
-            border-left: 5px solid #4d9eff;
-        }
-
-        .info-title {
-            font-size: 1.2rem;
-            color: #ffd966;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        #unitInfoContent {
-            color: #cbd5ff;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            min-height: 100px;
-        }
-
-        .drag-area {
-            background: #0a1a2f;
-            border-radius: 20px;
-            padding: 15px;
-        }
-
-        .drag-symbols {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin: 15px 0;
-            justify-content: center;
-        }
-
-        .drag-symbol {
-            background: #3742fa;
-            color: white;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5rem;
-            padding: 12px 20px;
-            border-radius: 16px;
-            cursor: grab;
-            user-select: none;
-            box-shadow: 0 6px 0 #1e2a5a;
-            transition: 0.1s;
-            border: 1px solid #aaccff;
-        }
-
-        .drag-symbol:active {
-            cursor: grabbing;
-            opacity: 0.8;
-            transform: translateY(3px);
-            box-shadow: 0 3px 0 #1e2a5a;
-        }
-
-        .drag-symbol.dragged-off {
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        .btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 10px;
-        }
-
-        .btn {
-            background: linear-gradient(145deg, #1e3b5a, #0f2640);
-            border: none;
-            border-radius: 40px;
-            padding: 12px 20px;
-            font-family: 'Exo 2', sans-serif;
-            font-weight: 600;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            border: 1px solid #4d9eff;
-            box-shadow: 0 6px 0 #0a1428;
-            transition: 0.1s ease;
-            font-size: 0.9rem;
-        }
-
-        .btn:hover {
-            background: linear-gradient(145deg, #2a4b70, #1a3350);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 0 #0a1428;
-        }
-
-        .btn:active {
-            transform: translateY(3px);
-            box-shadow: 0 3px 0 #0a1428;
-        }
-
-        .btn.secondary {
-            border-color: #ffaa33;
-            background: linear-gradient(145deg, #4a3a1a, #2f2a0f);
-        }
-
-        .feedback-panel {
-            background: #0f212e;
-            border-radius: 18px;
-            padding: 15px;
-            border-left: 6px solid #4d9eff;
-            margin-top: 10px;
-            transition: 0.2s;
-        }
-
-        .slider-block {
-            background: #0e1a2b;
-            border-radius: 16px;
-            padding: 15px;
-        }
-
-        .slider-block input {
-            width: 100%;
-            margin: 10px 0;
-        }
-
-        #scaleDisplay {
-            font-family: 'Orbitron', sans-serif;
-            color: #ffd966;
-        }
-
-        .hidden-fact {
-            background: #1b2b44;
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 10px;
-            border-left: 3px solid #ffaa33;
-            display: none;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #7890b0;
-        }
-
-        @media (max-width: 800px) {
-            .main-panel { flex-direction: column; }
-            h1 { font-size: 2rem; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>📐 SI units · 3D</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:1200px;margin:0 auto}
+    @media(min-width:800px){.grid{grid-template-columns:1.6fr 1fr}}
+    h2{font-weight:700;font-size:1.4rem;color:#0a1e3c;margin-bottom:16px}
+    .units-panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .units-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px}
+    .unit-card{background:#fff;border-radius:18px;padding:16px 8px;border:2px solid #d0e2ff;cursor:pointer;text-align:center;transition:0.15s}
+    .unit-card.selected{border-color:#3b82f6;background:#eef4ff}
+    .cube{width:80px;height:80px;margin:0 auto 10px;perspective:400px}
+    .cube-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s}
+    .face{position:absolute;width:100%;height:100%;background:#3b82f620;border:2px solid #3b82f6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:#3b82f6}
+    .front{transform:translateZ(40px)} .back{transform:rotateY(180deg)translateZ(40px)}
+    .right{transform:rotateY(90deg)translateZ(40px)} .left{transform:rotateY(-90deg)translateZ(40px)}
+    .top{transform:rotateX(90deg)translateZ(40px)} .bottom{transform:rotateX(-90deg)translateZ(40px)}
+    .unit-symbol{font-size:1.4rem;font-weight:700;color:#3b82f6}
+    .unit-name{font-weight:600;margin-top:4px}
+    .speaker{position:absolute;top:6px;right:6px;font-size:1.1rem;cursor:pointer;color:#3a628c}
+    .control-panel{display:flex;flex-direction:column;gap:16px}
+    .info-card{background:#f0f6ff;border-radius:20px;padding:18px;border-left:4px solid #3b82f6}
+    .drag-area{background:#fff;border-radius:20px;padding:16px;border:1px dashed #3b82f6}
+    .drag-symbols{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;justify-content:center}
+    .drag-item{background:#3b82f6;color:#fff;font-size:1.4rem;font-weight:700;padding:10px 18px;border-radius:14px;cursor:grab;user-select:none;box-shadow:0 4px 0 #1e4a8b}
+    .drag-item:active{cursor:grabbing;opacity:0.8;transform:translateY(2px);box-shadow:0 2px 0 #1e4a8b}
+    .drag-item.matched{opacity:0.4;pointer-events:none;background:#10b981;box-shadow:0 4px 0 #0b6e4f}
+    .btn{background:#3b82f6;color:#fff;border:none;padding:14px;border-radius:40px;font-weight:700;font-size:0.9rem;cursor:pointer;width:100%}
+    .btn-outline{background:#fff;border:1.5px solid #d0e2ff;color:#3a628c}
+    .btn:active{scale:0.97}
+    .feedback{background:#fef9e7;padding:12px;border-radius:16px;font-weight:500;border-left:4px solid #f59e0b}
+    .flex-row{display:flex;gap:8px;flex-wrap:wrap}
+    .flex-row .btn{flex:1}
+    .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
 <body>
-<div class="app-wrapper">
-    <header>
-        <h1><i class="fas fa-cube"></i> SI Base Units · 3D Explorer</h1>
-        <div class="subhead">Tap cubes · drag symbols · discover real-world science</div>
-    </header>
-
-    <div class="main-panel">
-        <!-- LEFT: interactive 3D units -->
-        <div class="scene-panel">
-            <div class="scene-header">
-                <h2>⚡ the seven</h2>
-                <button class="btn" id="rotateAllBtn"><i class="fas fa-sync-alt"></i> rotate all</button>
-            </div>
-            <div class="units-grid" id="unitsGrid"></div>
-
-            <!-- real-life context area (dynamic) -->
-            <div id="realLifeContext" class="info-card" style="margin-top: 25px; display: none;">
-                <div class="info-title"><i class="fas fa-globe"></i> real‑life use</div>
-                <div id="realLifeContent"></div>
-            </div>
-
-            <!-- size slider (dynamic) -->
-            <div id="sizeSliderBlock" class="slider-block" style="margin-top: 20px; display: none;">
-                <label><i class="fas fa-expand-alt"></i> scale comparison (for selected unit)</label>
-                <input type="range" id="sizeSlider" min="10" max="200" value="100">
-                <div id="scaleDisplay">1 unit = 1 reference</div>
-            </div>
-        </div>
-
-        <!-- RIGHT: controls & feedback -->
-        <div class="control-panel">
-            <div class="info-card">
-                <div class="info-title"><i class="fas fa-info-circle"></i> unit info</div>
-                <div id="unitInfoContent">👆 tap any cube to see details</div>
-            </div>
-
-            <div class="drag-area">
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <i class="fas fa-puzzle-piece" style="color:#ffd966;"></i>
-                    <span style="font-weight: 600;">drag symbol → matching cube</span>
-                </div>
-                <div class="drag-symbols" id="dragSymbolsContainer"></div>
-                <button class="btn secondary" id="resetDragBtn"><i class="fas fa-undo-alt"></i> reset game</button>
-            </div>
-
-            <div class="btn-group">
-                <button class="btn" id="randomFactBtn"><i class="fas fa-lightbulb"></i> random fact</button>
-                <button class="btn" id="speakAllBtn"><i class="fas fa-volume-up"></i> pronounce all</button>
-                <button class="btn" id="missionBtn"><i class="fas fa-search"></i> mini mission</button>
-                <button class="btn secondary" id="toggleRealBtn"><i class="fas fa-globe"></i> show real‑life</button>
-                <button class="btn secondary" id="sizeSliderBtn"><i class="fas fa-arrows-alt-h"></i> size scale</button>
-            </div>
-
-            <div class="feedback-panel" id="feedbackPanel">
-                <i class="fas fa-comment-dots" style="color: #4d9eff; margin-right: 8px;"></i>
-                <span id="feedbackMessage">✨ ready to explore</span>
-            </div>
-
-            <div class="hidden-fact" id="globalHiddenFact">
-                <i class="fas fa-flask"></i> <span id="factText">rotate a cube to reveal a secret</span>
-            </div>
-        </div>
+<div class="grid">
+  <div class="units-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="margin:0">⚡ seven base units</h2>
+      <button class="btn" style="width:auto;padding:10px 18px" id="rotateAll">↻ rotate all</button>
     </div>
-
-    <footer>
-        ⚡ 7 base units • 3D interactive • SI system • made for curious minds
-    </footer>
+    <div class="units-grid" id="unitsGrid"></div>
+  </div>
+  <div class="control-panel">
+    <div class="info-card">
+      <div style="font-weight:700;color:#3b82f6;margin-bottom:8px">📖 unit info</div>
+      <div id="unitDetail">👆 tap a cube</div>
+    </div>
+    <div class="drag-area">
+      <div style="font-weight:600;margin-bottom:8px">🧩 drag symbol → cube</div>
+      <div class="drag-symbols" id="dragContainer"></div>
+      <button class="btn-outline" id="resetDrag">↻ reset game</button>
+    </div>
+    <div class="flex-row">
+      <button class="btn" id="speakBtn">🔊 pronounce</button>
+      <button class="btn" id="factBtn">💡 fact</button>
+    </div>
+    <div class="feedback" id="feedbackMsg">✨ ready</div>
+    <div class="legend">
+      <span>● tap cube · drag symbol</span>
+    </div>
+  </div>
 </div>
-
 <script>
-    (function() {
-        // --- SI unit data ---
-        const siUnits = [
-            { id: 'meter', name: 'Meter', symbol: 'm', quantity: 'Length', icon: 'ruler',
-              example: 'Height of door (2 m), track length (400 m)',
-              fact: 'Originally 1/10,000,000 of equator–pole distance.',
-              pronunciation: 'mee-ter' },
-            { id: 'kilogram', name: 'Kilogram', symbol: 'kg', quantity: 'Mass', icon: 'weight-hanging',
-              example: 'Bag of flour (1 kg), dumbbell (5 kg)',
-              fact: 'Only unit still defined by a physical prototype (until 2019).',
-              pronunciation: 'kil-uh-gram' },
-            { id: 'second', name: 'Second', symbol: 's', quantity: 'Time', icon: 'clock',
-              example: 'Heartbeat ~1 s, 60 s in a minute',
-              fact: 'Based on cesium-133 radiation period.',
-              pronunciation: 'sek-und' },
-            { id: 'ampere', name: 'Ampere', symbol: 'A', quantity: 'Electric current', icon: 'bolt',
-              example: 'Phone charger ~1 A, household circuit ~15 A',
-              fact: 'Named after André-Marie Ampère.',
-              pronunciation: 'am-peer' },
-            { id: 'kelvin', name: 'Kelvin', symbol: 'K', quantity: 'Temperature', icon: 'thermometer-half',
-              example: 'Ice melts at 273 K, room temp ~293 K',
-              fact: '0 K = absolute zero, all motion stops.',
-              pronunciation: 'kel-vin' },
-            { id: 'mole', name: 'Mole', symbol: 'mol', quantity: 'Amount of substance', icon: 'flask',
-              example: '12 g carbon = 1 mol, chemistry reactions',
-              fact: 'Contains 6.022×10²³ entities (Avogadro).',
-              pronunciation: 'mohl' },
-            { id: 'candela', name: 'Candela', symbol: 'cd', quantity: 'Luminous intensity', icon: 'lightbulb',
-              example: 'Candle ~1 cd, LED ~100 cd',
-              fact: 'Latin for “candle”; based on monochromatic light.',
-              pronunciation: 'kan-del-uh' }
-        ];
-
-        // ----- global state -----
-        let selectedUnitId = 'meter';          // currently selected cube
-        const unitCards = new Map();            // id -> DOM element
-        let dragSymbols = [];                   // track draggable symbols
-
-        // ----- DOM elements -----
-        const unitsGrid = document.getElementById('unitsGrid');
-        const unitInfoContent = document.getElementById('unitInfoContent');
-        const feedbackMessage = document.getElementById('feedbackMessage');
-        const dragContainer = document.getElementById('dragSymbolsContainer');
-        const resetDragBtn = document.getElementById('resetDragBtn');
-        const globalHiddenFact = document.getElementById('globalHiddenFact');
-        const factText = document.getElementById('factText');
-        const realLifeContext = document.getElementById('realLifeContext');
-        const realLifeContent = document.getElementById('realLifeContent');
-        const sizeSliderBlock = document.getElementById('sizeSliderBlock');
-        const sizeSlider = document.getElementById('sizeSlider');
-        const scaleDisplay = document.getElementById('scaleDisplay');
-        const rotateAllBtn = document.getElementById('rotateAllBtn');
-
-        // ----- helper: show feedback message -----
-        function setFeedback(msg, isGood = true) {
-            feedbackMessage.innerText = msg;
-            const panel = document.getElementById('feedbackPanel');
-            panel.style.borderLeftColor = isGood ? '#4d9eff' : '#ffaa33';
-        }
-
-        // ----- update info panel for a unit -----
-        function showUnitInfo(unit) {
-            unitInfoContent.innerHTML = `
-                <strong style="color:#ffd966; font-size:1.3rem;">${unit.name} (${unit.symbol})</strong><br>
-                <span>📏 quantity: ${unit.quantity}</span><br>
-                <span>🌍 example: ${unit.example}</span><br>
-                <span>💡 fact: ${unit.fact}</span>
-            `;
-        }
-
-        // ----- speak unit name -----
-        function speakUnit(unit) {
-            if (!window.speechSynthesis) {
-                setFeedback('Speech not supported', false);
-                return;
-            }
-            const utter = new SpeechSynthesisUtterance(unit.name);
-            utter.rate = 0.9;
-            utter.pitch = 1;
-            window.speechSynthesis.cancel(); // avoid overlapping
-            window.speechSynthesis.speak(utter);
-            setFeedback(`🔊 ${unit.name} (${unit.pronunciation})`);
-        }
-
-        // ----- create all unit cubes -----
-        function buildUnits() {
-            unitsGrid.innerHTML = '';
-            siUnits.forEach((unit, index) => {
-                const card = document.createElement('div');
-                card.className = 'unit-card';
-                card.dataset.unitId = unit.id;
-                if (index === 0) card.classList.add('selected');
-
-                // cube faces: each face shows symbol
-                const faceSymbol = unit.symbol;
-                const cubeHTML = `
-                    <div class="cube-container">
-                        <div class="cube" id="cube-${unit.id}">
-                            <div class="cube-face front">${faceSymbol}</div>
-                            <div class="cube-face back">${faceSymbol}</div>
-                            <div class="cube-face right">${faceSymbol}</div>
-                            <div class="cube-face left">${faceSymbol}</div>
-                            <div class="cube-face top">${faceSymbol}</div>
-                            <div class="cube-face bottom">SI</div>
-                        </div>
-                    </div>
-                `;
-
-                card.innerHTML = `
-                    ${cubeHTML}
-                    <i class="fas fa-volume-up speaker-icon" data-unit="${unit.id}"></i>
-                    <div class="unit-name">${unit.name}</div>
-                    <div class="unit-symbol">${unit.symbol}</div>
-                `;
-
-                // click on card (but not speaker) -> select & show info
-                card.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('speaker-icon')) return;
-                    // remove selected class from all
-                    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    selectedUnitId = unit.id;
-                    showUnitInfo(unit);
-                    setFeedback(`🔍 selected: ${unit.name} (${unit.symbol})`);
-                });
-
-                // speaker click
-                const speaker = card.querySelector('.speaker-icon');
-                speaker.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    speakUnit(unit);
-                });
-
-                unitsGrid.appendChild(card);
-                unitCards.set(unit.id, card);
-            });
-
-            // show initial info
-            showUnitInfo(siUnits[0]);
-        }
-
-        // ----- drag & drop symbols -----
-        function rebuildDragSymbols() {
-            dragContainer.innerHTML = '';
-            dragSymbols = siUnits.map(unit => {
-                const span = document.createElement('span');
-                span.className = 'drag-symbol';
-                span.textContent = unit.symbol;
-                span.dataset.unitId = unit.id;
-                span.draggable = true;
-                span.ondragstart = (e) => {
-                    e.dataTransfer.setData('text/plain', unit.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                };
-                span.ondragend = () => {}; // no visual feedback removal – we manage via drop
-                return span;
-            });
-            dragSymbols.forEach(s => dragContainer.appendChild(s));
-        }
-
-        // setup drop targets (unit cards)
-        function setupDropZones() {
-            document.querySelectorAll('.unit-card').forEach(card => {
-                card.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    card.style.borderColor = '#ffd966';
-                });
-                card.addEventListener('dragleave', () => {
-                    card.style.borderColor = '';
-                });
-                card.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    card.style.borderColor = '';
-                    const draggedUnitId = e.dataTransfer.getData('text/plain');
-                    const targetUnitId = card.dataset.unitId;
-                    const draggedSymbolElem = [...dragContainer.children].find(el => el.dataset.unitId === draggedUnitId);
-
-                    if (draggedUnitId === targetUnitId) {
-                        // correct match
-                        setFeedback(`✅ correct! ${targetUnitId} matches`, true);
-                        if (draggedSymbolElem && !draggedSymbolElem.classList.contains('dragged-off')) {
-                            draggedSymbolElem.classList.add('dragged-off');
-                            draggedSymbolElem.draggable = false;
-                        }
-                        // highlight card
-                        card.style.boxShadow = '0 0 20px #00ffaa';
-                        setTimeout(() => card.style.boxShadow = '', 500);
-                    } else {
-                        setFeedback(`❌ ${draggedUnitId} symbol ≠ ${targetUnitId}`, false);
-                        card.style.boxShadow = '0 0 20px #ff5555';
-                        setTimeout(() => card.style.boxShadow = '', 500);
-                    }
-                });
-            });
-        }
-
-        // reset drag game
-        function resetDragGame() {
-            [...dragContainer.children].forEach(el => {
-                el.classList.remove('dragged-off');
-                el.draggable = true;
-            });
-            setFeedback('🔄 drag game reset');
-        }
-
-        // ----- rotate a specific cube (random) -----
-        function rotateCube(unitId) {
-            const cube = document.getElementById(`cube-${unitId}`);
-            if (!cube) return;
-            const x = Math.floor(Math.random() * 360);
-            const y = Math.floor(Math.random() * 360);
-            cube.style.transform = `rotateX(${x}deg) rotateY(${y}deg)`;
-        }
-
-        // rotate all cubes
-        function rotateAllCubes() {
-            siUnits.forEach(u => rotateCube(u.id));
-            // show hidden fact globally
-            const randomFact = siUnits[Math.floor(Math.random() * siUnits.length)].fact;
-            factText.innerText = randomFact;
-            globalHiddenFact.style.display = 'block';
-            setFeedback('🔄 cubes rotated – secret revealed');
-        }
-
-        // ----- real-life context for selected unit -----
-        function showRealLifeContext() {
-            const unit = siUnits.find(u => u.id === selectedUnitId);
-            if (!unit) return;
-            realLifeContent.innerHTML = `
-                <i class="fas fa-${unit.icon || 'cube'}" style="font-size:1.5rem; color:#ffd966;"></i>
-                <p><strong>${unit.name}</strong> is used for: ${unit.example}</p>
-                <p>⚡ everyday: ${unit.quantity.toLowerCase()} measurements.</p>
-            `;
-            realLifeContext.style.display = 'block';
-            setFeedback(`🌎 real-life: ${unit.name}`);
-        }
-
-        // hide real-life context
-        function hideRealLifeContext() {
-            realLifeContext.style.display = 'none';
-        }
-
-        // ----- size slider for selected unit -----
-        function showSizeSlider() {
-            sizeSliderBlock.style.display = 'block';
-            updateScaleDisplay();
-        }
-
-        function updateScaleDisplay() {
-            const val = sizeSlider.value;
-            const unit = siUnits.find(u => u.id === selectedUnitId);
-            if (!unit) return;
-            let desc = '';
-            if (val < 30) desc = 'micro scale (0.001×)';
-            else if (val < 60) desc = 'human scale (1×)';
-            else if (val < 130) desc = 'macro scale (100×)';
-            else desc = 'cosmic scale (10⁶×)';
-            scaleDisplay.innerText = `${unit.symbol} scale: ${desc}`;
-            // visual effect: scale the cube? we'll just show text
-        }
-
-        // ----- random fact popup -----
-        function randomFact() {
-            const unit = siUnits[Math.floor(Math.random() * siUnits.length)];
-            setFeedback(`✨ fun fact: ${unit.fact}`, true);
-        }
-
-        // ----- mini mission: find Kelvin -----
-        function startMission() {
-            setFeedback('🔍 mission: find the unit for temperature (hint: starts with K)', true);
-            // highlight all cards temporarily
-            document.querySelectorAll('.unit-card').forEach(c => c.style.boxShadow = '0 0 15px #ffff00');
-            setTimeout(() => {
-                document.querySelectorAll('.unit-card').forEach(c => c.style.boxShadow = '');
-            }, 4000);
-
-            // listen for click on kelvin
-            const kelvinCard = unitCards.get('kelvin');
-            const missionHandler = () => {
-                setFeedback('✅ mission complete! Kelvin (K) measures temperature.', true);
-                kelvinCard.style.boxShadow = '0 0 30px #00ffaa';
-                setTimeout(() => kelvinCard.style.boxShadow = '', 2000);
-                kelvinCard.removeEventListener('click', missionHandler);
-            };
-            kelvinCard.addEventListener('click', missionHandler, { once: true });
-        }
-
-        // ----- initialization -----
-        function init() {
-            buildUnits();
-            rebuildDragSymbols();
-            setupDropZones();
-
-            // event listeners
-            rotateAllBtn.addEventListener('click', rotateAllCubes);
-
-            document.getElementById('randomFactBtn').addEventListener('click', randomFact);
-            document.getElementById('speakAllBtn').addEventListener('click', () => {
-                siUnits.forEach((u, i) => setTimeout(() => speakUnit(u), i * 800));
-            });
-            document.getElementById('missionBtn').addEventListener('click', startMission);
-            document.getElementById('toggleRealBtn').addEventListener('click', () => {
-                if (realLifeContext.style.display === 'none') showRealLifeContext();
-                else hideRealLifeContext();
-            });
-            document.getElementById('sizeSliderBtn').addEventListener('click', showSizeSlider);
-            resetDragBtn.addEventListener('click', resetDragGame);
-
-            sizeSlider.addEventListener('input', updateScaleDisplay);
-
-            // update real-life and slider when selection changes (we'll override click)
-            const originalClick = document.querySelectorAll('.unit-card')[0].click; // not needed, we extend
-            document.querySelectorAll('.unit-card').forEach(card => {
-                card.addEventListener('click', () => {
-                    // after selection, update real-life if visible, and slider if visible
-                    if (realLifeContext.style.display === 'block') showRealLifeContext(); // refresh
-                    if (sizeSliderBlock.style.display === 'block') updateScaleDisplay();
-                });
-            });
-
-            setFeedback('👆 tap a cube or drag symbols to begin');
-        }
-
-        init();
-    })();
+(function(){
+  const units=[
+    {id:'meter',name:'Meter',sym:'m',q:'Length',ex:'door ~2 m',fact:'1/10M of equator-pole',pron:'mee-ter'},
+    {id:'kilogram',name:'Kilogram',sym:'kg',q:'Mass',ex:'flour ~1 kg',fact:'prototype until 2019',pron:'kil-uh-gram'},
+    {id:'second',name:'Second',sym:'s',q:'Time',ex:'heartbeat ~1 s',fact:'cesium-133',pron:'sek-und'},
+    {id:'ampere',name:'Ampere',sym:'A',q:'Current',ex:'charger ~1 A',fact:'Ampère',pron:'am-peer'},
+    {id:'kelvin',name:'Kelvin',sym:'K',q:'Temp',ex:'ice 273 K',fact:'absolute zero',pron:'kel-vin'},
+    {id:'mole',name:'Mole',sym:'mol',q:'Amount',ex:'12g C = 1 mol',fact:'6.022×10²³',pron:'mohl'},
+    {id:'candela',name:'Candela',sym:'cd',q:'Light',ex:'candle ~1 cd',fact:'latin candle',pron:'kan-del-uh'}
+  ];
+  let selected='meter';
+  const grid=document.getElementById('unitsGrid'),detail=document.getElementById('unitDetail');
+  const dragC=document.getElementById('dragContainer'),feedback=document.getElementById('feedbackMsg');
+  
+  function showInfo(u){detail.innerHTML=`<strong style="color:#3b82f6">${u.name} (${u.sym})</strong><br>📏 ${u.q}<br>🌍 ${u.ex}<br>💡 ${u.fact}`}
+  function speak(u){if(window.speechSynthesis){const ut=new SpeechSynthesisUtterance(u.name);ut.rate=0.9;window.speechSynthesis.cancel();window.speechSynthesis.speak(ut);feedback.textContent=`🔊 ${u.name} (${u.pron})`}}
+  
+  function build(){
+    grid.innerHTML='';
+    units.forEach((u,i)=>{
+      const c=document.createElement('div');c.className='unit-card'+(i===0?' selected':'');
+      c.dataset.id=u.id;
+      c.innerHTML=`<div class="cube"><div class="cube-inner" id="cube-${u.id}">
+        <div class="face front">${u.sym}</div><div class="face back">${u.sym}</div><div class="face right">${u.sym}</div>
+        <div class="face left">${u.sym}</div><div class="face top">${u.sym}</div><div class="face bottom">SI</div>
+      </div></div><div class="unit-symbol">${u.sym}</div><div class="unit-name">${u.name}</div>
+      <span class="speaker" data-id="${u.id}">🔊</span>`;
+      c.addEventListener('click',e=>{if(e.target.classList.contains('speaker'))return;
+        document.querySelectorAll('.unit-card').forEach(x=>x.classList.remove('selected'));c.classList.add('selected');
+        selected=u.id;showInfo(u);feedback.textContent=`🔍 ${u.name}`});
+      c.querySelector('.speaker').addEventListener('click',e=>{e.stopPropagation();speak(u)});
+      grid.appendChild(c);
+    });
+    showInfo(units[0]);
+  }
+  
+  function buildDrag(){
+    dragC.innerHTML='';
+    units.forEach(u=>{const s=document.createElement('span');s.className='drag-item';s.textContent=u.sym;
+      s.dataset.id=u.id;s.draggable=true;s.ondragstart=e=>{e.dataTransfer.setData('text/plain',u.id)};dragC.appendChild(s)});
+  }
+  
+  function setupDrop(){
+    document.querySelectorAll('.unit-card').forEach(c=>{c.addEventListener('dragover',e=>e.preventDefault());
+      c.addEventListener('drop',e=>{e.preventDefault();const id=e.dataTransfer.getData('text/plain');
+        const target=c.dataset.id;const el=[...dragC.children].find(x=>x.dataset.id===id);
+        if(id===target){if(el&&!el.classList.contains('matched')){el.classList.add('matched');el.draggable=false}
+          feedback.textContent=`✅ ${target} matched`;c.style.boxShadow='0 0 16px #10b981';setTimeout(()=>c.style.boxShadow='',500)}
+        else{feedback.textContent=`❌ ${id} ≠ ${target}`;c.style.boxShadow='0 0 16px #ef4444';setTimeout(()=>c.style.boxShadow='',400)}})});
+  }
+  
+  function rotateCube(id){const c=document.getElementById(`cube-${id}`);if(c){c.style.transform=`rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`}}
+  function rotateAll(){units.forEach(u=>rotateCube(u.id));feedback.textContent='🔄 rotated'}
+  
+  document.getElementById('rotateAll').addEventListener('click',rotateAll);
+  document.getElementById('resetDrag').addEventListener('click',()=>{[...dragC.children].forEach(e=>{e.classList.remove('matched');e.draggable=true});feedback.textContent='🔄 game reset'});
+  document.getElementById('speakBtn').addEventListener('click',()=>{const u=units.find(x=>x.id===selected);if(u)speak(u)});
+  document.getElementById('factBtn').addEventListener('click',()=>{const u=units[Math.floor(Math.random()*units.length)];feedback.textContent=`💡 ${u.name}: ${u.fact}`});
+  
+  build();buildDrag();setupDrop();
+})();
 </script>
 </body>
 </html>

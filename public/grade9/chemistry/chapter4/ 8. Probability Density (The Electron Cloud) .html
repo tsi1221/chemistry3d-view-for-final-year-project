@@ -1,178 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Electron Probability Density</title>
-    <style>
-        :root {
-            --bg: #020617;
-            --panel: #0f172a;
-            --electron: #38bdf8;
-            --text: #f1f5f9;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .viewport { flex-grow: 1; position: relative; background: #000; }
-        canvas { width: 100%; height: 100%; }
-
-        .card {
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 12px;
-        }
-
-        button {
-            width: 100%;
-            padding: 15px;
-            background: var(--electron);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: 800;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
-        button:active { transform: scale(0.98); }
-        
-        .stat-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            margin-top: 10px;
-        }
-
-        .highlight { color: var(--electron); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>☁️ 1s probability cloud</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
+    @media(min-width:700px){.grid{grid-template-columns:1fr 200px}}
+    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
+    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    canvas{display:block;width:100%;aspect-ratio:1/1;background:#fff;border-radius:16px;border:1px solid #d0e2ff}
+    .btn{width:100%;padding:14px;border-radius:40px;border:none;font-weight:700;font-size:1rem;cursor:pointer;background:#3b82f6;color:#fff;margin-bottom:8px}
+    .btn-outline{background:#fff;border:1.5px solid #d0e2ff;color:#3a628c}
+    .stat{background:#f0f6ff;border-radius:16px;padding:14px;margin:12px 0}
+    .stat-row{display:flex;justify-content:space-between;padding:4px 0}
+    .notes{font-size:0.8rem;color:#3a628c;margin-top:12px}
+  </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2 style="color:var(--electron); margin-top:0;">1s Orbital Cloud</h2>
-    
-    <div class="card">
-        <p style="font-size: 0.85rem; line-height: 1.5;">In quantum mechanics, we don't see orbits. We see <b>probability densities</b>.</p>
-        <button onclick="measure(100)">Measure Position (x100)</button>
-        <button onclick="measure(1000)" style="margin-top:10px; background:#94a3b8;">Instant Cloud (x1000)</button>
-    </div>
-
-    <div class="card">
-        <div class="stat-grid">
-            <span>Measurements:</span> <span id="count" class="highlight">0</span>
-            <span>Avg Radius:</span> <span id="avgR" class="highlight">0</span>
-        </div>
-    </div>
-
-    <button class="reset" onclick="reset()" style="background:#334155; color:white;">Clear Observations</button>
-
-    <div class="card" style="font-size: 0.8rem; color: #94a3b8;">
-        <b>The Math:</b> Each dot is placed using a Gaussian distribution. You are 90% likely to find the electron within the "cloud" boundary.
-    </div>
-</div>
-
-<div class="viewport">
+<div class="grid">
+  <div class="panel">
+    <h2>☁️ 1s probability density</h2>
     <canvas id="cloudCanvas"></canvas>
+    <div style="display:flex;gap:8px;margin-top:12px"><span style="color:#ef4444">● nucleus</span><span style="color:#3b82f6">● measurement</span></div>
+  </div>
+  <div>
+    <div class="panel">
+      <button class="btn" id="measure100">📊 ×100</button>
+      <button class="btn" id="measure500" style="background:#60a5fa">📊 ×500</button>
+      <button class="btn-outline" id="clearBtn">🗑️ clear</button>
+      <div class="stat"><div class="stat-row"><span>measurements</span><span id="countDisp" style="font-weight:700;color:#3b82f6">0</span></div><div class="stat-row"><span>avg radius</span><span id="avgDisp" style="font-weight:700;color:#3b82f6">0</span></div></div>
+      <div class="notes">ψ₁ₛ ∝ e⁻ʳ · denser = higher probability</div>
+    </div>
+  </div>
 </div>
-
 <script>
-    const canvas = document.getElementById('cloudCanvas');
-    const ctx = canvas.getContext('2d');
-    let points = [];
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-        draw();
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    // Box-Muller transform for Gaussian Distribution
-    function randomGaussian(mean, stdev) {
-        let u = 0, v = 0;
-        while(u === 0) u = Math.random();
-        while(v === 0) v = Math.random();
-        let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-        return num * stdev + mean;
-    }
-
-    function measure(samples) {
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-        const scale = 80;
-
-        for(let i=0; i<samples; i++) {
-            // Radial probability distribution for 1s orbital
-            const r = Math.abs(randomGaussian(0, scale)); 
-            const theta = Math.random() * Math.PI * 2;
-            
-            points.push({
-                x: cx + r * Math.cos(theta),
-                y: cy + r * Math.sin(theta),
-                r: r
-            });
-        }
-        updateStats();
-        draw();
-    }
-
-    function updateStats() {
-        document.getElementById('count').innerText = points.length;
-        const totalR = points.reduce((sum, p) => sum + p.r, 0);
-        document.getElementById('avgR').innerText = points.length ? (totalR / points.length).toFixed(1) + " pm" : 0;
-    }
-
-    function reset() {
-        points = [];
-        updateStats();
-        draw();
-    }
-
-    function draw() {
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2;
-
-        // Draw Nucleus
-        ctx.fillStyle = "#f87171";
-        ctx.beginPath();
-        ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw Electron "Observations"
-        ctx.fillStyle = "rgba(56, 189, 248, 0.5)";
-        points.forEach(p => {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
-            ctx.fill();
-        });
-    }
-
-    draw();
+(function(){
+  const canvas=document.getElementById('cloudCanvas'),ctx=canvas.getContext('2d');
+  let w=0,h=0,DPR=devicePixelRatio||1,points=[];
+  const countD=document.getElementById('countDisp'),avgD=document.getElementById('avgDisp');
+  
+  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=w;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+  
+  function gaussian(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+  
+  function measure(n){
+    const cx=w/2,cy=h/2,scale=Math.min(w,h)*0.2;
+    for(let i=0;i<n;i++){const r=Math.abs(gaussian()*scale*0.5),theta=Math.random()*2*Math.PI; points.push({x:cx+r*Math.cos(theta),y:cy+r*Math.sin(theta),r})}
+    updateStats(); draw();
+  }
+  
+  function updateStats(){
+    countD.textContent=points.length; if(points.length) avgD.textContent=(points.reduce((s,p)=>s+p.r,0)/points.length/(w*0.01)).toFixed(1); else avgD.textContent='0';
+  }
+  
+  function draw(){
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.strokeStyle='#d0e2ff'; ctx.lineWidth=1; ctx.setLineDash([3,6]);
+    for(let r=w*0.1;r<w*0.45;r+=w*0.1){ctx.beginPath();ctx.arc(w/2,h/2,r,0,2*Math.PI);ctx.stroke()} ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(w/2,h/2,5,0,2*Math.PI); ctx.fillStyle='#ef4444'; ctx.shadowColor='#ef444480'; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0;
+    points.forEach(p=>{ctx.fillStyle=`rgba(59,130,246,${0.25+Math.random()*0.15})`; ctx.beginPath(); ctx.arc(p.x,p.y,2,0,2*Math.PI); ctx.fill()});
+    const grad=ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*0.22); grad.addColorStop(0,'#3b82f620'); grad.addColorStop(1,'#3b82f600'); ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(w/2,h/2,w*0.22,0,2*Math.PI); ctx.fill();
+  }
+  
+  document.getElementById('measure100').onclick=()=>measure(100);
+  document.getElementById('measure500').onclick=()=>measure(500);
+  document.getElementById('clearBtn').onclick=()=>{points=[]; updateStats(); draw()};
+  window.onresize=()=>{resize(); draw()};
+  resize(); draw();
+})();
 </script>
 </body>
 </html>
