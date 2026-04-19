@@ -92,7 +92,7 @@ const grade9Lessons: Omit<Item, 'grade'>[] = [
   { name: "Budget Boundary Lab", link: "/grade9/maths/chapter4/5.budget_boundary_lab.htmlbudget_boundary_lab.html", chapter: "Chapter 4: Functions & Inequalities", subject: "Mathematics" },
   { name: "Unit Circle Trig Wave Visualizer", link: "/grade9/maths/chapter5/1.UnitCircle_TrigWave_Visualizer.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
   
-  { name: "Cone & Cylinder Volume Lab", link: "/grade9/maths/chapter5/3.Cone_Cylinder_Volume_Lab.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
+ 
   { name: "Quadratic Paraboloid Lab", link: "/grade9/maths/chapter5/4.Quadratic_Paraboloid_Lab.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
   { name: "3D Linear Plane Lab", link: "/grade9/maths/chapter5/5.3D_Linear_Plane_Lab.html", chapter: "Chapter 5: Geometry & Measurement", subject: "Mathematics" },
   { name: "3D Trig Helix Lab", link: "/grade9/maths/chapter6/1.3D_Trig_Helix_Lab.html", chapter: "Chapter 6: Advanced Geometry", subject: "Mathematics" },
