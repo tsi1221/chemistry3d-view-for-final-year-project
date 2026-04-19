@@ -1,231 +1,414 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-STEM Density & Graph Explorer</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --accent: #38bdf8;
-            --text: #f1f5f9;
-        }
-        body { 
-            font-family: 'Inter', system-ui, sans-serif; 
-            background: var(--bg); color: var(--text);
-            display: flex; flex-direction: column; align-items: center;
-            margin: 0; padding: 20px;
-        }
-        .main-container {
-            display: grid;
-            grid-template-columns: 400px 400px;
-            gap: 20px;
-            background: var(--card);
-            padding: 25px;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .canvas-container { position: relative; text-align: center; }
-        canvas { border-radius: 12px; background: #000; }
-        .controls {
-            display: flex; flex-direction: column; gap: 15px;
-            grid-column: span 2; padding-top: 20px; border-top: 1px solid #334155;
-        }
-        .slider-box { display: flex; align-items: center; gap: 15px; }
-        input[type="range"] { flex-grow: 1; accent-color: var(--accent); }
-        select, button {
-            padding: 12px; border-radius: 8px; border: none;
-            background: #334155; color: white; cursor: pointer;
-        }
-        button { background: var(--accent); color: #000; font-weight: bold; }
-        .stats-readout {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
-            font-size: 0.9rem; color: var(--accent);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>💧 density explorer · archimedes</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --bg-page: #ffffff;
+      --surface: #fafcff;
+      --border-light: #d0e2ff;
+      --text-dark: #0a1e3c;
+      --text-soft: #3a628c;
+      --accent: #3b82f6;
+      --water: #0ea5e9;
+      --shadow-card: 0 8px 24px rgba(0,0,0,0.04);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-page);
+      color: var(--text-dark);
+      min-height: 100dvh;
+      padding: 20px;
+    }
+
+    .app-grid {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border-radius: 24px;
+      border: 1px solid var(--border-light);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    h3 {
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-dark);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1/1;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid var(--border-light);
+    }
+
+    .controls {
+      grid-column: span 2;
+      background: var(--surface);
+      border-radius: 24px;
+      border: 1px solid var(--border-light);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    select {
+      padding: 12px 16px;
+      border-radius: 40px;
+      border: 1.5px solid var(--border-light);
+      background: white;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text-dark);
+      cursor: pointer;
+      min-width: 180px;
+    }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 2;
+    }
+
+    .slider-group input {
+      flex: 1;
+      height: 6px;
+      background: #d4e2fa;
+      border-radius: 10px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .slider-group input::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 20px;
+      border: 3px solid white;
+      cursor: grab;
+    }
+
+    .mass-value {
+      min-width: 60px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 40px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-outline {
+      background: white;
+      border: 1.5px solid var(--border-light);
+      color: var(--text-soft);
+    }
+
+    .log-box {
+      background: #f0f6ff;
+      padding: 14px 18px;
+      border-radius: 20px;
+      color: var(--text-soft);
+      font-size: 0.9rem;
+      margin-top: 12px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      font-size: 0.8rem;
+    }
+
+    @media (max-width: 750px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .controls { grid-column: span 1; }
+      .control-row { flex-direction: column; align-items: stretch; }
+    }
+  </style>
 </head>
 <body>
 
-    <h1 style="color: var(--accent); margin-bottom: 5px;">Density Explorer 3D</h1>
-    <p style="color: #94a3b8; margin-bottom: 25px;">Interactive Archimedes' Principle & Linear Regression</p>
-
-    <div class="main-container">
-        <div class="canvas-container">
-            <label style="display:block; margin-bottom:10px;">3D Displacement</label>
-            <canvas id="renderCanvas" width="380" height="450"></canvas>
-        </div>
-
-        <div class="canvas-container">
-            <label style="display:block; margin-bottom:10px;">Mass vs. Volume Graph</label>
-            <canvas id="graphCanvas" width="380" height="450"></canvas>
-        </div>
-
-        <div class="controls">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                <select id="matSelect">
-                    <option value="19.3" color="#fbbf24">Gold (19.3 g/cm³)</option>
-                    <option value="11.3" color="#94a3b8">Lead (11.3 g/cm³)</option>
-                    <option value="2.7" color="#e2e8f0">Aluminum (2.7 g/cm³)</option>
-                    <option value="0.6" color="#d97706">Wood (0.6 g/cm³)</option>
-                </select>
-                <div class="slider-box">
-                    <span>Mass</span>
-                    <input type="range" id="massRange" min="50" max="400" value="150">
-                    <span id="massVal">150g</span>
-                </div>
-                <button onclick="dropObject()">Drop Material</button>
-            </div>
-            <div class="stats-readout" id="dataLog">
-                Ready to experiment. Drop an object to calculate displacement.
-            </div>
-            <button onclick="resetSim()" style="background: #ef4444; color: white;">Clear All Data</button>
-        </div>
+<div class="app-grid">
+  <div class="panel">
+    <h3>💧 displacement · 3D</h3>
+    <canvas id="beakerCanvas"></canvas>
+    <div class="legend">
+      <span>◉ water displaced</span>
+      <span>▣ object</span>
     </div>
+  </div>
+
+  <div class="panel">
+    <h3>📈 mass vs volume</h3>
+    <canvas id="graphCanvas"></canvas>
+    <div class="legend">
+      <span>● gold</span>
+      <span>● lead</span>
+      <span>● aluminum</span>
+      <span>● wood</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="control-row">
+      <select id="materialSelect">
+        <option value="19.3" data-color="#fbbf24">🟡 Gold · 19.3 g/cm³</option>
+        <option value="11.3" data-color="#94a3b8">⚪ Lead · 11.3 g/cm³</option>
+        <option value="2.7" data-color="#cbd5e1">🔘 Aluminum · 2.7 g/cm³</option>
+        <option value="0.6" data-color="#d97706">🪵 Wood · 0.6 g/cm³</option>
+      </select>
+      
+      <div class="slider-group">
+        <span style="font-weight:500;">mass</span>
+        <input type="range" id="massSlider" min="30" max="350" value="120">
+        <span class="mass-value" id="massDisplay">120 g</span>
+      </div>
+      
+      <button class="btn" id="dropBtn">⬇ drop</button>
+      <button class="btn-outline" id="resetBtn">↻ reset</button>
+    </div>
+    
+    <div class="log-box" id="logMessage">
+      Select a material and drop into water.
+    </div>
+  </div>
+</div>
 
 <script>
-/** @type {HTMLCanvasElement} */
-const simCanvas = document.getElementById('renderCanvas');
-const simCtx = simCanvas.getContext('2d');
-const graphCanvas = document.getElementById('graphCanvas');
-const graphCtx = graphCanvas.getContext('2d');
-
-// State Management
-let waterLevel = 200; 
-let targetWaterLevel = 200;
-let history = []; // To store {mass, volume} for graph
-let objectsInCylinder = [];
-
-// Constants
-const CYL_X = 190, CYL_Y = 400, CYL_W = 140, SCALE = 1.2;
-
-function draw3DCylinder() {
-    simCtx.clearRect(0, 0, 380, 450);
+  (function(){
+    const beakerCanvas = document.getElementById('beakerCanvas');
+    const bCtx = beakerCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const gCtx = graphCanvas.getContext('2d');
     
-    // Smooth Animation
-    waterLevel += (targetWaterLevel - waterLevel) * 0.05;
-    const wHeight = waterLevel * SCALE;
-
-    // 1. Back of Glass
-    simCtx.strokeStyle = "rgba(255,255,255,0.2)";
-    simCtx.lineWidth = 2;
-    ellipse(simCtx, CYL_X, CYL_Y, CYL_W, 30, false, true);
-
-    // 2. Water Body
-    const grad = simCtx.createLinearGradient(CYL_X - CYL_W/2, 0, CYL_X + CYL_W/2, 0);
-    grad.addColorStop(0, "#075985");
-    grad.addColorStop(0.5, "#0ea5e9");
-    grad.addColorStop(1, "#075985");
-    simCtx.fillStyle = grad;
-    simCtx.globalAlpha = 0.6;
-    simCtx.fillRect(CYL_X - CYL_W/2, CYL_Y - wHeight, CYL_W, wHeight);
-    simCtx.globalAlpha = 1.0;
-
-    // 3. Water Surface (The 3D "Top")
-    ellipse(simCtx, CYL_X, CYL_Y - wHeight, CYL_W, 30, "#7dd3fc", "white");
-
-    // 4. Objects
-    objectsInCylinder.forEach(obj => {
-        if(obj.y < obj.targetY) obj.y += 5;
-        simCtx.fillStyle = obj.color;
-        simCtx.fillRect(CYL_X - obj.size/2, obj.y, obj.size, obj.size);
-    });
-
-    // 5. Front Glass & Ticks
-    simCtx.strokeStyle = "rgba(255,255,255,0.4)";
-    simCtx.strokeRect(CYL_X - CYL_W/2, 50, CYL_W, 350);
-    for(let i=0; i<=350; i+=50) {
-        let ty = CYL_Y - (i * SCALE);
-        simCtx.beginPath();
-        simCtx.moveTo(CYL_X + CYL_W/2, ty);
-        simCtx.lineTo(CYL_X + CYL_W/2 - 10, ty);
-        simCtx.stroke();
-        simCtx.fillStyle = "#94a3b8";
-        simCtx.fillText(i + "ml", CYL_X + CYL_W/2 + 5, ty + 4);
+    let width = 0, height = 0;
+    const DPR = devicePixelRatio || 1;
+    
+    let waterLevel = 180;
+    let targetWater = 180;
+    let objects = [];
+    let history = [];
+    
+    const massSlider = document.getElementById('massSlider');
+    const massDisplay = document.getElementById('massDisplay');
+    const materialSelect = document.getElementById('materialSelect');
+    const logMessage = document.getElementById('logMessage');
+    
+    function resizeCanvases() {
+      [beakerCanvas, graphCanvas].forEach(c => {
+        const rect = c.parentElement.getBoundingClientRect();
+        c.width = rect.width * DPR;
+        c.height = rect.width * DPR;
+        c.style.width = rect.width + 'px';
+        c.style.height = rect.width + 'px';
+        const ctx = c.getContext('2d');
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      });
+      width = beakerCanvas.width / DPR;
+      height = beakerCanvas.height / DPR;
     }
-}
-
-function drawGraph() {
-    graphCtx.clearRect(0, 0, 380, 450);
-    const origin = {x: 50, y: 400};
-    const gSize = 300;
-
-    // Axes
-    graphCtx.strokeStyle = "#475569";
-    graphCtx.beginPath();
-    graphCtx.moveTo(origin.x, 20); graphCtx.lineTo(origin.x, origin.y);
-    graphCtx.lineTo(370, origin.y);
-    graphCtx.stroke();
-
-    // Labels
-    graphCtx.fillStyle = "#94a3b8";
-    graphCtx.fillText("Volume (cm³)", 300, origin.y + 30);
-    graphCtx.save();
-    graphCtx.rotate(-Math.PI/2);
-    graphCtx.fillText("Mass (g)", -100, 20);
-    graphCtx.restore();
-
-    // Data Points
-    history.forEach(pt => {
-        graphCtx.fillStyle = pt.color;
-        // Map mass 0-500 and vol 0-200 to graph coords
-        const gx = origin.x + (pt.v * (gSize/200));
-        const gy = origin.y - (pt.m * (gSize/500));
-        graphCtx.beginPath();
-        graphCtx.arc(gx, gy, 5, 0, Math.PI*2);
-        graphCtx.fill();
+    
+    massSlider.addEventListener('input', () => {
+      massDisplay.textContent = massSlider.value + ' g';
     });
-}
-
-function dropObject() {
-    const mass = parseFloat(document.getElementById('massRange').value);
-    const select = document.getElementById('matSelect');
-    const density = parseFloat(select.value);
-    const color = select.options[select.selectedIndex].getAttribute('color');
     
-    const vol = mass / density;
-    const sinks = density >= 1.0;
-    const displaced = sinks ? vol : (mass / 1.0); // Floaters displace weight
-
-    targetWaterLevel += displaced;
-    
-    objectsInCylinder.push({
+    function dropObject() {
+      const mass = parseFloat(massSlider.value);
+      const density = parseFloat(materialSelect.value);
+      const color = materialSelect.selectedOptions[0].dataset.color;
+      const volume = mass / density;
+      const sinks = density >= 1.0;
+      const displaced = sinks ? volume : mass;
+      
+      targetWater = Math.min(320, targetWater + displaced * 0.8);
+      
+      objects.push({
+        x: width/2 - 15 + (Math.random()-0.5)*20,
         y: 0,
-        targetY: sinks ? CYL_Y - 20 : CYL_Y - (targetWaterLevel * SCALE),
-        size: Math.pow(vol, 1/3) * 12,
-        color: color
+        targetY: sinks ? height - 120 : height - targetWater * 0.7 - 20,
+        size: Math.min(45, Math.max(18, Math.pow(volume, 1/3) * 9)),
+        color: color,
+        sinks: sinks
+      });
+      
+      history.push({ mass, volume, color, density });
+      
+      const materialName = materialSelect.selectedOptions[0].text.split('·')[0].trim();
+      logMessage.innerHTML = `${materialName} · ${mass}g · volume ${volume.toFixed(1)} cm³ · ${sinks ? 'sinks' : 'floats'} · displaced ${displaced.toFixed(1)} mL`;
+      
+      drawGraph();
+    }
+    
+    function drawBeaker() {
+      bCtx.clearRect(0, 0, width, height);
+      
+      waterLevel += (targetWater - waterLevel) * 0.08;
+      const waterY = height - waterLevel;
+      
+      // back glass
+      bCtx.strokeStyle = '#cbd5e1';
+      bCtx.lineWidth = 2;
+      bCtx.beginPath();
+      bCtx.ellipse(width/2, height-80, 100, 25, 0, 0, Math.PI*2);
+      bCtx.stroke();
+      
+      // water
+      const grad = bCtx.createLinearGradient(width/2-80, waterY, width/2+80, waterY+60);
+      grad.addColorStop(0, '#0ea5e9');
+      grad.addColorStop(1, '#3b82f6');
+      bCtx.fillStyle = grad;
+      bCtx.globalAlpha = 0.5;
+      bCtx.fillRect(width/2-85, waterY, 170, height-80-waterY+10);
+      bCtx.globalAlpha = 1;
+      
+      // objects
+      objects.forEach(obj => {
+        if (obj.y < obj.targetY) obj.y += 4;
+        bCtx.fillStyle = obj.color;
+        bCtx.shadowColor = obj.color + '60';
+        bCtx.shadowBlur = 10;
+        bCtx.fillRect(obj.x - obj.size/2, obj.y, obj.size, obj.size);
+      });
+      bCtx.shadowBlur = 0;
+      
+      // water surface ellipse
+      bCtx.beginPath();
+      bCtx.ellipse(width/2, waterY, 85, 18, 0, 0, Math.PI*2);
+      bCtx.fillStyle = '#7dd3fc80';
+      bCtx.fill();
+      bCtx.strokeStyle = '#38bdf8';
+      bCtx.stroke();
+      
+      // front glass
+      bCtx.strokeStyle = '#94a3b8';
+      bCtx.lineWidth = 2.5;
+      bCtx.strokeRect(width/2-85, 60, 170, height-140);
+      
+      // markings
+      bCtx.fillStyle = '#64748b';
+      bCtx.font = '10px Inter';
+      for (let i = 0; i <= 300; i+=50) {
+        const y = height - 80 - i * 0.55;
+        bCtx.fillText(i+'mL', width/2+95, y+4);
+      }
+    }
+    
+    function drawGraph() {
+      gCtx.clearRect(0, 0, width, height);
+      
+      const pad = 40;
+      const graphW = width - 2*pad;
+      const graphH = height - 2*pad;
+      
+      gCtx.strokeStyle = '#cbd5e1';
+      gCtx.lineWidth = 1;
+      gCtx.beginPath();
+      gCtx.moveTo(pad, pad);
+      gCtx.lineTo(pad, height-pad);
+      gCtx.lineTo(width-pad, height-pad);
+      gCtx.stroke();
+      
+      gCtx.fillStyle = '#64748b';
+      gCtx.font = '10px Inter';
+      gCtx.fillText('volume (cm³)', width-100, height-15);
+      gCtx.fillText('mass (g)', 15, 25);
+      
+      const maxMass = 400;
+      const maxVol = 200;
+      
+      history.forEach(pt => {
+        const x = pad + (pt.volume / maxVol) * graphW;
+        const y = height - pad - (pt.mass / maxMass) * graphH;
+        
+        gCtx.beginPath();
+        gCtx.arc(x, y, 6, 0, 2*Math.PI);
+        gCtx.fillStyle = pt.color;
+        gCtx.shadowColor = pt.color + '60';
+        gCtx.shadowBlur = 8;
+        gCtx.fill();
+      });
+      gCtx.shadowBlur = 0;
+      
+      if (history.length > 1) {
+        gCtx.beginPath();
+        gCtx.strokeStyle = '#3b82f6';
+        gCtx.lineWidth = 2;
+        gCtx.setLineDash([4, 4]);
+        history.forEach((pt, i) => {
+          const x = pad + (pt.volume / maxVol) * graphW;
+          const y = height - pad - (pt.mass / maxMass) * graphH;
+          if (i === 0) gCtx.moveTo(x, y);
+          else gCtx.lineTo(x, y);
+        });
+        gCtx.stroke();
+        gCtx.setLineDash([]);
+      }
+    }
+    
+    function reset() {
+      waterLevel = 180;
+      targetWater = 180;
+      objects = [];
+      history = [];
+      logMessage.innerHTML = 'Cleared. Drop new material.';
+      drawGraph();
+    }
+    
+    function animate() {
+      drawBeaker();
+      requestAnimationFrame(animate);
+    }
+    
+    document.getElementById('dropBtn').addEventListener('click', dropObject);
+    document.getElementById('resetBtn').addEventListener('click', reset);
+    
+    window.addEventListener('resize', () => {
+      resizeCanvases();
+      drawGraph();
     });
-
-    history.push({m: mass, v: vol, color: color});
-    document.getElementById('dataLog').innerText = `Added ${mass}g (Density: ${density}). Displaced: ${displaced.toFixed(2)}mL. Total Volume: ${targetWaterLevel.toFixed(1)}mL`;
-}
-
-function ellipse(ctx, x, y, w, h, fill, stroke) {
-    ctx.beginPath();
-    ctx.ellipse(x, y, w/2, h/2, 0, 0, Math.PI*2);
-    if(fill) { ctx.fillStyle = fill; ctx.fill(); }
-    if(stroke) ctx.stroke();
-}
-
-function resetSim() {
-    targetWaterLevel = 200;
-    waterLevel = 200;
-    objectsInCylinder = [];
-    history = [];
-}
-
-document.getElementById('massRange').oninput = (e) => {
-    document.getElementById('massVal').innerText = e.target.value + "g";
-};
-
-function mainLoop() {
-    draw3DCylinder();
+    
+    resizeCanvases();
     drawGraph();
-    requestAnimationFrame(mainLoop);
-}
-mainLoop();
+    animate();
+  })();
 </script>
 </body>
 </html>
