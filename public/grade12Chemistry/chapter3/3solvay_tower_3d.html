@@ -1,166 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Solvay Carbonating Tower</title>
-    <style>
-        :root { --brine: #38bdf8; --co2: #94a3b8; --precipitate: #ffffff; --bg: #0f172a; }
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; }
-        
-        #ui {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box;
-        }
-
-        .glass-card {
-            pointer-events: auto; background: rgba(30, 41, 59, 0.85);
-            backdrop-filter: blur(10px); padding: 15px; border-radius: 12px;
-            border: 1px solid #334155; width: 100%; max-width: 320px;
-        }
-
-        h2 { margin: 0; font-size: 1.1rem; color: var(--brine); }
-        .formula { font-family: monospace; color: #7dd3fc; margin: 8px 0; font-size: 0.85rem; }
-        .desc { font-size: 0.75rem; line-height: 1.4; color: #cbd5e1; }
-
-        .controls { margin-top: auto; align-self: center; width: 100%; max-width: 280px; padding-bottom: 30px; }
-        
-        button {
-            pointer-events: auto; background: #0284c7; color: white; border: none;
-            width: 100%; padding: 14px; border-radius: 10px; font-weight: bold;
-            cursor: pointer; font-size: 1rem; box-shadow: 0 4px 0 #0369a1;
-        }
-        button:active { transform: translateY(2px); box-shadow: 0 0px 0 #0369a1; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🧂 solvay · carbonating tower</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    #canvas-container{width:100%;height:100dvh;position:relative;background:#f8fafc}
+    .panel{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:30px;padding:16px 20px;border:1px solid #d0e2ff;max-width:360px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .eq{font-size:0.75rem;color:#3a628c;margin-bottom:12px;line-height:1.4}
+    .btn{width:100%;padding:16px;border-radius:40px;border:none;font-weight:700;font-size:1rem;cursor:pointer;background:#3b82f6;color:#fff}
+    .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.8rem;color:#3a628c}
+    .hint{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:40px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
 <body>
-
-<div id="ui">
-    <div class="glass-card">
-        <h2>Carbonating Tower</h2>
-        <div class="formula">NH₃ + NaCl + H₂O + CO₂ → NaHCO₃↓ + NH₄Cl</div>
-        <div class="desc">
-            Ammoniacal Brine flows down while <b>CO₂</b> rises. The cold temperature causes <b>NaHCO₃</b> crystals to precipitate.
-        </div>
-    </div>
-
-    <div class="controls">
-        <button id="runBtn">Start Carbonation</button>
-    </div>
+<div id="canvas-container"></div>
+<div class="hint">🖱️ drag to rotate</div>
+<div class="panel">
+  <div class="eq">NH₃ + NaCl + H₂O + CO₂ → NaHCO₃↓ + NH₄Cl</div>
+  <button class="btn" id="powerBtn">▶ start carbonation</button>
+  <div class="legend"><span style="color:#3b82f6">● brine</span><span style="color:#94a3b8">● CO₂</span><span style="color:#10b981">◆ NaHCO₃</span></div>
 </div>
-
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.128.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}</script>
 <script type="module">
-    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
-    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    const light = new THREE.PointLight(0xffffff, 1);
-    light.position.set(10, 10, 10);
-    scene.add(light);
-
-    // Responsive Camera
-    const isMobile = window.innerWidth < 600;
-    camera.position.set(0, 5, isMobile ? 25 : 18);
-
-    // --- Tower Structure ---
-    const towerGeo = new THREE.CylinderGeometry(4, 4, 15, 32, 1, true);
-    const towerMat = new THREE.MeshPhongMaterial({ color: 0x64748b, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
-    scene.add(new THREE.Mesh(towerGeo, towerMat));
-
-    // Internal Baffles (Bridges)
-    for(let i = -6; i <= 6; i+=3) {
-        const baffle = new THREE.Mesh(
-            new THREE.RingGeometry(1, 3.9, 32),
-            new THREE.MeshStandardMaterial({ color: 0x475569, side: THREE.DoubleSide })
-        );
-        baffle.rotation.x = Math.PI / 2;
-        baffle.position.y = i;
-        scene.add(baffle);
-    }
-
-    // --- Particle Logic ---
-    let active = false;
-    const particles = [];
-
-    function createLabel(text, color) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 128; canvas.height = 128;
-        ctx.fillStyle = color; ctx.font = 'bold 60px Arial';
-        ctx.textAlign = 'center'; ctx.fillText(text, 64, 80);
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
-        sprite.scale.set(1.2, 1.2, 1);
-        sprite.position.y = 0.5;
-        return sprite;
-    }
-
-    function spawnCO2() {
-        const p = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshBasicMaterial({color: 0x94a3b8}));
-        p.add(createLabel("CO₂", "#94a3b8"));
-        p.position.set((Math.random()-0.5)*4, -7, (Math.random()-0.5)*4);
-        scene.add(p);
-        particles.push({ mesh: p, type: 'gas', vy: 0.1 });
-    }
-
-    function spawnBrine() {
-        const p = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x0ea5e9}));
-        p.position.set((Math.random()-0.5)*5, 7, (Math.random()-0.5)*5);
-        scene.add(p);
-        particles.push({ mesh: p, type: 'liquid', vy: -0.08 });
-    }
-
-    function spawnPrecipitate(pos) {
-        const p = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), new THREE.MeshStandardMaterial({color: 0xffffff}));
-        p.add(createLabel("NaHCO₃", "#fff"));
-        p.position.copy(pos);
-        scene.add(p);
-        particles.push({ mesh: p, type: 'solid', vy: -0.04 });
-    }
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    document.getElementById('runBtn').onclick = () => { active = !active; };
-
-    function animate() {
-        requestAnimationFrame(animate);
-        if(active) {
-            if(Math.random() < 0.2) spawnCO2();
-            if(Math.random() < 0.3) spawnBrine();
-        }
-
-        for(let i=particles.length-1; i>=0; i--) {
-            const p = particles[i];
-            p.mesh.position.y += p.vy;
-
-            // Simple collision for reaction
-            if(p.type === 'gas' && p.mesh.position.y > -2 && p.mesh.position.y < 2 && Math.random() < 0.02) {
-                spawnPrecipitate(p.mesh.position);
-                scene.remove(p.mesh);
-                particles.splice(i, 1);
-                continue;
-            }
-
-            if(p.mesh.position.y > 8 || p.mesh.position.y < -8) {
-                scene.remove(p.mesh);
-                particles.splice(i, 1);
-            }
-        }
-        controls.update();
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+import*as THREE from'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+const container=document.getElementById('canvas-container'),scene=new THREE.Scene();scene.background=new THREE.Color('#f8fafc');
+const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);camera.position.set(0,5,16);camera.lookAt(0,0,0);
+const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(container.clientWidth,container.clientHeight);container.appendChild(renderer.domElement);
+new OrbitControls(camera,renderer.domElement).enableDamping=!0;
+scene.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,8,5);scene.add(dl);
+const tower=new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.2,12,20),new THREE.MeshPhongMaterial({color:'#cbd5e1',transparent:!0,opacity:0.12,side:THREE.DoubleSide}));tower.position.y=0;scene.add(tower);
+for(let y=-4.5;y<=4.5;y+=2.5){const b=new THREE.Mesh(new THREE.RingGeometry(1.2,3,16),new THREE.MeshStandardMaterial({color:'#94a3b8',side:THREE.DoubleSide,transparent:!0,opacity:0.3}));b.rotation.x=Math.PI/2;b.position.y=y;scene.add(b)}
+let running=!1,particles=[];
+function spawn(type){const g=new THREE.Group();if(type==='brine'){g.add(new THREE.Mesh(new THREE.SphereGeometry(0.14,6),new THREE.MeshStandardMaterial({color:'#3b82f6'})));g.position.set((Math.random()-0.5)*4,6,(Math.random()-0.5)*4);g.userData={type:'brine'}}else{g.add(new THREE.Mesh(new THREE.SphereGeometry(0.12,6),new THREE.MeshStandardMaterial({color:'#94a3b8'})));g.position.set((Math.random()-0.5)*4,-6,(Math.random()-0.5)*4);g.userData={type:'co2'}}scene.add(g);particles.push(g)}
+function precipitate(pos){const g=new THREE.Group();g.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.18),new THREE.MeshStandardMaterial({color:'#10b981'})));g.position.copy(pos);g.userData={type:'ppt'};scene.add(g);particles.push(g)}
+document.getElementById('powerBtn').onclick=()=>{running=!running; document.getElementById('powerBtn').textContent=running?'⏸ stop':'▶ start'};
+function animate(){requestAnimationFrame(animate);if(running){if(Math.random()<0.12)spawn('brine');if(Math.random()<0.1)spawn('co2')}
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];if(p.userData.type==='brine')p.position.y-=0.04;else if(p.userData.type==='co2')p.position.y+=0.05;else p.position.y-=0.02;
+    if(p.userData.type!=='ppt'){for(let j=0;j<particles.length;j++){const o=particles[j];if(o===p||o.userData.type==='ppt')continue;if((p.userData.type==='brine'&&o.userData.type==='co2')||(p.userData.type==='co2'&&o.userData.type==='brine')){if(p.position.distanceTo(o.position)<1&&Math.random()<0.05){const mid=p.position.clone().add(o.position).multiplyScalar(0.5);precipitate(mid);scene.remove(p);scene.remove(o);particles.splice(i,1);const oi=particles.indexOf(o);if(oi>-1)particles.splice(oi,1);break}}}}
+    if(Math.abs(p.position.y)>7){scene.remove(p);particles.splice(i,1)}} renderer.render(scene,camera)}animate();
+window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()});
 </script>
 </body>
 </html>

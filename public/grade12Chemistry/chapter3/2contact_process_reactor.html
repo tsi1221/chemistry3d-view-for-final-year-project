@@ -1,190 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Contact Process Visualizer</title>
-    <style>
-        :root { --v2o5: #facc15; --so2: #94a3b8; --so3: #f87171; --bg: #0f172a; }
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: var(--bg); }
-        
-        #ui {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; display: flex; flex-direction: column; padding: 15px; box-sizing: border-box;
-        }
-
-        .glass-card {
-            pointer-events: auto; background: rgba(30, 41, 59, 0.85);
-            backdrop-filter: blur(10px); padding: 15px; border-radius: 12px;
-            border: 1px solid #334155; color: white; width: 100%; max-width: 340px;
-        }
-
-        h2 { margin: 0; font-size: 1.2rem; color: var(--v2o5); }
-        .formula { font-family: monospace; color: #fbbf24; margin: 8px 0; font-size: 0.95rem; }
-        .desc { font-size: 0.8rem; line-height: 1.4; color: #cbd5e1; }
-
-        .controls { margin-top: auto; align-self: center; width: 100%; max-width: 280px; padding-bottom: 30px; }
-        
-        button {
-            pointer-events: auto; background: #e879f9; color: white; border: none;
-            width: 100%; padding: 16px; border-radius: 12px; font-weight: bold;
-            cursor: pointer; font-size: 1rem; box-shadow: 0 4px 0 #a21caf;
-        }
-        button:active { transform: translateY(2px); box-shadow: 0 0px 0 #a21caf; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚗️ contact process · so₂ → so₃</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
+    #canvas-container{width:100%;height:100dvh;position:relative;background:#f8fafc}
+    .panel{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:30px;padding:16px 20px;border:1px solid #d0e2ff;max-width:360px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
+    .eq{text-align:center;font-weight:600;color:#3b82f6;margin-bottom:12px}
+    .btn{width:100%;padding:16px;border-radius:40px;border:none;font-weight:700;font-size:1rem;cursor:pointer;background:#facc15;color:#0a1e3c}
+    .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.8rem;color:#3a628c}
+    .hint{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:40px;font-size:0.8rem;color:#3a628c}
+  </style>
 </head>
 <body>
-
-<div id="ui">
-    <div class="glass-card">
-        <h2>The Converter</h2>
-        <div class="formula">2SO₂ + O₂ ⇌ 2SO₃</div>
-        <div class="desc">
-            Sulphur Dioxide (Grey) reacts with Oxygen on <b>Vanadium(V) Oxide</b> trays to form Sulphur Trioxide (Red).
-        </div>
-    </div>
-
-    <div class="controls">
-        <button id="startBtn">Inject Reactants</button>
-    </div>
+<div id="canvas-container"></div>
+<div class="hint">🖱️ drag to rotate</div>
+<div class="panel">
+  <div class="eq">2SO₂ + O₂ ⇌ 2SO₃ · V₂O₅</div>
+  <button class="btn" id="powerBtn">▶ start reaction</button>
+  <div class="legend"><span style="color:#94a3b8">● SO₂</span><span style="color:#3b82f6">● O₂</span><span style="color:#ef4444">● SO₃</span><span style="color:#facc15">▬ V₂O₅</span></div>
 </div>
-
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.128.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}</script>
 <script type="module">
-    import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
-    import { OrbitControls } from 'https://cdn.skypack.dev/three@0.132.2/examples/jsm/controls/OrbitControls.js';
-
-    // --- Scene Setup ---
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const light = new THREE.DirectionalLight(0xffffff, 0.8);
-    light.position.set(5, 10, 7);
-    scene.add(light);
-
-    // Responsive Camera
-    function adjustCam() {
-        camera.position.set(0, 8, window.innerWidth < 600 ? 28 : 20);
-    }
-    adjustCam();
-
-    // --- Reactor Tower & Catalyst Trays ---
-    const towerGeo = new THREE.CylinderGeometry(5, 5, 16, 32, 1, true);
-    const towerMat = new THREE.MeshPhongMaterial({ color: 0x64748b, transparent: true, opacity: 0.15, side: THREE.DoubleSide });
-    scene.add(new THREE.Mesh(towerGeo, towerMat));
-
-    const trayGeo = new THREE.CylinderGeometry(4.8, 4.8, 0.5, 32);
-    const trayMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.5, roughness: 0.2 });
-    
-    const trayLevels = [2, -2, -6];
-    trayLevels.forEach(y => {
-        const tray = new THREE.Mesh(trayGeo, trayMat);
-        tray.position.y = y;
-        scene.add(tray);
-        
-        // Label for Tray
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 256; canvas.height = 64;
-        ctx.fillStyle = '#facc15'; ctx.font = 'bold 35px Arial';
-        ctx.textAlign = 'center'; ctx.fillText("V₂O₅ CATALYST", 128, 45);
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas) }));
-        sprite.position.set(0, y + 0.8, 5.5);
-        sprite.scale.set(4, 1, 1);
-        scene.add(sprite);
-    });
-
-    // --- Particle Logic ---
-    let active = false;
-    const molecules = [];
-
-    function createLabelTexture(text, color) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 128; canvas.height = 128;
-        ctx.fillStyle = color; ctx.font = 'bold 70px Arial';
-        ctx.textAlign = 'center'; ctx.fillText(text, 64, 80);
-        return new THREE.CanvasTexture(canvas);
-    }
-
-    function spawnSO2() {
-        const group = new THREE.Group();
-        // SO2: 1 Yellow (S), 2 Grey (O)
-        const s = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshPhongMaterial({color: 0xfacc15}));
-        const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshPhongMaterial({color: 0x94a3b8}));
-        const o2 = o1.clone(); 
-        o1.position.set(0.3, -0.2, 0); o2.position.set(-0.3, -0.2, 0);
-        
-        const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: createLabelTexture("SO₂", "#94a3b8") }));
-        label.position.y = 0.8; label.scale.set(1.5, 1.5, 1);
-        
-        group.add(s, o1, o2, label);
-        group.position.set((Math.random()-0.5)*7, 9, (Math.random()-0.5)*7);
-        scene.add(group);
-        molecules.push({ mesh: group, type: 'SO2' });
-    }
-
-    function convertToSO3(pos) {
-        const group = new THREE.Group();
-        const s = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshPhongMaterial({color: 0xfacc15}));
-        for(let i=0; i<3; i++) {
-            const o = new THREE.Mesh(new THREE.SphereGeometry(0.2), new THREE.MeshPhongMaterial({color: 0xf87171}));
-            o.position.set(Math.cos(i*2)*0.35, 0.2, Math.sin(i*2)*0.35);
-            group.add(o);
-        }
-        group.add(s);
-        
-        const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: createLabelTexture("SO₃", "#f87171") }));
-        label.position.y = 0.8; label.scale.set(1.5, 1.5, 1);
-        
-        group.add(label);
-        group.position.copy(pos);
-        scene.add(group);
-        molecules.push({ mesh: group, type: 'SO3' });
-    }
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    document.getElementById('startBtn').onclick = () => { active = !active; };
-
-    function animate() {
-        requestAnimationFrame(animate);
-        if(active && Math.random() < 0.15) spawnSO2();
-
-        for(let i=molecules.length-1; i>=0; i--) {
-            const m = molecules[i];
-            m.mesh.position.y -= 0.07;
-
-            // Check Catalyst Trays
-            if(m.type === 'SO2') {
-                trayLevels.forEach(ty => {
-                    if(Math.abs(m.mesh.position.y - ty) < 0.3 && Math.random() < 0.05) {
-                        convertToSO3(m.mesh.position);
-                        scene.remove(m.mesh);
-                        molecules.splice(i, 1);
-                    }
-                });
-            }
-
-            if(m.mesh.position.y < -10) {
-                scene.remove(m.mesh);
-                molecules.splice(i, 1);
-            }
-        }
-        controls.update();
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        adjustCam();
-    });
+import*as THREE from'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
+const container=document.getElementById('canvas-container'),scene=new THREE.Scene();scene.background=new THREE.Color('#f8fafc');
+const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);camera.position.set(0,6,18);camera.lookAt(0,0,0);
+const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=!0;container.appendChild(renderer.domElement);
+new OrbitControls(camera,renderer.domElement).enableDamping=!0;
+scene.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,10,6);scene.add(dl);
+const tower=new THREE.Mesh(new THREE.CylinderGeometry(3.5,3.5,12,24),new THREE.MeshPhongMaterial({color:'#cbd5e1',transparent:!0,opacity:0.1,side:THREE.DoubleSide}));tower.position.y=0;scene.add(tower);
+const trays=[-2.5,0.5,3.5];trays.forEach(y=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.2,0.4,16),new THREE.MeshStandardMaterial({color:'#facc15'}));t.position.y=y;scene.add(t)});
+let running=!1,molecules=[];
+function spawn(type){const g=new THREE.Group();if(type==='SO2'){const s=new THREE.Mesh(new THREE.SphereGeometry(0.24,8),new THREE.MeshStandardMaterial({color:'#facc15'}));g.add(s);const o1=new THREE.Mesh(new THREE.SphereGeometry(0.18,6),new THREE.MeshStandardMaterial({color:'#94a3b8'}));o1.position.set(0.35,-0.1,0.1);g.add(o1);const o2=o1.clone();o2.position.set(-0.35,-0.1,-0.1);g.add(o2);g.userData={type:'SO2'}}else{const o1=new THREE.Mesh(new THREE.SphereGeometry(0.18,6),new THREE.MeshStandardMaterial({color:'#3b82f6'}));o1.position.x=-0.25;g.add(o1);const o2=o1.clone();o2.position.x=0.25;g.add(o2);g.userData={type:'O2'}}g.position.set((Math.random()-0.5)*4,7,(Math.random()-0.5)*4);scene.add(g);molecules.push(g)}
+function convert(pos){const g=new THREE.Group();const s=new THREE.Mesh(new THREE.SphereGeometry(0.24,8),new THREE.MeshStandardMaterial({color:'#facc15'}));g.add(s);for(let i=0;i<3;i++){const o=new THREE.Mesh(new THREE.SphereGeometry(0.18,6),new THREE.MeshStandardMaterial({color:'#ef4444'}));o.position.set(Math.cos(i*2.09)*0.4,0.15,Math.sin(i*2.09)*0.4);g.add(o)}g.position.copy(pos);g.userData={type:'SO3'};scene.add(g);molecules.push(g)}
+document.getElementById('powerBtn').onclick=()=>{running=!running; document.getElementById('powerBtn').textContent=running?'⏸ stop':'▶ start'};
+function animate(){requestAnimationFrame(animate);if(running&&Math.random()<0.12){spawn(Math.random()>0.3?'SO2':'O2')}
+  for(let i=molecules.length-1;i>=0;i--){const m=molecules[i];m.position.y-=0.05;
+    if(m.userData.type==='SO2'){for(const ty of trays){if(Math.abs(m.position.y-ty)<0.7&&Math.random()<0.05){const p=m.position.clone();scene.remove(m);molecules.splice(i,1);convert(p);break}}}
+    if(m.position.y<-6){scene.remove(m);molecules.splice(i,1)}} renderer.render(scene,camera)}animate();
+window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()});
 </script>
 </body>
 </html>
