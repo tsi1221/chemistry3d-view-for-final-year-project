@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Divisible test</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --surface-secondary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-soft: #dbeafe;
+            --success: #10b981;
+            --success-soft: #d1fae5;
+            --danger: #ef4444;
+            --danger-soft: #fee2e2;
+            --warning: #f59e0b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        #canvas {
+            display: block;
+            touch-action: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .ui {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+        }
+
+        .panel {
+            background: var(--surface);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            padding: 20px;
+            pointer-events: auto;
+            border-radius: var(--radius);
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .top-hub {
+            display: flex;
+            gap: 20px;
+        }
+
+        .input-area {
+            width: 340px;
+        }
+
+        .label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-tertiary);
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            background: var(--surface-secondary);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 2rem;
+            font-weight: 500;
+            text-align: center;
+            padding: 12px;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            background: var(--surface-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            padding: 10px 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+
+        .btn:hover {
+            background: var(--surface);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+        }
+
+        .hint {
+            font-size: 0.7rem;
+            color: var(--text-tertiary);
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .notes-panel {
+            flex: 1;
+        }
+
+        #notes {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+        }
+
+        #notes strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .analysis-box {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 640px;
+            text-align: center;
+            background: var(--surface);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 24px;
+            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        #log {
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 4px;
+        }
+
+        #status {
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 640px) {
+            .ui { padding: 16px; }
+            .top-hub { flex-direction: column; }
+            .input-area { width: 100%; }
+            .analysis-box { padding: 14px 18px; width: calc(100% - 32px); }
+        }
+    </style>
+    <!-- Inter font for modern clean look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="ui">
+    <div class="top-hub">
+        <div class="panel input-area">
+            <div class="label">Target Number</div>
+            <input type="number" id="numInput" value="1230" min="1" placeholder="Enter number">
+            <div class="module-grid">
+                <button class="btn" onclick="setMode('2')">2</button>
+                <button class="btn" onclick="setMode('3')">3</button>
+                <button class="btn" onclick="setMode('4')">4</button>
+                <button class="btn" onclick="setMode('5')">5</button>
+                <button class="btn" onclick="setMode('6')">6</button>
+                <button class="btn" onclick="setMode('8')">8</button>
+                <button class="btn" onclick="setMode('9')">9</button>
+                <button class="btn" onclick="setMode('10')">10</button>
+            </div>
+            <div class="hint">Drag digits to inspect · Manual cluster analysis</div>
+        </div>
+
+        <div class="panel notes-panel">
+            <div class="label">Lab Notes</div>
+            <div id="notes">
+                Select a detection module to begin sequence extraction...
+            </div>
+        </div>
+    </div>
+
+    <div class="analysis-box">
+        <div id="log">System Ready</div>
+        <div id="status">Idle</div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const numInput = document.getElementById('numInput');
+        const notes = document.getElementById('notes');
+        const log = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+
+        let width, height;
+        let digits = [];
+        let currentMode = null;
+        let mouse = { x: 0, y: 0, down: false };
+        let draggedDigit = null;
+
+        // Light mode color palette
+        const colors = {
+            bg: '#f8fafc',
+            grid: '#e2e8f0',
+            digitDefault: '#cbd5e1',
+            digitActive: '#94a3b8',
+            success: '#10b981',
+            danger: '#ef4444',
+            accent: '#3b82f6'
+        };
+
+        class Digit {
+            constructor(val, i, total) {
+                this.val = val;
+                this.i = i;
+                this.total = total;
+                this.x = 0;
+                this.y = 0;
+                this.targetX = 0;
+                this.targetY = 0;
+                this.color = colors.digitDefault;
+                this.glow = 0;
+                this.active = false;
+                this.isSumming = false;
+            }
+
+            update() {
+                if (draggedDigit === this) {
+                    this.x = mouse.x;
+                    this.y = mouse.y;
+                } else {
+                    const spacing = 70;
+                    const offset = (this.total - 1) * spacing / 2;
+                    this.targetX = width / 2 - offset + (this.i * spacing);
+                    this.targetY = height / 2;
+
+                    if (this.isSumming) {
+                        this.targetY = height / 2 + 100;
+                        this.targetX = width / 2 - 50 + (this.i * 30);
+                    }
+
+                    this.x += (this.targetX - this.x) * 0.15;
+                    this.y += (this.targetY - this.y) * 0.15;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                if (this.active) {
+                    ctx.shadowBlur = 16;
+                    ctx.shadowColor = this.color + '40';
+                }
+
+                ctx.fillStyle = this.active ? this.color : colors.digitDefault;
+                ctx.font = `600 ${this.active ? 80 : 60}px 'SF Mono', 'Menlo', monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.val, 0, 0);
+
+                if (this.active && (currentMode === '3' || currentMode === '9')) {
+                    ctx.font = '500 20px "Inter", sans-serif';
+                    ctx.fillStyle = this.color;
+                    if (this.i < this.total - 1) ctx.fillText('+', 38, -2);
+                }
+
+                ctx.restore();
+            }
+        }
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * devicePixelRatio;
+            canvas.height = height * devicePixelRatio;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+        }
+
+        function syncDigits() {
+            const str = numInput.value.toString();
+            digits = str.split('').map((v, i) => new Digit(v, i, str.length));
+            if (currentMode) setMode(currentMode);
+        }
+
+        function setMode(m) {
+            currentMode = m;
+            document.querySelectorAll('.btn').forEach(b => {
+                b.classList.toggle('active', b.innerText === m);
+            });
+            
+            const val = parseInt(numInput.value) || 0;
+            const str = val.toString();
+            let isPass = false;
+            
+            digits.forEach(d => { 
+                d.active = false; 
+                d.isSumming = false; 
+                d.color = colors.digitDefault;
+            });
+
+            switch(m) {
+                case '2':
+                    if (digits.length) digits[digits.length - 1].active = true;
+                    isPass = val % 2 === 0;
+                    notes.innerHTML = `<strong>Rule:</strong> Last digit must be 0, 2, 4, 6, or 8.<br>Detected: ${str.slice(-1)}`;
+                    break;
+                case '3':
+                case '9':
+                    const div = parseInt(m);
+                    digits.forEach(d => { d.active = true; d.isSumming = true; });
+                    const sum = str.split('').reduce((a,b) => a + parseInt(b), 0);
+                    isPass = sum % div === 0;
+                    notes.innerHTML = `<strong>Rule:</strong> Sum of digits must be divisible by ${m}.<br>Calculation: ${str.split('').join(' + ')} = ${sum}`;
+                    break;
+                case '4':
+                    const d4 = digits.length;
+                    if (d4 > 0) digits[d4-1].active = true;
+                    if (d4 > 1) digits[d4-2].active = true;
+                    isPass = val % 4 === 0;
+                    notes.innerHTML = `<strong>Rule:</strong> Last two digits (${str.slice(-2)}) must be divisible by 4.`;
+                    break;
+                case '5':
+                    if (digits.length) digits[digits.length - 1].active = true;
+                    isPass = val % 5 === 0;
+                    notes.innerHTML = `<strong>Rule:</strong> Ends in 0 or 5. Detected: ${str.slice(-1)}`;
+                    break;
+                case '6':
+                    digits.forEach(d => d.active = true);
+                    const p2 = val % 2 === 0;
+                    const p3 = val % 3 === 0;
+                    isPass = p2 && p3;
+                    notes.innerHTML = `<strong>Double Key:</strong> Must be EVEN (${p2 ? '✓' : '✗'}) AND sum must be div by 3 (${p3 ? '✓' : '✗'}).`;
+                    break;
+                case '8':
+                    const d8 = digits.length;
+                    for(let i=1; i<=Math.min(3, d8); i++) digits[d8-i].active = true;
+                    isPass = val % 8 === 0;
+                    notes.innerHTML = `<strong>Rule:</strong> Last 3 digits (${str.slice(-3)}) must be divisible by 8.`;
+                    break;
+                case '10':
+                    if (digits.length) digits[digits.length - 1].active = true;
+                    isPass = val % 10 === 0;
+                    notes.innerHTML = `<strong>Rule:</strong> Last digit must be 0. Detected: ${str.slice(-1)}`;
+                    break;
+                default: return;
+            }
+
+            const resultColor = isPass ? colors.success : colors.danger;
+            digits.forEach(d => { if(d.active) d.color = resultColor; });
+            
+            statusEl.innerText = isPass ? "Access Granted" : "Access Denied";
+            statusEl.style.color = isPass ? colors.success : colors.danger;
+            log.innerText = `Scanning sequence: ${m}  ·  Result: ${isPass ? 'Positive' : 'Negative'}`;
+        }
+
+        function drawBackground() {
+            // Soft grid
+            ctx.strokeStyle = colors.grid;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for(let i=0; i<width; i+= 80) { ctx.moveTo(i,0); ctx.lineTo(i,height); }
+            for(let i=0; i<height; i+= 80) { ctx.moveTo(0,i); ctx.lineTo(width,i); }
+            ctx.stroke();
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Light background
+            ctx.fillStyle = colors.bg;
+            ctx.fillRect(0, 0, width, height);
+            
+            drawBackground();
+
+            digits.forEach(d => {
+                d.update();
+                d.draw();
+            });
+
+            requestAnimationFrame(loop);
+        }
+
+        function init() {
+            resize();
+            syncDigits();
+            loop();
+        }
+
+        numInput.addEventListener('input', syncDigits);
+        window.addEventListener('resize', () => {
+            resize();
+            // re-center digits after resize
+            digits.forEach(d => { d.x = d.targetX; d.y = d.targetY; });
+        });
+
+        // Drag interactions
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            mouse.x = x; mouse.y = y;
+            draggedDigit = digits.find(d => Math.hypot(d.x - x, d.y - y) < 50);
+            if (draggedDigit) {
+                e.preventDefault();
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            mouse.y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        });
+
+        window.addEventListener('mouseup', () => {
+            draggedDigit = null;
+            canvas.style.cursor = 'default';
+        });
+
+        // Touch support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+            mouse.x = x; mouse.y = y;
+            draggedDigit = digits.find(d => Math.hypot(d.x - x, d.y - y) < 50);
+        }, {passive: false});
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            mouse.x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+            mouse.y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        }, {passive: false});
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            draggedDigit = null;
+        });
+
+        // Expose setMode globally for onclick
+        window.setMode = setMode;
+
+        init();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vertical Flow | Division Algorithm</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --border: #e2e8f0;
+            --dividend: #6366f1;
+            --quotient: #10b981;
+            --remainder: #f43f5e;
+            --machine: #334155;
+            --text: #1e293b;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Settings Panel */
+        .settings {
+            width: 280px;
+            border-right: 1px solid var(--border);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            z-index: 10;
+        }
+
+        .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.1em; }
+        .input-group input { 
+            width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 6px; 
+            font-size: 1rem; margin-top: 8px; box-sizing: border-box;
+        }
+
+        .btn {
+            background: var(--machine); color: white; border: none; padding: 14px; 
+            border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .btn:hover { background: #1e293b; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: #f8fafc; }
+
+        /* Processor Workspace */
+        .workspace {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            position: relative;
+        }
+
+        .flow-container {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        /* Reservoir & Chamber */
+        .reservoir { width: 100%; border: 2px solid var(--border); min-height: 120px; padding: 15px; border-radius: 8px; }
+        .chamber { 
+            width: 120px; border: 2px solid var(--machine); height: 80px; 
+            display: flex; flex-wrap: wrap; gap: 4px; padding: 10px; 
+            justify-content: center; align-content: center; border-radius: 4px;
+        }
+
+        /* Exits */
+        .exits { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; margin-top: 20px; }
+        .stack-area { border: 1px solid var(--border); min-height: 150px; padding: 15px; border-radius: 8px; display: flex; flex-direction: column-reverse; gap: 4px; }
+
+        /* Particles & Blocks */
+        .dot { width: 10px; height: 10px; border-radius: 2px; }
+        .dot-a { background: var(--dividend); }
+        .dot-r { background: var(--remainder); }
+        .block-q { background: var(--quotient); height: 20px; width: 100%; border-radius: 2px; }
+
+        /* Equation */
+        .equation { margin-top: 60px; font-size: 2.5rem; font-family: serif; }
+        .val { font-weight: bold; }
+        .c-a { color: var(--dividend); }
+        .c-q { color: var(--quotient); }
+        .c-r { color: var(--remainder); }
+    </style>
+</head>
+<body>
+
+<div class="settings">
+    <div class="label">Config</div>
+    <div class="input-group">
+        <label>Dividend (a)</label>
+        <input type="number" id="inA" value="23">
+    </div>
+    <div class="input-group">
+        <label>Divisor (b)</label>
+        <input type="number" id="inB" value="5">
+    </div>
+    <button class="btn" onclick="init()">Initialize Flow</button>
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+        <button class="btn btn-outline" onclick="step()">Cycle Once</button>
+        <button class="btn btn-outline" onclick="auto()">Full Process</button>
+    </div>
+</div>
+
+<div class="workspace">
+    <div class="flow-container">
+        <div class="reservoir">
+            <div class="label" style="margin-bottom: 8px;">Reservoir (a)</div>
+            <div class="particles" id="resGrid" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+        </div>
+
+        <div style="color: var(--border); font-size: 2rem;">↓</div>
+
+        <div class="chamber" id="chamber">
+            </div>
+
+        <div class="exits">
+            <div class="stack-area">
+                <div class="label" style="position: absolute; top: -20px; left: 0;">Quotient (q)</div>
+                <div id="qStack" style="display: flex; flex-direction: column-reverse; gap: 4px;"></div>
+            </div>
+            <div class="stack-area">
+                <div class="label" style="position: absolute; top: -20px; left: 0;">Remainder (r)</div>
+                <div id="rTray" style="display: flex; flex-wrap: wrap; gap: 4px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="equation">
+        <span class="val c-a" id="eqA">0</span> = 
+        (<span id="eqB">0</span> × <span class="val c-q" id="eqQ">0</span>) + 
+        <span class="val c-r" id="eqR">0</span>
+    </div>
+</div>
+
+<script>
+    let a, b, q, r, chamber, total;
+
+    function init() {
+        total = a = parseInt(document.getElementById('inA').value);
+        b = parseInt(document.getElementById('inB').value);
+        q = 0; r = 0; chamber = 0;
+        document.getElementById('qStack').innerHTML = '';
+        document.getElementById('rTray').innerHTML = '';
+        update();
+    }
+
+    function update() {
+        document.getElementById('eqA').innerText = total;
+        document.getElementById('eqB').innerText = b;
+        document.getElementById('eqQ').innerText = q;
+        document.getElementById('eqR').innerText = r;
+
+        fill('resGrid', a, 'dot-a');
+        fill('chamber', chamber, 'dot-a');
+        fill('rTray', r, 'dot-r');
+        
+        // Finalize state display
+        if (a === 0 && chamber === 0 && r === 0 && total > 0) {
+            // Remainder logic check
+            r = 0; // handled in step
+        }
+    }
+
+    function fill(id, n, cls) {
+        const el = document.getElementById(id);
+        el.innerHTML = '';
+        for(let i=0; i<n; i++) {
+            const d = document.createElement('div');
+            d.className = `dot ${cls}`;
+            el.appendChild(d);
+        }
+    }
+
+    function step() {
+        if (a > 0) {
+            a--;
+            chamber++;
+            if (chamber === b) {
+                chamber = 0;
+                q++;
+                const block = document.createElement('div');
+                block.className = 'block-q';
+                document.getElementById('qStack').appendChild(block);
+            }
+        } else if (chamber > 0) {
+            // Move whatever is left in the chamber to the remainder
+            r = chamber;
+            chamber = 0;
+        }
+        update();
+    }
+
+    function auto() {
+        const interval = setInterval(() => {
+            if (a === 0 && chamber === 0) clearInterval(interval);
+            step();
+        }, 100);
+    }
+
+    init();
+</script>
+</body>
+</html>

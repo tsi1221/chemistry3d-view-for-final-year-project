@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prime Composition | Light Mode</title>
+    <style>
+        /* --- LIGHT MODE THEME (clean, bright, airy) --- */
+        :root {
+            --bg-gradient-start: #f0f4fa;
+            --bg-gradient-end: #e9edf2;
+            --panel-bg: rgba(255, 255, 255, 0.92);
+            --panel-border: rgba(0, 0, 0, 0.08);
+            --accent: #2c6e9e;
+            --accent-soft: #4f7ea3;
+            --comp-glow: #c97e2c;
+            --text-primary: #1a2a3a;
+            --text-secondary: #4a627a;
+            --shadow-sm: 0 8px 20px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            --border-light: #dee4ec;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-primary);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas {
+            display: block;
+            touch-action: none;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.05));
+        }
+
+        /* UI Overlay - Clean, Light, Frosted Glass */
+        .ui-container {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            padding: 24px 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 28px;
+            padding: 20px 24px;
+            pointer-events: auto;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+
+        .controls {
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .title-block h1 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #1e4b6e, #2c6e9e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .title-block .sub {
+            font-size: 0.7rem;
+            font-weight: 450;
+            color: var(--text-secondary);
+            letter-spacing: 0.3px;
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: 60px;
+            padding: 4px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(44, 110, 158, 0.1);
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 18px;
+            color: var(--text-primary);
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            outline: none;
+            border-radius: 60px;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0 28px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        button:hover {
+            background: #1e5780;
+            transform: scale(0.97);
+            box-shadow: 0 4px 12px rgba(44, 110, 158, 0.2);
+        }
+
+        .data-readout {
+            font-family: 'SF Mono', 'Courier New', monospace;
+            font-size: 0.75rem;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 20px;
+            padding: 12px 14px;
+            color: var(--text-secondary);
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .warning {
+            color: var(--comp-glow);
+            font-weight: 600;
+        }
+
+        .hud-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        #result-display {
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            color: var(--accent);
+            line-height: 1.2;
+        }
+
+        .helper-text {
+            font-size: 0.65rem;
+            opacity: 0.6;
+            margin-top: 12px;
+            color: var(--text-secondary);
+        }
+
+        #factor-list {
+            font-family: 'SF Mono', monospace;
+            font-weight: 500;
+            color: var(--comp-glow);
+            font-size: 0.85rem;
+            word-break: break-word;
+        }
+
+        @media (max-width: 680px) {
+            .ui-container { padding: 16px; }
+            .controls { width: 100%; }
+            .hud-bottom { flex-direction: column; align-items: stretch; }
+            #result-display { font-size: 1.8rem; }
+        }
+
+        /* subtle canvas background overlay for readability */
+        .canvas-overlay-light {
+            position: absolute;
+            bottom: 16px;
+            right: 20px;
+            pointer-events: none;
+            font-size: 0.7rem;
+            background: rgba(255,255,240,0.7);
+            backdrop-filter: blur(4px);
+            padding: 4px 12px;
+            border-radius: 40px;
+            color: #5f7f9a;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<div class="canvas-overlay-light">⚡ interactive | drag to rotate | scroll zoom</div>
+
+<div class="ui-container">
+    <div class="header">
+        <div class="panel controls">
+            <div class="title-block">
+                <h1>✦ Atomic Decomposer</h1>
+                <div class="sub">divisor field · quantum visualization</div>
+            </div>
+
+            <div class="input-wrapper">
+                <input type="number" id="numInput" value="42" min="2" max="10000">
+                <button id="analyzeBtn">Analyze</button>
+            </div>
+
+            <div class="data-readout" id="readout">
+                ⚛️ ready for input<br>
+                ⟳ enter a number to scan
+            </div>
+            
+            <div class="helper-text">
+                🖱️ drag to rotate view • scroll to zoom • tap to explore
+            </div>
+        </div>
+    </div>
+
+    <div class="hud-bottom">
+        <div class="panel">
+            <div style="font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 6px; color: var(--text-secondary);">DECOMPOSITION STATUS</div>
+            <div id="result-display">—</div>
+        </div>
+        
+        <div class="panel" style="min-width: 200px;">
+            <div style="font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px; color: var(--text-secondary);">DIVISOR CLUSTERS</div>
+            <div id="factor-list" style="color: var(--comp-glow); font-family: monospace;">—</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ========== CORE LOGIC (preserved entirely, unchanged behavior) ==========
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const numInput = document.getElementById('numInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const readout = document.getElementById('readout');
+        const resultDisplay = document.getElementById('result-display');
+        const factorList = document.getElementById('factor-list');
+
+        let width, height;
+        let particles = [];
+        let targetNum = 0;
+        let rotation = 0;
+        let zoom = 1;
+        let targetZoom = 1;
+
+        class Particle {
+            constructor(val, x, y, isMain = false, angle = 0, dist = 0) {
+                this.val = val;
+                this.x = x;
+                this.y = y;
+                this.isMain = isMain;
+                this.angle = angle;
+                this.dist = dist;
+                this.baseRadius = isMain ? 40 : 15;
+                this.color = isMain ? (isPrime(val) ? '#2c6e9e' : '#c97e2c') : '#94a3b8';
+                this.opacity = 0;
+            }
+
+            draw() {
+                this.opacity = Math.min(this.opacity + 0.05, 1);
+                
+                const currentAngle = this.angle + rotation;
+                const screenX = width/2 + Math.cos(currentAngle) * this.dist * zoom;
+                const screenY = height/2 + Math.sin(currentAngle) * this.dist * 0.5 * zoom;
+                const scale = (Math.sin(currentAngle) + 2) / 2 * zoom;
+
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.scale(scale, scale);
+
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = this.isMain ? (this.color === '#2c6e9e' ? 'rgba(44,110,158,0.3)' : 'rgba(201,126,44,0.3)') : 'rgba(0,0,0,0.05)';
+                ctx.globalAlpha = this.opacity;
+
+                // core circle
+                ctx.beginPath();
+                ctx.arc(0, 0, this.baseRadius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+
+                if (!this.isMain) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.baseRadius + 4, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(100, 120, 140, 0.25)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = "#ffffff";
+                ctx.font = `bold ${this.baseRadius * 0.7}px "SF Mono", "Courier New", monospace`;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = this.isMain ? "#fff" : "#1e2a36";
+                ctx.fillText(this.val, 0, 0);
+
+                ctx.restore();
+
+                // connector lines (clean light lines)
+                if (!this.isMain) {
+                    ctx.beginPath();
+                    ctx.moveTo(width/2, height/2);
+                    ctx.lineTo(screenX, screenY);
+                    ctx.strokeStyle = `rgba(90, 110, 130, 0.12)`;
+                    ctx.lineWidth = 1.2;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function isPrime(n) {
+            if (n < 2) return false;
+            for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return false;
+            return true;
+        }
+
+        function getDivisors(n) {
+            let divs = [];
+            for (let i = 2; i < n; i++) if (n % i === 0) divs.push(i);
+            return divs;
+        }
+
+        function analyze() {
+            let val = parseInt(numInput.value);
+            if (isNaN(val) || val < 2) {
+                val = 2;
+                numInput.value = 2;
+            }
+            if (val > 10000) val = 10000;
+            targetNum = val;
+            particles = [];
+            
+            const divArray = getDivisors(val);
+            const primeStatus = isPrime(val);
+
+            // UI update (clean, readable)
+            resultDisplay.textContent = primeStatus ? "PRIME ELEMENT" : "COMPOSITE FIELD";
+            resultDisplay.style.color = primeStatus ? "var(--accent)" : "var(--comp-glow)";
+            
+            readout.innerHTML = `
+                🧬 TARGET: <span class="highlight">${val}</span><br>
+                🔬 TYPE: <span class="${primeStatus ? 'highlight' : 'warning'}">${primeStatus ? 'PRIME (stable core)' : 'COMPOSITE (resonant)'}</span><br>
+                📡 DIVISOR COUNT: ${divArray.length}<br>
+                ✨ decomposition complete
+            `;
+
+            factorList.textContent = divArray.length > 0 ? divArray.join('  •  ') : "∅ (only 1 & itself)";
+
+            // center nucleus
+            particles.push(new Particle(val, 0, 0, true, 0, 0));
+
+            // orbiting divisor particles
+            const count = divArray.length;
+            divArray.forEach((d, i) => {
+                const angle = (i / count) * Math.PI * 2;
+                const dist = 150 + (i * 9);
+                particles.push(new Particle(d, 0, 0, false, angle, dist));
+            });
+
+            targetZoom = count > 12 ? 0.65 : (count > 5 ? 0.85 : 1.0);
+        }
+
+        // resize canvas & handle hi-dpi
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * devicePixelRatio;
+            canvas.height = height * devicePixelRatio;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+        }
+
+        // Animation loop (no core changes, just drawing)
+        function loop() {
+            // gentle transparent clear for trail effect (preserved original behavior)
+            ctx.fillStyle = 'rgba(240, 244, 250, 0.22)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // light grid background (enhances readability without touching logic)
+            ctx.strokeStyle = 'rgba(44, 110, 158, 0.06)';
+            ctx.lineWidth = 1;
+            const gridSize = 55 * zoom;
+            const centerX = width/2, centerY = height/2;
+            for(let x = centerX % gridSize; x < width; x += gridSize) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+            }
+            for(let y = centerY % gridSize; y < height; y += gridSize) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+            }
+
+            // update rotation and zoom smoothly
+            rotation += 0.0048;
+            zoom += (targetZoom - zoom) * 0.1;
+            
+            // sort particles for subtle depth effect (preserved)
+            particles.sort((a, b) => {
+                const aZ = Math.sin(a.angle + rotation);
+                const bZ = Math.sin(b.angle + rotation);
+                return aZ - bZ;
+            });
+            
+            particles.forEach(p => p.draw());
+            requestAnimationFrame(loop);
+        }
+
+        // ---------- INTERACTION (unchanged, only preserve original functionality) ----------
+        window.addEventListener('resize', () => {
+            resize();
+        });
+        
+        analyzeBtn.onclick = () => {
+            analyze();
+        };
+        
+        // optional: trigger on enter key
+        numInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') analyze();
+        });
+        
+        // wheel zoom (exactly original behavior)
+        canvas.addEventListener('wheel', (e) => {
+            targetZoom -= e.deltaY * 0.001;
+            targetZoom = Math.max(0.25, Math.min(2.2, targetZoom));
+            e.preventDefault();
+        }, { passive: false });
+        
+        // drag to rotate (mouse)
+        let isDragging = false;
+        canvas.addEventListener('mousedown', () => isDragging = true);
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) rotation += e.movementX * 0.008;
+        });
+        
+        // touch support (preserve original style)
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                rotation += 0.04;
+                e.preventDefault();
+            }
+        });
+        canvas.addEventListener('touchstart', (e) => e.preventDefault());
+        
+        // ========== INIT ==========
+        function init() {
+            resize();
+            analyze();      // default number 42 -> shows divisors
+            loop();
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>
