@@ -3,266 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grade 9 Math Lab: Repeating Decimal Spiral</title>
+    <title>Rational Spiral | Interactive Math</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+
         :root {
-            --primary-blue: #0056b3;
-            --accent-blue: #00a2ff;
-            --white: #ffffff;
-            --bg-light: #f0f4f8;
+            --neon-cyan: #00f2ff;
+            --neon-purple: #bc13fe;
+            --bg-deep: #05070a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg-light);
             margin: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
-
-        .lab-shell {
-            width: 95%;
-            max-width: 1000px;
-            margin: 20px;
-            background: var(--white);
-            border-radius: 24px;
-            box-shadow: 0 15px 40px rgba(0, 86, 179, 0.1);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: var(--primary-blue);
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(188, 19, 254, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 0% 0%, rgba(0, 242, 255, 0.05) 0%, transparent 30%);
             color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .lab-layout {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            padding: 20px;
-            gap: 20px;
-        }
-
-        @media (max-width: 850px) {
-            .lab-layout { grid-template-columns: 1fr; }
-        }
-
-        .canvas-area {
-            background: white;
-            border: 2px solid #e1e8ed;
-            border-radius: 16px;
-            position: relative;
-        }
-
-        canvas {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .formula-card {
-            background: #e7f1ff;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 15px;
-            border-bottom: 4px solid var(--primary-blue);
-        }
-
-        .decimal-text {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: var(--primary-blue);
-            letter-spacing: 2px;
-        }
-
-        .control-panel {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 16px;
+            font-family: 'Space Grotesk', sans-serif;
+            overflow: hidden;
+            height: 100vh;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
         }
 
-        .input-group label {
-            display: block;
-            font-weight: bold;
-            font-size: 0.9rem;
+        /* Interactive HUD */
+        .hud {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            padding: 30px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+
+        .hud:hover { transform: scale(1.02); }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
             margin-bottom: 10px;
         }
 
-        select, input {
-            width: 100%;
-            padding: 12px;
-            border-radius: 8px;
-            border: 2px solid #ddd;
-            font-size: 1rem;
+        input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--glass-border);
+            color: var(--neon-cyan);
+            font-size: 3rem;
+            font-weight: 700;
+            width: 80px;
+            text-align: center;
+            font-family: 'Space Grotesk', sans-serif;
+            outline: none;
+            transition: border-color 0.3s;
         }
 
-        .info-box {
-            font-size: 0.85rem;
-            color: #475569;
-            background: #fffbe6;
-            padding: 15px;
-            border-radius: 10px;
-            border-left: 5px solid #fbbf24;
+        input:focus { border-color: var(--neon-purple); }
+
+        .divider { font-size: 3rem; color: rgba(255,255,255,0.2); }
+
+        .decimal-sub {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.5);
+            font-family: monospace;
+            margin-top: 5px;
         }
 
-        #blueAlert {
-            display: none;
-            position: fixed;
-            top: 20px;
+        #alert {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            padding: 10px 25px;
+            background: rgba(188, 19, 254, 0.1);
+            border: 1px solid var(--neon-purple);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--neon-purple);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0;
+            transition: 0.5s;
+        }
+
+        .active-alert { opacity: 1 !important; }
+
+        .controls-hint {
+            position: absolute;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--primary-blue);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-weight: bold;
-            z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            pointer-events: none;
         }
+
+        canvas { width: 100vw; height: 100vh; cursor: crosshair; }
     </style>
 </head>
 <body>
 
-<div id="blueAlert">Pattern Detected! Repeating Period found.</div>
+    <div id="alert">Periodicity Sync Active</div>
 
-<div class="lab-shell">
-    <header>
-        <h2 style="margin:0">Repeating Decimal Spiral</h2>
-        <p style="margin:5px 0 0">Visualizing the Period of Rational Numbers</p>
-    </header>
-
-    <div class="lab-layout">
-        <main>
-            <div class="formula-card">
-                <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 5px;">DECIMAL EXPANSION</div>
-                <div class="decimal-text" id="decimalDisplay">0.333...</div>
-            </div>
-            <div class="canvas-area">
-                <canvas id="spiralCanvas" width="600" height="500"></canvas>
-            </div>
-        </main>
-
-        <aside class="control-panel">
-            <div class="input-group">
-                <label>Numerator (Dividend)</label>
-                <input type="number" id="numInput" value="1" min="1" max="99">
-            </div>
-
-            <div class="input-group">
-                <label>Denominator (Divisor)</label>
-                <input type="number" id="denInput" value="7" min="1" max="99">
-            </div>
-
-            <div class="info-box">
-                <strong>The Pattern:</strong> 
-                The "Period" is the length of the digits that repeat. A 1/7 spiral repeats every 6 digits!
-            </div>
-
-            <div style="font-size: 0.8rem; color: #64748b;">
-                Terminating decimals (like 1/2) will result in a straight line ending at zero.
-            </div>
-        </aside>
+    <div class="hud">
+        <div style="font-size: 0.7rem; letter-spacing: 2px; color: var(--neon-cyan); margin-bottom: 10px;">RATIONAL INPUT</div>
+        <div class="input-container">
+            <input type="number" id="numIn" value="1" min="1" max="999">
+            <span class="divider">/</span>
+            <input type="number" id="denIn" value="7" min="2" max="999">
+        </div>
+        <div class="decimal-sub" id="decDisplay">0.142857...</div>
     </div>
-</div>
+
+    <div class="controls-hint">
+        Type Numbers Above OR Drag Canvas to Explore
+    </div>
+
+    <canvas id="canvas"></canvas>
 
 <script>
-    const canvas = document.getElementById('spiralCanvas');
+    const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const decimalDisplay = document.getElementById('decimalDisplay');
-    const alertBox = document.getElementById('blueAlert');
+    const numIn = document.getElementById('numIn');
+    const denIn = document.getElementById('denIn');
+    const decDisplay = document.getElementById('decDisplay');
+    const alert = document.getElementById('alert');
 
-    function getDecimalExpansion(num, den) {
-        let res = (num / den).toString();
-        if (res.length > 12) {
-            return res.substring(0, 10) + "...";
+    let w, h, num = 1, den = 7, rotation = 0, isDragging = false, lastX, lastY, zoom = 1.2;
+
+    function resize() {
+        w = window.innerWidth; h = window.innerHeight;
+        canvas.width = w * devicePixelRatio; canvas.height = h * devicePixelRatio;
+        ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+
+    function calculateExpansion(n, d) {
+        let digits = [], remainder = n % d, seen = new Map(), loopIdx = -1;
+        for (let i = 0; i < 200; i++) {
+            if (remainder === 0) break;
+            if (seen.has(remainder)) { loopIdx = seen.get(remainder); break; }
+            seen.set(remainder, i);
+            remainder *= 10;
+            digits.push(Math.floor(remainder / d));
+            remainder %= d;
         }
-        return res;
+        return { digits, loopIdx, isTerm: remainder === 0 };
     }
 
     function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, w, h);
+        rotation += 0.005;
         
-        const num = parseInt(document.getElementById('numInput').value) || 1;
-        const den = parseInt(document.getElementById('denInput').value) || 1;
-        
-        decimalDisplay.innerText = getDecimalExpansion(num, den);
+        const data = calculateExpansion(num, den);
+        const centerX = w / 2, centerY = h / 2;
 
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        
-        // Generate digits of the decimal
-        let digits = [];
-        let remainder = num % den;
-        let seenRemainders = new Map();
-        let periodFound = false;
+        let points = [];
+        data.digits.forEach((digit, i) => {
+            let angle = (digit * Math.PI * 2 / 10) + rotation + (i * 0.02);
+            let radius = (60 + i * 1.2) * zoom;
+            let z = Math.sin(angle) * radius;
+            let x = Math.cos(angle) * radius;
+            let y = (i * 4 - (data.digits.length * 2)) * zoom;
+            let pScale = (z + 400) / 800;
+            points.push({ x: centerX + x * pScale, y: centerY + y * pScale, p: pScale, val: digit, isLoop: i >= data.loopIdx && data.loopIdx !== -1 });
+        });
 
-        for (let i = 0; i < 100; i++) {
-            if (remainder === 0) break;
-            if (seenRemainders.has(remainder) && !periodFound) {
-                periodFound = true;
-                triggerAlert();
-            }
-            seenRemainders.set(remainder, i);
-            
-            remainder *= 10;
-            let digit = Math.floor(remainder / den);
-            digits.push(digit);
-            remainder %= den;
+        // Update HUD
+        let dStr = "0.";
+        data.digits.slice(0, 15).forEach(d => dStr += d);
+        decDisplay.innerText = dStr + (data.isTerm ? "" : "...");
+        if (data.loopIdx !== -1) alert.classList.add('active-alert');
+        else alert.classList.remove('active-alert');
+
+        // Draw Lines
+        for (let i = 1; i < points.length; i++) {
+            const p1 = points[i-1], p2 = points[i];
+            ctx.beginPath();
+            ctx.strokeStyle = p2.isLoop ? `hsla(280, 80%, 60%, ${p2.p * 0.6})` : `hsla(180, 80%, 60%, ${p2.p * 0.4})`;
+            ctx.lineWidth = p2.p * 3;
+            ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
         }
 
-        // Draw the 3D-style Cylinder Spiral
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        
-        let radius = 80;
-        let verticalSpacing = 4;
-        
-        for (let i = 0; i < digits.length; i++) {
-            // Mapping digit to angle (0-9 maps to 0-360 degrees)
-            let angle = (i * 0.5) + (digits[i] * (Math.PI * 2 / 10));
-            let x = centerX + Math.cos(angle) * radius;
-            let y = 50 + (i * verticalSpacing) + Math.sin(angle * 0.5) * 20;
+        // Draw Nodes
+        points.forEach((p, i) => {
+            ctx.fillStyle = p.isLoop ? `hsla(280, 100%, 70%, ${p.p})` : `hsla(180, 100%, 70%, ${p.p})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, (p.isLoop ? 3.5 : 1.5) * p.p, 0, Math.PI * 2);
+            ctx.fill();
+        });
 
-            // Color based on digit
-            ctx.strokeStyle = `hsl(${(digits[i] * 36)}, 70%, 50%)`;
-            
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-
-            // Draw small digit nodes
-            ctx.fillStyle = ctx.strokeStyle;
-            ctx.font = "10px Arial";
-            if (i % 2 === 0) ctx.fillText(digits[i], x + 5, y);
-        }
-        ctx.stroke();
-
-        // Labeling
-        ctx.fillStyle = "#0056b3";
-        ctx.textAlign = "center";
-        ctx.font = "bold 14px Arial";
-        ctx.fillText("Digit Patterns in Space", centerX, canvas.height - 20);
+        requestAnimationFrame(draw);
     }
 
-    function triggerAlert() {
-        alertBox.style.display = 'block';
-        setTimeout(() => { alertBox.style.display = 'none'; }, 2500);
-    }
+    // Controls
+    [numIn, denIn].forEach(el => el.addEventListener('input', () => {
+        num = parseInt(numIn.value) || 1;
+        den = parseInt(denIn.value) || 2;
+    }));
 
-    // Input Listeners
-    document.getElementById('numInput').addEventListener('input', draw);
-    document.getElementById('denInput').addEventListener('input', draw);
-
-    // Initial Draw
-    draw();
+    window.addEventListener('mousedown', e => { 
+        if(e.target.tagName !== 'INPUT') { isDragging = true; lastX = e.clientX; lastY = e.clientY; }
+    });
+    window.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        let dx = e.clientX - lastX, dy = e.clientY - lastY;
+        if (Math.abs(dx) > 30) { num = Math.max(1, num + (dx > 0 ? 1 : -1)); numIn.value = num; lastX = e.clientX; }
+        if (Math.abs(dy) > 30) { den = Math.max(2, den + (dy > 0 ? 1 : -1)); denIn.value = den; lastY = e.clientY; }
+    });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('wheel', e => { zoom = Math.max(0.3, Math.min(4, zoom - e.deltaY * 0.001)); });
+    window.addEventListener('resize', resize);
+    resize(); draw();
 </script>
-
 </body>
 </html>

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title> Absolute Value Distance</title>
+    <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --accent-blue: #60a5fa;
+            --white: #ffffff;
+            --bg-dark: #f8fafc;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            user-select: none;
+            overflow: hidden; /* Lock body scrolling for smooth dragging */
+        }
+
+        .lab-shell {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-dark);
+        }
+
+        header {
+            background: white;
+            color:#3b82f6;
+            padding: 15px 20px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .formula-display {
+            background: rgba(255,255,255,0.15);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid rgba(255,255,255,0.3);
+            min-width: 250px;
+        }
+
+        .math-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #3b82f6;
+            font-family: 'Courier New', monospace;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .viz-container {
+            flex: 1; /* Take all available space */
+            position: relative;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .interaction-hint {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(0,0,0,0.3);
+            font-size: 0.8rem;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        #blueAlert {
+            display: none;
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent-blue);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="blueAlert">🎯 Origin Reached! Distance = 0.0</div>
+
+<div class="lab-shell">
+    <header>
+        <div class="formula-display">
+            <div style="font-size: 0.8rem; color:#3b82f6; margin-bottom: 3px;">RESULTANT DISTANCE FROM ZERO</div>
+            <div class="math-text" id="formulaText">| 5.0 | = 5.0</div>
+        </div>
+    </header>
+
+    <div class="viz-container" id="canvasWrapper">
+        <canvas id="absCanvas"></canvas>
+        <div class="interaction-hint">← Click and Drag Point →<br><span style="color:#64748b; font-size:0.7rem">(Arrow Keys to Rotate View)</span></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('absCanvas');
+    const ctx = canvas.getContext('2d');
+    const formulaText = document.getElementById('formulaText');
+    const alertBox = document.getElementById('blueAlert');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
+    // State
+    let xPos = 5.0;
+    let rotation = 0.5; // Initial 3D rotation
+    let isDragging = false;
+    let canvasW, canvasH;
+
+    // Projection scale (adjust for larger fullscreen view)
+    const scale = 35; 
+
+    // Resize canvas to fullscreen
+    function resize() {
+        canvasW = canvasWrapper.clientWidth;
+        canvasH = canvasWrapper.clientHeight;
+        canvas.width = canvasW * devicePixelRatio;
+        canvas.height = canvasH * devicePixelRatio;
+        canvas.style.width = canvasW + 'px';
+        canvas.style.height = canvasH + 'px';
+        ctx.scale(devicePixelRatio, devicePixelRatio);
+        draw(); // Redraw immediately on resize
+    }
+
+    // 3D Projection Helper
+    const project = (x, y, z) => {
+        const centerX = canvasW / 2;
+        const centerY = canvasH / 2;
+        const cos = Math.cos(rotation);
+        const sin = Math.sin(rotation);
+        // Standard X rotation matrix application
+        const nx = x * cos - z * sin;
+        const nz = x * sin + z * cos;
+        // Project to 2D screen coordinates
+        return {
+            x: centerX + nx * scale,
+            y: centerY - y * scale + nz * 0.4 * scale, // Skew Y slightly for 3D effect
+            depth: nz
+        };
+    };
+
+    // Inverse Projection (Estimate X from Mouse X position)
+    function screenToMathX(mouseX) {
+        const centerX = canvasW / 2;
+        const cos = Math.cos(rotation);
+        // mouseX = centerX + (x * cos) * scale, solve for x
+        return (mouseX - centerX) / (scale * cos);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvasW, canvasH);
+        
+        // 1. Draw Ground Grid for depth
+        ctx.strokeStyle = 'rgba(203, 213, 225, 0.4)';
+        ctx.lineWidth = 1;
+        for(let i = -12; i <= 12; i+=2) {
+            const p1 = project(i, 0, -6);
+            const p2 = project(i, 0, 6);
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        // 2. Draw Number Line (X-Axis)
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 3;
+        const startLine = project(-14, 0, 0);
+        const endLine = project(14, 0, 0);
+        ctx.beginPath();
+        ctx.moveTo(startLine.x, startLine.y);
+        ctx.lineTo(endLine.x, endLine.y);
+        ctx.stroke();
+
+        // Ticks
+        for(let i = -12; i <= 12; i++) {
+            const tickBottom = project(i, -0.4, 0);
+            const tickTop = project(i, 0.4, 0);
+            ctx.beginPath();
+            ctx.moveTo(tickBottom.x, tickBottom.y);
+            ctx.lineTo(tickTop.x, tickTop.y);
+            ctx.stroke();
+            
+            // Major Ticks (5, 10)
+            if(i % 5 === 0 && i !== 0) {
+                ctx.fillStyle = '#475569';
+                ctx.font = 'bold 12px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(i, tickBottom.x, tickBottom.y + 20);
+            }
+        }
+
+        // 3. Origin Point (Zero)
+        const origin = project(0, 0, 0);
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(origin.x, origin.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#475569';
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText("0", origin.x - 5, origin.y + 25);
+
+        // 4. Mirror Ghost (Shows symmetry for $|-x|$)
+        const mirror = project(-xPos, 0, 0);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.15)';
+        ctx.setLineDash([8, 8]); // Dashed line
+        ctx.beginPath();
+        ctx.moveTo(origin.x, origin.y);
+        ctx.lineTo(mirror.x, mirror.y);
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset to solid line
+
+        // 5. The Distance Line (The Absolute Value |x|)
+        const target = project(xPos, 0, 0);
+        
+        // Glowing Neon effect
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#3b82f6';
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(origin.x, origin.y);
+        ctx.lineTo(target.x, target.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0; // Turn off glow for performance
+
+        // 6. The Draggable Point
+        ctx.fillStyle = isDragging ? '#ffffff' : '#3b82f6'; // Change color when grabbed
+        ctx.beginPath();
+        ctx.arc(target.x, target.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 7. Dynamic Labels near the point
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 14px Arial';
+        // Label with dynamic formatting (avoids -0.0)
+        let displayX = xPos.toFixed(1) === '-0.0' ? '0.0' : xPos.toFixed(1);
+        ctx.fillText(`x = ${displayX}`, target.x + 15, target.y - 15);
+        
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'bold 12px Arial';
+        ctx.fillText(`$|x| = ${Math.abs(xPos).toFixed(1)}`, (origin.x + target.x)/2 - 30, (origin.y + target.y)/2 - 10);
+
+        // 8. Update Formula Header
+        const absVal = Math.abs(xPos);
+        formulaText.innerHTML = `| ${displayX} | = ${absVal.toFixed(1)}`;
+        
+        // Zero Paradox check
+        if (absVal < 0.1) {
+            alertBox.style.display = 'block';
+        } else {
+            alertBox.style.display = 'none';
+        }
+    }
+
+    // --- Interaction Logic ---
+
+    function handleInput(clientX) {
+        // Correct mouse X for devicePixelRatio and canvas offset
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        const mouseX = (clientX - rect.left);
+        
+        // Use inverse projection to estimate X value on the number line
+        let newX = screenToMathX(mouseX);
+        
+        // Constraints
+        newX = Math.max(-12.5, Math.min(12.5, newX));
+        
+        xPos = newX;
+        draw();
+    }
+
+    // Direct Canvas Interaction (Mouse)
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        handleInput(e.clientX);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) handleInput(e.clientX);
+    });
+
+    window.addEventListener('mouseup', () => {
+        isDragging = false;
+        draw();
+    });
+
+    // Touch Support for mobile
+    canvas.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        handleInput(e.touches[0].clientX);
+        // Crucial: prevent scrolling behavior while dragging
+        e.preventDefault(); 
+    }, {passive: false});
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (isDragging) handleInput(e.touches[0].clientX);
+        e.preventDefault();
+    }, {passive: false});
+
+    canvas.addEventListener('touchend', () => isDragging = false);
+
+    // Keyboard Hotkeys for Rotation (No sliders!)
+    window.addEventListener('keydown', (e) => {
+        const step = 0.05;
+        if (e.key === 'ArrowLeft') {
+            rotation -= step;
+            draw();
+        } else if (e.key === 'ArrowRight') {
+            rotation += step;
+            draw();
+        }
+    });
+
+    // Initial Setup
+    window.addEventListener('resize', resize);
+    resize(); // This handles the initial size and draw call
+</script>
+
+</body>
+</html>
