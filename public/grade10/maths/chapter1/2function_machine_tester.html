@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Function Machine: Vertical Line Test Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255,255,255,0.5);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            padding: 1.2rem;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.1);
+        }
+
+        .canvas-container {
+            background: #ffffff;
+            border-radius: 1.8rem;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+            padding: 0.6rem;
+            margin-bottom: 1.2rem;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefdf8;
+            border-radius: 1.2rem;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .toolbar {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 1.8rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .graph-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+
+        .graph-btn {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: monospace;
+        }
+
+        .graph-btn.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 8px rgba(59,130,246,0.3);
+        }
+
+        .result-badge {
+            background: #1e293b;
+            padding: 0.5rem 1.2rem;
+            border-radius: 2.5rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .result-badge span {
+            font-size: 1.3rem;
+        }
+
+        .function-pass {
+            background: #10b981;
+            color: white;
+        }
+
+        .function-fail {
+            background: #ef4444;
+            color: white;
+        }
+
+        .intersection-counter {
+            background: #334155;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #facc15;
+        }
+
+        .info-panel {
+            background: #fef9e3;
+            border-radius: 1.2rem;
+            padding: 0.7rem 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .vertical-line-demo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: white;
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+        }
+
+        .vertical-line-demo div {
+            width: 4px;
+            height: 30px;
+            background: #f59e0b;
+            border-left: 3px dashed #f59e0b;
+        }
+
+        @media (max-width: 700px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .graph-selector {
+                justify-content: center;
+            }
+            .result-badge {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="canvas-container">
+        <canvas id="functionCanvas" width="800" height="800" style="width:100%; height:auto; max-width:800px; margin:0 auto; display:block"></canvas>
+    </div>
+
+    <div class="toolbar">
+        <div class="graph-selector">
+            <button data-graph="line" class="graph-btn active">📈 y = 2x + 1 (Line)</button>
+            <button data-graph="parabola" class="graph-btn">🟢 y = x² (Parabola)</button>
+            <button data-graph="circle" class="graph-btn">⚪ x² + y² = 9 (Circle)</button>
+        </div>
+        <div class="result-badge" id="functionBadge">
+            <span>🔍</span> <span id="functionStatus">Waiting...</span>
+        </div>
+        <div class="intersection-counter">
+            📍 Intersections: <span id="intersectCount">0</span>
+        </div>
+    </div>
+
+    <div class="info-panel">
+        <div class="vertical-line-demo">
+            <div></div> <span>← Drag the ORANGE dashed line →</span>
+        </div>
+        <div>💡 <strong>Vertical Line Test:</strong> If any vertical line touches graph at more than 1 point → NOT a function</div>
+        <div>🍫 <strong>Vending machine rule:</strong> One input (x) → exactly ONE output (y)</div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- canvas elements -----
+        const canvas = document.getElementById('functionCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // dimensions & transform (cartesian plane)
+        let width = 800, height = 800;
+        let originX = 400, originY = 400;
+        let scale = 35;          // 35px per unit -> range -11.4 to 11.4 approx, but we show -7 to 7 nicely
+        let rangeMin = -7.5, rangeMax = 7.5;
+        
+        // current graph type: 'line', 'parabola', 'circle'
+        let currentGraph = 'line';
+        
+        // vertical line position (x coordinate in world units)
+        let vLineX = 0;          // passes through origin initially
+        
+        // intersection points list (world coordinates)
+        let intersections = [];   // array of {x, y}
+        
+        // dragging state for vertical line
+        let draggingLine = false;
+        
+        // UI elements
+        const functionStatusSpan = document.getElementById('functionStatus');
+        const intersectCountSpan = document.getElementById('intersectCount');
+        const functionBadgeDiv = document.getElementById('functionBadge');
+        
+        // ---- Helper: convert screen X to world X ----
+        function screenToWorldX(screenX) {
+            return (screenX - originX) / scale;
+        }
+        
+        function worldToScreenX(x) {
+            return originX + x * scale;
+        }
+        
+        function worldToScreenY(y) {
+            return originY - y * scale;
+        }
+        
+        // ---- compute intersections of vertical line x = vLineX with current graph ----
+        function computeIntersections() {
+            let points = [];
+            if (currentGraph === 'line') {
+                // y = 2x + 1
+                let y = 2 * vLineX + 1;
+                if (y >= rangeMin && y <= rangeMax) {
+                    points.push({ x: vLineX, y: y });
+                }
+            } 
+            else if (currentGraph === 'parabola') {
+                // y = x^2
+                let y = vLineX * vLineX;
+                if (y >= rangeMin && y <= rangeMax) {
+                    points.push({ x: vLineX, y: y });
+                }
+            }
+            else if (currentGraph === 'circle') {
+                // x^2 + y^2 = 9  => y = ± sqrt(9 - x^2)
+                let inside = 9 - vLineX * vLineX;
+                if (inside >= 0) {
+                    let yPos = Math.sqrt(inside);
+                    let yNeg = -yPos;
+                    if (yPos >= rangeMin && yPos <= rangeMax) {
+                        points.push({ x: vLineX, y: yPos });
+                    }
+                    if (yNeg >= rangeMin && yNeg <= rangeMax && Math.abs(yPos - yNeg) > 1e-6) {
+                        points.push({ x: vLineX, y: yNeg });
+                    }
+                }
+            }
+            // remove duplicates if any (for circle tangent case)
+            points = points.filter((p, idx, self) => 
+                idx === self.findIndex(t => Math.abs(t.y - p.y) < 1e-6)
+            );
+            return points;
+        }
+        
+        // ---- update vertical line and refresh intersections + UI ----
+        function updateVerticalLine(worldX) {
+            // clamp to visible range for better UX
+            vLineX = Math.min(rangeMax, Math.max(rangeMin, worldX));
+            intersections = computeIntersections();
+            const count = intersections.length;
+            intersectCountSpan.innerText = count;
+            
+            // determine if function or not: any intersection count > 1 => fail
+            // But we need to check globally: we simulate vertical line at current position.
+            // For full test we could analyze whole domain, but for pedagogical demo:
+            // If at current x there is >1 intersection => not a function
+            // But a circle fails anywhere x in (-3,3) with 2 points.
+            // For line/parabola always <=1 so passes.
+            let isFunction = true;
+            if (currentGraph === 'circle') {
+                // For circle, if vertical line is within (-3,3) there will be 2 intersections -> not function.
+                if (Math.abs(vLineX) < 3 - 1e-6) {
+                    if (count > 1) isFunction = false;
+                    else isFunction = false; // Actually circle fails test: many x have 2 y's
+                    // but we need to show it fails if any point has 2 intersections.
+                    // Since we are dynamic, we check if current count > 1. For circle in range, always 2.
+                    isFunction = (count <= 1);
+                } else if (Math.abs(vLineX - 3) < 0.01 || Math.abs(vLineX + 3) < 0.01) {
+                    isFunction = true; // tangent point single intersection but full circle still fails overall.
+                    // To make education clear: Circle is globally NOT a function, we will override logic:
+                    isFunction = false; // but better to show real vertical line test: circle fails because there exist x with 2 y's.
+                }
+                // Override: circle is never a function (by definition)
+                if (currentGraph === 'circle') isFunction = false;
+                // But we want to reflect the test: if any intersection count ever >1 then function fails.
+                // To be precise we show based on current count: but for circle dynamic, user sees failure.
+            }
+            
+            // For line and parabola, they always pass
+            if (currentGraph === 'line' || currentGraph === 'parabola') {
+                isFunction = true;
+            }
+            
+            // Special rule: circle always fails vertical line test (demonstrate concept)
+            if (currentGraph === 'circle') {
+                isFunction = false;
+            }
+            
+            // Update badge
+            if (isFunction) {
+                functionStatusSpan.innerText = "✅ IS A FUNCTION (Passes Vertical Line Test)";
+                functionBadgeDiv.classList.remove('function-fail');
+                functionBadgeDiv.classList.add('function-pass');
+            } else {
+                functionStatusSpan.innerText = "❌ NOT A FUNCTION (Vertical Line Test Failed)";
+                functionBadgeDiv.classList.remove('function-pass');
+                functionBadgeDiv.classList.add('function-fail');
+            }
+            
+            drawCanvas();
+        }
+        
+        // ---- Draw entire coordinate system, graph, vertical line, intersection points ----
+        function drawCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            drawGridAndAxes();
+            drawGraph();
+            drawVerticalLine();
+            drawIntersectionDots();
+        }
+        
+        function drawGridAndAxes() {
+            ctx.save();
+            // light grid
+            ctx.strokeStyle = '#cbd5e6';
+            ctx.lineWidth = 0.6;
+            // vertical lines
+            for (let x = Math.ceil(rangeMin); x <= rangeMax; x += 1) {
+                if (Math.abs(x) < 0.01) continue;
+                let screenX = worldToScreenX(x);
+                ctx.beginPath();
+                ctx.moveTo(screenX, 0);
+                ctx.lineTo(screenX, height);
+                ctx.stroke();
+            }
+            // horizontal lines
+            for (let y = Math.ceil(rangeMin); y <= rangeMax; y += 1) {
+                if (Math.abs(y) < 0.01) continue;
+                let screenY = worldToScreenY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, screenY);
+                ctx.lineTo(width, screenY);
+                ctx.stroke();
+            }
+            
+            // axes
+            ctx.beginPath();
+            ctx.lineWidth = 2.2;
+            ctx.strokeStyle = '#1e293b';
+            ctx.moveTo(0, originY);
+            ctx.lineTo(width, originY);
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, height);
+            ctx.stroke();
+            
+            // arrows
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.moveTo(width-8, originY-4);
+            ctx.lineTo(width, originY);
+            ctx.lineTo(width-8, originY+4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(originX-4, 8);
+            ctx.lineTo(originX, 0);
+            ctx.lineTo(originX+4, 8);
+            ctx.fill();
+            
+            ctx.font = 'bold 13px "Segoe UI"';
+            ctx.fillStyle = '#334155';
+            ctx.fillText('x', width-12, originY-6);
+            ctx.fillText('y', originX+8, 16);
+            ctx.fillText('O', originX+4, originY-4);
+            
+            // labels for range
+            ctx.font = '10px monospace';
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('-7', worldToScreenX(-7)-6, originY+12);
+            ctx.fillText('7', worldToScreenX(7)-6, originY+12);
+            ctx.fillText('7', originX+6, worldToScreenY(7)-4);
+            ctx.fillText('-7', originX+6, worldToScreenY(-7)-4);
+            ctx.restore();
+        }
+        
+        function drawGraph() {
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#3b82f6';
+            ctx.shadowBlur = 2;
+            ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            
+            if (currentGraph === 'line') {
+                // y = 2x + 1
+                for (let sx = 0; sx <= width; sx++) {
+                    let wx = screenToWorldX(sx);
+                    let wy = 2 * wx + 1;
+                    let sy = worldToScreenY(wy);
+                    if (sx === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+            } 
+            else if (currentGraph === 'parabola') {
+                // y = x^2
+                for (let sx = 0; sx <= width; sx++) {
+                    let wx = screenToWorldX(sx);
+                    let wy = wx * wx;
+                    let sy = worldToScreenY(wy);
+                    if (sx === 0) ctx.moveTo(sx, sy);
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+            }
+            else if (currentGraph === 'circle') {
+                // x² + y² = 9  -> upper and lower halves
+                ctx.beginPath();
+                for (let sx = 0; sx <= width; sx++) {
+                    let wx = screenToWorldX(sx);
+                    if (Math.abs(wx) <= 3.01) {
+                        let yPos = Math.sqrt(9 - wx*wx);
+                        let sy = worldToScreenY(yPos);
+                        if (sx === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    } else {
+                        ctx.moveTo(sx, worldToScreenY(0));
+                    }
+                }
+                ctx.stroke();
+                ctx.beginPath();
+                for (let sx = 0; sx <= width; sx++) {
+                    let wx = screenToWorldX(sx);
+                    if (Math.abs(wx) <= 3.01) {
+                        let yNeg = -Math.sqrt(9 - wx*wx);
+                        let sy = worldToScreenY(yNeg);
+                        if (sx === 0) ctx.moveTo(sx, sy);
+                        else ctx.lineTo(sx, sy);
+                    }
+                }
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        function drawVerticalLine() {
+            const screenX = worldToScreenX(vLineX);
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([10, 8]);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#f59e0b';
+            ctx.moveTo(screenX, 0);
+            ctx.lineTo(screenX, height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            // glowing handle
+            ctx.beginPath();
+            ctx.arc(screenX, originY, 10, 0, Math.PI*2);
+            ctx.fillStyle = '#fbbf24';
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.fillStyle = '#b45309';
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText('⤍', screenX-6, originY+4);
+            ctx.restore();
+        }
+        
+        function drawIntersectionDots() {
+            if (!intersections.length) return;
+            ctx.save();
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = '#ef4444';
+            for (let p of intersections) {
+                let sx = worldToScreenX(p.x);
+                let sy = worldToScreenY(p.y);
+                ctx.beginPath();
+                ctx.arc(sx, sy, 8, 0, Math.PI*2);
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(sx, sy, 3, 0, Math.PI*2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        
+        // ---- update based on pointer (drag vertical line) ----
+        function handlePointerMove(clientX, clientY) {
+            if (!draggingLine) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleCanvas = canvas.width / rect.width;
+            let canvasX = (clientX - rect.left) * scaleCanvas;
+            canvasX = Math.min(width, Math.max(0, canvasX));
+            const worldX = screenToWorldX(canvasX);
+            updateVerticalLine(worldX);
+        }
+        
+        function onDragStart(e) {
+            e.preventDefault();
+            draggingLine = true;
+            // get coords
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            const rect = canvas.getBoundingClientRect();
+            const scaleCanvas = canvas.width / rect.width;
+            let canvasX = (clientX - rect.left) * scaleCanvas;
+            canvasX = Math.min(width, Math.max(0, canvasX));
+            const worldX = screenToWorldX(canvasX);
+            updateVerticalLine(worldX);
+        }
+        
+        function onDragMove(e) {
+            if (!draggingLine) return;
+            e.preventDefault();
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            handlePointerMove(clientX, clientY);
+        }
+        
+        function onDragEnd(e) {
+            draggingLine = false;
+        }
+        
+        // ---- switch graph type, reset vertical line position to zero for clarity, recompute ----
+        function setGraph(type) {
+            currentGraph = type;
+            // update active button UI
+            document.querySelectorAll('.graph-btn').forEach(btn => {
+                if (btn.getAttribute('data-graph') === type) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            // re-evaluate intersections at current vertical line x (vLineX)
+            intersections = computeIntersections();
+            const count = intersections.length;
+            intersectCountSpan.innerText = count;
+            
+            let isFunc = (type === 'line' || type === 'parabola');
+            if (type === 'circle') isFunc = false;
+            
+            if (isFunc) {
+                functionStatusSpan.innerText = "✅ IS A FUNCTION (Passes Vertical Line Test)";
+                functionBadgeDiv.classList.remove('function-fail');
+                functionBadgeDiv.classList.add('function-pass');
+            } else {
+                functionStatusSpan.innerText = "❌ NOT A FUNCTION (Vertical Line Test Failed)";
+                functionBadgeDiv.classList.remove('function-pass');
+                functionBadgeDiv.classList.add('function-fail');
+            }
+            drawCanvas();
+        }
+        
+        // ---- reset and attach events, resize ----
+        function resizeCanvasAndRedraw() {
+            canvas.width = 800;
+            canvas.height = 800;
+            width = 800;
+            height = 800;
+            originX = width/2;
+            originY = height/2;
+            scale = 35;
+            rangeMin = -7.5;
+            rangeMax = 7.5;
+            // keep vLineX within range
+            vLineX = Math.min(rangeMax, Math.max(rangeMin, vLineX));
+            intersections = computeIntersections();
+            drawCanvas();
+        }
+        
+        function initEvents() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            window.addEventListener('touchmove', onDragMove, { passive: false });
+            window.addEventListener('touchend', onDragEnd);
+        }
+        
+        function init() {
+            resizeCanvasAndRedraw();
+            initEvents();
+            // initial vertical line at x=0
+            updateVerticalLine(0);
+            // graph buttons
+            document.querySelectorAll('.graph-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const graphType = btn.getAttribute('data-graph');
+                    setGraph(graphType);
+                    // after switching graph, recompute intersections at current vLineX
+                    intersections = computeIntersections();
+                    const cnt = intersections.length;
+                    intersectCountSpan.innerText = cnt;
+                    drawCanvas();
+                });
+            });
+            window.addEventListener('resize', () => {
+                // keep canvas visually responsive but buffer unchanged
+                drawCanvas();
+            });
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

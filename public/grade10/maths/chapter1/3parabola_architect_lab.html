@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Parabola Architect Lab: Exploring y = a·x²</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0b1120 0%, #1a2639 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+        }
+
+        .dashboard {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(15, 25, 45, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 2.5rem;
+            padding: 1.2rem;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .canvas-container {
+            background: #0f172a;
+            border-radius: 2rem;
+            padding: 0.5rem;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.4);
+            margin-bottom: 1.5rem;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefcf5;
+            border-radius: 1.5rem;
+            cursor: pointer;
+        }
+
+        .control-panel {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 1.2rem 1.8rem;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .equation-display {
+            background: #0f172a;
+            padding: 0.8rem 1.2rem;
+            border-radius: 1.8rem;
+            text-align: center;
+            margin-bottom: 1.2rem;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .equation {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: #38bdf8;
+            letter-spacing: 1px;
+        }
+
+        .equation span {
+            color: #facc15;
+            font-size: 2rem;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            color: #e2e8f0;
+            font-weight: 500;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, #3b82f6, #facc15, #ef4444);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 28px;
+            height: 28px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 12px #facc15;
+            border: 2px solid #f59e0b;
+        }
+
+        .a-value {
+            background: #1e293b;
+            display: inline-block;
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #facc15;
+        }
+
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #0f172a80;
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+        }
+
+        .legend-color {
+            width: 28px;
+            height: 4px;
+            border-radius: 4px;
+        }
+
+        .legend-color.blue {
+            background: #3b82f6;
+            height: 3px;
+            box-shadow: 0 0 4px #3b82f6;
+        }
+        .legend-color.gray {
+            background: #94a3b8;
+            height: 2px;
+        }
+
+        .insight {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: #cbd5e6;
+            background: #1e293b;
+            padding: 0.4rem;
+            border-radius: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .equation {
+                font-size: 1.2rem;
+            }
+            .equation span {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="canvas-container">
+        <canvas id="parabolaCanvas" width="900" height="900" style="width:100%; height:auto; max-width:900px; margin:0 auto; display:block"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="equation-display">
+            <div class="equation">
+                y = <span id="aValueDisplay">1.00</span> · x²
+            </div>
+            <div style="font-size:0.7rem; color:#94a3b8; margin-top:6px;">Curvature coefficient (a)</div>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-label">
+                <span>📉 Narrow / Opens Down</span>
+                <span class="a-value" id="sliderReadout">a = 1.00</span>
+                <span>Opens Up / Wide ➔</span>
+            </div>
+            <input type="range" id="aSlider" min="-3" max="3" step="0.02" value="1">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color blue"></div><span>🔵 y = a·x² (active)</span></div>
+            <div class="legend-item"><div class="legend-color gray"></div><span>⚪ y = x² (reference "ghost")</span></div>
+            <div class="legend-item"><span>📐 Slider changes 'a' → width & direction</span></div>
+        </div>
+        <div class="insight">
+            💡 <strong>Architect's tip:</strong> |a| > 1 = narrower & steeper • |a| < 1 = wider & flatter • a negative = 🫢 frown (opens down)
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // canvas setup
+        const canvas = document.getElementById('parabolaCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // dimensions and coordinate system
+        let width = 900, height = 900;
+        let originX = width/2;
+        let originY = height/2;
+        let scale = 45;          // 45px per unit → range -10 to 10 visible
+        let rangeMin = -9.5, rangeMax = 9.5;
+        
+        // current 'a' coefficient
+        let aValue = 1.0;
+        
+        // DOM elements
+        const aSlider = document.getElementById('aSlider');
+        const aValueDisplaySpan = document.getElementById('aValueDisplay');
+        const sliderReadoutSpan = document.getElementById('sliderReadout');
+        
+        // ----- conversion helpers -----
+        function worldToScreenX(x) {
+            return originX + x * scale;
+        }
+        
+        function worldToScreenY(y) {
+            return originY - y * scale;
+        }
+        
+        // ----- draw reference parabola y = x² (light gray ghost) -----
+        function drawReferenceParabola() {
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#94a3b8';
+            ctx.setLineDash([6, 8]);
+            ctx.shadowBlur = 0;
+            
+            let first = true;
+            // iterate over screen pixels for smoothness
+            for (let px = 0; px <= width; px++) {
+                let worldX = (px - originX) / scale;
+                let worldY = worldX * worldX;
+                let py = worldToScreenY(worldY);
+                if (py >= 0 && py <= height) {
+                    if (first) {
+                        ctx.moveTo(px, py);
+                        first = false;
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                } else {
+                    first = true;
+                    ctx.moveTo(px, py);
+                }
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+        
+        // ----- draw active parabola y = a * x² (bold, dynamic) -----
+        function drawActiveParabola() {
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = 3.5;
+            ctx.strokeStyle = '#3b82f6';
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = '#3b82f6';
+            
+            let first = true;
+            for (let px = 0; px <= width; px++) {
+                let worldX = (px - originX) / scale;
+                let worldY = aValue * worldX * worldX;
+                let py = worldToScreenY(worldY);
+                // clip to canvas
+                if (py >= 0 && py <= height) {
+                    if (first) {
+                        ctx.moveTo(px, py);
+                        first = false;
+                    } else {
+                        ctx.lineTo(px, py);
+                    }
+                } else {
+                    first = true;
+                    ctx.moveTo(px, py);
+                }
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        // ----- draw grid and axes, plus labels for quadrants, origin -----
+        function drawGridAndAxes() {
+            ctx.save();
+            ctx.strokeStyle = '#cbd5e180';
+            ctx.lineWidth = 0.6;
+            
+            // vertical grid lines
+            for (let x = -9; x <= 9; x += 1) {
+                if (Math.abs(x) < 0.01) continue;
+                let sx = worldToScreenX(x);
+                ctx.beginPath();
+                ctx.moveTo(sx, 0);
+                ctx.lineTo(sx, height);
+                ctx.stroke();
+            }
+            // horizontal grid lines
+            for (let y = -9; y <= 9; y += 1) {
+                if (Math.abs(y) < 0.01) continue;
+                let sy = worldToScreenY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, sy);
+                ctx.lineTo(width, sy);
+                ctx.stroke();
+            }
+            
+            // axes (bold)
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#1e293b';
+            ctx.moveTo(0, originY);
+            ctx.lineTo(width, originY);
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, height);
+            ctx.stroke();
+            
+            // arrows
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.moveTo(width-10, originY-4);
+            ctx.lineTo(width, originY);
+            ctx.lineTo(width-10, originY+4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(originX-4, 10);
+            ctx.lineTo(originX, 0);
+            ctx.lineTo(originX+4, 10);
+            ctx.fill();
+            
+            // labels
+            ctx.font = 'bold 14px "Segoe UI"';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText('x', width-12, originY-6);
+            ctx.fillText('y', originX+8, 16);
+            ctx.fillStyle = '#475569';
+            ctx.font = '12px monospace';
+            ctx.fillText('O(0,0)', originX+6, originY-8);
+            
+            // mark some references
+            ctx.fillStyle = '#64748b';
+            ctx.font = '10px monospace';
+            for (let i = -8; i <= 8; i+=2) {
+                if(i===0) continue;
+                ctx.fillText(i, worldToScreenX(i)-6, originY+12);
+                ctx.fillText(i, originX+8, worldToScreenY(i)-4);
+            }
+            ctx.restore();
+        }
+        
+        // optional: extra visual highlight at vertex (0,0) and dynamic effect
+        function drawVertexMarker() {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(originX, originY, 6, 0, Math.PI*2);
+            ctx.fillStyle = '#facc1580';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(originX, originY, 2.5, 0, Math.PI*2);
+            ctx.fillStyle = '#f97316';
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // full draw routine
+        function drawEverything() {
+            ctx.clearRect(0, 0, width, height);
+            drawGridAndAxes();
+            drawReferenceParabola();     // ghost y = x²
+            drawActiveParabola();        // dynamic y = a·x²
+            drawVertexMarker();          // highlight origin vertex
+            // add small text annotation about current a effect
+            ctx.font = 'bold 11px "Segoe UI"';
+            ctx.fillStyle = '#334155';
+            ctx.shadowBlur = 0;
+            let effectText = "";
+            if (Math.abs(aValue) > 1) effectText = "↗️ Narrower & steeper";
+            else if (Math.abs(aValue) < 1 && aValue !== 0) effectText = "↔️ Wider & flatter";
+            else if (aValue === 0) effectText = "— Flat line (degenerate)";
+            if (aValue < 0) effectText = "🔻 Opens downward (frown)";
+            else if (aValue > 0) effectText = "🟢 Opens upward (smile) " + effectText;
+            if (aValue !== 0 && Math.abs(aValue) !== 1 && Math.abs(aValue) !== 0) {
+                // show combined
+            }
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(15, height-45, 220, 32);
+            ctx.fillStyle = '#facc15';
+            ctx.fillText(effectText || "|a| controls width & direction", 22, height-23);
+        }
+        
+        // ----- update slider and refresh parabola + equation label -----
+        function updateCoefficient(value) {
+            aValue = parseFloat(value);
+            // update displays
+            aValueDisplaySpan.innerText = aValue.toFixed(2);
+            sliderReadoutSpan.innerText = `a = ${aValue.toFixed(2)}`;
+            drawEverything();
+        }
+        
+        // ----- slider event binding (supports touch & mouse)-----
+        function initSlider() {
+            aSlider.addEventListener('input', (e) => {
+                updateCoefficient(e.target.value);
+            });
+            // initial draw with a=1
+            updateCoefficient(aSlider.value);
+        }
+        
+        // ----- handle canvas resize (maintain crisp 900x900 but responsive display)-----
+        function handleCanvasScaling() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(900, container.clientWidth);
+            canvas.style.width = `${maxWidth}px`;
+            canvas.style.height = 'auto';
+            // keep actual buffer high-res
+            canvas.width = 900;
+            canvas.height = 900;
+            width = 900;
+            height = 900;
+            originX = width/2;
+            originY = height/2;
+            scale = 45;
+            drawEverything();
+        }
+        
+        // ----- window resize observer -----
+        window.addEventListener('resize', () => {
+            handleCanvasScaling();
+        });
+        
+        // additional: double-tap reset to a=1
+        function addResetGesture() {
+            const slider = aSlider;
+            // reset on canvas double click/tap
+            canvas.addEventListener('dblclick', (e) => {
+                aSlider.value = "1";
+                updateCoefficient(1);
+                e.preventDefault();
+            });
+            // also provide reset hint via small label: not needed but nice
+        }
+        
+        // animate any extra smoothness on slider (already smooth)
+        function init() {
+            handleCanvasScaling();
+            initSlider();
+            addResetGesture();
+            // optional initial description
+            drawEverything();
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

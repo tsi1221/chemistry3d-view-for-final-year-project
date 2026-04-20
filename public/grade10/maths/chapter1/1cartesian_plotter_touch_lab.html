@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cartesian Quest: Interactive Coordinate Plane</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* Prevents accidental text selection while dragging */
+        }
+
+        body {
+            background: linear-gradient(145deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            padding: 20px;
+        }
+
+        /* Main container */
+        .dashboard {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(2px);
+            border-radius: 3rem;
+            padding: 1.2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        /* Canvas wrapper for responsive scaling */
+        .canvas-container {
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+            padding: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefefe;
+            border-radius: 1.5rem;
+            cursor: grab;
+            touch-action: none; /* Improves touch dragging */
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Control panel - modern glassmorphism */
+        .controls {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+
+        .coord-panel {
+            background: #1e293b;
+            color: white;
+            border-radius: 2rem;
+            padding: 0.5rem 1.2rem;
+            display: inline-flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 1.4rem;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .coord-panel span {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #cbd5e1;
+        }
+
+        .coord-value {
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+            background: #0f172a;
+            padding: 0 0.6rem;
+            border-radius: 1.2rem;
+        }
+
+        .abscissa-ord {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8rem;
+            margin-top: 0.2rem;
+            justify-content: center;
+        }
+
+        .badge {
+            background: #334155;
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+
+        button {
+            background: #ffffffcc;
+            backdrop-filter: blur(4px);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            font-family: inherit;
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        .quadrant-btn {
+            background: #f1f5f9;
+            font-weight: 700;
+        }
+
+        .plot-section {
+            display: flex;
+            gap: 0.5rem;
+            background: #eef2ff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 3rem;
+            align-items: center;
+        }
+
+        .plot-section input {
+            width: 70px;
+            padding: 0.5rem;
+            border-radius: 2rem;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            font-weight: 500;
+            font-size: 1rem;
+            background: white;
+            font-family: monospace;
+        }
+
+        .reset-btn {
+            background: #f97316;
+            color: white;
+            box-shadow: 0 4px 8px rgba(249,115,22,0.2);
+        }
+
+        .instruction {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 1rem;
+            color: #334155;
+            background: #ffffffaa;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            backdrop-filter: blur(4px);
+        }
+
+        @media (max-width: 700px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .coord-panel {
+                justify-content: center;
+            }
+            .plot-section {
+                justify-content: center;
+            }
+            .button-group {
+                justify-content: center;
+            }
+            .coord-value {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="canvas-container">
+        <canvas id="gridCanvas" width="900" height="900" style="width:100%; height:auto; max-width:900px; margin:0 auto; display:block"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="coord-panel">
+            <span>📍 P(</span>
+            <span class="coord-value" id="xCoord">0.0</span>
+            <span>,</span>
+            <span class="coord-value" id="yCoord">0.0</span>
+            <span>)</span>
+            <div class="abscissa-ord">
+                <div class="badge">📐 Abscissa (x)</div>
+                <div class="badge">📏 Ordinate (y)</div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="quadrant-btn" data-q="1">✨ Q1 (+,+)</button>
+            <button class="quadrant-btn" data-q="2">✨ Q2 (-,+)</button>
+            <button class="quadrant-btn" data-q="3">✨ Q3 (-,-)</button>
+            <button class="quadrant-btn" data-q="4">✨ Q4 (+,-)</button>
+        </div>
+
+        <div class="plot-section">
+            <span>✏️ Plot (x,y):</span>
+            <input type="number" id="inputX" value="3" step="0.5" placeholder="x">
+            <input type="number" id="inputY" value="2" step="0.5" placeholder="y">
+            <button id="plotBtn">🎯 Plot & glide</button>
+        </div>
+
+        <button id="resetOriginBtn" class="reset-btn">🔄 Reset to Origin</button>
+    </div>
+    <div class="instruction">
+        💡 Drag the glowing point • Projection lines update live • Quadrants highlight automatically • GPS style grid
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- DOM elements -----
+        const canvas = document.getElementById('gridCanvas');
+        const ctx = canvas.getContext('2d');
+        const xCoordSpan = document.getElementById('xCoord');
+        const yCoordSpan = document.getElementById('yCoord');
+
+        // ----- State -----
+        let point = { x: 0, y: 0 };        // logical coordinates (cartesian)
+        let targetPoint = { x: 0, y: 0 };   // for smooth animation
+        let animating = false;
+        let animationId = null;
+
+        // canvas dimensions & transformation
+        let canvasWidth = 900, canvasHeight = 900;
+        let originX = 450, originY = 450;
+        let scale = 45;            // 45px per unit (covers range -10 to 10 approx)
+        let halfRange = 10;        // visible from -10 to +10
+
+        // drag handling
+        let dragging = false;
+
+        // ----- Helper: update logical coordinates from canvas pixel (touch/mouse)
+        function pixelToCartesian(px, py) {
+            let dx = (px - originX) / scale;
+            let dy = (originY - py) / scale;   // y inverted because canvas Y+ is down
+            return { x: dx, y: dy };
+        }
+
+        // clamp point inside visible range (-10..10) but also allow slight edge? keep inside
+        function clampPoint(p) {
+            let maxCoord = halfRange;
+            let minCoord = -halfRange;
+            return {
+                x: Math.min(maxCoord, Math.max(minCoord, p.x)),
+                y: Math.min(maxCoord, Math.max(minCoord, p.y))
+            };
+        }
+
+        // update point & reflect UI
+        function setPointImmediately(newX, newY) {
+            let clamped = clampPoint({ x: newX, y: newY });
+            point.x = clamped.x;
+            point.y = clamped.y;
+            targetPoint.x = point.x;
+            targetPoint.y = point.y;
+            updateCoordDisplay();
+            drawCanvas(); // immediate redraw
+        }
+
+        // smooth animation to targetPoint (used by buttons)
+        function startSmoothAnimation(toX, toY) {
+            if (animationId) cancelAnimationFrame(animationId);
+            const clampedTarget = clampPoint({ x: toX, y: toY });
+            targetPoint.x = clampedTarget.x;
+            targetPoint.y = clampedTarget.y;
+
+            const startX = point.x;
+            const startY = point.y;
+            const diffX = targetPoint.x - startX;
+            const diffY = targetPoint.y - startY;
+            const duration = 380; // ms
+            const startTime = performance.now();
+
+            function step(now) {
+                const elapsed = now - startTime;
+                let t = Math.min(1, elapsed / duration);
+                // easeOutCubic for nice glide
+                const ease = 1 - Math.pow(1 - t, 3);
+                point.x = startX + diffX * ease;
+                point.y = startY + diffY * ease;
+                updateCoordDisplay();
+                drawCanvas();
+                if (t < 1) {
+                    animationId = requestAnimationFrame(step);
+                } else {
+                    point.x = targetPoint.x;
+                    point.y = targetPoint.y;
+                    updateCoordDisplay();
+                    drawCanvas();
+                    animationId = null;
+                }
+            }
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(step);
+        }
+
+        // update text readouts (abscissa/ordinate)
+        function updateCoordDisplay() {
+            xCoordSpan.innerText = point.x.toFixed(2);
+            yCoordSpan.innerText = point.y.toFixed(2);
+        }
+
+        // ----- drawing routines (clean blueprint grid + point + projections)
+        function drawCanvas() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // 1. soft graph paper background
+            drawGridAndAxes();
+
+            // 2. Dotted projection lines from point to axes
+            const px = originX + point.x * scale;
+            const py = originY - point.y * scale;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.setLineDash([8, 6]);
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2;
+            // vertical projection to X-axis (down to horizontal axis)
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(px, originY);
+            ctx.stroke();
+            // horizontal projection to Y-axis
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(originX, py);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 3. draw the GLOWING draggable point
+            ctx.shadowColor = 'rgba(59,130,246,0.6)';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.arc(px, py, 12, 0, Math.PI * 2);
+            ctx.fillStyle = '#facc15';
+            ctx.fill();
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.arc(px, py, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#f97316';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(px, py, 4, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.fillStyle = '#1e293b';
+            ctx.font = 'bold 14px "Segoe UI"';
+            ctx.shadowBlur = 0;
+            ctx.fillText("P", px-5, py-8);
+
+            // extra: show quadrant highlight subtle background?
+            highlightQuadrantGlow(point.x, point.y);
+        }
+
+        function drawGridAndAxes() {
+            const step = 1; // grid every 1 unit
+            const start = -halfRange;
+            const end = halfRange;
+
+            // light blue grid lines
+            ctx.save();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 0.8;
+            // vertical lines
+            for (let i = start; i <= end; i += step) {
+                if (Math.abs(i) < 0.01) continue; // axis drawn separately
+                const xPos = originX + i * scale;
+                ctx.beginPath();
+                ctx.moveTo(xPos, 0);
+                ctx.lineTo(xPos, canvasHeight);
+                ctx.stroke();
+            }
+            // horizontal lines
+            for (let i = start; i <= end; i += step) {
+                if (Math.abs(i) < 0.01) continue;
+                const yPos = originY - i * scale;
+                ctx.beginPath();
+                ctx.moveTo(0, yPos);
+                ctx.lineTo(canvasWidth, yPos);
+                ctx.stroke();
+            }
+
+            // bold axes
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#1e293b';
+            // X-axis
+            ctx.moveTo(0, originY);
+            ctx.lineTo(canvasWidth, originY);
+            // Y-axis
+            ctx.moveTo(originX, 0);
+            ctx.lineTo(originX, canvasHeight);
+            ctx.stroke();
+
+            // arrows
+            ctx.fillStyle = '#0f172a';
+            // x arrow
+            ctx.beginPath();
+            ctx.moveTo(canvasWidth-8, originY-4);
+            ctx.lineTo(canvasWidth, originY);
+            ctx.lineTo(canvasWidth-8, originY+4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(originX-4, 8);
+            ctx.lineTo(originX, 0);
+            ctx.lineTo(originX+4, 8);
+            ctx.fill();
+
+            // label axes
+            ctx.font = 'bold 14px "Segoe UI"';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText('x', canvasWidth-12, originY-6);
+            ctx.fillText('y', originX+8, 16);
+            ctx.fillText('O(0,0)', originX+6, originY-6);
+
+            // Quadrant labels with sign rules
+            ctx.font = '12px "Segoe UI"';
+            ctx.fillStyle = '#64748b';
+            ctx.shadowBlur = 0;
+            // Q1 (top-right)
+            ctx.fillText('Quadrant I (+,+)', canvasWidth-100, 35);
+            // Q2 (top-left)
+            ctx.fillText('Quadrant II (-,+)', 20, 35);
+            // Q3 (bottom-left)
+            ctx.fillText('Quadrant III (-,-)', 20, canvasHeight-20);
+            // Q4 (bottom-right)
+            ctx.fillText('Quadrant IV (+,-)', canvasWidth-100, canvasHeight-20);
+        }
+
+        // highlight quadrant visually by a subtle translucent overlay when point moves
+        function highlightQuadrantGlow(x, y) {
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            ctx.fillStyle = '#38bdf8';
+            if (x > 0 && y > 0) {
+                ctx.fillRect(originX, 0, canvasWidth-originX, originY);
+            } else if (x < 0 && y > 0) {
+                ctx.fillRect(0, 0, originX, originY);
+            } else if (x < 0 && y < 0) {
+                ctx.fillRect(0, originY, originX, canvasHeight-originY);
+            } else if (x > 0 && y < 0) {
+                ctx.fillRect(originX, originY, canvasWidth-originX, canvasHeight-originY);
+            }
+            ctx.restore();
+        }
+
+        // ----- resize handler (responsive canvas)
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(900, container.clientWidth);
+            canvas.style.width = `${maxWidth}px`;
+            canvas.style.height = 'auto';
+            // maintain actual drawing buffer size 900x900 for crisp grid
+            canvas.width = 900;
+            canvas.height = 900;
+            canvasWidth = 900;
+            canvasHeight = 900;
+            originX = canvasWidth/2;
+            originY = canvasHeight/2;
+            scale = 45; // consistent range -10..10 fits: 20*45=900px
+            halfRange = 10;
+            drawCanvas();
+        }
+
+        // ----- drag handling (supports touch & mouse)
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;   // canvas buffer 900 / display width
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(canvasWidth, Math.max(0, canvasX));
+            canvasY = Math.min(canvasHeight, Math.max(0, canvasY));
+            return { canvasX, canvasY };
+        }
+
+        function onDragStart(e) {
+            e.preventDefault();
+            dragging = true;
+            const { canvasX, canvasY } = getCanvasCoords(e);
+            const cart = pixelToCartesian(canvasX, canvasY);
+            // cancel any ongoing animation for smooth direct drag
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            setPointImmediately(cart.x, cart.y);
+        }
+
+        function onDragMove(e) {
+            if (!dragging) return;
+            e.preventDefault();
+            const { canvasX, canvasY } = getCanvasCoords(e);
+            const cart = pixelToCartesian(canvasX, canvasY);
+            setPointImmediately(cart.x, cart.y);
+        }
+
+        function onDragEnd(e) {
+            dragging = false;
+        }
+
+        // ----- attach listeners
+        function initEvents() {
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            window.addEventListener('touchmove', onDragMove, { passive: false });
+            window.addEventListener('touchend', onDragEnd);
+            canvas.addEventListener('dragstart', (e) => e.preventDefault());
+        }
+
+        // ----- Quadrant jump with random point inside
+        function jumpToQuadrant(q) {
+            let randX, randY;
+            switch(q) {
+                case 1: randX = Math.random() * 7 + 1; randY = Math.random() * 7 + 1; break; // (1..8)
+                case 2: randX = -Math.random() * 7 - 1; randY = Math.random() * 7 + 1; break;
+                case 3: randX = -Math.random() * 7 - 1; randY = -Math.random() * 7 - 1; break;
+                case 4: randX = Math.random() * 7 + 1; randY = -Math.random() * 7 - 1; break;
+                default: randX=0; randY=0;
+            }
+            startSmoothAnimation(randX, randY);
+        }
+
+        // ----- reset to origin (0,0)
+        function resetToOrigin() {
+            startSmoothAnimation(0, 0);
+        }
+
+        // ----- plot via inputs
+        function plotFromInputs() {
+            let rawX = parseFloat(document.getElementById('inputX').value);
+            let rawY = parseFloat(document.getElementById('inputY').value);
+            if (isNaN(rawX)) rawX = 0;
+            if (isNaN(rawY)) rawY = 0;
+            rawX = Math.min(halfRange, Math.max(-halfRange, rawX));
+            rawY = Math.min(halfRange, Math.max(-halfRange, rawY));
+            startSmoothAnimation(rawX, rawY);
+        }
+
+        // ----- window resize observer
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            drawCanvas();
+        });
+
+        // ----- initialization
+        function init() {
+            resizeCanvas();
+            initEvents();
+            // set default point at origin
+            setPointImmediately(0, 0);
+            drawCanvas();
+
+            // quadrant buttons
+            document.querySelectorAll('.quadrant-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const qVal = parseInt(btn.getAttribute('data-q'), 10);
+                    jumpToQuadrant(qVal);
+                });
+            });
+            document.getElementById('resetOriginBtn').addEventListener('click', resetToOrigin);
+            document.getElementById('plotBtn').addEventListener('click', plotFromInputs);
+            // optional: update input fields from current point? not needed but user friendly
+        }
+
+        init();
+    })();
+</script>
+</body>
+</html>
