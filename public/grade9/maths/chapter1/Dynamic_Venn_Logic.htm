@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Dynamic Venn Logic</title>
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --bg-gradient: none;
+            --cyan: #3b82f6;
+            --magenta: #ec489a;
+            --yellow: #f59e0b;
+            --lime: #10b981;
+            --orange: #f97316;
+            --panel: rgba(255, 255, 255, 0.96);
+            --glass-edge: rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            background: var(--bg); 
+            font-family: 'Inter', system-ui, sans-serif; 
+            color: #1e293b; 
+        }
+        
+        canvas { 
+            display: block; 
+            cursor: grab;
+            touch-action: none;
+        }
+        
+        canvas:active { cursor: grabbing; }
+
+        .ui-panel {
+            position: absolute; 
+            top: 20px; 
+            left: 20px;
+            background: var(--panel); 
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-edge);
+            padding: 16px;
+            border-radius: 24px;
+            width: min(280px, calc(100% - 40px));
+            max-height: 88vh;
+            overflow-y: auto;
+            z-index: 20;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.04);
+            scrollbar-width: thin;
+        }
+
+        .ui-panel::-webkit-scrollbar { width: 4px; }
+        .ui-panel::-webkit-scrollbar-track { background: #eef2f6; border-radius: 4px; }
+        .ui-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .section-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #5b6e8c;
+            margin: 12px 0 8px 0;
+            border-bottom: 1px solid #eef2f6;
+            padding-bottom: 4px;
+        }
+
+        .circle-list {
+            margin-bottom: 12px;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .circle-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border: 1px solid #eef2f6;
+            transition: all 0.2s;
+        }
+
+        .circle-item.selected-primary {
+            border-left: 3px solid var(--cyan);
+            background: #f0f9ff;
+        }
+
+        .circle-item.selected-secondary {
+            border-right: 3px solid var(--magenta);
+        }
+
+        .circle-color {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            margin-right: 10px;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 0 6px rgba(0,0,0,0.05);
+        }
+
+        .circle-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+
+        .circle-stats {
+            font-size: 0.65rem;
+            color: #5b6e8c;
+            margin-left: 8px;
+        }
+
+        .circle-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #5b6e8c;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 4px 6px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover { background: #f1f5f9; color: #1e293b; }
+        .icon-btn.delete:hover { color: #e11d48; }
+
+        .add-circle {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .add-circle input {
+            flex: 1;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 8px 12px;
+            color: #1e293b;
+            font-size: 0.8rem;
+        }
+
+        .add-circle input:focus { outline: none; border-color: var(--cyan); }
+
+        .btn {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 6px 14px;
+            color: #1e293b;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { background: #e6edf5; }
+
+        .op-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .op-btn {
+            flex: 1;
+            min-width: 65px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            padding: 8px 6px;
+            border-radius: 14px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .op-btn:hover { border-color: var(--cyan); background: #f8fafc; }
+        .op-btn.active { background: #1e293b; color: white; border-color: #1e293b; }
+
+        .relation-panel {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 10px;
+            margin-top: 12px;
+            font-size: 0.7rem;
+            border: 1px solid #eef2f6;
+        }
+
+        .relation-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #eef2f6;
+        }
+
+        .relation-name { color: #5b6e8c; }
+        .relation-value { font-family: monospace; font-weight: bold; color: #1e293b; }
+
+        .notation-box {
+            position: absolute;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.6rem;
+            font-family: serif;
+            font-style: italic;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(12px);
+            padding: 8px 24px;
+            border-radius: 60px;
+            border: 1px solid rgba(0,0,0,0.08);
+            white-space: nowrap;
+            z-index: 20;
+            pointer-events: none;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: #1e293b;
+        }
+
+        .touch-hint {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-size: 0.6rem;
+            color: #5b6e8c;
+            pointer-events: none;
+            z-index: 20;
+            border: 1px solid #eef2f6;
+        }
+
+        @media (max-width: 680px) {
+            .ui-panel { width: min(260px, calc(100% - 30px)); padding: 12px; top: 12px; left: 12px; max-height: 82vh; }
+            .notation-box { font-size: 1.1rem; padding: 5px 16px; bottom: 16px; white-space: nowrap; }
+            .op-btn { font-size: 0.6rem; min-width: 55px; }
+            .circle-name { font-size: 0.8rem; }
+            .circle-stats { font-size: 0.55rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="ui-panel">
+    <div class="section-title">✦ SETS (CIRCLES)</div>
+    <div class="circle-list" id="circleList"></div>
+    
+    <div class="add-circle">
+        <input type="text" id="newCircleName" placeholder="Name (e.g., C, D)" maxlength="3">
+        <button class="btn" id="addCircleBtn">+ Add Circle</button>
+    </div>
+
+    <div class="section-title">⚡ OPERATIONS</div>
+    <div class="op-buttons" id="opButtons">
+        <button class="op-btn" data-op="union">∪ Union</button>
+        <button class="op-btn" data-op="intersect">∩ Intersect</button>
+        <button class="op-btn" data-op="diff">− Diff (A-B)</button>
+        <button class="op-btn" data-op="symm">∆ Sym Diff</button>
+        <button class="op-btn" data-op="comp">∁ Complement</button>
+    </div>
+
+    <div class="section-title">📊 SET RELATIONS (Auto-calculated)</div>
+    <div class="relation-panel" id="relationPanel">
+        <div class="relation-item"><span class="relation-name">Total Sets:</span><span class="relation-value" id="totalSets">0</span></div>
+        <div class="relation-item"><span class="relation-name">A ∩ B (Intersection):</span><span class="relation-value" id="intersectionCard">-</span></div>
+        <div class="relation-item"><span class="relation-name">A ∪ B (Union):</span><span class="relation-value" id="unionCard">-</span></div>
+        <div class="relation-item"><span class="relation-name">A \ B (Difference):</span><span class="relation-value" id="diffCard">-</span></div>
+        <div class="relation-item"><span class="relation-name">Disjoint?</span><span class="relation-value" id="disjointStatus">-</span></div>
+        <div class="relation-item"><span class="relation-name">Subset (A⊆B):</span><span class="relation-value" id="subsetStatus">-</span></div>
+        <div class="relation-item"><span class="relation-name">Equal Sets:</span><span class="relation-value" id="equalStatus">-</span></div>
+    </div>
+    <div class="selected-info" id="selectedInfo" style="font-size:0.7rem; margin-top:8px; text-align:center; color:#5b6e8c;">
+        ⭐ Click circle = select A | 🔹 Shift+Click = select B
+    </div>
+</div>
+
+<div class="notation-box" id="notation">Select sets</div>
+<div class="touch-hint">👆 Tap to select • Drag to move circles</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const notationEl = document.getElementById('notation');
+        const circleListDiv = document.getElementById('circleList');
+        
+        // Data structures
+        let width, height;
+        let circles = [];
+        let nextId = 1;
+        let selectedA = null;
+        let selectedB = null;
+        let currentOp = 'union';
+        let isDragging = false;
+        let dragCircleId = null;
+        
+        // Store relationship data (recalculated on every change)
+        let currentRelations = {
+            intersectionSize: 0,
+            unionSize: 0,
+            diffSize: 0,
+            areDisjoint: false,
+            isSubset: false,
+            areEqual: false,
+            intersectionPercent: 0
+        };
+        
+        // Color palette (kept original but light mode friendly)
+        const colorPalette = [
+            { border: '#3b82f6', fill: 'rgba(59, 130, 246, 0.15)', glow: '#3b82f6', darkFill: 'rgba(59,130,246,0.3)' },
+            { border: '#ec489a', fill: 'rgba(236, 72, 153, 0.15)', glow: '#ec489a', darkFill: 'rgba(236,72,153,0.3)' },
+            { border: '#f59e0b', fill: 'rgba(245, 158, 11, 0.15)', glow: '#f59e0b', darkFill: 'rgba(245,158,11,0.3)' },
+            { border: '#10b981', fill: 'rgba(16, 185, 129, 0.15)', glow: '#10b981', darkFill: 'rgba(16,185,129,0.3)' },
+            { border: '#8b5cf6', fill: 'rgba(139, 92, 246, 0.15)', glow: '#8b5cf6', darkFill: 'rgba(139,92,246,0.3)' },
+            { border: '#ef4444', fill: 'rgba(239, 68, 68, 0.15)', glow: '#ef4444', darkFill: 'rgba(239,68,68,0.3)' },
+            { border: '#06b6d4', fill: 'rgba(6, 182, 212, 0.15)', glow: '#06b6d4', darkFill: 'rgba(6,182,212,0.3)' }
+        ];
+        
+        // ========== CORE: RECALCULATE ALL RELATIONS (UNCHANGED) ==========
+        function recalculateRelations() {
+            if (!selectedA || !selectedB) {
+                currentRelations = {
+                    intersectionSize: 0,
+                    unionSize: 0,
+                    diffSize: 0,
+                    areDisjoint: false,
+                    isSubset: false,
+                    areEqual: false,
+                    intersectionPercent: 0
+                };
+                updateRelationUI();
+                return;
+            }
+            
+            const A = selectedA;
+            const B = selectedB;
+            
+            // Calculate geometric overlap between two circles
+            const dx = A.x - B.x;
+            const dy = A.y - B.y;
+            const distance = Math.hypot(dx, dy);
+            const r1 = A.r;
+            const r2 = B.r;
+            
+            // Calculate intersection area (circle-circle intersection)
+            let intersectionArea = 0;
+            let overlapRatio = 0;
+            
+            if (distance >= r1 + r2) {
+                // No overlap
+                intersectionArea = 0;
+                overlapRatio = 0;
+            } else if (distance <= Math.abs(r1 - r2)) {
+                // One circle completely inside the other
+                intersectionArea = Math.PI * Math.min(r1, r2) * Math.min(r1, r2);
+                overlapRatio = (Math.min(r1, r2) * Math.min(r1, r2)) / (Math.max(r1, r2) * Math.max(r1, r2));
+            } else {
+                // Partial overlap
+                const d = distance;
+                const part1 = r1 * r1 * Math.acos((d*d + r1*r1 - r2*r2) / (2*d*r1));
+                const part2 = r2 * r2 * Math.acos((d*d + r2*r2 - r1*r1) / (2*d*r2));
+                const part3 = 0.5 * Math.sqrt((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2));
+                intersectionArea = part1 + part2 - part3;
+                overlapRatio = intersectionArea / (Math.PI * r1 * r1);
+            }
+            
+            const areaA = Math.PI * r1 * r1;
+            const areaB = Math.PI * r2 * r2;
+            const unionArea = areaA + areaB - intersectionArea;
+            const diffArea = areaA - intersectionArea;
+            
+            // Normalize as "cardinality" (normalized from 0 to 100 for visualization)
+            const normIntersection = Math.floor((intersectionArea / areaA) * 100);
+            const normUnion = Math.floor((unionArea / (areaA + areaB)) * 100);
+            const normDiff = Math.floor((diffArea / areaA) * 100);
+            
+            currentRelations = {
+                intersectionSize: Math.min(100, Math.max(0, normIntersection)),
+                unionSize: Math.min(100, Math.max(0, normUnion)),
+                diffSize: Math.min(100, Math.max(0, normDiff)),
+                areDisjoint: intersectionArea < 0.01,
+                isSubset: (distance + Math.min(r1, r2) <= Math.max(r1, r2) + 0.1),
+                areEqual: (Math.abs(r1 - r2) < 0.1 && distance < 0.1),
+                intersectionPercent: Math.floor((intersectionArea / areaA) * 100)
+            };
+            
+            updateRelationUI();
+        }
+        
+        function updateRelationUI() {
+            document.getElementById('totalSets').innerText = circles.length;
+            if (selectedA && selectedB) {
+                document.getElementById('intersectionCard').innerHTML = `${currentRelations.intersectionSize}% overlap`;
+                document.getElementById('unionCard').innerHTML = `${currentRelations.unionSize}% combined`;
+                document.getElementById('diffCard').innerHTML = `${currentRelations.diffSize}% (A only)`;
+                document.getElementById('disjointStatus').innerHTML = currentRelations.areDisjoint ? '✓ Yes (no overlap)' : '✗ No (overlapping)';
+                document.getElementById('subsetStatus').innerHTML = currentRelations.isSubset ? `✓ ${selectedA.name} ⊆ ${selectedB.name}` : `✗ Not subset`;
+                document.getElementById('equalStatus').innerHTML = currentRelations.areEqual ? `✓ ${selectedA.name} = ${selectedB.name}` : '✗ Not equal';
+            } else {
+                document.getElementById('intersectionCard').innerHTML = '-';
+                document.getElementById('unionCard').innerHTML = '-';
+                document.getElementById('diffCard').innerHTML = '-';
+                document.getElementById('disjointStatus').innerHTML = 'Select 2 sets';
+                document.getElementById('subsetStatus').innerHTML = 'Select 2 sets';
+                document.getElementById('equalStatus').innerHTML = 'Select 2 sets';
+            }
+            updateNotation();
+        }
+        
+        function updateNotation() {
+            if (!selectedA) {
+                notationEl.innerText = "Select a primary set (A)";
+                return;
+            }
+            if (currentOp === 'comp') {
+                notationEl.innerText = `${selectedA.name}' (Complement)`;
+            } else if (selectedB) {
+                const symbols = { union: '∪', intersect: '∩', diff: '−', symm: 'Δ' };
+                notationEl.innerText = `${selectedA.name} ${symbols[currentOp]} ${selectedB.name}`;
+            } else {
+                notationEl.innerText = `${selectedA.name} (need B for binary ops)`;
+            }
+        }
+        
+        // ========== CIRCLE MANAGEMENT (UNCHANGED) ==========
+        function addCircle(name, x, y, r = 125) {
+            const colorIdx = circles.length % colorPalette.length;
+            const newCircle = {
+                id: nextId++,
+                name: name.toUpperCase().substring(0, 3),
+                x: x,
+                y: y,
+                r: r,
+                color: colorPalette[colorIdx]
+            };
+            circles.push(newCircle);
+            renderCircleList();
+            recalculateRelations();
+        }
+        
+        function deleteCircle(id) {
+            const idx = circles.findIndex(c => c.id === id);
+            if (idx === -1) return;
+            circles.splice(idx, 1);
+            
+            if (selectedA && selectedA.id === id) selectedA = circles[0] || null;
+            if (selectedB && selectedB.id === id) selectedB = null;
+            if (selectedB === selectedA && circles.length > 1) selectedB = circles[1] || null;
+            if (circles.length === 1 && selectedA === null) selectedA = circles[0];
+            
+            renderCircleList();
+            recalculateRelations();
+        }
+        
+        function selectCircle(circle, isSecondary = false) {
+            if (!circle) return;
+            if (isSecondary) {
+                if (selectedA && circle.id === selectedA.id) return;
+                selectedB = circle;
+            } else {
+                selectedA = circle;
+                if (selectedB && selectedB.id === selectedA.id) selectedB = null;
+            }
+            renderCircleList();
+            recalculateRelations();
+        }
+        
+        function setOperation(op, btn) {
+            currentOp = op;
+            document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            updateNotation();
+        }
+        
+        // ========== IMPROVED VISUAL DRAWING WITH PROPER HIGHLIGHTING ==========
+        function drawBackground() {
+            // Light mode background
+            ctx.fillStyle = '#f5f7fb';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Subtle animated particles (kept for ambiance)
+            for (let i = 0; i < 100; i++) {
+                ctx.fillStyle = `rgba(0,0,0,0.03)`;
+                ctx.beginPath();
+                ctx.arc((i * 179) % width, (i * 263) % height, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawUniversalSet() {
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(40, 40, width - 80, height - 80);
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 0.8;
+            ctx.strokeRect(42, 42, width - 84, height - 84);
+        }
+        
+        function drawCircle(circle, isSelectedPrimary, isSelectedSecondary) {
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+            ctx.fillStyle = circle.color.fill;
+            ctx.fill();
+            
+            // Border styling
+            ctx.strokeStyle = isSelectedPrimary ? '#1e293b' : (isSelectedSecondary ? '#ec489a' : circle.color.border);
+            ctx.lineWidth = isSelectedPrimary || isSelectedSecondary ? 4 : 2.5;
+            ctx.stroke();
+            
+            // Glow
+            ctx.shadowBlur = isSelectedPrimary ? 12 : 6;
+            ctx.shadowColor = circle.color.glow;
+            ctx.beginPath();
+            ctx.arc(circle.x, circle.y, circle.r, 0, Math.PI * 2);
+            ctx.strokeStyle = circle.color.border;
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Label
+            ctx.font = `bold ${Math.max(20, Math.floor(circle.r * 0.22))}px "Inter", sans-serif`;
+            ctx.fillStyle = '#1e293b';
+            ctx.shadowBlur = 2;
+            ctx.fillText(circle.name, circle.x - 14, circle.y - circle.r * 0.62);
+            ctx.font = `${Math.max(11, Math.floor(circle.r * 0.13))}px monospace`;
+            ctx.fillStyle = '#5b6e8c';
+            ctx.fillText(`|${circle.name}|`, circle.x - 22, circle.y + circle.r * 0.55);
+            ctx.shadowBlur = 0;
+        }
+        
+        // Helper function to create clipping path for intersection
+        function clipToIntersection(A, B) {
+            ctx.beginPath();
+            ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.beginPath();
+            ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+            ctx.clip();
+        }
+        
+        // Helper to get the difference (A - B)
+        function clipToDifference(A, B) {
+            ctx.beginPath();
+            ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+            ctx.clip();
+            // Punch out B
+            ctx.beginPath();
+            ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        // Helper for symmetric difference (A Δ B)
+        function clipToSymmetricDifference(A, B) {
+            // Save current state
+            ctx.save();
+            
+            // Clear the intersection area
+            ctx.beginPath();
+            ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.beginPath();
+            ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillRect(0, 0, width, height);
+            
+            ctx.restore();
+            
+            // Now fill both circles (excluding the intersection which is now cleared)
+            ctx.beginPath();
+            ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(236, 72, 153, 0.4)';
+            ctx.fill();
+        }
+        
+        function shadeOperation() {
+            if (!selectedA) return;
+            const A = selectedA;
+            const B = selectedB;
+            
+            ctx.save();
+            
+            if (currentOp === 'union' && B) {
+                // Highlight both circles fully
+                ctx.beginPath();
+                ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(236, 72, 153, 0.35)';
+                ctx.fill();
+            } 
+            else if (currentOp === 'intersect' && B) {
+                // Highlight only intersection area
+                ctx.save();
+                clipToIntersection(A, B);
+                ctx.fillStyle = 'rgba(100, 100, 255, 0.5)';
+                ctx.fillRect(0, 0, width, height);
+                ctx.restore();
+            }
+            else if (currentOp === 'diff' && B) {
+                // Highlight A minus B
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+                ctx.clip();
+                // Punch out B
+                ctx.beginPath();
+                ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fill();
+                // Fill the remaining area
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.45)';
+                ctx.fillRect(0, 0, width, height);
+                ctx.restore();
+            }
+            else if (currentOp === 'symm' && B) {
+                // Symmetric difference: (A ∪ B) - (A ∩ B)
+                // First, fill both circles
+                ctx.beginPath();
+                ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(236, 72, 153, 0.4)';
+                ctx.fill();
+                
+                // Then remove the intersection
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+                ctx.clip();
+                ctx.beginPath();
+                ctx.arc(B.x, B.y, B.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                ctx.globalCompositeOperation = 'source-over';
+            }
+            else if (currentOp === 'comp') {
+                // Complement: everything outside A
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
+                ctx.fillRect(40, 40, width - 80, height - 80);
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+                // Draw border around complement region
+                ctx.beginPath();
+                ctx.arc(A.x, A.y, A.r, 0, Math.PI * 2);
+                ctx.strokeStyle = '#3b82f6';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+        
+        function draw() {
+            drawBackground();
+            drawUniversalSet();
+            
+            // Draw all circles first
+            circles.forEach(circle => {
+                const isPrimary = selectedA && selectedA.id === circle.id;
+                const isSecondary = selectedB && selectedB.id === circle.id;
+                drawCircle(circle, isPrimary, isSecondary);
+            });
+            
+            // Apply operation highlighting overlay
+            if (selectedA) shadeOperation();
+            
+            // Connection line between selected sets
+            if (selectedA && selectedB && currentOp !== 'comp') {
+                ctx.beginPath();
+                ctx.moveTo(selectedA.x, selectedA.y);
+                ctx.lineTo(selectedB.x, selectedB.y);
+                ctx.strokeStyle = `rgba(59,130,246,0.3)`;
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([8, 8]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        function animate() {
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        // ========== INPUT HANDLERS (UNCHANGED) ==========
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        }
+        
+        function findCircleAt(x, y) {
+            for (let i = circles.length - 1; i >= 0; i--) {
+                const c = circles[i];
+                if (Math.hypot(x - c.x, y - c.y) < c.r) return c;
+            }
+            return null;
+        }
+        
+        function handleStart(x, y, isShift) {
+            const circle = findCircleAt(x, y);
+            if (circle) {
+                if (isShift) selectCircle(circle, true);
+                else selectCircle(circle, false);
+                dragCircleId = circle.id;
+                isDragging = true;
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+        
+        function handleMove(x, y) {
+            if (isDragging && dragCircleId !== null) {
+                const circle = circles.find(c => c.id === dragCircleId);
+                if (circle) {
+                    circle.x = Math.min(Math.max(x, 40 + circle.r), width - 40 - circle.r);
+                    circle.y = Math.min(Math.max(y, 40 + circle.r), height - 40 - circle.r);
+                    recalculateRelations();
+                    renderCircleList();
+                }
+            }
+        }
+        
+        function handleEnd() {
+            isDragging = false;
+            dragCircleId = null;
+            canvas.style.cursor = 'grab';
+        }
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            circles.forEach(c => {
+                c.x = Math.min(Math.max(c.x, 40 + c.r), width - 40 - c.r);
+                c.y = Math.min(Math.max(c.y, 40 + c.r), height - 40 - c.r);
+            });
+            recalculateRelations();
+        }
+        
+        // UI rendering
+        function renderCircleList() {
+            circleListDiv.innerHTML = '';
+            circles.forEach(circle => {
+                const div = document.createElement('div');
+                div.className = `circle-item ${selectedA && selectedA.id === circle.id ? 'selected-primary' : ''} ${selectedB && selectedB.id === circle.id ? 'selected-secondary' : ''}`;
+                div.innerHTML = `
+                    <div class="circle-color" style="background: ${circle.color.border}; box-shadow: 0 0 8px ${circle.color.glow};"></div>
+                    <div class="circle-name">${circle.name}</div>
+                    <div class="circle-actions">
+                        <button class="icon-btn select-primary" data-id="${circle.id}" title="Set as A">⭐</button>
+                        <button class="icon-btn select-secondary" data-id="${circle.id}" title="Set as B">🔹</button>
+                        <button class="icon-btn delete" data-id="${circle.id}" title="Delete">🗑️</button>
+                    </div>
+                `;
+                circleListDiv.appendChild(div);
+            });
+            
+            document.querySelectorAll('.select-primary').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    const circle = circles.find(c => c.id === id);
+                    if (circle) selectCircle(circle, false);
+                });
+            });
+            document.querySelectorAll('.select-secondary').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    const circle = circles.find(c => c.id === id);
+                    if (circle) selectCircle(circle, true);
+                });
+            });
+            document.querySelectorAll('.delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    deleteCircle(id);
+                });
+            });
+        }
+        
+        // Event setup
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            const coords = getCanvasCoords(e);
+            handleStart(coords.x, coords.y, e.shiftKey);
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const coords = getCanvasCoords(e);
+            handleMove(coords.x, coords.y);
+        });
+        window.addEventListener('mouseup', () => handleEnd());
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const coords = getCanvasCoords(e);
+            handleStart(coords.x, coords.y, false);
+        }, { passive: false });
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging || !e.touches.length) return;
+            e.preventDefault();
+            const coords = getCanvasCoords(e);
+            handleMove(coords.x, coords.y);
+        }, { passive: false });
+        window.addEventListener('touchend', () => handleEnd());
+        window.addEventListener('touchcancel', () => handleEnd());
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        document.getElementById('addCircleBtn').addEventListener('click', () => {
+            const input = document.getElementById('newCircleName');
+            let name = input.value.trim();
+            if (!name) name = String.fromCharCode(65 + circles.length % 26);
+            if (name.length > 3) name = name.substring(0, 3);
+            let x = width/2 + (circles.length * 35 - 70);
+            let y = height/2 + (circles.length % 2 === 0 ? -40 : 40);
+            x = Math.min(Math.max(x, 100), width - 100);
+            y = Math.min(Math.max(y, 80), height - 80);
+            addCircle(name.toUpperCase(), x, y, 125);
+            input.value = '';
+        });
+        
+        document.querySelectorAll('.op-btn').forEach(btn => {
+            btn.addEventListener('click', () => setOperation(btn.dataset.op, btn));
+        });
+        
+        window.addEventListener('resize', () => resize());
+        
+        // Initialize
+        function init() {
+            resize();
+            circles = [];
+            nextId = 1;
+            addCircle('A', width/2 - 110, height/2, 130);
+            addCircle('B', width/2 + 100, height/2, 130);
+            selectedA = circles[0];
+            selectedB = circles[1];
+            setOperation('union', document.querySelector('.op-btn[data-op="union"]'));
+            recalculateRelations();
+            animate();
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equal Equivalent Universal Subset Proper-Subset Visualizer</title>
+    <style>
+        :root {
+            --bg-color: #0a0b10;
+            --u-bg: #11141d;
+            --text-color: #e0e6ed;
+            --accent-equal: #ffca28; /* Gold */
+            --accent-equiv: #00e5ff; /* Cyan */
+            --accent-subset: #7c4dff; /* Purple */
+            --panel-bg: rgba(20, 25, 35, 0.9);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: var(--bg-color);
+            color: var(--text-color); font-family: var(--font-family);
+            user-select: none;
+        }
+
+        #canvas { display: block; touch-action: none; }
+
+        /* UI Overlays */
+        .ui-layer {
+            position: absolute; inset: 0; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 20px; box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            border-radius: 12px; padding: 15px; pointer-events: auto;
+            backdrop-filter: blur(8px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Top Bar */
+        .header { align-self: center; display: flex; gap: 10px; align-items: center; }
+        h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; color: #888; }
+        
+        .mode-selector { display: flex; gap: 5px; }
+        .btn {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-color); padding: 8px 16px; border-radius: 6px;
+            cursor: pointer; transition: all 0.2s; font-size: 0.85rem; font-weight: 600;
+        }
+        .btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+        .btn.active { background: #fff; color: #000; border-color: #fff; }
+
+        /* Dynamic Notation Display */
+        .notation-display {
+            position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+            font-size: 2.5rem; text-align: center; pointer-events: auto;
+            text-shadow: 0 0 15px rgba(255,255,255,0.3);
+        }
+        .not-equal { color: #ff5252; }
+        .is-equal { color: var(--accent-equal); }
+        .is-equiv { color: var(--accent-equiv); }
+        .is-subset { color: var(--accent-subset); }
+
+        /* Footer Controls */
+        .footer { align-self: center; width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 10px; }
+        .control-group { display: none; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+        .control-group.active { display: grid; }
+        
+        .btn-action { width: 100%; }
+        .btn-equal { border-color: var(--accent-equal); color: var(--accent-equal); }
+        .btn-equal:hover { background: rgba(255, 202, 40, 0.1); }
+        .btn-equiv { border-color: var(--accent-equiv); color: var(--accent-equiv); }
+        .btn-equiv:hover { background: rgba(0, 229, 255, 0.1); }
+        .btn-subset { border-color: var(--accent-subset); color: var(--accent-subset); }
+        .btn-subset:hover { background: rgba(124, 77, 255, 0.1); }
+
+        /* Subset Info Panel */
+        .subset-info {
+            position: absolute; top: 150px; right: 20px;
+            width: 180px; font-family: monospace; font-size: 0.85rem;
+            color: #aaa; pointer-events: auto;
+        }
+        .subset-info div { margin-bottom: 5px; }
+        .subset-info span { color: var(--accent-subset); font-weight: bold; font-size: 1.1rem; }
+
+        /* Instructions Overlay */
+        .instructions-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 100; pointer-events: auto; transition: opacity 0.3s;
+        }
+        .instructions-overlay.hidden { opacity: 0; pointer-events: none; }
+        .instructions-content {
+            background: #111; border: 1px solid #333; border-radius: 12px;
+            padding: 30px; max-width: 500px; text-align: center;
+        }
+        .instructions-content h2 { color: var(--accent-equiv); margin-top: 0; }
+        .instructions-content p { line-height: 1.6; color: #bbb; margin-bottom: 25px; }
+
+        @media (max-width: 600px) {
+            .notation-display { font-size: 1.8rem; top: 120px; }
+            .subset-info { top: auto; bottom: 150px; right: 10px; width: 120px; font-size: 0.75rem; }
+            h1 { display: none; }
+            .instructions-content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="instructions" class="instructions-overlay">
+    <div class="instructions-content">
+        <h2>The Playground of Sets (U)</h2>
+        <p>Explore relationships between sets within the Universal Set $U$. Drag elements between sets $A$ and $B$, use controls to reorder or compare, and observe how symbols like $=$, $\leftrightarrow$, and $\subseteq$ change dynamically based on logic.</p>
+        <button class="btn active" onclick="hideInstructions()">Start Exploring</button>
+    </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div class="ui-layer">
+    <div class="panel header">
+        <h1>Relationships</h1>
+        <div class="mode-selector">
+            <button class="btn active" data-mode="compare" onclick="setMode('compare')">Equal/Equivalent</button>
+            <button class="btn" data-mode="subset" onclick="setMode('subset')">Subsets</button>
+        </div>
+    </div>
+
+    <div class="notation-display" id="notation">U</div>
+
+    <div class="subset-info panel" id="subset-info" style="display: none;">
+        <div>Elements in A: <span id="count-a">0</span></div>
+        <div>Possible Subsets 2<sup>n</sup>: <span id="count-subsets">1</span></div>
+        <div style="font-size: 0.7rem; color: #666; margin-top: 10px;">Includes ∅ and A itself.</div>
+    </div>
+
+    <div class="panel footer">
+        <div id="controls-compare" class="control-group active">
+            <button class="btn btn-action btn-equal" onclick="actionEqual()">Set Equal</button>
+            <button class="btn btn-action btn-equiv" onclick="actionEquivalent()">Set Equivalent</button>
+            <button class="btn btn-action" onclick="shuffleSets()">Shuffle</button>
+        </div>
+        <div id="controls-subset" class="control-group">
+            <button class="btn btn-action btn-subset" onclick="actionSubset()">Make A ⊆ B</button>
+            <button class="btn btn-action btn-subset" onclick="actionProperSubset()">Make A ⊂ B</button>
+            <button class="btn btn-action" onclick="resetSubset()">Reset</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Setup & Constants ---
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const notationEl = document.getElementById('notation');
+    const subsetInfoEl = document.getElementById('subset-info');
+    const countAEl = document.getElementById('count-a');
+    const countSubsetsEl = document.getElementById('count-subsets');
+
+    let width, height, cx, cy;
+    let time = 0;
+    let currentMode = 'compare'; // 'compare' or 'subset'
+    
+    // Universal Set U
+    const U_PADDING = 20;
+    let uRect = { x: 0, y: 0, w: 0, h: 0 };
+
+    // Sets A and B
+    let setA = { id: 'A', x: 0, y: 0, r: 0, targetR: 0, color: 'rgba(100, 150, 255, 0.15)', stroke: '#339af0' };
+    let setB = { id: 'B', x: 0, y: 0, r: 0, targetR: 0, color: 'rgba(255, 100, 100, 0.1)', stroke: '#ff6b6b' };
+    const GHOST_EMPTY_SET_R = 15;
+
+    // Elements
+    let allElements = [];
+    let draggedElement = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    // Animation states
+    let relationshipType = 'none'; // 'equal', 'equivalent', 'subset', 'proper', 'none'
+    let bridgeCrack = 0;
+    let threadsOpacity = 0;
+    let glowPulse = 0;
+
+    // --- Configuration ---
+    const VALUES_POOL = 'abcdefghijklmnopqrstuvwxyz0123456789'.split('');
+    const MAX_ELEMENTS = 12;
+
+    class Element {
+        constructor(val, x, y) {
+            this.val = val;
+            this.x = x; this.y = y;
+            this.targetX = x; this.targetY = y;
+            this.vx = 0; this.vy = 0;
+            this.r = 18;
+            this.color = '#fff';
+            this.inSet = null; // null, 'A', 'B'
+            this.pulse = 0;
+        }
+
+        update() {
+            if (this === draggedElement) return;
+
+            // Physics logic: spring towards target, friction
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            this.vx += dx * 0.05;
+            this.vy += dy * 0.05;
+            this.vx *= 0.8;
+            this.vy *= 0.8;
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if (this.pulse > 0) this.pulse *= 0.9;
+        }
+
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+
+            // Glower if pulsed
+            if (this.pulse > 0.1) {
+                ctx.shadowColor = (this.inSet === 'A') ? setA.stroke : (this.inSet === 'B' ? setB.stroke : '#fff');
+                ctx.shadowBlur = this.pulse * 15;
+            }
+
+            // Circle
+            ctx.beginPath();
+            ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+            ctx.fillStyle = (draggedElement === this) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Value
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(this.val, 0, 1);
+            ctx.restore();
+        }
+    }
+
+    // --- Core Functions ---
+    function init() {
+        resize();
+        spawnUniverse();
+        animate();
+    }
+
+    function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        cx = width / 2; cy = height / 2;
+
+        // Update U boundary
+        uRect = { x: U_PADDING, y: U_PADDING, w: width - U_PADDING * 2, h: height - U_PADDING * 2 };
+
+        setLayout();
+    }
+
+    function setLayout() {
+        if (currentMode === 'compare') {
+            const setR = Math.min(width * 0.2, height * 0.3, 150);
+            setA.targetR = setB.targetR = setR;
+            setA.x = cx - setR - 40; setA.y = cy;
+            setB.x = cx + setR + 40; setB.y = cy;
+        } else {
+            // Subset mode: B is large, A is draggable
+            const setR_B = Math.min(width * 0.3, height * 0.4, 250);
+            setB.targetR = setR_B;
+            setB.x = cx + 80; setB.y = cy;
+            
+            setA.targetR = 80; // smaller
+            // Keep A where it is or default to left
+            if (setA.x === 0) { setA.x = cx - 200; setA.y = cy; }
+        }
+        
+        // Immediate radius update on resize to prevent awkward scaling
+        setA.r = setA.targetR;
+        setB.r = setB.targetR;
+
+        resetElementTargets();
+    }
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.header .btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.header .btn[data-mode="${mode}"]`).classList.add('active');
+        
+        document.querySelectorAll('.footer .control-group').forEach(p => p.classList.remove('active'));
+        document.getElementById(`controls-${mode}`).classList.add('active');
+
+        subsetInfoEl.style.display = (mode === 'subset') ? 'block' : 'none';
+        
+        setLayout();
+        
+        // Special logic for subset reset
+        if (mode === 'subset') resetSubset();
+        else relationshipType = 'none';
+    }
+
+    function spawnUniverse() {
+        allElements = [];
+        for (let i = 0; i < MAX_ELEMENTS; i++) {
+            const val = VALUES_POOL[i % VALUES_POOL.length];
+            // Spawn in background of U
+            const x = uRect.x + 50 + Math.random() * (uRect.w - 100);
+            const y = uRect.y + 50 + Math.random() * (uRect.h - 100);
+            allElements.push(new Element(val, x, y));
+        }
+    }
+
+    // --- Logic & Comparisons ---
+    function getElementsInSet(setId) {
+        const s = (setId === 'A') ? setA : setB;
+        return allElements.filter(el => {
+            const d = Math.hypot(el.x - s.x, el.y - s.y);
+            return d < s.r;
+        });
+    }
+
+    function updateLogic() {
+        const elsA = getElementsInSet('A');
+        const elsB = getElementsInSet('B');
+        
+        allElements.forEach(el => el.inSet = null);
+        elsA.forEach(el => el.inSet = 'A');
+        elsB.forEach(el => el.inSet = 'B'); // Note: in subset mode, B takes precedence for color
+
+        if (currentMode === 'compare') {
+            if (elsA.length === 0 && elsB.length === 0) {
+                relationshipType = 'equal';
+                notationEl.innerHTML = '<span class="is-equal">A = B = ∅</span>';
+                return;
+            }
+
+            // Check Equality (Clones)
+            const valsA = elsA.map(el => el.val).sort();
+            const valsB = elsB.map(el => el.val).sort();
+            let isEqual = (valsA.length === valsB.length) && valsA.every((v, i) => v === valsB[i]);
+
+            if (isEqual) {
+                relationshipType = 'equal';
+                notationEl.innerHTML = `A <span class="is-equal">=</span> B`;
+                bridgeCrack = 0;
+            } else if (elsA.length === elsB.length) {
+                // Check Equivalence (Teams)
+                relationshipType = 'equivalent';
+                notationEl.innerHTML = `A <span class="is-equiv">↔</span> B`;
+                threadsOpacity = Math.min(1, threadsOpacity + 0.05);
+            } else {
+                relationshipType = 'none';
+                notationEl.innerHTML = `A <span class="not-equal">≠</span> B`;
+                threadsOpacity = Math.max(0, threadsOpacity - 0.1);
+            }
+        } else {
+            // Subset Logic (Nesting)
+            // A ⊆ B if every element of A is in B.
+            countAEl.innerText = elsA.length;
+            countSubsetsEl.innerText = Math.pow(2, elsA.length);
+
+            // Is A inside B boundary?
+            const dSets = Math.hypot(setA.x - setB.x, setA.y - setB.y);
+            const isInside = dSets < (setB.r - setA.r);
+            
+            if (isInside) {
+                // Visual nesting signifies subset
+                // check elements just to trigger glows
+                elsA.forEach(el => el.pulse = 2);
+
+                if (Math.abs(setA.r - setB.r) < 5 && dSets < 10) {
+                    // Improper Subset (A = B)
+                    relationshipType = 'subset';
+                    notationEl.innerHTML = `A <span class="is-subset">⊆</span> B`;
+                } else {
+                    // Proper Subset
+                    relationshipType = 'proper';
+                    notationEl.innerHTML = `A <span class="is-subset">⊂</span> B`;
+                }
+            } else {
+                // check if logic still holds even if circles aren't nested
+                // (for educational rigor, although visual metaphor is stronger)
+                const valsA = elsA.map(el => el.val);
+                const valsB = elsB.map(el => el.val);
+                const logicalSubset = valsA.every(v => valsB.includes(v)) && valsA.length > 0;
+                
+                if (logicalSubset) {
+                    // Logic holds but visual nesting doesn't
+                    elsA.forEach(el => el.pulse = 1);
+                    notationEl.innerHTML = `A <span class="is-subset">⊆</span> B`;
+                } else {
+                    relationshipType = 'none';
+                    notationEl.innerHTML = `A <span class="not-equal">⊈</span> B`;
+                }
+            }
+        }
+    }
+
+    // --- Drawing & Animation ---
+    function drawSet(s) {
+        ctx.save();
+        // Smooth radius transition
+        s.r += (s.targetR - s.r) * 0.1;
+
+        // Glow based on logic
+        ctx.shadowBlur = (relationshipType === 'subset' || relationshipType === 'proper') && s.id === 'B' ? 20 + glowPulse * 10 : 0;
+        ctx.shadowColor = varToHex('--accent-subset');
+
+        // Circle Fill
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = s.color; ctx.fill();
+        
+        // Circle Stroke
+        ctx.shadowBlur = 0; // reset
+        ctx.lineWidth = 3; ctx.strokeStyle = s.stroke; ctx.stroke();
+        
+        // Label
+        ctx.fillStyle = s.stroke;
+        ctx.font = 'bold 20px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(s.id, s.x, s.y - s.r - 15);
+
+        // Ghost Empty Set at bottom
+        ctx.beginPath();
+        const ghostY = s.y + s.r * 0.7;
+        ctx.arc(s.x, ghostY, GHOST_EMPTY_SET_R, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '16px serif'; ctx.fillText('∅', s.x, ghostY + 5);
+
+        ctx.restore();
+    }
+
+    function drawUniverse() {
+        // Subtle stardust effect
+        ctx.fillStyle = varToHex('--u-bg');
+        ctx.fillRect(uRect.x, uRect.y, uRect.w, uRect.h);
+        
+        ctx.strokeStyle = varToHex('--border-color'); ctx.lineWidth = 2;
+        ctx.strokeRect(uRect.x, uRect.y, uRect.w, uRect.h);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = 'bold 24px monospace'; ctx.textAlign = 'right';
+        ctx.fillText('U', uRect.x + uRect.w - 20, uRect.y + 40);
+
+        // Dust particles
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        for(let i=0; i<50; i++) {
+            const lx = (Math.sin(time*0.1 + i)*0.5+0.5) * uRect.w + uRect.x;
+            const ly = (Math.cos(time*0.15 + i*2)*0.5+0.5) * uRect.h + uRect.y;
+            ctx.fillRect(lx, ly, 2, 2);
+        }
+    }
+
+    function drawRelationships() {
+        if (currentMode === 'compare') {
+            const bridgeX = (setA.x + setB.x) / 2;
+            const bridgeW = (setB.x - setA.x) - setA.r - setB.r;
+            
+            if (relationshipType === 'equal') {
+                // Golden Bridge
+                ctx.save();
+                ctx.strokeStyle = varToHex('--accent-equal'); ctx.lineWidth = 6; ctx.lineCap = 'round';
+                ctx.beginPath(); ctx.moveTo(setA.x + setA.r, cy); ctx.lineTo(setB.x - setB.r, cy); ctx.stroke();
+                
+                // Notation =
+                ctx.fillStyle = varToHex('--accent-equal'); ctx.font = 'bold 40px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('=', bridgeX, cy - 10);
+                ctx.restore();
+            } else if (relationshipType === 'equivalent' && threadsOpacity > 0.1) {
+                // Glowing Energy Threads
+                const elsA = getElementsInSet('A');
+                const elsB = getElementsInSet('B');
+                ctx.save();
+                ctx.globalAlpha = threadsOpacity;
+                ctx.strokeStyle = varToHex('--accent-equiv'); ctx.lineWidth = 2; ctx.setLineDash([5,5]);
+                
+                elsA.forEach((elA, i) => {
+                    if (elsB[i]) {
+                        ctx.beginPath(); ctx.moveTo(elA.x, elA.y); ctx.lineTo(elsB[i].x, elsB[i].y); ctx.stroke();
+                    }
+                });
+                ctx.restore();
+            }
+        } else {
+            // Subset visual indicators already handled in updateLogic (element glows)
+        }
+    }
+
+    function animate(t) {
+        time = t / 1000;
+        glowPulse = Math.sin(time * 4) * 0.5 + 0.5;
+        
+        ctx.clearRect(0, 0, width, height);
+
+        drawUniverse();
+        updateLogic();
+
+        if (currentMode === 'subset') { drawSet(setB); drawSet(setA); } // Draw B first so A is on top
+        else { drawSet(setA); drawSet(setB); }
+
+        drawRelationships();
+
+        allElements.forEach(el => {
+            el.update();
+            el.draw();
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    // --- Footer Actions ---
+    function actionEqual() {
+        relationshipType = 'equal';
+        const vals = ['x', 'y', 'z', 'w'];
+        const elsA = allElements.slice(0, 4);
+        const elsB = allElements.slice(4, 8);
+        
+        elsA.forEach((el, i) => { el.val = vals[i]; el.targetX = setA.x + (Math.random()-0.5)*100; el.targetY = setA.y + (Math.random()-0.5)*100; });
+        elsB.forEach((el, i) => { el.val = vals[i]; el.targetX = setB.x + (Math.random()-0.5)*100; el.targetY = setB.y + (Math.random()-0.5)*100; });
+    }
+
+    function actionEquivalent() {
+        relationshipType = 'equivalent';
+        const valsA = ['1', '2', '3'];
+        const valsB = ['★', '◆', '▲'];
+        const elsA = allElements.slice(0, 3);
+        const elsB = allElements.slice(3, 6);
+        
+        elsA.forEach((el, i) => { el.val = valsA[i]; el.targetX = setA.x; el.targetY = setA.y + (i-1)*50; });
+        elsB.forEach((el, i) => { el.val = valsB[i]; el.targetX = setB.x; el.targetY = setB.y + (i-1)*50; });
+    }
+
+    function shuffleSets() {
+        const els = getElementsInSet('A').concat(getElementsInSet('B'));
+        els.forEach(el => {
+            el.vx = (Math.random()-0.5)*30;
+            el.vy = (Math.random()-0.5)*30;
+        });
+    }
+
+    function actionSubset() {
+        // Move A exactly over B, make radius same
+        setA.x = setB.x; setA.y = setB.y;
+        setA.targetR = setB.targetR;
+        // Move some elements into both
+        const els = allElements.slice(0, 3);
+        els.forEach((el, i) => { el.targetX = setB.x; el.targetY = setB.y + (i-1)*50; });
+    }
+
+    function actionProperSubset() {
+        // Nest A inside B
+        setA.targetR = 80;
+        setA.x = setB.x - 50; setA.y = setB.y + 50;
+        // Elements in A (therefore in B)
+        allElements.slice(0, 2).forEach((el, i) => { el.targetX = setA.x; el.targetY = setA.y; });
+        // Elements only in B
+        allElements.slice(2, 4).forEach((el, i) => { el.targetX = setB.x + 80; el.targetY = setB.y - 80; });
+    }
+
+    function resetSubset() {
+        setLayout();
+        setA.x = cx - 200; setA.y = cy;
+        resetElementTargets();
+    }
+
+    function resetElementTargets() {
+        // Scatter elements in background of U
+        allElements.forEach(el => {
+            el.targetX = uRect.x + 50 + Math.random() * (uRect.w - 100);
+            el.targetY = uRect.y + 50 + Math.random() * (uRect.h - 100);
+        });
+    }
+
+    // --- Interaction Handling ---
+    function handleDown(e) {
+        const pos = getMousePos(e);
+        
+        // Check for dragging element first
+        draggedElement = allElements.find(el => Math.hypot(el.x - pos.x, el.y - pos.y) < el.r + 10);
+        
+        if (draggedElement) {
+            dragOffset = { x: draggedElement.x - pos.x, y: draggedElement.y - pos.y };
+        } else if (currentMode === 'subset' && Math.hypot(setA.x - pos.x, setA.y - pos.y) < setA.r) {
+            // Drag set A in subset mode
+            draggedElement = setA;
+            dragOffset = { x: setA.x - pos.x, y: setA.y - pos.y };
+        }
+    }
+
+    function handleMove(e) {
+        if (!draggedElement) return;
+        const pos = getMousePos(e);
+        
+        let newX = pos.x + dragOffset.x;
+        let newY = pos.y + dragOffset.y;
+
+        // universal set boundary check (elements only, set A has looser bounds)
+        if (draggedElement instanceof Element) {
+            const r = draggedElement.r;
+            draggedElement.x = Math.max(uRect.x + r, Math.min(uRect.x + uRect.w - r, newX));
+            draggedElement.y = Math.max(uRect.y + r, Math.min(uRect.y + uRect.h - r, newY));
+        } else {
+            // Dragging set A
+            draggedElement.x = newX;
+            draggedElement.y = newY;
+        }
+    }
+
+    function handleUp() {
+        if (draggedElement instanceof Element) {
+            // Snap elements to grid/pile if dropped near center of a set
+            const nearA = Math.hypot(draggedElement.x - setA.x, draggedElement.y - setA.y) < setA.r;
+            const nearB = Math.hypot(draggedElement.x - setB.x, draggedElement.y - setB.y) < setB.r;
+            
+            if (nearA || nearB) {
+                // Keep current pos as target (drift stopped)
+                draggedElement.targetX = draggedElement.x;
+                draggedElement.targetY = draggedElement.y;
+            } else {
+                // drifted outside discussion boundary, return to U background
+                // draggedElement.targetX = uRect.x + 50 + Math.random()*(uRect.w-100);
+            }
+        }
+        draggedElement = null;
+    }
+
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function varToHex(varName) {
+        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    }
+
+    function hideInstructions() {
+        document.getElementById('instructions').classList.add('hidden');
+    }
+
+    // --- Init ---
+    window.addEventListener('resize', resize);
+    canvas.addEventListener('mousedown', handleDown);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('mouseup', handleUp);
+    
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown(e); });
+    canvas.addEventListener('touchmove', handleMove);
+    canvas.addEventListener('touchend', handleUp);
+
+    init();
+</script>
+</body>
+</html>

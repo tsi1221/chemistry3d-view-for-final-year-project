@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Empty Finite Infinite Set Visualizer</title>
+    <style>
+        /* ===== RESET & GLOBAL ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* Prevents text selection during drag on mobile, improves touch feel */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-deep: #010101;
+            --bg-radial: radial-gradient(circle at 30% 20%, #051a24, #000000 90%);
+            --ring-empty: rgba(168, 218, 255, 0.25);
+            --ring-active: #3efffb;
+            --ring-glow: rgba(0, 242, 255, 0.6);
+            --text-primary: #f0fcff;
+            --text-subtle: #b3e4ff;
+            --glass-bg: rgba(10, 25, 35, 0.6);
+            --glass-border: rgba(62, 255, 235, 0.25);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-deep);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            touch-action: none; /* improved touch panning without page scroll interference */
+        }
+
+        canvas {
+            display: block;
+            cursor: grab;
+            width: 100%;
+            height: 100%;
+            touch-action: none; /* allows full canvas control for touch drag */
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* ===== ATTRACTIVE HUD – GLASSMORPHIC, ANIMATED ===== */
+        .hud {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            width: 90%;
+            max-width: 520px;
+            background: rgba(5, 15, 20, 0.55);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 12px 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 12px rgba(0,242,255,0.2);
+            transition: all 0.2s ease;
+            z-index: 20;
+        }
+
+        .status {
+            font-size: 0.75rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            color: var(--ring-active);
+            font-weight: 500;
+            text-shadow: 0 0 6px rgba(0,242,255,0.7);
+            word-break: keep-all;
+        }
+
+        .notation {
+            font-size: 1.8rem;
+            font-family: 'Times New Roman', 'Georgia', serif;
+            font-style: italic;
+            font-weight: 500;
+            color: white;
+            letter-spacing: 1px;
+            background: linear-gradient(135deg, #ffffff, #9efff0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 5px rgba(0,255,245,0.5);
+            word-break: break-word;
+        }
+
+        /* counter badge – elegant floating ring */
+        .counter {
+            position: absolute;
+            bottom: 85px;
+            right: 20px;
+            top: auto;
+            left: auto;
+            transform: none;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0, 20, 30, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--ring-active);
+            border: 1px solid rgba(0, 242, 255, 0.5);
+            box-shadow: 0 0 15px rgba(0,242,255,0.2);
+            letter-spacing: 1px;
+            pointer-events: none;
+            z-index: 20;
+            white-space: nowrap;
+        }
+
+        /* instructions – modern badge, responsive, touch hint */
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(5, 20, 28, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: rgba(210, 240, 255, 0.85);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            white-space: nowrap;
+            pointer-events: none;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+            z-index: 20;
+            transition: opacity 0.3s;
+        }
+
+        /* floating glow effect on active set hint */
+        @keyframes subtlePulse {
+            0% { border-color: rgba(0, 242, 255, 0.2); box-shadow: 0 0 5px rgba(0,242,255,0.1);}
+            100% { border-color: rgba(0, 242, 255, 0.6); box-shadow: 0 0 18px rgba(0,242,255,0.3);}
+        }
+
+        .hud:has(.status:contains("Finite Set")) {
+            animation: subtlePulse 1.8s infinite alternate;
+        }
+
+        /* responsive adjustments */
+        @media (max-width: 680px) {
+            .notation {
+                font-size: 1.3rem;
+            }
+            .counter {
+                bottom: 70px;
+                right: 16px;
+                padding: 5px 14px;
+                font-size: 0.9rem;
+            }
+            .instructions {
+                font-size: 0.6rem;
+                padding: 6px 14px;
+                white-space: nowrap;
+            }
+            .hud {
+                top: 16px;
+                padding: 8px 16px;
+                width: 85%;
+            }
+            .status {
+                font-size: 0.65rem;
+                letter-spacing: 3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .counter {
+                bottom: 65px;
+                right: 12px;
+                font-size: 0.8rem;
+                padding: 4px 12px;
+            }
+            .instructions {
+                bottom: 12px;
+                font-size: 0.55rem;
+            }
+            .notation {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* optional: small decorative radial accent */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 70% 30%, rgba(0,80,100,0.15) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hud">
+    <div class="status" id="status">Empty Set</div>
+    <div class="notation" id="notation">A = ∅</div>
+</div>
+
+<div class="counter" id="counter">n(A) = 0</div>
+
+<div class="instructions">🖱️ Drag / 👆 Swipe to Explore • ✨ Pinch / Scroll to Zoom</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    (function() {
+        // ========== CORE LOGIC – PRESERVED COMPLETELY ==========
+        // only UI enhancements, touch support, responsiveness added without changing any mathematical or star logic
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const statusEl = document.getElementById('status');
+        const notationEl = document.getElementById('notation');
+        const counterEl = document.getElementById('counter');
+
+        let width, height;
+        let zoom = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
+
+        let stars = [];
+        const SEEKER_RADIUS = 100;
+
+        function init() {
+            resize();
+            // Create 1000 "Numbers" in space
+            for(let i=0; i<1000; i++) {
+                stars.push({
+                    val: i,
+                    x: (Math.random() - 0.5) * 5000,
+                    y: (Math.random() - 0.5) * 5000,
+                    baseSize: 10 + Math.random() * 10
+                });
+            }
+            animate();
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        function animate() {
+            ctx.fillStyle = '#020408';
+            ctx.fillRect(0, 0, width, height);
+
+            let activeCount = 0;
+            const cx = width / 2;
+            const cy = height / 2;
+
+            // Draw Seeker Ring – enhanced style but no logic change
+            ctx.beginPath();
+            ctx.arc(cx, cy, SEEKER_RADIUS, 0, Math.PI * 2);
+            ctx.setLineDash(activeCount === 0 ? [6, 8] : []);
+            ctx.strokeStyle = activeCount > 0 ? '#00f2ff' : 'rgba(255,255,255,0.35)';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            
+            // extra glow for active ring (cosmetic, no logic)
+            if (activeCount > 0) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, SEEKER_RADIUS + 2, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(0,242,255,0.25)';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // Draw Stars (same logic, only rendering enhancements for beauty)
+            stars.forEach(star => {
+                const sx = cx + (star.x + offsetX) * zoom;
+                const sy = cy + (star.y + offsetY) * zoom;
+
+                const dist = Math.hypot(sx - cx, sy - cy);
+                const inSet = dist < SEEKER_RADIUS;
+
+                if (inSet) activeCount++;
+
+                // Only draw if visible on screen
+                if (sx > -80 && sx < width + 80 && sy > -80 && sy < height + 80) {
+                    ctx.save();
+                    ctx.globalAlpha = inSet ? 1 : 0.25;
+                    ctx.fillStyle = inSet ? '#00f2ff' : '#ffffff';
+                    ctx.font = `${Math.max(9, star.baseSize * zoom)}px "SF Mono", "JetBrains Mono", monospace, "Courier New"`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    if (inSet) {
+                        ctx.shadowBlur = 14;
+                        ctx.shadowColor = '#00f2ff';
+                        // subtle extra glow
+                        ctx.fillStyle = '#9effff';
+                    } else {
+                        ctx.shadowBlur = 2;
+                        ctx.shadowColor = 'rgba(255,255,255,0.3)';
+                    }
+                    
+                    ctx.fillText(star.val, sx, sy);
+                    ctx.restore();
+                }
+            });
+
+            updateHUD(activeCount);
+            requestAnimationFrame(animate);
+        }
+
+        function updateHUD(count) {
+            // PURE CORE LOGIC: unchanged condition & assignments
+            if (zoom < 0.05) {
+                statusEl.innerText = "Infinite Set";
+                notationEl.innerHTML = "A = { 1, 2, 3, ... }";
+                counterEl.innerText = "n(A) = ∞";
+            } else if (count === 0) {
+                statusEl.innerText = "Empty Set";
+                notationEl.innerHTML = "A = ∅";
+                counterEl.innerText = "n(A) = 0";
+            } else {
+                statusEl.innerText = "Finite Set";
+                notationEl.innerHTML = `A = { ... }`;
+                counterEl.innerText = `n(A) = ${count}`;
+            }
+        }
+
+        // ========== ENHANCED INPUT: FULL RESPONSIVE + TOUCH (preserving original logic) ==========
+        // wheel zoom (original preserved)
+        window.addEventListener('wheel', (e) => {
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            zoom *= delta;
+            zoom = Math.max(0.01, Math.min(zoom, 5));
+            e.preventDefault();    // prevents page zoom but keeps canvas zoom (enhancement)
+        }, { passive: false });
+
+        // MOUSE & TOUCH unified handlers – DRAG support without breaking anything
+        function getClientCoord(clientX, clientY) {
+            return { x: clientX, y: clientY };
+        }
+
+        function onPointerStart(clientX, clientY) {
+            isDragging = true;
+            lastMouse = { x: clientX, y: clientY };
+            canvas.style.cursor = 'grabbing';
+        }
+
+        function onPointerMove(clientX, clientY) {
+            if (!isDragging) return;
+            offsetX += (clientX - lastMouse.x) / zoom;
+            offsetY += (clientY - lastMouse.y) / zoom;
+            lastMouse = { x: clientX, y: clientY };
+        }
+
+        function onPointerEnd() {
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+        }
+
+        // Mouse events (desktop)
+        canvas.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            onPointerStart(e.clientX, e.clientY);
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            onPointerMove(e.clientX, e.clientY);
+        });
+        window.addEventListener('mouseup', () => onPointerEnd());
+
+        // TOUCH EVENTS – full mobile support: drag with one finger, plus preserve zoom gesture with pinch (native)
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            if (touch) {
+                onPointerStart(touch.clientX, touch.clientY);
+            }
+        }, { passive: false });
+        
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            if (touch) {
+                onPointerMove(touch.clientX, touch.clientY);
+            }
+        }, { passive: false });
+        
+        window.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            onPointerEnd();
+        });
+        
+        // Also handle touchcancel to be robust
+        window.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            onPointerEnd();
+        });
+
+        // additional: pinch zooming on touch devices (using gesture, adds intuitive scaling)
+        // we handle pinch to adjust zoom, doesn't conflict with core zoom logic – it's just another zoom input method
+        let initialPinchDistance = null;
+        let initialZoom = 1;
+        
+        function getPinchDistance(touches) {
+            if (touches.length < 2) return 0;
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.hypot(dx, dy);
+        }
+        
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                initialPinchDistance = getPinchDistance(e.touches);
+                initialZoom = zoom;
+            }
+        });
+        
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialPinchDistance !== null) {
+                e.preventDefault();
+                const newDistance = getPinchDistance(e.touches);
+                if (newDistance > 0 && initialPinchDistance > 0) {
+                    const scaleFactor = newDistance / initialPinchDistance;
+                    let newZoom = initialZoom * scaleFactor;
+                    newZoom = Math.max(0.01, Math.min(5, newZoom));
+                    zoom = newZoom;
+                }
+            }
+        }, { passive: false });
+        
+        window.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                initialPinchDistance = null;
+            }
+        });
+        
+        // also prevent context menu on canvas for cleaner experience
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // resize handler (kept original)
+        window.addEventListener('resize', () => {
+            resize();
+        });
+        
+        // optional: double tap reset? not interfering with core, but adds charm (no logic change)
+        let lastTap = 0;
+        canvas.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTap < 300) {
+                // double tap reset view – just cosmetic enhancement (doesn't break set logic)
+                zoom = 1;
+                offsetX = 0;
+                offsetY = 0;
+                e.preventDefault();
+            }
+            lastTap = now;
+        });
+        
+        // for desktop, double-click reset
+        canvas.addEventListener('dblclick', (e) => {
+            zoom = 1;
+            offsetX = 0;
+            offsetY = 0;
+            e.preventDefault();
+        });
+
+        // initialize app
+        init();
+    })();
+</script>
+</body>
+</html>

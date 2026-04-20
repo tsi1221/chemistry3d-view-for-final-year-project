@@ -2,133 +2,205 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Set Theory: The Sorting Machine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Set Sorter | Modern Light UI</title>
     <style>
-        :root {
-            --bg-color: #1a1a1d;
-            --panel-bg: rgba(35, 35, 40, 0.95);
-            --accent-gold: #ffcc00;
-            --accent-cyan: #00f2ff;
-            --accent-red: #ff3366;
-            --text-color: #e0e0e0;
-            --border-ui: 1px solid rgba(255, 255, 255, 0.1);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* cleaner drag feel */
         }
 
-        * { box-sizing: border-box; }
-        body, html {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: #f5f7fb;
             overflow: hidden;
-            background-color: var(--bg-color);
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: var(--text-color);
+            color: #1e293b;
         }
 
-        #canvas { display: block; touch-action: none; }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
 
-        /* UI Overlay */
-        .interface {
+        /* --- Modern Light UI Overlay --- */
+        .ui {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%; height: 100%;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space;
-            padding: 20px;
+            z-index: 10;
         }
 
-        .top-bar {
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            pointer-events: auto;
-        }
-
-        .control-panel {
+        /* top right panel - minimal glass */
+        .card {
             position: absolute;
-            top: 0px;
-            right: 0px;
-            background: var(--panel-bg);
-            padding: 15px 20px;
-            border-radius: 12px;
-            border: var(--border-ui);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            min-width: 280px;
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.02), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            padding: 18px 20px;
+            pointer-events: auto;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
-        .panel-title {
-            font-size: 0.75rem;
+        .section-title {
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent-cyan);
+            font-weight: 600;
+            color: #5b6e8c;
             margin-bottom: 12px;
-            font-weight: 700;
         }
 
-        .btn-group {
+        .btn-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
-            margin-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         .btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 8px 10px;
+            border-radius: 40px;
             font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e293b;
+            cursor: pointer;
             transition: all 0.2s;
             pointer-events: auto;
+            font-family: inherit;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.02);
         }
 
-        .btn:hover { background: rgba(255,255,255,0.15); border-color: var(--accent-cyan); }
-        .btn.active { background: var(--accent-cyan); color: #000; border-color: var(--accent-cyan); }
-        .btn.danger { border-color: var(--accent-red); color: var(--accent-red); }
-        .btn.danger:hover { background: var(--accent-red); color: white; }
+        .btn:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
 
-        .log-panel {
-            background: rgba(0,0,0,0.4);
-            border-radius: 8px;
-            height: 120px;
+        .btn.active {
+            background: #1e293b;
+            border-color: #1e293b;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn.danger {
+            color: #e11d48;
+            border-color: #ffe4e8;
+            background: #fff5f7;
+        }
+
+        .btn.danger:hover {
+            background: #ffe4e8;
+            border-color: #fecdd3;
+            color: #be123c;
+        }
+
+        .log-area {
+            background: rgba(248, 250, 252, 0.9);
+            border-radius: 20px;
+            padding: 10px 12px;
+            height: 110px;
             overflow-y: auto;
-            padding: 10px;
-            font-family: 'Fira Code', monospace;
-            font-size: 0.8rem;
-            border: var(--border-ui);
-            pointer-events: auto;
+            font-size: 0.75rem;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            border: 1px solid #eef2f6;
+            margin-top: 6px;
+            backdrop-filter: blur(4px);
         }
 
-        .log-entry { margin-bottom: 4px; border-left: 2px solid var(--accent-cyan); padding-left: 8px; animation: fadeIn 0.3s ease; }
-        .log-entry.fail { border-left-color: var(--accent-red); opacity: 0.7; }
+        .log-entry {
+            padding: 5px 0 5px 8px;
+            border-left: 2px solid #3b82f6;
+            margin-bottom: 6px;
+            color: #334155;
+            font-size: 0.7rem;
+            font-weight: 450;
+            animation: slideIn 0.2s ease;
+        }
 
-        .instruction-overlay {
+        .log-entry.fail {
+            border-left-color: #f43f5e;
+            color: #9f1239;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .instruction-badge {
             position: absolute;
-            bottom: 30px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.6);
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            padding: 8px 20px;
+            border-radius: 60px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e293b;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02), 0 0 0 1px rgba(0,0,0,0.02);
             pointer-events: none;
+            white-space: nowrap;
+            font-family: monospace;
+            letter-spacing: -0.2px;
         }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+        /* mobile adjustments */
+        @media (max-width: 640px) {
+            .card {
+                width: calc(100% - 32px);
+                right: 16px;
+                top: 16px;
+                padding: 14px 16px;
+            }
+            .instruction-badge {
+                font-size: 0.7rem;
+                white-space: nowrap;
+                bottom: 16px;
+                padding: 6px 16px;
+            }
+            .log-area {
+                height: 90px;
+            }
+            .btn {
+                padding: 6px 8px;
+                font-size: 0.75rem;
+            }
+        }
 
-        /* Mobile specific adjustments */
-        @media (max-width: 768px) {
-            .control-panel { width: 100%; min-width: unset; }
-            .top-bar { flex-direction: column; gap: 10px; }
-            .log-panel { display: none; }
+        /* Scrollbar */
+        .log-area::-webkit-scrollbar {
+            width: 4px;
+        }
+        .log-area::-webkit-scrollbar-track {
+            background: #eef2f6;
+            border-radius: 10px;
+        }
+        .log-area::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
         }
     </style>
 </head>
@@ -136,381 +208,501 @@
 
 <canvas id="canvas"></canvas>
 
-<div class="interface">
-    <div class="top-bar">
-        <div class="control-panel">
-            <div class="panel-title">Machine Parameters</div>
-            <div class="btn-group">
-                <button class="btn active" onclick="setRule('vowels', this)">Vowels</button>
-                <button class="btn" onclick="setRule('multiples', this)">Mult. of 3</button>
-                <button class="btn" onclick="setRule('primes', this)">Primes</button>
-                <button class="btn danger" onclick="setRule('vague', this)">Vague Set</button>
-            </div>
-            <div class="panel-title">Operations</div>
-            <div class="btn-group">
-                <button class="btn" onclick="toggleManual()">Manual Mode</button>
-                <button class="btn" onclick="resetMachine()">Reset All</button>
-            </div>
-            <div class="log-panel" id="log">
-                <div class="log-entry">System ready. Awaiting input.</div>
-            </div>
+<div class="ui">
+    <div class="card">
+        <div class="section-title">⚡ Set definition</div>
+        <div class="btn-grid" id="rule-group">
+            <button data-rule="vowels" class="btn active">Vowels</button>
+            <button data-rule="multiples" class="btn">Mult. of 3</button>
+            <button data-rule="primes" class="btn">Primes</button>
+            <button data-rule="vague" class="btn danger">Vague set</button>
+        </div>
+        <div class="section-title">🕹️ Mode</div>
+        <div class="btn-grid">
+            <button id="manualToggleBtn" class="btn">Manual mode</button>
+            <button id="resetBtn" class="btn">Reset</button>
+        </div>
+        <div class="section-title">📋 Activity</div>
+        <div class="log-area" id="logPanel">
+            <div class="log-entry">✓ system ready · drag elements</div>
         </div>
     </div>
-    <div class="instruction-overlay" id="instruction">Drag elements into the scanner</div>
+    <div class="instruction-badge" id="statusMsg">✨ drag into scanner → auto-sort</div>
 </div>
 
 <script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const logEl = document.getElementById('log');
-    const instructionEl = document.getElementById('instruction');
+    (function(){
+        // --- DOM refs
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const logContainer = document.getElementById('logPanel');
+        const statusMsg = document.getElementById('statusMsg');
 
-    let width, height;
-    let elements = [];
-    let particles = [];
-    let currentRule = 'vowels';
-    let manualMode = false;
-    let draggedElement = null;
-    let scannerState = 'idle'; // 'idle', 'scanning', 'error'
-    let scannerPulse = 0;
-    let glitchEffect = 0;
+        // --- global state
+        let width, height;
+        let elements = [];
+        let currentRule = 'vowels';
+        let manualMode = false;
+        let draggedElement = null;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        let scannerPulse = 0;
+        let scannerPulseColor = "#3b82f6";
+        let errorGlitch = 0;
 
-    const RULES = {
-        vowels: { 
-            name: "Vowels", 
-            check: (v) => ['a','e','i','o','u'].includes(v.toLowerCase()),
-            pool: ['A','B','E','X','I','M','U','O','Z','Y']
-        },
-        multiples: { 
-            name: "Multiples of 3", 
-            check: (v) => parseInt(v) % 3 === 0,
-            pool: ['1','3','4','6','8','9','12','13','15','2']
-        },
-        primes: { 
-            name: "Primes", 
-            check: (v) => {
-                let n = parseInt(v);
-                if (n < 2) return false;
-                for(let i=2; i <= Math.sqrt(n); i++) if(n % i === 0) return false;
-                return true;
+        // --- rule definitions (light & clean)
+        const RULES = {
+            vowels: {
+                name: "Vowels",
+                check: (v) => ['a','e','i','o','u'].includes(v.toLowerCase()),
+                pool: ['A','B','E','X','I','M','U','O','Z','Y']
             },
-            pool: ['2','3','4','5','6','7','8','9','11','13']
-        },
-        vague: { name: "Beautiful Elements", check: null }
-    };
+            multiples: {
+                name: "Multiples of 3",
+                check: (v) => parseInt(v) % 3 === 0,
+                pool: ['1','3','4','6','8','9','12','13','15','2']
+            },
+            primes: {
+                name: "Primes",
+                check: (v) => {
+                    let n = parseInt(v);
+                    if (isNaN(n) || n < 2) return false;
+                    for(let i=2; i<=Math.sqrt(n); i++) if(n % i === 0) return false;
+                    return true;
+                },
+                pool: ['2','3','4','5','6','7','8','9','11','13']
+            },
+            vague: {
+                name: "Undefined",
+                check: null,
+                pool: ['?','★','♢','◈','✧','∞','⚡','❤','✓','✗']
+            }
+        };
 
-    class Element {
-        constructor(value, x, y) {
-            this.value = value;
-            this.x = x; this.y = y;
-            this.targetX = x; this.targetY = y;
-            this.size = 35;
-            this.status = 'belt'; // 'belt', 'scanning', 'member', 'excluded'
-            this.vx = 0; this.vy = 0;
-            this.opacity = 1;
+        // --- helper: add log (minimal)
+        function addLog(text, isError = false) {
+            const logDiv = document.createElement('div');
+            logDiv.className = `log-entry ${isError ? 'fail' : ''}`;
+            logDiv.innerText = isError ? `⚠ ${text}` : `→ ${text}`;
+            logContainer.prepend(logDiv);
+            if(logContainer.children.length > 18) logContainer.removeChild(logContainer.lastChild);
+            // auto-scroll to top
+            logContainer.scrollTop = 0;
         }
 
-        update() {
-            if (this === draggedElement) return;
+        // --- element class (modern minimal visuals)
+        class FlowElement {
+            constructor(value, x, y) {
+                this.value = value;
+                this.x = x;
+                this.y = y;
+                this.targetX = x;
+                this.targetY = y;
+                this.size = 42;
+                this.status = 'belt'; // belt, member, excluded
+                this.vx = 0;
+                this.vy = 0;
+                this.opacity = 1;
+                this.floatPhase = Math.random() * Math.PI * 2;
+            }
 
-            if (this.status === 'belt') {
-                this.x += (this.targetX - this.x) * 0.1;
-                this.y += (this.targetY - this.y) * 0.1;
-            } else if (this.status === 'member' || this.status === 'excluded') {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.opacity -= 0.01;
+            update() {
+                if (this === draggedElement) return;
+                if (this.status === 'belt') {
+                    // smooth easing to target
+                    this.x += (this.targetX - this.x) * 0.12;
+                    this.y += (this.targetY - this.y) * 0.12;
+                } else if (this.status === 'member' || this.status === 'excluded') {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.opacity -= 0.012;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.min(this.opacity, 0.95);
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 0.65, 0, Math.PI * 2);
+                // clean white / light card style
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = this.status === 'belt' ? '#cbd5e1' : (this.status === 'member' ? '#3b82f6' : '#f43f5e');
+                ctx.lineWidth = 2.2;
+                ctx.stroke();
+                // subtle inner shadow
+                ctx.fillStyle = '#0f172a';
+                ctx.font = `500 ${Math.floor(this.size * 0.55)}px "Inter", monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.value, this.x, this.y);
+                ctx.restore();
             }
         }
 
-        draw() {
-            ctx.save();
-            ctx.globalAlpha = this.opacity;
-            ctx.translate(this.x, this.y);
-
-            // Circle
-            ctx.beginPath();
-            ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(255,255,255,0.05)';
-            ctx.fill();
-            ctx.strokeStyle = this.status === 'belt' ? 'rgba(255,255,255,0.3)' : (this.status === 'member' ? varToHex('--accent-cyan') : varToHex('--accent-red'));
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Text
-            ctx.fillStyle = 'white';
-            ctx.font = 'bold 20px monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(this.value, 0, 0);
-
-            ctx.restore();
-        }
-    }
-
-    function init() {
-        resize();
-        spawnElements();
-        animate();
-    }
-
-    function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width;
-        canvas.height = height;
-    }
-
-    function spawnElements() {
-        elements = [];
-        const pool = RULES[currentRule].pool || RULES.vowels.pool;
-        for (let i = 0; i < pool.length; i++) {
-            elements.push(new Element(pool[i], 100, 150 + i * 90));
-        }
-    }
-
-    function setRule(key, btn) {
-        currentRule = key;
-        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        if (key === 'vague') {
-            scannerState = 'error';
-            addLog("CRITICAL ERROR: 'Beautiful' is not a well-defined rule.", true);
-        } else {
-            scannerState = 'idle';
-            addLog(`Scanner programmed: ${RULES[key].name}`);
-        }
-        spawnElements();
-    }
-
-    function toggleManual() {
-        manualMode = !manualMode;
-        instructionEl.innerText = manualMode ? "Manual Sort: Drag element to top (∈) or bottom (∉)" : "Automatic Sort: Drop element in scanner";
-        addLog(manualMode ? "Manual Mode Enabled" : "Automatic Mode Enabled");
-    }
-
-    function resetMachine() {
-        spawnElements();
-        addLog("Machine Reset complete.");
-        scannerState = 'idle';
-    }
-
-    function addLog(text, isFail = false) {
-        const div = document.createElement('div');
-        div.className = `log-entry ${isFail ? 'fail' : ''}`;
-        div.innerText = `> ${text}`;
-        logEl.prepend(div);
-        if (logEl.children.length > 20) logEl.removeChild(logEl.lastChild);
-    }
-
-    function drawBackground() {
-        const scannerX = width / 2;
-        const scannerY = height / 2;
-
-        // Conveyor Belt
-        ctx.fillStyle = '#222';
-        ctx.fillRect(0, scannerY - 60, scannerX - 100, 120);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
-        for(let i=0; i < (scannerX - 100); i += 40) {
-            ctx.beginPath();
-            ctx.moveTo(i, scannerY - 60);
-            ctx.lineTo(i, scannerY + 60);
-            ctx.stroke();
+        // --- spawn elements from current rule pool
+        function spawnElements() {
+            const pool = RULES[currentRule].pool;
+            const startX = 70;
+            let startY = 150;
+            const stepY = 85;
+            elements = [];
+            for(let i=0; i<pool.length; i++) {
+                const yPos = startY + (i % 6) * stepY;
+                elements.push(new FlowElement(pool[i], startX, yPos));
+                elements[elements.length-1].targetX = startX;
+                elements[elements.length-1].targetY = yPos;
+            }
         }
 
-        // Fork Paths
-        ctx.lineWidth = 10;
-        // Top Fork (Member)
-        ctx.strokeStyle = 'rgba(0, 242, 255, 0.2)';
-        ctx.beginPath();
-        ctx.moveTo(scannerX + 100, scannerY);
-        ctx.quadraticCurveTo(scannerX + 150, scannerY, scannerX + 250, scannerY - 150);
-        ctx.lineTo(width, scannerY - 150);
-        ctx.stroke();
-
-        // Bottom Fork (Excluded)
-        ctx.strokeStyle = 'rgba(255, 51, 102, 0.2)';
-        ctx.beginPath();
-        ctx.moveTo(scannerX + 100, scannerY);
-        ctx.quadraticCurveTo(scannerX + 150, scannerY, scannerX + 250, scannerY + 150);
-        ctx.lineTo(width, scannerY + 150);
-        ctx.stroke();
-
-        // Labels
-        ctx.font = 'bold 14px monospace';
-        ctx.fillStyle = varToHex('--accent-cyan');
-        ctx.fillText("MEMBERSHIP AREA (∈ A)", width - 200, scannerY - 170);
-        ctx.fillStyle = varToHex('--accent-red');
-        ctx.fillText("EXCLUDED ZONE (∉ A)", width - 200, scannerY + 180);
-    }
-
-    function drawScanner() {
-        const x = width / 2;
-        const y = height / 2;
-        
-        ctx.save();
-        if (scannerState === 'error') {
-            glitchEffect = Math.sin(Date.now() * 0.1) * 5;
-            ctx.translate(glitchEffect, 0);
+        // --- reset machine
+        function resetMachine() {
+            spawnElements();
+            scannerPulse = 0;
+            errorGlitch = 0;
+            addLog(`reset · ${RULES[currentRule].name} set ready`, false);
+            statusMsg.innerText = manualMode ? "✋ manual: drag to top(∈) or bottom(∉)" : "⚡ drag into scanner → auto-sort";
         }
 
-        // Body
-        ctx.fillStyle = '#333';
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = 'black';
-        ctx.fillRect(x - 100, y - 120, 200, 240);
-        
-        // Screen
-        ctx.fillStyle = scannerState === 'error' ? '#200' : '#111';
-        ctx.fillRect(x - 80, y - 100, 160, 80);
-        
-        // Screen Text
-        ctx.textAlign = 'center';
-        ctx.fillStyle = scannerState === 'error' ? varToHex('--accent-red') : varToHex('--accent-cyan');
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText("SET A DEFINITION:", x, y - 85);
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText(RULES[currentRule].name.toUpperCase(), x, y - 60);
-
-        if (scannerState === 'error') {
-            ctx.fillStyle = varToHex('--accent-red');
-            ctx.font = 'bold 10px monospace';
-            ctx.fillText("!! UNDEFINED !!", x, y - 40);
-        }
-
-        // Scanner Aperture
-        ctx.strokeStyle = scannerPulse > 0 ? (scannerPulseColor) : '#555';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(x - 80, y, 160, 100);
-        
-        if (scannerPulse > 0) {
-            ctx.globalAlpha = scannerPulse / 20;
-            ctx.fillStyle = scannerPulseColor;
-            ctx.fillRect(x - 80, y, 160, 100);
-            scannerPulse--;
-        }
-
-        ctx.restore();
-    }
-
-    let scannerPulseColor = '#00f2ff';
-
-    function processSorting(el, manualChoice = null) {
-        const scannerX = width / 2;
-        const scannerY = height / 2;
-
-        if (currentRule === 'vague') {
-            el.vx = -5; el.vy = (Math.random() - 0.5) * 10;
-            addLog(`Error: ${el.value} is unclassifiable.`, true);
-            return;
-        }
-
-        const isMember = RULES[currentRule].check(el.value);
-        
-        // In manual mode, check if user was correct
-        if (manualChoice !== null) {
-            const userWasCorrect = (manualChoice === 'member' && isMember) || (manualChoice === 'excluded' && !isMember);
-            if (!userWasCorrect) {
-                el.targetX = 100; el.targetY = 150 + elements.indexOf(el) * 90;
-                addLog(`Incorrect! ${el.value} does ${isMember ? '' : 'not '}fit the rule.`, true);
+        // --- process sorting (core logic)
+        function processElement(el, manualOverride = null) {
+            const ruleObj = RULES[currentRule];
+            if (currentRule === 'vague' || ruleObj.check === null) {
+                // vague set chaos
+                el.vx = (Math.random() - 0.5) * 6;
+                el.vy = (Math.random() - 0.5) * 6 - 3;
+                addLog(`"${el.value}" · set not defined (vague)`, true);
+                scannerPulse = 18;
+                scannerPulseColor = "#f97316";
+                return;
+            }
+            
+            const isMember = ruleObj.check(el.value);
+            let finalAccept = isMember;
+            let userCorrect = true;
+            
+            if (manualOverride !== null) {
+                const userChoiceMember = (manualOverride === 'member');
+                if (userChoiceMember !== isMember) {
+                    userCorrect = false;
+                    finalAccept = null;
+                    addLog(`incorrect: "${el.value}" ${isMember ? 'belongs' : 'does not belong'} to ${ruleObj.name}`, true);
+                    // return element to belt
+                    el.status = 'belt';
+                    el.opacity = 1;
+                    el.targetX = 70;
+                    el.targetY = 150 + (elements.findIndex(e => e === el) % 6) * 85;
+                    scannerPulse = 12;
+                    scannerPulseColor = "#f97316";
+                    return;
+                }
+            }
+            
+            if (finalAccept !== null) {
+                el.status = finalAccept ? 'member' : 'excluded';
+                el.vx = 6.5;
+                el.vy = finalAccept ? -3.2 : 3.2;
+                scannerPulse = 22;
+                scannerPulseColor = finalAccept ? "#3b82f6" : "#f43f5e";
+                addLog(`${el.value} ${finalAccept ? '∈' : '∉'} ${ruleObj.name}`, !finalAccept);
+            } else if(userCorrect === false) {
+                // already handled incorrect
                 return;
             }
         }
 
-        el.status = isMember ? 'member' : 'excluded';
-        el.vx = 8;
-        el.vy = isMember ? -4 : 4;
-        
-        scannerPulse = 20;
-        scannerPulseColor = isMember ? varToHex('--accent-cyan') : varToHex('--accent-red');
-        
-        addLog(`${el.value} ${isMember ? '∈' : '∉'} A (${isMember ? 'Accept' : 'Reject'})`, !isMember);
-    }
-
-    function animate() {
-        ctx.clearRect(0, 0, width, height);
-        
-        drawBackground();
-        drawScanner();
-
-        elements.forEach(el => {
-            el.update();
-            el.draw();
-        });
-
-        // Cleanup finished elements
-        elements = elements.filter(el => el.opacity > 0);
-        if (elements.length < 5) {
-            const pool = RULES[currentRule].pool || RULES.vowels.pool;
-            const val = pool[Math.floor(Math.random() * pool.length)];
-            elements.push(new Element(val, -50, height * 0.5));
-            elements[elements.length-1].targetX = 100;
-            elements[elements.length-1].targetY = 200 + (Math.random()*300);
-        }
-
-        requestAnimationFrame(animate);
-    }
-
-    // Input Handling
-    function handleDown(e) {
-        const pos = getMousePos(e);
-        draggedElement = elements.find(el => {
-            const d = Math.hypot(el.x - pos.x, el.y - pos.y);
-            return d < el.size;
-        });
-    }
-
-    function handleMove(e) {
-        if (!draggedElement) return;
-        const pos = getMousePos(e);
-        draggedElement.x = pos.x;
-        draggedElement.y = pos.y;
-    }
-
-    function handleUp(e) {
-        if (!draggedElement) return;
-        
-        const scannerX = width / 2;
-        const scannerY = height / 2;
-        const distToScanner = Math.hypot(draggedElement.x - scannerX, draggedElement.y - (scannerY + 50));
-
-        if (distToScanner < 100) {
-            if (manualMode) {
-                // Return if they dropped it in scanner during manual mode
-                draggedElement.targetX = 100;
-            } else {
-                processSorting(draggedElement);
+        // --- draw background: minimal zones & clean geometry
+        function drawBackground() {
+            const midX = width / 2;
+            const midY = height / 2;
+            
+            // very light canvas base
+            ctx.fillStyle = '#f5f7fb';
+            ctx.fillRect(0, 0, width, height);
+            
+            // soft conveyor belt visual
+            ctx.fillStyle = '#eef2f9';
+            ctx.shadowBlur = 0;
+            ctx.fillRect(40, midY - 45, midX - 80, 90);
+            ctx.fillStyle = '#e2e8f0';
+            for(let i=40; i<midX-60; i+=38) {
+                ctx.fillRect(i, midY - 8, 20, 16);
             }
-        } else if (manualMode) {
-            if (draggedElement.y < scannerY - 100) processSorting(draggedElement, 'member');
-            else if (draggedElement.y > scannerY + 100) processSorting(draggedElement, 'excluded');
+            
+            // elegant paths: membership (upper) & rejected (lower)
+            ctx.beginPath();
+            ctx.moveTo(midX + 70, midY);
+            ctx.quadraticCurveTo(midX + 120, midY, midX + 190, midY - 120);
+            ctx.lineTo(width - 40, midY - 120);
+            ctx.strokeStyle = '#3b82f680';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(midX + 70, midY);
+            ctx.quadraticCurveTo(midX + 120, midY, midX + 190, midY + 120);
+            ctx.lineTo(width - 40, midY + 120);
+            ctx.strokeStyle = '#f43f5e80';
+            ctx.stroke();
+            
+            // labels (clean)
+            ctx.font = "500 12px 'Inter'";
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText("member zone ∈ A", width - 160, midY - 135);
+            ctx.fillStyle = '#f43f5e';
+            ctx.fillText("reject zone ∉ A", width - 155, midY + 145);
+            
+            // faint circles for target zones
+            ctx.beginPath();
+            ctx.arc(width - 55, midY - 120, 28, 0, Math.PI*2);
+            ctx.fillStyle = '#3b82f610';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(width - 55, midY + 120, 28, 0, Math.PI*2);
+            ctx.fillStyle = '#f43f5e10';
+            ctx.fill();
         }
-
-        draggedElement = null;
-    }
-
-    function getMousePos(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return { x: clientX - rect.left, y: clientY - rect.top };
-    }
-
-    function varToHex(varName) {
-        return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-    }
-
-    window.addEventListener('resize', resize);
-    canvas.addEventListener('mousedown', handleDown);
-    canvas.addEventListener('mousemove', handleMove);
-    canvas.addEventListener('mouseup', handleUp);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleDown(e); });
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); });
-    canvas.addEventListener('touchend', (e) => { e.preventDefault(); handleUp(e); });
-
-    init();
+        
+        // --- scanner unit (light & sleek)
+        function drawScanner() {
+            const cx = width / 2;
+            const cy = height / 2;
+            ctx.save();
+            if (errorGlitch > 0) {
+                ctx.translate((Math.random() - 0.5) * 3, 0);
+                errorGlitch -= 0.5;
+            }
+            // main scanner body
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = "rgba(0,0,0,0.02)";
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(0,0,0,0.04)";
+            ctx.fillRect(cx - 92, cy - 105, 184, 210);
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(cx - 84, cy - 96, 168, 190);
+            
+            // screen display
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(cx - 74, cy - 86, 148, 70);
+            ctx.fillStyle = '#f1f5f9';
+            ctx.fillRect(cx - 74, cy - 86, 148, 70);
+            
+            ctx.font = "500 11px 'Inter'";
+            ctx.fillStyle = '#475569';
+            ctx.fillText("set A:", cx - 30, cy - 68);
+            ctx.font = "600 16px 'Inter'";
+            ctx.fillStyle = '#0f172a';
+            let ruleDisplay = RULES[currentRule].name;
+            if(currentRule === 'vague') ruleDisplay = "❓ undefined";
+            ctx.fillText(ruleDisplay, cx - 28, cy - 44);
+            
+            // scanning aperture
+            ctx.strokeStyle = scannerPulse > 0 ? scannerPulseColor : '#cbd5e1';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(cx - 74, cy - 6, 148, 84);
+            if(scannerPulse > 0) {
+                ctx.globalAlpha = 0.2;
+                ctx.fillStyle = scannerPulseColor;
+                ctx.fillRect(cx - 74, cy - 6, 148, 84);
+                scannerPulse--;
+                ctx.globalAlpha = 1;
+            }
+            
+            // small decorative led
+            ctx.beginPath();
+            ctx.arc(cx + 68, cy - 86, 6, 0, Math.PI*2);
+            ctx.fillStyle = scannerPulse > 0 ? scannerPulseColor : '#cbd5e6';
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // --- draw elements + background and refresh animations
+        function drawAll() {
+            drawBackground();
+            drawScanner();
+            elements.forEach(el => el.draw());
+        }
+        
+        // --- update targets for belt arrangement (maintain positions)
+        function repositionBeltItems() {
+            const startX = 70;
+            const startYBase = 150;
+            const stepY = 82;
+            elements.forEach((el, idx) => {
+                if(el.status === 'belt' && el !== draggedElement) {
+                    const newY = startYBase + (idx % 7) * stepY;
+                    el.targetX = startX;
+                    el.targetY = newY;
+                } else if(el.status === 'belt' && el === draggedElement) {
+                    // while dragging, don't force target
+                }
+            });
+        }
+        
+        // --- resize canvas
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            repositionBeltItems();
+        }
+        
+        // --- UI: change rule
+        function setRule(ruleKey, btnElement) {
+            if(ruleKey === currentRule) return;
+            currentRule = ruleKey;
+            // update active style
+            document.querySelectorAll('#rule-group .btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
+            
+            if(currentRule === 'vague') {
+                addLog(`⚠ set to "vague set" – no definition, unpredictable`, true);
+                statusMsg.innerText = "⚠ vague set: elements will glitch away";
+            } else {
+                addLog(`rule changed → ${RULES[currentRule].name}`);
+                statusMsg.innerText = manualMode ? "✋ manual mode: drag to zone" : "✨ auto mode: drop into scanner";
+            }
+            spawnElements();
+            scannerPulse = 0;
+            errorGlitch = 0;
+        }
+        
+        // --- toggle manual mode
+        function toggleManualMode() {
+            manualMode = !manualMode;
+            const toggleBtn = document.getElementById('manualToggleBtn');
+            toggleBtn.innerText = manualMode ? "Auto mode" : "Manual mode";
+            toggleBtn.classList.toggle('active');
+            if(manualMode) {
+                statusMsg.innerText = "✋ manual: drag element to TOP (∈) or BOTTOM (∉) zones";
+                addLog("manual mode · sort by dropping above/below scanner");
+            } else {
+                statusMsg.innerText = "✨ auto: drop element into scanner → machine decides";
+                addLog("auto mode · scanner evaluates membership");
+            }
+        }
+        
+        // --- interaction handlers (drag & drop)
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+        
+        function onPointerDown(e) {
+            e.preventDefault();
+            const pos = getCanvasCoords(e);
+            draggedElement = elements.find(el => {
+                const dx = el.x - pos.x, dy = el.y - pos.y;
+                return Math.hypot(dx, dy) < el.size * 0.7;
+            });
+            if(draggedElement) {
+                dragOffsetX = draggedElement.x - pos.x;
+                dragOffsetY = draggedElement.y - pos.y;
+            }
+        }
+        
+        function onPointerMove(e) {
+            if(!draggedElement) return;
+            e.preventDefault();
+            const pos = getCanvasCoords(e);
+            draggedElement.x = pos.x + dragOffsetX;
+            draggedElement.y = pos.y + dragOffsetY;
+        }
+        
+        function onPointerUp(e) {
+            if(!draggedElement) return;
+            e.preventDefault();
+            const scannerCenterX = width / 2;
+            const scannerCenterY = height / 2;
+            const dropX = draggedElement.x;
+            const dropY = draggedElement.y;
+            const inScannerArea = (Math.hypot(dropX - scannerCenterX, dropY - (scannerCenterY + 10)) < 85);
+            
+            if(manualMode) {
+                const isAboveZone = dropY < (scannerCenterY - 70);
+                const isBelowZone = dropY > (scannerCenterY + 70);
+                if(isAboveZone) {
+                    processElement(draggedElement, 'member');
+                } else if(isBelowZone) {
+                    processElement(draggedElement, 'excluded');
+                } else if(inScannerArea) {
+                    // in manual mode, scanner does nothing; but we treat as invalid? give hint
+                    addLog(`manual mode: drop to upper (∈) or lower (∉) area`, true);
+                    draggedElement.targetX = 70;
+                    draggedElement.targetY = 150 + (elements.indexOf(draggedElement) % 7) * 82;
+                } else {
+                    draggedElement.targetX = 70;
+                    draggedElement.targetY = 150 + (elements.indexOf(draggedElement) % 7) * 82;
+                }
+            } else {
+                // auto mode: scanner zone detection
+                if(inScannerArea) {
+                    processElement(draggedElement, null);
+                } else {
+                    draggedElement.targetX = 70;
+                    draggedElement.targetY = 150 + (elements.indexOf(draggedElement) % 7) * 82;
+                }
+            }
+            draggedElement = null;
+            repositionBeltItems();
+        }
+        
+        // --- animate loop
+        function animate() {
+            if(!ctx) return;
+            // update element positions
+            for(let i=0; i<elements.length; i++) {
+                elements[i].update();
+            }
+            // filter out removed elements (opacity)
+            elements = elements.filter(el => el.opacity > 0.02);
+            // respawn if too few
+            if(elements.length < 5 && RULES[currentRule].pool) {
+                const pool = RULES[currentRule].pool;
+                const newVal = pool[Math.floor(Math.random() * pool.length)];
+                const newY = 150 + (elements.length % 7) * 85;
+                const newEl = new FlowElement(newVal, 20, newY);
+                newEl.targetX = 70;
+                newEl.targetY = newY;
+                elements.push(newEl);
+            }
+            drawAll();
+            requestAnimationFrame(animate);
+        }
+        
+        // --- event binding & initialization
+        function bindEvents() {
+            canvas.addEventListener('mousedown', onPointerDown);
+            window.addEventListener('mousemove', onPointerMove);
+            window.addEventListener('mouseup', onPointerUp);
+            canvas.addEventListener('touchstart', onPointerDown, {passive:false});
+            window.addEventListener('touchmove', onPointerMove, {passive:false});
+            window.addEventListener('touchend', onPointerUp);
+            window.addEventListener('resize', () => { resizeCanvas(); repositionBeltItems(); });
+            
+            document.getElementById('resetBtn').addEventListener('click', () => resetMachine());
+            document.getElementById('manualToggleBtn').addEventListener('click', toggleManualMode);
+            document.querySelectorAll('#rule-group .btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const rule = btn.getAttribute('data-rule');
+                    if(rule) setRule(rule, btn);
+                });
+            });
+        }
+        
+        function start() {
+            resizeCanvas();
+            spawnElements();
+            bindEvents();
+            animate();
+            addLog("ready · modern light sorter");
+        }
+        start();
+    })();
 </script>
 </body>
 </html>
