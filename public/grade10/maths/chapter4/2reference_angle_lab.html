@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Unit Circle Unwrapped | Sine Wave Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .header p {
+            font-size: 0.8rem;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        /* Split canvas layout */
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eef2f8;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefefe;
+            border-radius: 20px;
+            cursor: grab;
+            touch-action: pan-x pan-y;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .controls {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 16px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #eef2f8;
+        }
+
+        .btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.1s;
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-secondary {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .angle-display {
+            font-family: monospace;
+            font-size: 0.9rem;
+            background: #f8fafc;
+            padding: 8px 16px;
+            border-radius: 40px;
+            color: #1e293b;
+        }
+
+        @media (max-width: 800px) {
+            .split {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>⭕ Unit Circle → Sine Wave</h1>
+        <p>y = sin(θ) | Drag the point around the circle → watch the wave draw</p>
+    </div>
+
+    <div class="split">
+        <div class="canvas-card">
+            <canvas id="unitCanvas" width="500" height="500" style="width:100%; height:auto; max-width:500px; margin:0 auto; display:block"></canvas>
+        </div>
+        <div class="canvas-card">
+            <canvas id="waveCanvas" width="600" height="350" style="width:100%; height:auto; max-width:600px; margin:0 auto; display:block"></canvas>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="playBtn" class="btn btn-primary">▶ Play</button>
+        <button id="pauseBtn" class="btn">⏸ Pause</button>
+        <button id="resetBtn" class="btn">⟳ Reset Wave</button>
+        <button id="traceCosineBtn" class="btn btn-secondary">📐 Trace Cosine (x)</button>
+        <div class="angle-display" id="angleDisplay">θ = 0.00 rad (0°)</div>
+    </div>
+    <div style="text-align: center; margin-top: 12px; font-size:0.7rem; color:#64748b;">
+        💡 Drag the 🔴 point on the circle | Height = sin(θ) | The wave is drawn as you move
+    </div>
+</div>
+
+<script>
+    // canvases
+    const unitCanvas = document.getElementById('unitCanvas');
+    const unitCtx = unitCanvas.getContext('2d');
+    const waveCanvas = document.getElementById('waveCanvas');
+    const waveCtx = waveCanvas.getContext('2d');
+    
+    let widthU = 500, heightU = 500;
+    let widthW = 600, heightW = 350;
+    
+    // Unit circle parameters
+    let centerX = 250, centerY = 250;
+    let radius = 180;
+    
+    // angle in radians
+    let angle = 0; // 0 to 2π
+    let traceMode = 'sine'; // 'sine' or 'cosine'
+    let isAnimating = false;
+    let animationId = null;
+    
+    // Store drawn wave points (for sine)
+    let sinePoints = []; // array of {x: pixel, y: pixel} for wave canvas
+    let cosinePoints = [];
+    let currentPoints = sinePoints;
+    
+    // Wave graph parameters
+    let xMin = 0, xMax = 2 * Math.PI; // radians
+    let yMin = -1.2, yMax = 1.2;
+    
+    // pixel mapping for wave
+    let graphLeft = 50, graphRight = widthW - 40;
+    let graphBottom = heightW - 40, graphTop = 40;
+    
+    // dragging state
+    let isDragging = false;
+    
+    function updateCanvasSizes() {
+        const rectU = unitCanvas.parentElement.getBoundingClientRect();
+        const maxWU = Math.min(500, rectU.width - 20);
+        unitCanvas.style.width = `${maxWU}px`;
+        unitCanvas.style.height = 'auto';
+        unitCanvas.width = 500;
+        unitCanvas.height = 500;
+        widthU = 500; heightU = 500;
+        centerX = 250; centerY = 250;
+        radius = Math.min(180, widthU * 0.36);
+        
+        const rectW = waveCanvas.parentElement.getBoundingClientRect();
+        const maxWW = Math.min(600, rectW.width - 20);
+        waveCanvas.style.width = `${maxWW}px`;
+        waveCanvas.style.height = 'auto';
+        waveCanvas.width = 600;
+        waveCanvas.height = 350;
+        widthW = 600; heightW = 350;
+        graphLeft = 50; graphRight = widthW - 40;
+        graphBottom = heightW - 40; graphTop = 40;
+        
+        drawAll();
+    }
+    
+    // convert angle (radians) to point on unit circle
+    function pointOnCircle(rad) {
+        const x = centerX + radius * Math.cos(rad);
+        const y = centerY - radius * Math.sin(rad); // y inverted because canvas y+ down
+        return { x, y };
+    }
+    
+    // convert x (radians) to pixel x on wave graph
+    function radToPixelX(rad) {
+        return graphLeft + (rad - xMin) / (xMax - xMin) * (graphRight - graphLeft);
+    }
+    
+    // convert y value (-1..1) to pixel y
+    function valueToPixelY(val) {
+        return graphBottom - (val - yMin) / (yMax - yMin) * (graphBottom - graphTop);
+    }
+    
+    // draw unit circle, axes, point, bridge
+    function drawUnitCircle() {
+        unitCtx.clearRect(0, 0, widthU, heightU);
+        unitCtx.fillStyle = "#ffffff";
+        unitCtx.fillRect(0, 0, widthU, heightU);
+        
+        // axes
+        unitCtx.beginPath();
+        unitCtx.strokeStyle = "#cbd5e1";
+        unitCtx.lineWidth = 1;
+        unitCtx.moveTo(0, centerY);
+        unitCtx.lineTo(widthU, centerY);
+        unitCtx.moveTo(centerX, 0);
+        unitCtx.lineTo(centerX, heightU);
+        unitCtx.stroke();
+        
+        // circle
+        unitCtx.beginPath();
+        unitCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        unitCtx.strokeStyle = "#1e293b";
+        unitCtx.lineWidth = 2;
+        unitCtx.stroke();
+        
+        // labels
+        unitCtx.fillStyle = "#64748b";
+        unitCtx.font = "12px monospace";
+        unitCtx.fillText("(1,0)", centerX + radius + 5, centerY + 5);
+        unitCtx.fillText("(0,1)", centerX + 5, centerY - radius - 5);
+        unitCtx.fillText("(-1,0)", centerX - radius - 30, centerY + 5);
+        unitCtx.fillText("(0,-1)", centerX + 5, centerY + radius + 15);
+        
+        // point P
+        const p = pointOnCircle(angle);
+        unitCtx.beginPath();
+        unitCtx.arc(p.x, p.y, 12, 0, 2 * Math.PI);
+        unitCtx.fillStyle = "#ef4444";
+        unitCtx.fill();
+        unitCtx.fillStyle = "white";
+        unitCtx.font = "bold 12px monospace";
+        unitCtx.fillText("P", p.x-4, p.y+4);
+        
+        // horizontal bridge line to right
+        unitCtx.beginPath();
+        unitCtx.setLineDash([6, 8]);
+        unitCtx.strokeStyle = "#f59e0b";
+        unitCtx.lineWidth = 2;
+        unitCtx.moveTo(p.x, p.y);
+        unitCtx.lineTo(widthU - 20, p.y);
+        unitCtx.stroke();
+        unitCtx.setLineDash([]);
+        
+        // show angle arc
+        const angleDeg = (angle * 180 / Math.PI).toFixed(0);
+        unitCtx.fillStyle = "#3b82f6";
+        unitCtx.font = "bold 11px monospace";
+        unitCtx.fillText(`θ = ${angle.toFixed(2)} rad (${angleDeg}°)`, centerX + 20, centerY - radius - 10);
+        
+        // draw radius line
+        unitCtx.beginPath();
+        unitCtx.moveTo(centerX, centerY);
+        unitCtx.lineTo(p.x, p.y);
+        unitCtx.strokeStyle = "#94a3b8";
+        unitCtx.lineWidth = 1.5;
+        unitCtx.stroke();
+    }
+    
+    // draw wave graph with current trace points
+    function drawWave() {
+        waveCtx.clearRect(0, 0, widthW, heightW);
+        waveCtx.fillStyle = "#ffffff";
+        waveCtx.fillRect(0, 0, widthW, heightW);
+        
+        // axes
+        waveCtx.beginPath();
+        waveCtx.strokeStyle = "#cbd5e1";
+        waveCtx.lineWidth = 1;
+        // x-axis at y=0
+        const zeroY = valueToPixelY(0);
+        waveCtx.moveTo(graphLeft, zeroY);
+        waveCtx.lineTo(graphRight, zeroY);
+        waveCtx.moveTo(graphLeft, graphTop);
+        waveCtx.lineTo(graphLeft, graphBottom);
+        waveCtx.stroke();
+        
+        // x-axis labels (radians)
+        waveCtx.fillStyle = "#64748b";
+        waveCtx.font = "10px monospace";
+        const radMarks = [0, Math.PI/2, Math.PI, 3*Math.PI/2, 2*Math.PI];
+        radMarks.forEach(rad => {
+            const px = radToPixelX(rad);
+            waveCtx.fillText(`${rad === 0 ? "0" : rad === Math.PI ? "π" : rad === 2*Math.PI ? "2π" : rad === Math.PI/2 ? "π/2" : "3π/2"}`, px-8, zeroY + 12);
+        });
+        
+        // y-axis labels
+        waveCtx.fillText("1", graphLeft-20, valueToPixelY(1));
+        waveCtx.fillText("-1", graphLeft-25, valueToPixelY(-1));
+        waveCtx.fillText("sin(θ)", graphRight-40, graphTop+15);
+        
+        // draw the traced wave (dots or line)
+        if (currentPoints.length > 1) {
+            waveCtx.beginPath();
+            waveCtx.strokeStyle = traceMode === 'sine' ? "#3b82f6" : "#f59e0b";
+            waveCtx.lineWidth = 2.5;
+            waveCtx.moveTo(currentPoints[0].x, currentPoints[0].y);
+            for (let i = 1; i < currentPoints.length; i++) {
+                waveCtx.lineTo(currentPoints[i].x, currentPoints[i].y);
+            }
+            waveCtx.stroke();
+        }
+        
+        // draw current active point on wave (bridge)
+        const currentRad = angle;
+        let currentValue;
+        if (traceMode === 'sine') {
+            currentValue = Math.sin(angle);
+        } else {
+            currentValue = Math.cos(angle);
+        }
+        const waveX = radToPixelX(currentRad);
+        const waveY = valueToPixelY(currentValue);
+        waveCtx.beginPath();
+        waveCtx.arc(waveX, waveY, 8, 0, 2*Math.PI);
+        waveCtx.fillStyle = "#ef4444";
+        waveCtx.fill();
+        waveCtx.fillStyle = "white";
+        waveCtx.font = "bold 10px monospace";
+        waveCtx.fillText("●", waveX-2, waveY+2);
+        
+        // draw vertical dashed bridge from wave point to x-axis
+        const axisY = valueToPixelY(0);
+        waveCtx.beginPath();
+        waveCtx.setLineDash([5, 6]);
+        waveCtx.strokeStyle = "#f59e0b";
+        waveCtx.moveTo(waveX, waveY);
+        waveCtx.lineTo(waveX, axisY);
+        waveCtx.stroke();
+        waveCtx.setLineDash([]);
+        
+        // show value
+        waveCtx.fillStyle = "#1e293b";
+        waveCtx.font = "10px monospace";
+        waveCtx.fillText(`${traceMode === 'sine' ? 'sin' : 'cos'}(θ) = ${currentValue.toFixed(4)}`, waveX-30, waveY-8);
+    }
+    
+    // update the traced points based on current angle (for wave)
+    function updateTracedPoints() {
+        // if we are resetting or animating, we keep points up to current angle
+        if (traceMode === 'sine') {
+            // rebuild sinePoints up to current angle
+            sinePoints = [];
+            const steps = 300;
+            for (let i = 0; i <= steps; i++) {
+                const rad = (i / steps) * (2 * Math.PI);
+                if (rad > angle + 0.001) break;
+                const val = Math.sin(rad);
+                const px = radToPixelX(rad);
+                const py = valueToPixelY(val);
+                sinePoints.push({ x: px, y: py });
+            }
+            currentPoints = sinePoints;
+        } else {
+            cosinePoints = [];
+            const steps = 300;
+            for (let i = 0; i <= steps; i++) {
+                const rad = (i / steps) * (2 * Math.PI);
+                if (rad > angle + 0.001) break;
+                const val = Math.cos(rad);
+                const px = radToPixelX(rad);
+                const py = valueToPixelY(val);
+                cosinePoints.push({ x: px, y: py });
+            }
+            currentPoints = cosinePoints;
+        }
+    }
+    
+    function setAngle(newAngle) {
+        // wrap angle between 0 and 2π
+        angle = newAngle % (2 * Math.PI);
+        if (angle < 0) angle += 2 * Math.PI;
+        updateTracedPoints();
+        drawAll();
+        document.getElementById('angleDisplay').innerHTML = `θ = ${angle.toFixed(3)} rad (${(angle * 180 / Math.PI).toFixed(0)}°)`;
+    }
+    
+    function drawAll() {
+        drawUnitCircle();
+        drawWave();
+    }
+    
+    // drag interaction on unit circle
+    function handleDragStart(e) {
+        isDragging = true;
+        handleDragMove(e);
+        e.preventDefault();
+    }
+    
+    function handleDragMove(e) {
+        if (!isDragging) return;
+        const rect = unitCanvas.getBoundingClientRect();
+        const scaleX = unitCanvas.width / rect.width;
+        const scaleY = unitCanvas.height / rect.height;
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        let canvasX = (clientX - rect.left) * scaleX;
+        let canvasY = (clientY - rect.top) * scaleY;
+        // compute vector from center
+        let dx = canvasX - centerX;
+        let dy = canvasY - centerY;
+        let rad = Math.atan2(-dy, dx); // because y flipped
+        setAngle(rad);
+    }
+    
+    function handleDragEnd() {
+        isDragging = false;
+    }
+    
+    // animation loop
+    function startAnimation() {
+        if (animationId) cancelAnimationFrame(animationId);
+        isAnimating = true;
+        let lastTimestamp = 0;
+        function animate(timestamp) {
+            if (!isAnimating) return;
+            const delta = 0.016; // ~60fps step
+            let newAngle = angle + 0.025;
+            if (newAngle > 2 * Math.PI) {
+                newAngle = 0;
+                // reset wave points when full cycle completes? keep continuous
+                if (traceMode === 'sine') sinePoints = [];
+                else cosinePoints = [];
+            }
+            setAngle(newAngle);
+            animationId = requestAnimationFrame(animate);
+        }
+        animationId = requestAnimationFrame(animate);
+    }
+    
+    function stopAnimation() {
+        isAnimating = false;
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+    }
+    
+    function resetWave() {
+        if (traceMode === 'sine') {
+            sinePoints = [];
+        } else {
+            cosinePoints = [];
+        }
+        setAngle(0);
+        drawAll();
+    }
+    
+    function toggleTraceMode() {
+        if (traceMode === 'sine') {
+            traceMode = 'cosine';
+            document.getElementById('traceCosineBtn').innerHTML = "📐 Trace Sine (y)";
+        } else {
+            traceMode = 'sine';
+            document.getElementById('traceCosineBtn').innerHTML = "📐 Trace Cosine (x)";
+        }
+        if (traceMode === 'sine') currentPoints = sinePoints;
+        else currentPoints = cosinePoints;
+        updateTracedPoints();
+        drawAll();
+    }
+    
+    // resize and events
+    window.addEventListener('resize', () => {
+        updateCanvasSizes();
+        updateTracedPoints();
+        drawAll();
+    });
+    
+    function bindEvents() {
+        unitCanvas.addEventListener('mousedown', handleDragStart);
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('mouseup', handleDragEnd);
+        unitCanvas.addEventListener('touchstart', handleDragStart, { passive: false });
+        window.addEventListener('touchmove', handleDragMove, { passive: false });
+        window.addEventListener('touchend', handleDragEnd);
+        
+        document.getElementById('playBtn').addEventListener('click', startAnimation);
+        document.getElementById('pauseBtn').addEventListener('click', stopAnimation);
+        document.getElementById('resetBtn').addEventListener('click', resetWave);
+        document.getElementById('traceCosineBtn').addEventListener('click', toggleTraceMode);
+    }
+    
+    function init() {
+        updateCanvasSizes();
+        setAngle(0);
+        bindEvents();
+        drawAll();
+    }
+    
+    init();
+</script>
+</body>
+</html>

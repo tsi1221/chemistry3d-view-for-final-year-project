@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Inscribed Angle Theorem | Central Angle = 2 × Inscribed Angle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .header p {
+            font-size: 0.8rem;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eef2f8;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefefe;
+            border-radius: 20px;
+            cursor: grab;
+            touch-action: pan-x pan-y;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .info-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+        }
+        .angle-card {
+            background: #f8fafc;
+            border-radius: 28px;
+            padding: 12px 24px;
+            text-align: center;
+            flex: 1;
+            min-width: 160px;
+        }
+        .angle-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+        }
+        .angle-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: monospace;
+            color: #0f172a;
+        }
+        .relationship {
+            background: #eef2ff;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-family: monospace;
+            font-weight: 600;
+            color: #3b82f6;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+        .btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.1s;
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .note {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .angle-value { font-size: 1.4rem; }
+            .header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📐 Inscribed Angle Theorem</h1>
+        <p>Central Angle = 2 × Inscribed Angle (intercepting same arc)</p>
+    </div>
+
+    <div class="card">
+        <canvas id="circleCanvas" width="700" height="500" style="width:100%; height:auto; max-width:700px; margin:0 auto; display:block"></canvas>
+        
+        <div class="info-panel">
+            <div class="angle-card">
+                <div class="angle-label">🎯 Central Angle (θ)</div>
+                <div class="angle-value" id="centralAngle">0°</div>
+            </div>
+            <div class="angle-card">
+                <div class="angle-label">✏️ Inscribed Angle (α)</div>
+                <div class="angle-value" id="inscribedAngle">0°</div>
+            </div>
+            <div class="angle-card relationship" id="relationDisplay">
+                θ = 2α
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="resetArcBtn" class="btn">⟳ Reset Arc</button>
+            <button id="semicircleBtn" class="btn btn-primary">⭕ Semicircle (90° test)</button>
+            <button id="explainBtn" class="btn">📘 Theorem</button>
+        </div>
+        <div class="note">
+            💡 Drag the <span style="color:#ef4444; font-weight:bold;">🔴 RED point</span> (inscribed vertex) along the circle • Drag <span style="color:#3b82f6; font-weight:bold;">🔵 BLUE endpoints</span> to change the intercepted arc
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('circleCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = 700, height = 500;
+    let centerX = width/2, centerY = height/2;
+    let radius = Math.min(width, height) * 0.35;
+    
+    // Points: arc endpoints A and B (central angle), inscribed vertex P on circumference
+    let angleA = 0.8;      // radians from positive x-axis
+    let angleB = 2.5;      // radians (counterclockwise)
+    let angleP = 4.2;      // radians for inscribed vertex
+    
+    let dragMode = null;    // 'A', 'B', 'P'
+    let isDragging = false;
+    
+    // DOM elements
+    const centralSpan = document.getElementById('centralAngle');
+    const inscribedSpan = document.getElementById('inscribedAngle');
+    const relationSpan = document.getElementById('relationDisplay');
+    
+    // Helper: compute angle between two vectors (in degrees)
+    function angleBetweenPoints(center, p1, p2) {
+        const dx1 = p1.x - center.x;
+        const dy1 = p1.y - center.y;
+        const dx2 = p2.x - center.x;
+        const dy2 = p2.y - center.y;
+        const dot = dx1 * dx2 + dy1 * dy2;
+        const mag1 = Math.hypot(dx1, dy1);
+        const mag2 = Math.hypot(dx2, dy2);
+        const rad = Math.acos(Math.min(1, Math.max(-1, dot / (mag1 * mag2))));
+        return rad * 180 / Math.PI;
+    }
+    
+    // Compute inscribed angle at P subtended by arc AB (major vs minor)
+    // For points A, B, P on circle, inscribed angle = half the measure of arc AB (the arc opposite P)
+    // We'll compute the central angle AOB (smallest) and then inscribed = central/2
+    function computeAngles() {
+        // central angle (smaller arc between A and B)
+        let centralRad = Math.abs(angleB - angleA);
+        if (centralRad > Math.PI) centralRad = 2 * Math.PI - centralRad;
+        const centralDeg = centralRad * 180 / Math.PI;
+        
+        // Inscribed angle: depends on P's position relative to arc AB
+        // The inscribed angle intercepts the arc AB that does NOT contain P
+        // We need to check which arc (major/minor) contains P
+        let arcStart = angleA;
+        let arcEnd = angleB;
+        let arcSize = (angleB - angleA + 2 * Math.PI) % (2 * Math.PI);
+        let isPOnMajorArc = false;
+        if (arcSize > Math.PI) {
+            // arc from A to B going the long way is > 180. The intercepted arc for P should be the one OPPOSITE P
+            // Simpler: inscribed angle = half the measure of arc AB that does NOT contain P
+            // So we find if P lies on the minor arc between A and B
+            let anglePnorm = angleP;
+            let aNorm = angleA;
+            let bNorm = angleB;
+            let contains = false;
+            if (aNorm < bNorm) {
+                contains = (anglePnorm > aNorm && anglePnorm < bNorm);
+            } else {
+                contains = (anglePnorm > aNorm || anglePnorm < bNorm);
+            }
+            if (contains) {
+                // P is on the minor arc => inscribed angle uses major arc
+                let majorArc = 2 * Math.PI - centralRad;
+                const inscribedDeg = (majorArc * 180 / Math.PI) / 2;
+                return { centralDeg, inscribedDeg };
+            } else {
+                const inscribedDeg = centralDeg / 2;
+                return { centralDeg, inscribedDeg };
+            }
+        } else {
+            // minor arc between A and B is the intercepted arc for P when P is on the major arc
+            let anglePnorm = angleP;
+            let aNorm = angleA;
+            let bNorm = angleB;
+            let onMinor = false;
+            if (aNorm < bNorm) {
+                onMinor = (anglePnorm > aNorm && anglePnorm < bNorm);
+            } else {
+                onMinor = (anglePnorm > aNorm || anglePnorm < bNorm);
+            }
+            if (!onMinor) {
+                const inscribedDeg = centralDeg / 2;
+                return { centralDeg, inscribedDeg };
+            } else {
+                let majorArc = 2 * Math.PI - centralRad;
+                const inscribedDeg = (majorArc * 180 / Math.PI) / 2;
+                return { centralDeg, inscribedDeg };
+            }
+        }
+    }
+    
+    function updateDisplay() {
+        const { centralDeg, inscribedDeg } = computeAngles();
+        centralSpan.innerText = `${centralDeg.toFixed(1)}°`;
+        inscribedSpan.innerText = `${inscribedDeg.toFixed(1)}°`;
+        relationSpan.innerHTML = `θ = 2α  (${centralDeg.toFixed(1)}° = 2 × ${inscribedDeg.toFixed(1)}°)`;
+        drawCanvas();
+    }
+    
+    // convert angle (radians) to canvas point
+    function angleToPoint(rad) {
+        const x = centerX + radius * Math.cos(rad);
+        const y = centerY + radius * Math.sin(rad);
+        return { x, y };
+    }
+    
+    function drawCanvas() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        
+        // draw circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = "#1e293b";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // mark center O
+        ctx.fillStyle = "#64748b";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 4, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = "#475569";
+        ctx.font = "bold 14px monospace";
+        ctx.fillText("O", centerX + 6, centerY - 4);
+        
+        // points A and B (arc endpoints)
+        const pointA = angleToPoint(angleA);
+        const pointB = angleToPoint(angleB);
+        const pointP = angleToPoint(angleP);
+        
+        // draw intercepted arc (thick colored arc from A to B, minor arc)
+        let arcStart = angleA;
+        let arcEnd = angleB;
+        let anticlockwise = false;
+        let diff = (arcEnd - arcStart + 2 * Math.PI) % (2 * Math.PI);
+        if (diff > Math.PI) anticlockwise = true;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius + 6, arcStart, arcEnd, anticlockwise);
+        ctx.strokeStyle = "#f59e0b";
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        
+        // draw radii for central angle
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(pointA.x, pointA.y);
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(pointB.x, pointB.y);
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // draw chords for inscribed angle (PA and PB)
+        ctx.beginPath();
+        ctx.moveTo(pointP.x, pointP.y);
+        ctx.lineTo(pointA.x, pointA.y);
+        ctx.moveTo(pointP.x, pointP.y);
+        ctx.lineTo(pointB.x, pointB.y);
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        // draw points
+        ctx.fillStyle = "#3b82f6";
+        ctx.beginPath();
+        ctx.arc(pointA.x, pointA.y, 10, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.font = "bold 12px monospace";
+        ctx.fillText("A", pointA.x-5, pointA.y-5);
+        
+        ctx.fillStyle = "#3b82f6";
+        ctx.beginPath();
+        ctx.arc(pointB.x, pointB.y, 10, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.fillText("B", pointB.x-5, pointB.y-5);
+        
+        ctx.fillStyle = "#ef4444";
+        ctx.beginPath();
+        ctx.arc(pointP.x, pointP.y, 12, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.fillText("P", pointP.x-4, pointP.y-4);
+        
+        // draw central angle arc
+        let centralRad = Math.abs(angleB - angleA);
+        if (centralRad > Math.PI) centralRad = 2 * Math.PI - centralRad;
+        const startAngle = angleA;
+        const endAngle = angleB;
+        let arcDir = (angleB - angleA + 2 * Math.PI) % (2 * Math.PI) > Math.PI;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.5, startAngle, endAngle, arcDir);
+        ctx.strokeStyle = "#3b82f6";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // inscribed angle arc (near P)
+        const anglePA = Math.atan2(pointA.y - pointP.y, pointA.x - pointP.x);
+        const anglePB = Math.atan2(pointB.y - pointP.y, pointB.x - pointP.x);
+        let diffAngle = anglePB - anglePA;
+        if (diffAngle > Math.PI) diffAngle -= 2 * Math.PI;
+        if (diffAngle < -Math.PI) diffAngle += 2 * Math.PI;
+        const arcRadius = 25;
+        const arcDirInscribed = diffAngle > 0;
+        ctx.beginPath();
+        ctx.arc(pointP.x, pointP.y, arcRadius, anglePA, anglePB, !arcDirInscribed);
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // labels for angles
+        const midAngle = (angleA + angleB) / 2;
+        const midPoint = angleToPoint(midAngle);
+        ctx.fillStyle = "#3b82f6";
+        ctx.font = "bold 13px monospace";
+        ctx.fillText(`θ = ${(centralRad * 180 / Math.PI).toFixed(0)}°`, midPoint.x - 20, midPoint.y - 12);
+        
+        const { inscribedDeg } = computeAngles();
+        ctx.fillStyle = "#ef4444";
+        ctx.fillText(`α = ${inscribedDeg.toFixed(0)}°`, pointP.x - 30, pointP.y - 18);
+    }
+    
+    // find nearest point on circle from mouse
+    function getAngleFromMouse(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        let canvasX = (clientX - rect.left) * scaleX;
+        let canvasY = (clientY - rect.top) * scaleY;
+        const dx = canvasX - centerX;
+        const dy = canvasY - centerY;
+        let rad = Math.atan2(dy, dx);
+        if (rad < 0) rad += 2 * Math.PI;
+        return rad;
+    }
+    
+    function handleDragStart(e) {
+        e.preventDefault();
+        const rad = getAngleFromMouse(e);
+        const pointArad = angleA;
+        const pointBrad = angleB;
+        const pointPrad = angleP;
+        const distA = Math.min(Math.abs(rad - pointArad), 2 * Math.PI - Math.abs(rad - pointArad));
+        const distB = Math.min(Math.abs(rad - pointBrad), 2 * Math.PI - Math.abs(rad - pointBrad));
+        const distP = Math.min(Math.abs(rad - pointPrad), 2 * Math.PI - Math.abs(rad - pointPrad));
+        if (distP < 0.1) {
+            dragMode = 'P';
+        } else if (distA < 0.1) {
+            dragMode = 'A';
+        } else if (distB < 0.1) {
+            dragMode = 'B';
+        }
+        isDragging = dragMode !== null;
+        if (isDragging) handleDragMove(e);
+    }
+    
+    function handleDragMove(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        let rad = getAngleFromMouse(e);
+        if (dragMode === 'A') {
+            angleA = rad;
+        } else if (dragMode === 'B') {
+            angleB = rad;
+        } else if (dragMode === 'P') {
+            angleP = rad;
+        }
+        // keep angles in [0, 2π)
+        angleA = (angleA + 2 * Math.PI) % (2 * Math.PI);
+        angleB = (angleB + 2 * Math.PI) % (2 * Math.PI);
+        angleP = (angleP + 2 * Math.PI) % (2 * Math.PI);
+        updateDisplay();
+    }
+    
+    function handleDragEnd() {
+        dragMode = null;
+        isDragging = false;
+    }
+    
+    function resetArc() {
+        angleA = 0.8;
+        angleB = 2.5;
+        angleP = 4.2;
+        updateDisplay();
+    }
+    
+    function setSemicircle() {
+        // set arc to be exactly 180° (π radians)
+        angleA = 0.5;
+        angleB = 0.5 + Math.PI;
+        // place P anywhere on the opposite semicircle
+        angleP = angleA + Math.PI / 2;
+        updateDisplay();
+    }
+    
+    function showExplanation() {
+        alert("📐 Inscribed Angle Theorem:\n\nAn inscribed angle (α) formed by two chords from a point on the circle is half the measure of the central angle (θ) that subtends the same arc.\n\nθ = 2α\n\n🔹 All inscribed angles intercepting the same arc are congruent.\n🔹 An angle inscribed in a semicircle (arc = 180°) is always a right angle (90°).\n🔹 Drag the RED point (P) to see the inscribed angle change — but any P on the same arc gives the same α!");
+    }
+    
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const maxW = Math.min(700, rect.width - 20);
+        canvas.style.width = `${maxW}px`;
+        canvas.style.height = 'auto';
+        canvas.width = 700;
+        canvas.height = 500;
+        width = 700;
+        height = 500;
+        centerX = width/2;
+        centerY = height/2;
+        radius = Math.min(width, height) * 0.35;
+        updateDisplay();
+    }
+    
+    // event binding
+    function bindEvents() {
+        canvas.addEventListener('mousedown', handleDragStart);
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('mouseup', handleDragEnd);
+        canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+        window.addEventListener('touchmove', handleDragMove, { passive: false });
+        window.addEventListener('touchend', handleDragEnd);
+        document.getElementById('resetArcBtn').addEventListener('click', resetArc);
+        document.getElementById('semicircleBtn').addEventListener('click', setSemicircle);
+        document.getElementById('explainBtn').addEventListener('click', showExplanation);
+        window.addEventListener('resize', resizeCanvas);
+    }
+    
+    function init() {
+        resizeCanvas();
+        bindEvents();
+        updateDisplay();
+    }
+    
+    init();
+</script>
+</body>
+</html>

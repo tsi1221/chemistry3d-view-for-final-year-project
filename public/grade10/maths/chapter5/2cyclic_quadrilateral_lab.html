@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Cyclic Quadrilateral Lab | Opposite Angles Sum to 180°</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .header p {
+            font-size: 0.8rem;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eef2f8;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefefe;
+            border-radius: 20px;
+            cursor: grab;
+            touch-action: pan-x pan-y;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .angle-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .angle-card {
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 10px 20px;
+            text-align: center;
+            min-width: 100px;
+        }
+        .angle-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .angle-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            font-family: monospace;
+        }
+        .sum-card {
+            background: #eef2ff;
+            border-radius: 24px;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        .sum-label {
+            font-size: 0.7rem;
+            color: #3b82f6;
+        }
+        .sum-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: monospace;
+            color: #1e40af;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.1s;
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .note {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .angle-value { font-size: 1.2rem; }
+            .sum-value { font-size: 1.1rem; }
+            .header h1 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔷 Cyclic Quadrilateral Lab</h1>
+        <p>All vertices on circle → Opposite angles sum to 180°</p>
+    </div>
+
+    <div class="card">
+        <canvas id="cyclicCanvas" width="700" height="500" style="width:100%; height:auto; max-width:700px; margin:0 auto; display:block"></canvas>
+        
+        <div class="angle-panel">
+            <div class="angle-card" style="border-left: 4px solid #3b82f6;">
+                <div class="angle-label">∠A</div>
+                <div class="angle-value" id="angleA">0°</div>
+            </div>
+            <div class="angle-card" style="border-left: 4px solid #10b981;">
+                <div class="angle-label">∠B</div>
+                <div class="angle-value" id="angleB">0°</div>
+            </div>
+            <div class="angle-card" style="border-left: 4px solid #3b82f6;">
+                <div class="angle-label">∠C</div>
+                <div class="angle-value" id="angleC">0°</div>
+            </div>
+            <div class="angle-card" style="border-left: 4px solid #10b981;">
+                <div class="angle-label">∠D</div>
+                <div class="angle-value" id="angleD">0°</div>
+            </div>
+        </div>
+
+        <div class="angle-panel">
+            <div class="sum-card">
+                <div class="sum-label">∠A + ∠C</div>
+                <div class="sum-value" id="sumAC">0°</div>
+            </div>
+            <div class="sum-card">
+                <div class="sum-label">∠B + ∠D</div>
+                <div class="sum-value" id="sumBD">0°</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="highlightOppositeBtn" class="btn">🎨 Highlight Opposite Pairs</button>
+            <button id="resetRectBtn" class="btn">⟳ Reset to Rectangle</button>
+            <button id="testModeBtn" class="btn btn-primary">✏️ Test Yourself (Hide ∠C)</button>
+            <button id="explainBtn" class="btn">📘 Theorem</button>
+        </div>
+        <div class="note">
+            💡 Drag any <span style="color:#3b82f6; font-weight:bold;">🔵 vertex</span> around the circle • Opposite angles always sum to 180°!
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('cyclicCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = 700, height = 500;
+    let centerX = width/2, centerY = height/2;
+    let radius = Math.min(width, height) * 0.38;
+    
+    // Four vertices angles (radians) in order A, B, C, D around circle
+    let angles = [0.5, 1.8, 3.2, 4.7]; // radians, in increasing order around circle
+    
+    let dragIndex = -1;
+    let isDragging = false;
+    let testMode = false;      // if true, hide ∠C value
+    let highlightMode = false; // visual highlight for opposite pairs
+    
+    // DOM elements
+    const angleASpan = document.getElementById('angleA');
+    const angleBSpan = document.getElementById('angleB');
+    const angleCSpan = document.getElementById('angleC');
+    const angleDSpan = document.getElementById('angleD');
+    const sumACSpan = document.getElementById('sumAC');
+    const sumBDSpan = document.getElementById('sumBD');
+    const testBtn = document.getElementById('testModeBtn');
+    
+    // convert angle (radians) to point
+    function angleToPoint(rad) {
+        const x = centerX + radius * Math.cos(rad);
+        const y = centerY + radius * Math.sin(rad);
+        return { x, y };
+    }
+    
+    // compute interior angle at vertex i (in degrees)
+    // quadrilateral vertices in order: A(0), B(1), C(2), D(3)
+    function computeAngle(i) {
+        const prev = angles[(i - 1 + 4) % 4];
+        const curr = angles[i];
+        const next = angles[(i + 1) % 4];
+        
+        const p1 = angleToPoint(prev);
+        const pC = angleToPoint(curr);
+        const p2 = angleToPoint(next);
+        
+        // vectors from current vertex to prev and next
+        const v1x = p1.x - pC.x;
+        const v1y = p1.y - pC.y;
+        const v2x = p2.x - pC.x;
+        const v2y = p2.y - pC.y;
+        
+        const dot = v1x * v2x + v1y * v2y;
+        const mag1 = Math.hypot(v1x, v1y);
+        const mag2 = Math.hypot(v2x, v2y);
+        let rad = Math.acos(Math.min(1, Math.max(-1, dot / (mag1 * mag2))));
+        // convert to degrees
+        return rad * 180 / Math.PI;
+    }
+    
+    function updateAnglesAndDisplay() {
+        const angleA = computeAngle(0);
+        const angleB = computeAngle(1);
+        const angleC = computeAngle(2);
+        const angleD = computeAngle(3);
+        
+        angleASpan.innerText = `${angleA.toFixed(1)}°`;
+        angleBSpan.innerText = `${angleB.toFixed(1)}°`;
+        if (testMode) {
+            angleCSpan.innerText = "?°";
+        } else {
+            angleCSpan.innerText = `${angleC.toFixed(1)}°`;
+        }
+        angleDSpan.innerText = `${angleD.toFixed(1)}°`;
+        
+        const sumAC = angleA + angleC;
+        const sumBD = angleB + angleD;
+        sumACSpan.innerText = `${sumAC.toFixed(1)}°`;
+        sumBDSpan.innerText = `${sumBD.toFixed(1)}°`;
+        
+        // visual feedback if sums are ~180 (green highlight)
+        const acNear = Math.abs(sumAC - 180) < 0.5;
+        const bdNear = Math.abs(sumBD - 180) < 0.5;
+        sumACSpan.style.color = acNear ? "#10b981" : "#1e40af";
+        sumBDSpan.style.color = bdNear ? "#10b981" : "#1e40af";
+        
+        drawCanvas();
+    }
+    
+    function drawCanvas() {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        
+        // draw circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // get points
+        const points = angles.map(a => angleToPoint(a));
+        
+        // draw quadrilateral edges
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < 4; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = "#1e293b";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.fillStyle = "#f8fafc";
+        ctx.fill();
+        
+        // draw vertices with highlight for opposite pairs if toggled
+        const vertexLabels = ['A', 'B', 'C', 'D'];
+        for (let i = 0; i < 4; i++) {
+            const p = points[i];
+            // color based on highlight mode: A/C blue, B/D green
+            let color = "#3b82f6";
+            if (highlightMode) {
+                if (i === 0 || i === 2) color = "#3b82f6"; // A and C blue
+                else color = "#10b981"; // B and D green
+            }
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 12, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.font = "bold 14px monospace";
+            ctx.fillText(vertexLabels[i], p.x - 5, p.y - 5);
+        }
+        
+        // draw angle arcs and labels
+        for (let i = 0; i < 4; i++) {
+            const prev = angles[(i - 1 + 4) % 4];
+            const curr = angles[i];
+            const next = angles[(i + 1) % 4];
+            const pC = points[i];
+            const pPrev = points[(i - 1 + 4) % 4];
+            const pNext = points[(i + 1) % 4];
+            
+            // compute angle for arc drawing
+            const anglePrev = Math.atan2(pPrev.y - pC.y, pPrev.x - pC.x);
+            const angleNext = Math.atan2(pNext.y - pC.y, pNext.x - pC.x);
+            let startAngle = anglePrev;
+            let endAngle = angleNext;
+            let sweep = endAngle - startAngle;
+            if (sweep > Math.PI) sweep -= 2 * Math.PI;
+            if (sweep < -Math.PI) sweep += 2 * Math.PI;
+            const clockwise = sweep < 0;
+            const arcRadius = 28;
+            ctx.beginPath();
+            ctx.arc(pC.x, pC.y, arcRadius, startAngle, endAngle, clockwise);
+            ctx.strokeStyle = highlightMode ? (i === 0 || i === 2 ? "#3b82f6" : "#10b981") : "#f59e0b";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            const angleValue = computeAngle(i);
+            const midAngle = startAngle + (clockwise ? -sweep/2 : sweep/2);
+            const textX = pC.x + (arcRadius + 8) * Math.cos(midAngle);
+            const textY = pC.y + (arcRadius + 8) * Math.sin(midAngle);
+            ctx.fillStyle = "#1e293b";
+            ctx.font = "bold 11px monospace";
+            let displayVal = testMode && i === 2 ? "?" : `${angleValue.toFixed(0)}°`;
+            ctx.fillText(displayVal, textX - 10, textY - 5);
+        }
+        
+        // additional visual: highlight opposite pairs text
+        if (highlightMode) {
+            ctx.font = "bold 10px monospace";
+            ctx.fillStyle = "#3b82f6";
+            ctx.fillText("Opposite Pair ∠A + ∠C", centerX - 70, centerY - radius - 12);
+            ctx.fillStyle = "#10b981";
+            ctx.fillText("Opposite Pair ∠B + ∠D", centerX - 70, centerY - radius - 2);
+        }
+    }
+    
+    // get angle from mouse position on circle (snap to circle)
+    function getAngleFromMouse(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        let canvasX = (clientX - rect.left) * scaleX;
+        let canvasY = (clientY - rect.top) * scaleY;
+        const dx = canvasX - centerX;
+        const dy = canvasY - centerY;
+        let rad = Math.atan2(dy, dx);
+        if (rad < 0) rad += 2 * Math.PI;
+        return rad;
+    }
+    
+    // find nearest vertex to mouse
+    function findNearestVertex(e) {
+        const rad = getAngleFromMouse(e);
+        let minDist = Infinity;
+        let idx = -1;
+        for (let i = 0; i < 4; i++) {
+            let diff = Math.abs(angles[i] - rad);
+            diff = Math.min(diff, 2 * Math.PI - diff);
+            if (diff < minDist && diff < 0.2) {
+                minDist = diff;
+                idx = i;
+            }
+        }
+        return idx;
+    }
+    
+    function handleDragStart(e) {
+        e.preventDefault();
+        const idx = findNearestVertex(e);
+        if (idx !== -1) {
+            dragIndex = idx;
+            isDragging = true;
+            handleDragMove(e);
+        }
+    }
+    
+    function handleDragMove(e) {
+        if (!isDragging || dragIndex === -1) return;
+        e.preventDefault();
+        let newAngle = getAngleFromMouse(e);
+        // ensure angles remain in increasing order to maintain convex quadrilateral
+        // we'll allow any angle but keep order after drag ends; for smoothness just set
+        angles[dragIndex] = newAngle;
+        // sort angles to maintain convex cyclic order (A,B,C,D around circle)
+        const sorted = [...angles];
+        sorted.sort((a,b) => a - b);
+        // preserve labeling? we need to keep vertex identities but cyclic order matters
+        // Instead of sorting, we reassign order to keep labels in clockwise order
+        // Simpler: keep labels in the order they appear around circle
+        let order = [];
+        for (let i = 0; i < 4; i++) {
+            order.push({ idx: i, angle: angles[i] });
+        }
+        order.sort((a,b) => a.angle - b.angle);
+        const newAngles = order.map(o => o.angle);
+        // reorder the angles array to maintain A,B,C,D in clockwise order
+        for (let i = 0; i < 4; i++) {
+            angles[i] = newAngles[i];
+        }
+        updateAnglesAndDisplay();
+    }
+    
+    function handleDragEnd() {
+        dragIndex = -1;
+        isDragging = false;
+    }
+    
+    function resetToRectangle() {
+        // set angles to form a nice rectangle (90° each)
+        angles = [0.8, 0.8 + Math.PI/2, 0.8 + Math.PI, 0.8 + 3*Math.PI/2];
+        updateAnglesAndDisplay();
+    }
+    
+    function toggleHighlight() {
+        highlightMode = !highlightMode;
+        drawCanvas();
+    }
+    
+    function toggleTestMode() {
+        testMode = !testMode;
+        if (testMode) {
+            testBtn.innerText = "🔍 Exit Test Mode";
+            // optional alert hint
+            alert("Test Mode: ∠C is hidden. Can you calculate it? (Hint: ∠A + ∠C = 180°)");
+        } else {
+            testBtn.innerText = "✏️ Test Yourself (Hide ∠C)";
+        }
+        updateAnglesAndDisplay();
+    }
+    
+    function showExplanation() {
+        alert("📐 Cyclic Quadrilateral Theorem:\n\nA quadrilateral is cyclic if all four vertices lie on a single circle.\n\n⭐ In a cyclic quadrilateral, the sum of the measures of either pair of opposite angles is 180°.\n\n∠A + ∠C = 180°  and  ∠B + ∠D = 180°\n\n🔹 The converse is also true: if opposite angles sum to 180°, the quadrilateral is cyclic.\n\nTry dragging any vertex — the sums will always stay at 180°!");
+    }
+    
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const maxW = Math.min(700, rect.width - 20);
+        canvas.style.width = `${maxW}px`;
+        canvas.style.height = 'auto';
+        canvas.width = 700;
+        canvas.height = 500;
+        width = 700;
+        height = 500;
+        centerX = width/2;
+        centerY = height/2;
+        radius = Math.min(width, height) * 0.38;
+        updateAnglesAndDisplay();
+    }
+    
+    function bindEvents() {
+        canvas.addEventListener('mousedown', handleDragStart);
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('mouseup', handleDragEnd);
+        canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+        window.addEventListener('touchmove', handleDragMove, { passive: false });
+        window.addEventListener('touchend', handleDragEnd);
+        document.getElementById('highlightOppositeBtn').addEventListener('click', toggleHighlight);
+        document.getElementById('resetRectBtn').addEventListener('click', resetToRectangle);
+        document.getElementById('testModeBtn').addEventListener('click', toggleTestMode);
+        document.getElementById('explainBtn').addEventListener('click', showExplanation);
+        window.addEventListener('resize', resizeCanvas);
+    }
+    
+    function init() {
+        resizeCanvas();
+        bindEvents();
+        updateAnglesAndDisplay();
+    }
+    
+    init();
+</script>
+</body>
+</html>

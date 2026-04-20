@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, touch-action: manipulation">
+    <title>Exponential Explorer | f(x) = aˣ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            font-size: 0.8rem;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        .canvas-card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f8;
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefefe;
+            border-radius: 20px;
+            cursor: crosshair;
+            touch-action: pan-x pan-y;
+        }
+
+        .controls {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 20px;
+            border: 1px solid #eef2f8;
+        }
+
+        .function-equation {
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #0f172a;
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 60px;
+            margin-bottom: 20px;
+        }
+
+        /* Touch-friendly button grid for base values */
+        .button-grid {
+            margin-bottom: 24px;
+        }
+        .grid-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+        .base-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .base-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            min-width: 70px;
+            touch-action: manipulation;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .base-btn:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+        .base-btn.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        }
+        .base-btn.special {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        /* Trace point controls - touch buttons */
+        .trace-panel {
+            background: #f8fafc;
+            border-radius: 28px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+        .trace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .trace-value {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            background: #ffffff;
+            padding: 6px 16px;
+            border-radius: 40px;
+            border: 1px solid #e2e8f0;
+        }
+        .x-control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .x-btn {
+            background: #eef2ff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 60px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e40af;
+            cursor: pointer;
+            touch-action: manipulation;
+            min-width: 60px;
+        }
+        .x-btn:active { transform: scale(0.94); }
+        .reset-x {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .badge-note {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-align: center;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #eef2f8;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.3rem; }
+            .function-equation { font-size: 1rem; }
+            .base-btn { padding: 10px 14px; font-size: 0.9rem; min-width: 60px; }
+            .x-btn { padding: 8px 16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📈 Exponential Growth Explorer</h1>
+        <p>f(x) = aˣ  |  tap base buttons → growth or decay</p>
+    </div>
+
+    <div class="canvas-card">
+        <canvas id="expCanvas" width="800" height="500" style="width:100%; height:auto; max-width:800px; margin:0 auto; display:block"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="function-equation" id="functionDisplay">
+            f(x) = 2.00ˣ
+        </div>
+
+        <div class="button-grid">
+            <div class="grid-label">🔢 choose base (a)</div>
+            <div class="base-buttons" id="baseButtons">
+                <button class="base-btn" data-a="0.25">0.25</button>
+                <button class="base-btn" data-a="0.5">0.5</button>
+                <button class="base-btn" data-a="0.75">0.75</button>
+                <button class="base-btn" data-a="1">1</button>
+                <button class="base-btn active" data-a="2">2</button>
+                <button class="base-btn" data-a="3">3</button>
+                <button class="base-btn" data-a="4">4</button>
+                <button class="base-btn special" data-a="2.5">2.5</button>
+            </div>
+        </div>
+
+        <div class="trace-panel">
+            <div class="trace-header">
+                <span style="font-size:0.75rem; font-weight:500;">📍 trace point (x, f(x))</span>
+                <span class="trace-value" id="traceReadout">f(1.00) = 2.00</span>
+            </div>
+            <div class="x-control-buttons">
+                <button class="x-btn" data-x-step="-0.5">-0.5</button>
+                <button class="x-btn" data-x-step="-0.2">-0.2</button>
+                <button class="x-btn" data-x="-2">x = -2</button>
+                <button class="x-btn" data-x="-1">x = -1</button>
+                <button class="x-btn" data-x="0">x = 0</button>
+                <button class="x-btn" data-x="1">x = 1</button>
+                <button class="x-btn" data-x="2">x = 2</button>
+                <button class="x-btn" data-x="3">x = 3</button>
+                <button class="x-btn reset-x" data-reset="1">⟳ reset to 1</button>
+            </div>
+            <div class="x-control-buttons" style="margin-top: 8px;">
+                <button class="x-btn" data-x-step="0.2">+0.2</button>
+                <button class="x-btn" data-x-step="0.5">+0.5</button>
+                <button class="x-btn" data-x-step="1">+1</button>
+            </div>
+        </div>
+        <div class="badge-note">
+            ✨ Tap base buttons to change curve • Tap x values to trace point • f(x+1)/f(x) = a always!
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('expCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let width = 800, height = 500;
+    let originX = 90, originY = height - 70;
+    let xMin = -3.5, xMax = 4.5;
+    let yMin = -0.5, yMax = 12;
+    
+    let a = 2.0;          // base
+    let traceX = 1.0;     // current trace x
+    
+    // DOM elements
+    const functionDisplaySpan = document.getElementById('functionDisplay');
+    const traceReadoutSpan = document.getElementById('traceReadout');
+    
+    // ----- math helpers -----
+    function evaluateExp(x) {
+        if (a <= 0) return 0;
+        if (x === 0) return 1;
+        return Math.pow(a, x);
+    }
+    
+    // dynamic yMax adjustment based on current a and range
+    function adjustYRange() {
+        const maxTest = evaluateExp(xMax);
+        if (a > 1) {
+            if (maxTest > yMax - 0.5) {
+                yMax = Math.min(35, Math.ceil(maxTest) + 2);
+            }
+            if (a > 2.5) yMax = Math.min(40, Math.ceil(evaluateExp(xMax)) + 3);
+            else if (a > 1.5) yMax = 16;
+            else yMax = 10;
+        } else if (a < 1) {
+            yMax = 5;
+        } else {
+            yMax = 5;
+        }
+        if (yMax < 3) yMax = 4;
+    }
+    
+    // ----- drawing utilities -----
+    function worldToScreen(x, y) {
+        const sx = originX + (x - xMin) / (xMax - xMin) * (width - originX - 40);
+        const sy = originY - (y - yMin) / (yMax - yMin) * (originY - 40);
+        return { sx, sy };
+    }
+    
+    function drawGridAndAxes() {
+        ctx.save();
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 0.8;
+        
+        // vertical grid lines
+        for (let x = Math.ceil(xMin); x <= xMax; x += 1) {
+            if (Math.abs(x) < 0.01) continue;
+            const { sx } = worldToScreen(x, 0);
+            ctx.beginPath();
+            ctx.moveTo(sx, 20);
+            ctx.lineTo(sx, height - 20);
+            ctx.stroke();
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "10px monospace";
+            ctx.fillText(x, sx-5, originY + 15);
+        }
+        
+        // horizontal grid lines
+        for (let y = 0; y <= yMax; y += 1) {
+            const { sy } = worldToScreen(0, y);
+            if (sy < 20 || sy > height - 20) continue;
+            ctx.beginPath();
+            ctx.moveTo(30, sy);
+            ctx.lineTo(width - 30, sy);
+            ctx.stroke();
+            ctx.fillStyle = "#94a3b8";
+            ctx.fillText(y, 12, sy+3);
+        }
+        
+        // axes
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#1e293b";
+        const { sy: yZero } = worldToScreen(0, 0);
+        ctx.moveTo(30, yZero);
+        ctx.lineTo(width - 30, yZero);
+        const { sx: xZero } = worldToScreen(0, 0);
+        ctx.moveTo(xZero, 20);
+        ctx.lineTo(xZero, height - 20);
+        ctx.stroke();
+        
+        // arrows
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath();
+        ctx.moveTo(width-35, yZero-4);
+        ctx.lineTo(width-25, yZero);
+        ctx.lineTo(width-35, yZero+4);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(xZero-4, 25);
+        ctx.lineTo(xZero, 15);
+        ctx.lineTo(xZero+4, 25);
+        ctx.fill();
+        
+        // labels
+        ctx.fillStyle = "#1e293b";
+        ctx.font = "bold 11px 'Inter'";
+        ctx.fillText("x", width-30, yZero-6);
+        ctx.fillText("y", xZero+8, 25);
+        ctx.fillStyle = "#64748b";
+        ctx.font = "italic 9px monospace";
+        ctx.fillText("y = 0 (asymptote)", width-140, yZero-8);
+        
+        // dashed asymptote
+        ctx.beginPath();
+        ctx.setLineDash([6, 8]);
+        ctx.strokeStyle = "#94a3b8";
+        ctx.moveTo(30, yZero);
+        ctx.lineTo(width-30, yZero);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+    }
+    
+    function drawExponentialCurve() {
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#3b82f6";
+        ctx.shadowBlur = 2;
+        
+        let first = true;
+        for (let px = 0; px <= width; px++) {
+            const t = px / width;
+            const x = xMin + t * (xMax - xMin);
+            const y = evaluateExp(x);
+            if (y < yMin || y > yMax + 1) {
+                first = true;
+                continue;
+            }
+            const { sx, sy } = worldToScreen(x, y);
+            if (first) {
+                ctx.moveTo(sx, sy);
+                first = false;
+            } else {
+                ctx.lineTo(sx, sy);
+            }
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+    
+    function drawHighlightPoints() {
+        // y-intercept (0,1)
+        const y1 = evaluateExp(0);
+        const { sx: x0, sy: y0 } = worldToScreen(0, y1);
+        ctx.beginPath();
+        ctx.arc(x0, y0, 8, 0, 2*Math.PI);
+        ctx.fillStyle = "#f59e0b";
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.font = "bold 9px monospace";
+        ctx.fillText("(0,1)", x0+6, y0-4);
+        
+        // trace point
+        const traceY = evaluateExp(traceX);
+        const { sx: traceSx, sy: traceSy } = worldToScreen(traceX, traceY);
+        ctx.beginPath();
+        ctx.arc(traceSx, traceSy, 11, 0, 2*Math.PI);
+        ctx.fillStyle = "#ef4444";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(traceSx, traceSy, 4, 0, 2*Math.PI);
+        ctx.fillStyle = "white";
+        ctx.fill();
+        
+        // vertical dashed line
+        const { sy: axisY } = worldToScreen(0, 0);
+        ctx.beginPath();
+        ctx.setLineDash([5, 6]);
+        ctx.strokeStyle = "#ef4444";
+        ctx.moveTo(traceSx, traceSy);
+        ctx.lineTo(traceSx, axisY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        
+        // step multiplier annotation
+        const nextX = traceX + 1;
+        const nextY = evaluateExp(nextX);
+        if (nextY < yMax + 2 && nextY > yMin) {
+            const { sx: nextSx, sy: nextSy } = worldToScreen(nextX, nextY);
+            ctx.beginPath();
+            ctx.setLineDash([3, 5]);
+            ctx.strokeStyle = "#a855f7";
+            ctx.moveTo(traceSx, traceSy);
+            ctx.lineTo(nextSx, nextSy);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#a855f7";
+            ctx.font = "bold 9px monospace";
+            ctx.fillText(`× ${a.toFixed(2)}`, (traceSx+nextSx)/2, (traceSy+nextSy)/2 - 8);
+        }
+    }
+    
+    function drawGraph() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, width, height);
+        drawGridAndAxes();
+        drawExponentialCurve();
+        drawHighlightPoints();
+    }
+    
+    // ----- update UI and graph -----
+    function updateFunctionDisplay() {
+        let displayStr = `f(x) = ${a.toFixed(3)}ˣ`;
+        if (Math.abs(a - 1) < 0.001) displayStr = `f(x) = 1ˣ = 1 (constant)`;
+        functionDisplaySpan.innerText = displayStr;
+        
+        // update active button style
+        document.querySelectorAll('.base-btn').forEach(btn => {
+            const btnVal = parseFloat(btn.getAttribute('data-a'));
+            if (Math.abs(btnVal - a) < 0.01) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+    
+    function updateTraceReadout() {
+        const yVal = evaluateExp(traceX);
+        traceReadoutSpan.innerText = `f(${traceX.toFixed(2)}) = ${yVal.toFixed(5)}`;
+        drawGraph();
+    }
+    
+    function setBase(newA) {
+        a = Math.max(0.1, newA);
+        adjustYRange();
+        updateFunctionDisplay();
+        updateTraceReadout();
+        drawGraph();
+    }
+    
+    function setTraceX(newX) {
+        traceX = Math.min(xMax, Math.max(xMin, newX));
+        updateTraceReadout();
+    }
+    
+    function stepTraceX(delta) {
+        setTraceX(traceX + delta);
+    }
+    
+    // ----- resize handler -----
+    function updateDimensions() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        const maxW = Math.min(800, rect.width - 20);
+        canvas.style.width = `${maxW}px`;
+        canvas.style.height = 'auto';
+        canvas.width = 800;
+        canvas.height = 500;
+        width = 800;
+        height = 500;
+        originX = 90;
+        originY = height - 70;
+        adjustYRange();
+        drawGraph();
+        updateTraceReadout();
+    }
+    
+    // ----- event binding (touch + mouse)-----
+    function bindEvents() {
+        // base buttons
+        document.querySelectorAll('.base-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const aVal = parseFloat(btn.getAttribute('data-a'));
+                if (!isNaN(aVal)) setBase(aVal);
+            });
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const aVal = parseFloat(btn.getAttribute('data-a'));
+                if (!isNaN(aVal)) setBase(aVal);
+            }, { passive: false });
+        });
+        
+        // x value buttons (direct jump)
+        document.querySelectorAll('.x-btn[data-x]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const xVal = parseFloat(btn.getAttribute('data-x'));
+                if (!isNaN(xVal)) setTraceX(xVal);
+            });
+        });
+        
+        // step buttons
+        document.querySelectorAll('.x-btn[data-x-step]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const step = parseFloat(btn.getAttribute('data-x-step'));
+                if (!isNaN(step)) stepTraceX(step);
+            });
+        });
+        
+        // reset button
+        const resetBtn = document.querySelector('.x-btn[data-reset]');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                setTraceX(1);
+            });
+        }
+    }
+    
+    // ----- initialization -----
+    function init() {
+        updateDimensions();
+        setBase(2.0);
+        setTraceX(1);
+        bindEvents();
+        window.addEventListener('resize', () => updateDimensions());
+    }
+    
+    init();
+</script>
+</body>
+</html>

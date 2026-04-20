@@ -202,12 +202,38 @@ const grade12ChemistryLessons: Omit<Item, 'grade'>[] = [
   { name: "Protein Ribbon Visualizer", link: "/grade12Chemistry/chapter5/1Protein Ribbon Visualizer.html", chapter: "Chapter 5: Green Chemistry", subject: "Chemistry" },
   { name: "Atom Economy", link: "/grade12Chemistry/chapter5/2atom-economy.html", chapter: "Chapter 5: Green Chemistry", subject: "Chemistry" },
 ];
+// ----- GRADE 10 MATHEMATICS LESSONS (new) -----
+const grade10MathematicsLessons: Omit<Item, 'grade'>[] = [
+  // Chapter 1: Functions & Graphs
+  { name: "Cartesian Plotter Touch Lab", link: "/grade10/maths/chapter1/1cartesian_plotter_touch_lab.html", chapter: "Chapter 1: Functions & Graphs", subject: "Mathematics" },
+  { name: "Function Machine Tester", link: "/grade10/maths/chapter1/2function_machine_tester.html", chapter: "Chapter 1: Functions & Graphs", subject: "Mathematics" },
+  { name: "Parabola Architect Lab", link: "/grade10/maths/chapter1/3parabola_architect_lab.html", chapter: "Chapter 1: Functions & Graphs", subject: "Mathematics" },
 
+  // Chapter 2: Polynomials
+  { name: "Polynomial End Behavior Lab", link: "/grade10/maths/chapter2/1polinomiyalend_behavior_lab.html", chapter: "Chapter 2: Polynomials", subject: "Mathematics" },
+  { name: "Remainder Machine", link: "/grade10/maths/chapter2/2remainder_machine.html", chapter: "Chapter 2: Polynomials", subject: "Mathematics" },
+  { name: "Zero Detective Lab", link: "/grade10/maths/chapter2/3zero_detective_lab.html", chapter: "Chapter 2: Polynomials", subject: "Mathematics" },
+
+  // Chapter 3: Exponentials & Logarithms
+  { name: "Exponential Growth Lab", link: "/grade10/maths/chapter3/1exponential_growth_lab.html", chapter: "Chapter 3: Exponentials & Logarithms", subject: "Mathematics" },
+  { name: "Logarithm Machine", link: "/grade10/maths/chapter3/2logarithm_machine.html", chapter: "Chapter 3: Exponentials & Logarithms", subject: "Mathematics" },
+  { name: "Compound Interest Race", link: "/grade10/maths/chapter3/3compound_interest_race.html", chapter: "Chapter 3: Exponentials & Logarithms", subject: "Mathematics" },
+
+  // Chapter 4: Trigonometry
+  { name: "Unit Circle Sine Wave", link: "/grade10/maths/chapter4/1unit_circle_sine_wave.html", chapter: "Chapter 4: Trigonometry", subject: "Mathematics" },
+  { name: "Reference Angle Lab", link: "/grade10/maths/chapter4/2reference_angle_lab.html", chapter: "Chapter 4: Trigonometry", subject: "Mathematics" },
+
+  // Chapter 5: Geometry & Circles
+  { name: "Inscribed Angle Lab", link: "/grade10/maths/chapter5/1inscribed_angle_lab.html", chapter: "Chapter 5: Geometry & Circles", subject: "Mathematics" },
+  { name: "Cyclic Quadrilateral Lab", link: "/grade10/maths/chapter5/2cyclic_quadrilateral_lab.html", chapter: "Chapter 5: Geometry & Circles", subject: "Mathematics" },
+  { name: "Sector Builder Lab", link: "/grade10/maths/chapter5/3sector_builder_lab.html", chapter: "Chapter 5: Geometry & Circles", subject: "Mathematics" },
+];
 // Combine all lessons, assigning proper grades
 const allLessons: Item[] = [
   ...grade9Lessons.map(item => ({ ...item, grade: 9 as Grade })),
+  ...grade10MathematicsLessons.map(item => ({ ...item, grade: 10 as Grade })),
   ...grade12ChemistryLessons.map(item => ({ ...item, grade: 12 as Grade })),
-  // Grade 10 and 11 remain empty for now (no lessons)
+  // Grade 11 remains empty for now
   // Biology can be added later with grade 9-12 as needed
 ];
 
@@ -226,6 +252,7 @@ const App: React.FC = () => {
     const updated = favorites.includes(name)
       ? favorites.filter(f => f !== name)
       : [...favorites, name];
+
     setFavorites(updated);
     localStorage.setItem('eduTwin_bookmarks', JSON.stringify(updated));
   };
@@ -234,9 +261,14 @@ const App: React.FC = () => {
   const filteredItems = allLessons.filter(item => {
     if (item.grade !== selectedGrade) return false;
     if (selectedSubject !== 'All' && item.subject !== selectedSubject) return false;
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
     if (!matchesSearch) return false;
     if (showOnlyFavorites && !favorites.includes(item.name)) return false;
+
     return true;
   });
 
@@ -245,11 +277,23 @@ const App: React.FC = () => {
   );
 
   const gradeOptions: Grade[] = [9, 10, 11, 12];
-  const subjectOptions: (Subject | 'All')[] = ['All', 'Mathematics', 'Chemistry', 'Physics', 'Biology'];
+
+  const subjectOptions: (Subject | 'All')[] = [
+    'All',
+    'Mathematics',
+    'Chemistry',
+    'Physics',
+    'Biology'
+  ];
 
   const getSubjectCount = (subject: Subject | 'All') => {
-    if (subject === 'All') return allLessons.filter(l => l.grade === selectedGrade).length;
-    return allLessons.filter(l => l.grade === selectedGrade && l.subject === subject).length;
+    if (subject === 'All') {
+      return allLessons.filter(l => l.grade === selectedGrade).length;
+    }
+
+    return allLessons.filter(
+      l => l.grade === selectedGrade && l.subject === subject
+    ).length;
   };
 
   const hasAnyContent = filteredItems.length > 0;
@@ -257,118 +301,180 @@ const App: React.FC = () => {
   return (
     <div className="container">
       <header className="glass-header">
-        <h1 className="main-title">📘 EduTwin Visualizer • Grade & Subject Labs</h1>
+        <h1 className="main-title">
+          📘 EduTwin Visualizer • Grade & Subject Labs
+        </h1>
+
         <div className="controls">
           <input
             type="text"
-            placeholder="🔍 Search lessons (e.g., 'pH', 'Galvanic')..."
+            placeholder="🔍 Search lessons..."
             className="search-bar"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
+
+          {/* Grade Buttons */}
           <div className="grade-tabs">
             {gradeOptions.map(grade => (
               <button
                 key={grade}
-                className={`grade-btn ${selectedGrade === grade ? 'active' : ''}`}
+                className={`grade-btn ${
+                  selectedGrade === grade ? 'active' : ''
+                }`}
                 onClick={() => setSelectedGrade(grade)}
               >
                 Grade {grade}
               </button>
             ))}
           </div>
+
+          {/* Subject Buttons */}
           <div className="subject-tabs">
             {subjectOptions.map(subj => (
               <button
                 key={subj}
-                className={`subject-btn ${selectedSubject === subj ? 'active' : ''}`}
+                className={`subject-btn ${
+                  selectedSubject === subj ? 'active' : ''
+                }`}
                 onClick={() => setSelectedSubject(subj)}
               >
                 {subj}
-                {selectedGrade === 9 && subj !== 'All' && getSubjectCount(subj) > 0 && (
-                  <span className="subject-count"> ({getSubjectCount(subj)})</span>
-                )}
-                {selectedGrade === 12 && subj === 'Chemistry' && getSubjectCount(subj) > 0 && (
-                  <span className="subject-count"> ({getSubjectCount(subj)})</span>
+
+                {subj !== 'All' && getSubjectCount(subj) > 0 && (
+                  <span className="subject-count">
+                    {' '}
+                    ({getSubjectCount(subj)})
+                  </span>
                 )}
               </button>
             ))}
           </div>
+
+          {/* Favorites */}
           <label className="favorite-filter">
             <input
               type="checkbox"
               checked={showOnlyFavorites}
-              onChange={e => setShowOnlyFavorites(e.target.checked)}
+              onChange={e =>
+                setShowOnlyFavorites(e.target.checked)
+              }
             />
             ⭐ Show favorites only
           </label>
         </div>
-        <div style={{ marginTop: '0.8rem', fontSize: '0.85rem', color: '#3b6e9e' }}>
+
+        {/* Dynamic Grade Description */}
+        <div
+          style={{
+            marginTop: '0.8rem',
+            fontSize: '0.85rem',
+            color: '#3b6e9e'
+          }}
+        >
           {selectedGrade === 9 && (
-            <span>✅ Grade 9 • {getSubjectCount('All')} interactive simulations (Mathematics, Chemistry, Physics) — Biology coming soon</span>
+            <span>
+              ✅ Grade 9 • {getSubjectCount('All')} interactive simulations
+              (Mathematics, Chemistry, Physics)
+            </span>
           )}
+
+          {selectedGrade === 10 && (
+            <span>
+              📐 Grade 10 • {getSubjectCount('All')} Mathematics simulations
+              (Functions, Polynomials, Trigonometry, Geometry)
+            </span>
+          )}
+
+          {selectedGrade === 11 && (
+            <span>
+              📌 Grade 11 content — coming soon.
+            </span>
+          )}
+
           {selectedGrade === 12 && (
-            <span>🧪 Grade 12 • {getSubjectCount('All')} Chemistry simulations (Acid-Base, Electrochemistry, Industrial Chemistry, Polymers, Green Chemistry)</span>
-          )}
-          {(selectedGrade === 10 || selectedGrade === 11) && (
-            <span>📌 Grade {selectedGrade} content — coming soon. Explore Grade 9 or Grade 12 for available labs.</span>
+            <span>
+              🧪 Grade 12 • {getSubjectCount('All')} Chemistry simulations
+              (Acid-Base, Electrochemistry, Industrial Chemistry,
+              Polymers, Green Chemistry)
+            </span>
           )}
         </div>
       </header>
 
       <main className="content">
+        {/* Empty states */}
         {!hasAnyContent && selectedGrade === 9 && (
           <div className="empty-state">
-            <p>🔍 No lessons match your search, subject, or favorites filter.</p>
-            <p>Try adjusting keywords or turning off 'favorites only'.</p>
+            <p>🔍 No Grade 9 lessons match your filters.</p>
+          </div>
+        )}
+
+        {!hasAnyContent && selectedGrade === 10 && (
+          <div className="empty-state">
+            <p>📐 No Grade 10 Mathematics lessons match your filters.</p>
+          </div>
+        )}
+
+        {!hasAnyContent && selectedGrade === 11 && (
+          <div className="empty-state">
+            <p>📚 Grade 11 content is under development.</p>
           </div>
         )}
 
         {!hasAnyContent && selectedGrade === 12 && (
           <div className="empty-state">
-            <p>🧪 <strong>Grade 12 Chemistry</strong></p>
-            <p>No lessons match your current filters. Try clearing search or showing all subjects.</p>
+            <p>🧪 No Grade 12 Chemistry lessons match your filters.</p>
           </div>
         )}
 
-        {!hasAnyContent && (selectedGrade === 10 || selectedGrade === 11) && (
-          <div className="empty-state">
-            <p>📚 <strong>Grade {selectedGrade} Content</strong></p>
-            <p>✨ This grade is under development. New visualizations coming soon! ✨</p>
-            <p style={{ fontSize: '0.9rem', marginTop: '0.75rem' }}>
-              ⭐ Meanwhile, switch to <strong>Grade 9</strong> or <strong>Grade 12</strong> to access available labs.
-            </p>
-          </div>
-        )}
-
+        {/* Show Lessons */}
         {hasAnyContent && (
           <>
             {visibleChapters.map(title => (
               <Section
                 key={title}
                 title={title}
-                items={filteredItems.filter(i => `${i.subject} – ${i.chapter}` === title)}
+                items={filteredItems.filter(
+                  i => `${i.subject} – ${i.chapter}` === title
+                )}
                 favorites={favorites}
                 toggleFavorite={toggleFavorite}
               />
             ))}
-            <div style={{ marginTop: '1rem', textAlign: 'right', fontSize: '0.75rem', color: '#5d7f9e' }}>
-              {filteredItems.length} lesson{filteredItems.length !== 1 ? 's' : ''} displayed
+
+            <div
+              style={{
+                marginTop: '1rem',
+                textAlign: 'right',
+                fontSize: '0.75rem',
+                color: '#5d7f9e'
+              }}
+            >
+              {filteredItems.length} lesson
+              {filteredItems.length !== 1 ? 's' : ''} displayed
             </div>
           </>
         )}
 
-        {/* Biology placeholder for Grade 9/12 if selected but no content yet */}
-        {selectedSubject === 'Biology' && hasAnyContent === false && (selectedGrade === 9 || selectedGrade === 12) && (
-          <div className="empty-state" style={{ marginTop: '1rem' }}>
-            <p>🧬 <strong>Biology content is being prepared</strong></p>
-            <p>Interactive biology visualizations will appear here soon.</p>
-          </div>
-        )}
+        {/* Biology Placeholder */}
+        {selectedSubject === 'Biology' &&
+          !hasAnyContent &&
+          (selectedGrade === 9 || selectedGrade === 12) && (
+            <div
+              className="empty-state"
+              style={{ marginTop: '1rem' }}
+            >
+              <p>
+                🧬 <strong>Biology content coming soon</strong>
+              </p>
+            </div>
+          )}
       </main>
 
       <footer>
-        🧪 EduTwin – Interactive STEM visualizations • Grade 9 (Math, Chem, Physics) • Grade 12 Chemistry (full) • Biology & Grades 10-11 in progress
+        🧪 EduTwin – Interactive STEM Visualizations • Grade 9 • Grade 10
+        Mathematics • Grade 12 Chemistry • More coming soon
       </footer>
     </div>
   );

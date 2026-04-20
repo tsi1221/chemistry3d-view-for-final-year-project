@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, touch-action: manipulation">
+    <title>Logarithm Decoder | log_b(x) = exponent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            font-size: 0.85rem;
+            color: #475569;
+            margin-top: 6px;
+        }
+
+        /* Split layout */
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* Cards - white theme */
+        .card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid #eef2f8;
+        }
+
+        .machine-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #64748b;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        /* Input display */
+        .input-group {
+            margin-bottom: 24px;
+        }
+        .input-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .input-value {
+            font-size: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #3b82f6;
+            background: #f1f5f9;
+            padding: 8px 20px;
+            border-radius: 60px;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+
+        /* Button grid */
+        .button-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .num-btn {
+            background: #f1f5f9;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 48px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            min-width: 56px;
+            touch-action: manipulation;
+        }
+        .num-btn:active {
+            transform: scale(0.94);
+            background: #e2e8f0;
+        }
+        .num-btn.primary {
+            background: #3b82f6;
+            color: white;
+        }
+        .num-btn.warning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        /* Output box */
+        .output-box {
+            background: #f8fafc;
+            border-radius: 28px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border: 1px solid #eef2f8;
+        }
+        .output-label {
+            font-size: 0.65rem;
+            color: #64748b;
+            letter-spacing: 1px;
+        }
+        .output-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            font-family: monospace;
+            color: #0f172a;
+        }
+
+        /* Translator card */
+        .translator {
+            background: #ffffff;
+        }
+        .formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 24px;
+            text-align: center;
+            margin: 16px 0;
+            border: 1px solid #eef2f8;
+        }
+        .step {
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #475569;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        /* Mini graph */
+        .graph-container {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 20px;
+            border: 1px solid #eef2f8;
+        }
+        .graph-title {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefefe;
+            border-radius: 20px;
+        }
+
+        .quick-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+            justify-content: center;
+        }
+
+        @media (max-width: 800px) {
+            .split {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            .header h1 { font-size: 1.4rem; }
+            .input-value { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🔓 Logarithm Decoder</h1>
+        <p>log_b(x) = ? &nbsp;→&nbsp; "What exponent gives x?" &nbsp;•&nbsp; Change of Base: ln(x)/ln(b)</p>
+    </div>
+
+    <div class="split">
+        <!-- LEFT: Log Machine -->
+        <div class="card">
+            <div class="machine-title">⚙️ LOG MACHINE</div>
+            
+            <div class="input-group">
+                <div class="input-label">BASE (b)</div>
+                <div class="input-value" id="baseDisplay">b = 2</div>
+                <div class="button-grid" id="baseButtons">
+                    <button class="num-btn" data-base="0.5">0.5</button>
+                    <button class="num-btn" data-base="1.5">1.5</button>
+                    <button class="num-btn primary" data-base="2">2</button>
+                    <button class="num-btn" data-base="3">3</button>
+                    <button class="num-btn" data-base="4">4</button>
+                    <button class="num-btn" data-base="5">5</button>
+                    <button class="num-btn" data-base="10">10</button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-label">ARGUMENT (x)</div>
+                <div class="input-value" id="argDisplay">x = 8</div>
+                <div class="button-grid" id="argButtons">
+                    <button class="num-btn" data-arg="0.5">0.5</button>
+                    <button class="num-btn" data-arg="1">1</button>
+                    <button class="num-btn" data-arg="2">2</button>
+                    <button class="num-btn primary" data-arg="8">8</button>
+                    <button class="num-btn" data-arg="16">16</button>
+                    <button class="num-btn" data-arg="32">32</button>
+                    <button class="num-btn" data-arg="64">64</button>
+                    <button class="num-btn" data-arg="100">100</button>
+                </div>
+                <div class="quick-row">
+                    <button class="num-btn warning" id="doubleXBtn">×2</button>
+                    <button class="num-btn warning" id="halfXBtn">÷2</button>
+                </div>
+            </div>
+
+            <div class="output-box">
+                <div class="output-label">🔢 EXPONENT (y) : log_b(x) =</div>
+                <div class="output-number" id="logOutput">3.000000</div>
+                <div style="font-size:0.7rem; color:#64748b; margin-top:6px;">because bʸ = x</div>
+            </div>
+
+            <div class="quick-row">
+                <button class="num-btn" id="log1Btn">log_b(1) = 0</button>
+                <button class="num-btn" id="logbBtn">log_b(b) = 1</button>
+            </div>
+        </div>
+
+        <!-- RIGHT: Change of Base Translator -->
+        <div class="card translator">
+            <div class="machine-title">🌐 CHANGE OF BASE TRANSLATOR</div>
+            <div class="formula" id="changeBaseFormula">
+                log₂(8) = ln(8) / ln(2)
+            </div>
+            <div class="step" id="stepDetails">
+                ln(8) = 2.07944 &nbsp; | &nbsp; ln(2) = 0.69315
+            </div>
+            <div class="output-box" style="background:#f8fafc;">
+                <div class="output-label">✨ RESULT (same!) ✨</div>
+                <div class="output-number" id="translatorOutput" style="color:#3b82f6;">3.000000</div>
+            </div>
+            <div class="quick-row">
+                <button class="num-btn" id="base10Btn">log₁₀(100)</button>
+                <button class="num-btn" id="naturalBtn">ln(e³) = 3</button>
+                <button class="num-btn" id="explainBtn">📘 How it works</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mini Graph -->
+    <div class="graph-container">
+        <div class="graph-title">📈 point (x, log_b(x)) on logarithmic curve</div>
+        <canvas id="miniGraph" width="600" height="130" style="width:100%; height:auto; background:#ffffff; border-radius:20px;"></canvas>
+        <div style="font-size:0.65rem; text-align:center; margin-top:8px; color:#64748b;">curve: y = log_b(x) &nbsp; | &nbsp; ● current point</div>
+    </div>
+</div>
+
+<script>
+    // DOM elements
+    const baseDisplay = document.getElementById('baseDisplay');
+    const argDisplay = document.getElementById('argDisplay');
+    const logOutputSpan = document.getElementById('logOutput');
+    const translatorOutputSpan = document.getElementById('translatorOutput');
+    const changeBaseFormulaSpan = document.getElementById('changeBaseFormula');
+    const stepDetailsSpan = document.getElementById('stepDetails');
+    
+    let b = 2.0;
+    let x = 8.0;
+    
+    // compute logarithm
+    function computeLog(base, arg) {
+        if (base <= 0 || base === 1) return NaN;
+        if (arg <= 0) return NaN;
+        return Math.log(arg) / Math.log(base);
+    }
+    
+    function updateAll() {
+        if (b <= 0) b = 0.1;
+        if (b === 1) b = 1.001;
+        if (x <= 0) x = 0.1;
+        
+        baseDisplay.innerText = `b = ${b.toFixed(4)}`;
+        argDisplay.innerText = `x = ${x.toFixed(4)}`;
+        
+        const logVal = computeLog(b, x);
+        const isValid = !isNaN(logVal) && isFinite(logVal);
+        
+        let resultStr = isValid ? logVal.toFixed(6) : 'undefined';
+        logOutputSpan.innerText = resultStr;
+        translatorOutputSpan.innerText = resultStr;
+        
+        // update change of base formula
+        const lnX = Math.log(x);
+        const lnB = Math.log(b);
+        changeBaseFormulaSpan.innerHTML = `log<sub>${b.toFixed(4)}</sub>(${x.toFixed(4)}) = ln(${x.toFixed(4)}) / ln(${b.toFixed(4)})`;
+        if (isValid && lnX !== undefined && lnB !== undefined) {
+            stepDetailsSpan.innerHTML = `ln(${x.toFixed(4)}) = ${lnX.toFixed(6)} &nbsp; | &nbsp; ln(${b.toFixed(4)}) = ${lnB.toFixed(6)} &nbsp; → &nbsp; ${(lnX/lnB).toFixed(6)}`;
+        } else {
+            stepDetailsSpan.innerHTML = `⚠️ invalid: base must be >0 and ≠1, argument >0`;
+        }
+        
+        drawMiniGraph(logVal, isValid);
+    }
+    
+    // mini graph drawing
+    const graphCanvas = document.getElementById('miniGraph');
+    const gCtx = graphCanvas.getContext('2d');
+    
+    function drawMiniGraph(logVal, isValid) {
+        if (!gCtx) return;
+        const rect = graphCanvas.parentElement.getBoundingClientRect();
+        const maxW = Math.min(600, rect.width - 20);
+        graphCanvas.style.width = `${maxW}px`;
+        graphCanvas.style.height = 'auto';
+        graphCanvas.width = 600;
+        graphCanvas.height = 130;
+        const gWidth = 600;
+        const gHeight = 130;
+        
+        gCtx.clearRect(0, 0, gWidth, gHeight);
+        gCtx.fillStyle = "#ffffff";
+        gCtx.fillRect(0, 0, gWidth, gHeight);
+        
+        // visible range
+        let xMinGraph = 0.2;
+        let xMaxGraph = Math.max(12, x + 2);
+        if (xMaxGraph > 30) xMaxGraph = 30;
+        let yMinGraph = -2.5;
+        let yMaxGraph = 4.5;
+        
+        function mapX(px) { return (px / gWidth) * (xMaxGraph - xMinGraph) + xMinGraph; }
+        function screenX(xVal) { return ((xVal - xMinGraph) / (xMaxGraph - xMinGraph)) * gWidth; }
+        function screenY(yVal) { return gHeight - ((yVal - yMinGraph) / (yMaxGraph - yMinGraph)) * gHeight; }
+        
+        // axes
+        gCtx.beginPath();
+        gCtx.strokeStyle = "#cbd5e1";
+        gCtx.lineWidth = 1;
+        const axisYZero = screenY(0);
+        gCtx.moveTo(0, axisYZero);
+        gCtx.lineTo(gWidth, axisYZero);
+        gCtx.stroke();
+        const axisXZero = screenX(0);
+        gCtx.moveTo(axisXZero, 0);
+        gCtx.lineTo(axisXZero, gHeight);
+        gCtx.stroke();
+        
+        // draw curve y = log_b(x)
+        gCtx.beginPath();
+        gCtx.strokeStyle = "#3b82f6";
+        gCtx.lineWidth = 2.5;
+        let first = true;
+        for (let px = 0; px <= gWidth; px++) {
+            const xVal = mapX(px);
+            if (xVal <= 0) continue;
+            const yVal = computeLog(b, xVal);
+            if (isNaN(yVal) || !isFinite(yVal)) {
+                first = true;
+                continue;
+            }
+            const sy = screenY(yVal);
+            if (sy < 0 || sy > gHeight) {
+                first = true;
+                continue;
+            }
+            if (first) {
+                gCtx.moveTo(px, sy);
+                first = false;
+            } else {
+                gCtx.lineTo(px, sy);
+            }
+        }
+        gCtx.stroke();
+        
+        // mark current point
+        if (isValid && x > 0) {
+            const px = screenX(x);
+            const py = screenY(logVal);
+            gCtx.beginPath();
+            gCtx.arc(px, py, 7, 0, 2*Math.PI);
+            gCtx.fillStyle = "#ef4444";
+            gCtx.fill();
+            gCtx.fillStyle = "white";
+            gCtx.font = "bold 9px 'Inter'";
+            gCtx.fillText(`(${x.toFixed(2)}, ${logVal.toFixed(2)})`, px+6, py-5);
+        }
+    }
+    
+    // setters
+    function setBase(value) {
+        b = parseFloat(value);
+        if (isNaN(b)) return;
+        if (b === 1) b = 1.001;
+        if (b < 0.2) b = 0.2;
+        updateAll();
+    }
+    
+    function setArg(value) {
+        x = parseFloat(value);
+        if (isNaN(x)) return;
+        if (x < 0.05) x = 0.05;
+        updateAll();
+    }
+    
+    function doubleArg() { setArg(x * 2); }
+    function halfArg() { setArg(x / 2); }
+    
+    // presets
+    function presetLog1() { setArg(1); }
+    function presetLogb() { setArg(b); }
+    function presetBase10() { setBase(10); setArg(100); }
+    function presetNatural() { setBase(Math.E); setArg(Math.pow(Math.E, 3)); }
+    
+    // button bindings
+    document.querySelectorAll('[data-base]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const val = parseFloat(btn.getAttribute('data-base'));
+            setBase(val);
+        });
+    });
+    
+    document.querySelectorAll('[data-arg]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const val = parseFloat(btn.getAttribute('data-arg'));
+            setArg(val);
+        });
+    });
+    
+    document.getElementById('doubleXBtn').addEventListener('click', doubleArg);
+    document.getElementById('halfXBtn').addEventListener('click', halfArg);
+    document.getElementById('log1Btn').addEventListener('click', presetLog1);
+    document.getElementById('logbBtn').addEventListener('click', presetLogb);
+    document.getElementById('base10Btn').addEventListener('click', presetBase10);
+    document.getElementById('naturalBtn').addEventListener('click', presetNatural);
+    
+    document.getElementById('explainBtn').addEventListener('click', () => {
+        alert("📐 Change of Base Formula:\n\nlog_b(x) = ln(x) / ln(b)\n\nThis lets you calculate ANY logarithm using natural logs (ln).\n\nWhy? If y = log_b(x), then bʸ = x. Take ln both sides: y·ln(b) = ln(x) → y = ln(x)/ln(b).");
+    });
+    
+    window.addEventListener('resize', () => updateAll());
+    
+    // initial
+    updateAll();
+</script>
+</body>
+</html>
