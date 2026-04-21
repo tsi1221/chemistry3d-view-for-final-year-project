@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>linear inequality · half-plane</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- inequality: y < 5x + 7 -----
+    let slope = 5;
+    let intercept = 7;
+    let inequality = '<'; // '<', '≤', '>', '≥'
+    
+    // test point
+    let testPoint = { x: 0, y: 0 };
+    
+    // chart dimensions
+    const xMin = -3, xMax = 3;
+    const yMin = -5, yMax = 20;
+    
+    const margin = { top: 80, right: 40, bottom: 70, left: 70 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+    
+    // dragging
+    let isDragging = false;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+
+    // colors
+    const C = {
+      line: '#2563eb',
+      shade: 'rgba(37, 99, 235, 0.12)',
+      testTrue: '#10b981',
+      testFalse: '#ef4444',
+      grid: '#e2e8f0',
+      axis: '#1e293b',
+      text: '#334155',
+      dim: '#94a3b8'
+    };
+
+    // ----- evaluate inequality -----
+    function evaluate(x, y) {
+      const lhs = y;
+      const rhs = slope * x + intercept;
+      switch(inequality) {
+        case '<': return lhs < rhs;
+        case '≤': return lhs <= rhs;
+        case '>': return lhs > rhs;
+        case '≥': return lhs >= rhs;
+        default: return false;
+      }
+    }
+    
+    function getLineStyle() {
+      return (inequality === '<' || inequality === '>') ? [8, 5] : [];
+    }
+
+    // coordinate mapping
+    function toScreenX(x) {
+      return margin.left + ((x - xMin) / (xMax - xMin)) * chartW;
+    }
+    function toScreenY(y) {
+      return margin.top + chartH - ((y - yMin) / (yMax - yMin)) * chartH;
+    }
+    function toWorld(px, py) {
+      const x = xMin + ((px - margin.left) / chartW) * (xMax - xMin);
+      const y = yMin + ((margin.top + chartH - py) / chartH) * (yMax - yMin);
+      return { x, y };
+    }
+
+    // hit test for test point
+    function hitTestPoint(px, py) {
+      const sp = toScreenX(testPoint.x);
+      const sy = toScreenY(testPoint.y);
+      return Math.hypot(px - sp, py - sy) < 25;
+    }
+    
+    function hitInequalityToggle(px, py, index) {
+      const startX = 50;
+      const x = startX + index * 55;
+      return px >= x && px <= x + 45 && py >= 70 && py <= 102;
+    }
+
+    // draw shaded region
+    function drawShadedRegion() {
+      // determine which side to shade based on test point (0,0) or a point far away
+      // for y < 5x+7: shade below the line
+      const testY = slope * xMin + intercept;
+      const shadeBelow = evaluate(xMin, testY - 1);
+      
+      ctx.save();
+      ctx.fillStyle = C.shade;
+      
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(xMin), toScreenY(yMin));
+      ctx.lineTo(toScreenX(xMax), toScreenY(yMin));
+      
+      // follow the line
+      for (let x = xMax; x >= xMin; x -= 0.05) {
+        const y = slope * x + intercept;
+        ctx.lineTo(toScreenX(x), toScreenY(y));
+      }
+      
+      ctx.closePath();
+      ctx.fill();
+      
+      // if shade above, fill the other half
+      if (!shadeBelow) {
+        ctx.clearRect(margin.left, margin.top, chartW, chartH);
+        ctx.fillStyle = C.shade;
+        ctx.beginPath();
+        ctx.moveTo(toScreenX(xMin), toScreenY(yMax));
+        ctx.lineTo(toScreenX(xMax), toScreenY(yMax));
+        for (let x = xMax; x >= xMin; x -= 0.05) {
+          const y = slope * x + intercept;
+          ctx.lineTo(toScreenX(x), toScreenY(y));
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      ctx.restore();
+    }
+
+    function drawAxes() {
+      ctx.save();
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      
+      const originX = toScreenX(0);
+      const originY = toScreenY(0);
+      
+      ctx.beginPath();
+      ctx.moveTo(margin.left, originY);
+      ctx.lineTo(margin.left + chartW, originY);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(originX, margin.top);
+      ctx.lineTo(originX, margin.top + chartH);
+      ctx.stroke();
+      
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      for (let x = -3; x <= 3; x++) {
+        const sx = toScreenX(x);
+        ctx.fillText(x.toString(), sx, originY + 18);
+      }
+      
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let y = -5; y <= 20; y += 5) {
+        const sy = toScreenY(y);
+        if (sy >= margin.top && sy <= margin.top + chartH) {
+          ctx.fillText(y.toString(), originX - 8, sy);
+        }
+      }
+      
+      // grid
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 0.6;
+      for (let x = -3; x <= 3; x++) {
+        const sx = toScreenX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, margin.top);
+        ctx.lineTo(sx, margin.top + chartH);
+        ctx.stroke();
+      }
+      for (let y = -5; y <= 20; y += 5) {
+        const sy = toScreenY(y);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, sy);
+        ctx.lineTo(margin.left + chartW, sy);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+
+    function drawLine() {
+      const x1 = xMin, y1 = slope * x1 + intercept;
+      const x2 = xMax, y2 = slope * x2 + intercept;
+      
+      ctx.save();
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 3;
+      ctx.setLineDash(getLineStyle());
+      
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(x1), toScreenY(y1));
+      ctx.lineTo(toScreenX(x2), toScreenY(y2));
+      ctx.stroke();
+      
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawTestPoint() {
+      const sx = toScreenX(testPoint.x);
+      const sy = toScreenY(testPoint.y);
+      const isTrue = evaluate(testPoint.x, testPoint.y);
+      
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(sx, sy, 10, 0, 2*Math.PI);
+      ctx.fillStyle = isTrue ? C.testTrue : C.testFalse;
+      ctx.shadowColor = 'rgba(0,0,0,0.1)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      ctx.font = "600 13px system-ui";
+      ctx.fillStyle = isTrue ? C.testTrue : C.testFalse;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(`(${testPoint.x.toFixed(1)}, ${testPoint.y.toFixed(1)})`, sx, sy - 16);
+      ctx.fillText(isTrue ? '✓ satisfies' : '✗ does not satisfy', sx, sy + 26);
+      
+      ctx.restore();
+    }
+
+    function drawInequalityToggles() {
+      const signs = ['<', '≤', '>', '≥'];
+      
+      ctx.save();
+      ctx.font = "15px system-ui";
+      
+      signs.forEach((s, i) => {
+        const x = 50 + i * 55;
+        const isActive = inequality === s;
+        
+        ctx.fillStyle = isActive ? C.line : '#f8fafc';
+        ctx.strokeStyle = isActive ? C.line : C.dim;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(x, 70, 45, 32, 16);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = isActive ? '#ffffff' : C.dim;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(s, x + 22.5, 86);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      
+      const symbol = inequality === '<' ? '&lt;' : (inequality === '≤' ? '≤' : (inequality === '>' ? '&gt;' : '≥'));
+      ctx.fillText(`y ${symbol} ${slope}x + ${intercept}`, W/2, 45);
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('drag test point · tap inequality · hold to reset', W/2, H-25);
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawAxes();
+      drawShadedRegion();
+      drawLine();
+      drawTestPoint();
+      drawInequalityToggles();
+      drawTitle();
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.line;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // interaction
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const signs = ['<', '≤', '>', '≥'];
+      for (let i = 0; i < 4; i++) {
+        if (hitInequalityToggle(px, py, i)) {
+          inequality = signs[i];
+          return;
+        }
+      }
+      
+      if (hitTestPoint(px, py)) {
+        isDragging = true;
+        canvas.style.cursor = 'grabbing';
+      }
+      
+      pointerDown = true;
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown && !isDragging) {
+          testPoint = { x: 0, y: 0 };
+          inequality = '<';
+        }
+        holding = false;
+        holdTimer = null;
+      }, 500);
+    }
+
+    function ptrMove(e) {
+      e.preventDefault();
+      if (!isDragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const world = toWorld(px, py);
+      testPoint.x = Math.max(xMin, Math.min(xMax, world.x));
+      testPoint.y = Math.max(yMin, Math.min(yMax, world.y));
+      
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; holding = false; }
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      isDragging = false;
+      pointerDown = false;
+      holding = false;
+      canvas.style.cursor = 'grab';
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchmove', ptrMove, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mousemove', ptrMove);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

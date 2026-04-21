@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>pascal's triangle · binomial coefficients</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- Pascal's Triangle (rows 0 through 7) -----
+    const rows = [
+      [1],
+      [1, 1],
+      [1, 2, 1],
+      [1, 3, 3, 1],
+      [1, 4, 6, 4, 1],
+      [1, 5, 10, 10, 5, 1],
+      [1, 6, 15, 20, 15, 6, 1],
+      [1, 7, 21, 35, 35, 21, 7, 1]
+    ];
+    
+    const numRows = rows.length;
+    
+    // layout
+    const startY = 130;
+    const rowSpacing = 58;
+    const cellSize = 46;
+    
+    // selected cell
+    let selectedRow = 4;
+    let selectedCol = 2; // value 6
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      number: '#2563eb',
+      highlight: '#f59e0b',
+      sum1: '#3b82f6',
+      sum2: '#0ea5e9',
+      text: '#1e293b',
+      dim: '#94a3b8',
+      rowLabel: '#64748b',
+      expansion: '#10b981',
+      diagonal: '#8b5cf6'
+    };
+
+    // ----- get cell position -----
+    function getCellPosition(row, col) {
+      const y = startY + row * rowSpacing;
+      const offset = (numRows - row - 1) * (cellSize + 8) / 2;
+      const x = W/2 - (row * (cellSize + 8))/2 + col * (cellSize + 8);
+      return { x, y };
+    }
+
+    // ----- hit test -----
+    function hitCell(px, py) {
+      for (let r = 0; r < numRows; r++) {
+        for (let c = 0; c < rows[r].length; c++) {
+          const pos = getCellPosition(r, c);
+          if (Math.abs(px - pos.x - cellSize/2) < cellSize/2 + 5 && 
+              Math.abs(py - pos.y - cellSize/2) < cellSize/2 + 5) {
+            return { row: r, col: c };
+          }
+        }
+      }
+      return null;
+    }
+    
+    function hitRowLabel(px, py) {
+      for (let r = 0; r < numRows; r++) {
+        const y = startY + r * rowSpacing + cellSize/2;
+        if (px >= 20 && px <= 75 && py >= y - 15 && py <= y + 15) {
+          return r;
+        }
+      }
+      return null;
+    }
+
+    // ----- drawing -----
+    function drawTriangle() {
+      ctx.save();
+      
+      rows.forEach((row, r) => {
+        row.forEach((val, c) => {
+          const pos = getCellPosition(r, c);
+          const isSelected = (r === selectedRow && c === selectedCol);
+          const isParent = (r === selectedRow - 1 && (c === selectedCol - 1 || c === selectedCol));
+          const isChild = (r === selectedRow + 1 && (c === selectedCol || c === selectedCol + 1));
+          
+          let bgColor = '#ffffff';
+          if (isSelected) bgColor = C.highlight;
+          else if (isParent) bgColor = C.sum1;
+          else if (isChild) bgColor = C.sum2;
+          
+          ctx.fillStyle = bgColor;
+          ctx.strokeStyle = isSelected ? C.highlight : C.dim;
+          ctx.lineWidth = isSelected ? 3 : 1.5;
+          
+          ctx.beginPath();
+          ctx.roundRect(pos.x, pos.y, cellSize, cellSize, 10);
+          ctx.fill();
+          ctx.stroke();
+          
+          ctx.font = `600 ${isSelected ? 19 : 17}px 'Segoe UI', monospace`;
+          ctx.fillStyle = isSelected ? '#ffffff' : (isParent || isChild ? '#ffffff' : C.number);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(val, pos.x + cellSize/2, pos.y + cellSize/2);
+        });
+      });
+      
+      ctx.restore();
+    }
+
+    function drawRowLabels() {
+      ctx.save();
+      ctx.font = "500 13px system-ui";
+      ctx.fillStyle = C.rowLabel;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      
+      rows.forEach((_, r) => {
+        const y = startY + r * rowSpacing + cellSize/2;
+        ctx.fillText(`n = ${r}`, 70, y);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawSumArrows() {
+      if (selectedRow === 0 || selectedRow >= numRows - 1) return;
+      
+      const parentPos = getCellPosition(selectedRow, selectedCol);
+      const leftParentPos = selectedCol > 0 ? getCellPosition(selectedRow - 1, selectedCol - 1) : null;
+      const rightParentPos = selectedCol < rows[selectedRow - 1].length ? getCellPosition(selectedRow - 1, selectedCol) : null;
+      
+      ctx.save();
+      ctx.strokeStyle = C.sum2;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.globalAlpha = 0.5;
+      
+      if (leftParentPos) {
+        ctx.beginPath();
+        ctx.moveTo(leftParentPos.x + cellSize/2, leftParentPos.y + cellSize);
+        ctx.lineTo(parentPos.x + cellSize/2, parentPos.y);
+        ctx.stroke();
+      }
+      
+      if (rightParentPos) {
+        ctx.beginPath();
+        ctx.moveTo(rightParentPos.x + cellSize/2, rightParentPos.y + cellSize);
+        ctx.lineTo(parentPos.x + cellSize/2, parentPos.y);
+        ctx.stroke();
+      }
+      
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawExpansion() {
+      const row = rows[selectedRow];
+      
+      ctx.save();
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.expansion;
+      ctx.textAlign = "center";
+      
+      let expansion = '';
+      row.forEach((coef, i) => {
+        const aPow = selectedRow - i;
+        const bPow = i;
+        
+        if (coef > 1) expansion += coef;
+        if (aPow > 0) {
+          expansion += 'a';
+          if (aPow > 1) expansion += superscript(aPow);
+        }
+        if (bPow > 0) {
+          expansion += 'b';
+          if (bPow > 1) expansion += superscript(bPow);
+        }
+        if (i < row.length - 1) expansion += ' + ';
+      });
+      
+      ctx.fillText(`(a + b)${superscript(selectedRow)} = ${expansion}`, W/2, H - 70);
+      
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`row ${selectedRow} coefficients: ${row.join(', ')}`, W/2, H - 45);
+      
+      ctx.restore();
+    }
+    
+    function superscript(n) {
+      const sup = ['⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'];
+      return n.toString().split('').map(d => sup[parseInt(d)]).join('');
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 20px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText("Pascal's Triangle", W/2, 45);
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('each number = sum of two above', W/2, 75);
+      
+      if (selectedRow > 0) {
+        const val = rows[selectedRow][selectedCol];
+        const leftParent = selectedCol > 0 ? rows[selectedRow - 1][selectedCol - 1] : 0;
+        const rightParent = selectedCol < rows[selectedRow - 1].length ? rows[selectedRow - 1][selectedCol] : 0;
+        
+        if (selectedCol > 0 && selectedCol < rows[selectedRow - 1].length) {
+          ctx.fillText(`${val} = ${leftParent} + ${rightParent}`, W/2, 105);
+        } else {
+          ctx.fillText(`${val} = 1`, W/2, 105);
+        }
+      }
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawSumArrows();
+      drawTriangle();
+      drawRowLabels();
+      drawTitle();
+      drawExpansion();
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('tap numbers or row labels · hold to reset', W/2, H-20);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.number;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitCell(px, py);
+      if (hit) {
+        selectedRow = hit.row;
+        selectedCol = hit.col;
+      } else {
+        const rowHit = hitRowLabel(px, py);
+        if (rowHit !== null) {
+          selectedRow = rowHit;
+          selectedCol = Math.floor(rows[rowHit].length / 2);
+        }
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          selectedRow = 4;
+          selectedCol = 2;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

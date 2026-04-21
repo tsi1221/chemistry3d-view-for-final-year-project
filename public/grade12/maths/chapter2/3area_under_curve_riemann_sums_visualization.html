@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>increasing · decreasing · sign chart</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- function: f(x) = 3x⁴ - 4x³ - 12x² + 5 -----
+    function f(x) {
+      return 3*Math.pow(x,4) - 4*Math.pow(x,3) - 12*x*x + 5;
+    }
+    
+    function df(x) {
+      return 12*x*x*x - 12*x*x - 24*x;
+    }
+    
+    // critical numbers (where f'(x) = 0)
+    const criticals = [-1, 0, 2];
+    
+    // domain for graphing
+    const xMin = -2.2, xMax = 3.2;
+    const yMin = -18, yMax = 18;
+    
+    const margin = { top: 80, right: 40, bottom: 160, left: 70 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+    
+    // selected interval (tap to select)
+    let selectedInterval = 2; // 0: x<-1, 1: -1<x<0, 2: 0<x<2, 3: x>2
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      increasing: 'rgba(16, 185, 129, 0.15)',
+      decreasing: 'rgba(239, 68, 68, 0.12)',
+      incLine: '#10b981',
+      decLine: '#ef4444',
+      curve: '#2563eb',
+      critical: '#f59e0b',
+      grid: '#e2e8f0',
+      axis: '#1e293b',
+      text: '#334155',
+      dim: '#94a3b8'
+    };
+
+    // ----- sign of derivative -----
+    function signAt(x) {
+      const val = df(x);
+      if (Math.abs(val) < 0.001) return 0;
+      return val > 0 ? 1 : -1;
+    }
+    
+    function getInterval(x) {
+      if (x < -1) return 0;
+      if (x < 0) return 1;
+      if (x < 2) return 2;
+      return 3;
+    }
+
+    // ----- coordinate mapping -----
+    function toScreenX(x) {
+      return margin.left + ((x - xMin) / (xMax - xMin)) * chartW;
+    }
+    
+    function toScreenY(y) {
+      return margin.top + chartH - ((y - yMin) / (yMax - yMin)) * chartH;
+    }
+
+    // ----- hit test for intervals (on sign chart) -----
+    function hitInterval(px, py) {
+      const signY = margin.top + chartH + 60;
+      if (py < signY - 15 || py > signY + 35) return null;
+      
+      const intervals = [
+        { left: -2.2, right: -1, label: 'x < -1' },
+        { left: -1, right: 0, label: '-1 < x < 0' },
+        { left: 0, right: 2, label: '0 < x < 2' },
+        { left: 2, right: 3.2, label: 'x > 2' }
+      ];
+      
+      for (let i = 0; i < intervals.length; i++) {
+        const leftX = toScreenX(intervals[i].left);
+        const rightX = toScreenX(intervals[i].right);
+        if (px >= leftX && px <= rightX) return i;
+      }
+      return null;
+    }
+
+    // ----- drawing -----
+    function drawAxes() {
+      ctx.save();
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      
+      const originX = toScreenX(0);
+      const originY = toScreenY(0);
+      
+      ctx.beginPath();
+      ctx.moveTo(margin.left, originY);
+      ctx.lineTo(margin.left + chartW, originY);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(originX, margin.top);
+      ctx.lineTo(originX, margin.top + chartH);
+      ctx.stroke();
+      
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      
+      for (let x = -2; x <= 3; x++) {
+        const sx = toScreenX(x);
+        ctx.fillText(x.toString(), sx, originY + 18);
+      }
+      
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let y = -15; y <= 15; y += 5) {
+        const sy = toScreenY(y);
+        ctx.fillText(y.toString(), originX - 8, sy);
+      }
+      
+      // grid
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 0.6;
+      for (let x = -2; x <= 3; x++) {
+        const sx = toScreenX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, margin.top);
+        ctx.lineTo(sx, margin.top + chartH);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+
+    function drawColoredRegions() {
+      ctx.save();
+      
+      // draw colored backgrounds for each interval
+      const intervals = [
+        { left: xMin, right: -1 },
+        { left: -1, right: 0 },
+        { left: 0, right: 2 },
+        { left: 2, right: xMax }
+      ];
+      
+      intervals.forEach((inv, i) => {
+        const leftX = toScreenX(inv.left);
+        const rightX = toScreenX(inv.right);
+        const isInc = (i === 1 || i === 3); // increasing intervals
+        
+        ctx.fillStyle = isInc ? C.increasing : C.decreasing;
+        ctx.fillRect(leftX, margin.top, rightX - leftX, chartH);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawCurve() {
+      ctx.save();
+      ctx.strokeStyle = C.curve;
+      ctx.lineWidth = 3;
+      
+      ctx.beginPath();
+      for (let x = xMin; x <= xMax; x += 0.03) {
+        const sx = toScreenX(x);
+        const sy = toScreenY(f(x));
+        if (x === xMin) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function drawCriticalPoints() {
+      ctx.save();
+      
+      criticals.forEach(x => {
+        const sx = toScreenX(x);
+        const sy = toScreenY(f(x));
+        
+        ctx.beginPath();
+        ctx.arc(sx, sy, 7, 0, 2*Math.PI);
+        ctx.fillStyle = C.critical;
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        // label
+        ctx.font = "600 13px system-ui";
+        ctx.fillStyle = C.critical;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        let label = '';
+        if (x === -1) label = 'local min';
+        else if (x === 0) label = 'local max';
+        else if (x === 2) label = 'local min';
+        ctx.fillText(label, sx, sy - 15);
+      });
+      
+      // critical lines (vertical dashed)
+      ctx.strokeStyle = C.critical;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      criticals.forEach(x => {
+        const sx = toScreenX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, margin.top);
+        ctx.lineTo(sx, margin.top + chartH);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      
+      ctx.restore();
+    }
+
+    function drawSignChart() {
+      const signY = margin.top + chartH + 60;
+      const lineY = signY - 15;
+      
+      ctx.save();
+      
+      // number line
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(xMin), lineY);
+      ctx.lineTo(toScreenX(xMax), lineY);
+      ctx.stroke();
+      
+      // tick marks at criticals
+      criticals.forEach(x => {
+        const sx = toScreenX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, lineY - 8);
+        ctx.lineTo(sx, lineY + 8);
+        ctx.stroke();
+        
+        ctx.font = "13px system-ui";
+        ctx.fillStyle = C.text;
+        ctx.textAlign = "center";
+        ctx.fillText(x.toString(), sx, lineY + 25);
+      });
+      
+      // sign regions
+      const intervals = [
+        { left: xMin, right: -1, sign: '-', dec: true },
+        { left: -1, right: 0, sign: '+', dec: false },
+        { left: 0, right: 2, sign: '-', dec: true },
+        { left: 2, right: xMax, sign: '+', dec: false }
+      ];
+      
+      ctx.font = "600 18px system-ui";
+      
+      intervals.forEach((inv, i) => {
+        const leftX = toScreenX(inv.left);
+        const rightX = toScreenX(inv.right);
+        const midX = (leftX + rightX) / 2;
+        
+        const isSelected = (i === selectedInterval);
+        ctx.fillStyle = isSelected ? C.critical : (inv.dec ? C.decLine : C.incLine);
+        
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(inv.sign, midX, signY);
+        
+        // increasing/decreasing text
+        ctx.font = "12px system-ui";
+        ctx.fillStyle = C.dim;
+        ctx.fillText(inv.dec ? 'decreasing' : 'increasing', midX, signY + 25);
+        ctx.font = "600 18px system-ui";
+      });
+      
+      // f'(x) label
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "left";
+      ctx.fillText("f'(x)", toScreenX(xMin) - 5, lineY - 10);
+      
+      ctx.restore();
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('f(x) = 3x⁴ − 4x³ − 12x² + 5', W/2, 45);
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('critical numbers: x = −1, 0, 2', W/2, 72);
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawColoredRegions();
+      drawAxes();
+      drawCurve();
+      drawCriticalPoints();
+      drawSignChart();
+      drawTitle();
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('tap sign chart intervals · hold to reset', W/2, H-20);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.curve;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitInterval(px, py);
+      if (hit !== null) {
+        selectedInterval = hit;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          selectedInterval = 2;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

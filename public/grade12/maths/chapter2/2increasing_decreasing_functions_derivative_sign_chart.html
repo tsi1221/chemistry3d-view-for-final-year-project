@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>riemann sums · area under curve</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- function: f(x) = x² + 1 -----
+    function f(x) {
+      return x * x + 1;
+    }
+    
+    function antiderivative(x) {
+      return Math.pow(x, 3)/3 + x;
+    }
+    
+    // interval [a, b]
+    const a = 1, b = 5;
+    const exactArea = antiderivative(b) - antiderivative(a);
+    
+    // Riemann sum parameters
+    let n = 4;
+    let useRightEndpoint = false;
+    const nOptions = [2, 4, 8, 16];
+    
+    // chart dimensions
+    const xMin = 0, xMax = 6;
+    const yMin = 0, yMax = 28;
+    
+    const margin = { top: 90, right: 40, bottom: 80, left: 70 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      curve: '#2563eb',
+      rectangle: 'rgba(37, 99, 235, 0.35)',
+      rectBorder: '#3b82f6',
+      area: 'rgba(16, 185, 129, 0.15)',
+      exactLine: '#10b981',
+      grid: '#e2e8f0',
+      axis: '#1e293b',
+      text: '#334155',
+      dim: '#94a3b8',
+      button: '#f8fafc'
+    };
+
+    // ----- Riemann sum calculation -----
+    function computeRiemannSum() {
+      const dx = (b - a) / n;
+      let sum = 0;
+      const rectangles = [];
+      
+      for (let i = 0; i < n; i++) {
+        const x = useRightEndpoint ? a + (i + 1) * dx : a + i * dx;
+        const height = f(x);
+        const rect = {
+          xLeft: a + i * dx,
+          xRight: a + (i + 1) * dx,
+          height: height
+        };
+        rectangles.push(rect);
+        sum += height * dx;
+      }
+      
+      return { sum, rectangles, dx };
+    }
+
+    // ----- coordinate mapping -----
+    function toScreenX(x) {
+      return margin.left + ((x - xMin) / (xMax - xMin)) * chartW;
+    }
+    
+    function toScreenY(y) {
+      return margin.top + chartH - ((y - yMin) / (yMax - yMin)) * chartH;
+    }
+
+    // ----- hit test for buttons -----
+    function hitNButton(px, py, index) {
+      const startX = 50;
+      const x = startX + index * 55;
+      return px >= x && px <= x + 45 && py >= 70 && py <= 102;
+    }
+    
+    function hitEndpointToggle(px, py) {
+      return px >= 280 && px <= 410 && py >= 70 && py <= 102;
+    }
+
+    // ----- drawing -----
+    function drawAxes() {
+      ctx.save();
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      
+      const originX = toScreenX(0);
+      const originY = toScreenY(0);
+      
+      ctx.beginPath();
+      ctx.moveTo(margin.left, originY);
+      ctx.lineTo(margin.left + chartW, originY);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(originX, margin.top);
+      ctx.lineTo(originX, margin.top + chartH);
+      ctx.stroke();
+      
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      
+      for (let x = 0; x <= 6; x++) {
+        const sx = toScreenX(x);
+        ctx.fillText(x.toString(), sx, originY + 18);
+      }
+      
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let y = 0; y <= 25; y += 5) {
+        const sy = toScreenY(y);
+        ctx.fillText(y.toString(), originX - 8, sy);
+      }
+      
+      // grid
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 0.6;
+      for (let x = 0; x <= 6; x++) {
+        const sx = toScreenX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, margin.top);
+        ctx.lineTo(sx, margin.top + chartH);
+        ctx.stroke();
+      }
+      
+      // interval markers
+      ctx.fillStyle = C.text;
+      ctx.font = "13px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText('a = 1', toScreenX(1), originY + 40);
+      ctx.fillText('b = 5', toScreenX(5), originY + 40);
+      
+      ctx.restore();
+    }
+
+    function drawCurve() {
+      ctx.save();
+      ctx.strokeStyle = C.curve;
+      ctx.lineWidth = 3;
+      
+      ctx.beginPath();
+      for (let x = 0; x <= 5.5; x += 0.03) {
+        const sx = toScreenX(x);
+        const sy = toScreenY(f(x));
+        if (x === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function drawAreaRegion() {
+      ctx.save();
+      ctx.fillStyle = C.area;
+      
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(a), toScreenY(0));
+      for (let x = a; x <= b; x += 0.05) {
+        ctx.lineTo(toScreenX(x), toScreenY(f(x)));
+      }
+      ctx.lineTo(toScreenX(b), toScreenY(0));
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.restore();
+    }
+
+    function drawRectangles() {
+      const { rectangles } = computeRiemannSum();
+      
+      ctx.save();
+      ctx.strokeStyle = C.rectBorder;
+      ctx.lineWidth = 1.5;
+      
+      rectangles.forEach(rect => {
+        const x1 = toScreenX(rect.xLeft);
+        const x2 = toScreenX(rect.xRight);
+        const y0 = toScreenY(0);
+        const y1 = toScreenY(rect.height);
+        
+        ctx.fillStyle = C.rectangle;
+        ctx.fillRect(x1, y1, x2 - x1, y0 - y1);
+        ctx.strokeRect(x1, y1, x2 - x1, y0 - y1);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawButtons() {
+      ctx.save();
+      ctx.font = "13px system-ui";
+      
+      // n buttons
+      nOptions.forEach((opt, i) => {
+        const x = 50 + i * 55;
+        const isActive = (n === opt);
+        
+        ctx.fillStyle = isActive ? C.curve : C.button;
+        ctx.strokeStyle = isActive ? C.curve : C.dim;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(x, 70, 45, 32, 16);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = isActive ? '#ffffff' : C.dim;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(`n=${opt}`, x + 22.5, 86);
+      });
+      
+      // endpoint toggle
+      ctx.fillStyle = useRightEndpoint ? C.button : C.curve;
+      ctx.strokeStyle = useRightEndpoint ? C.dim : C.curve;
+      ctx.beginPath();
+      ctx.roundRect(280, 70, 60, 32, 16);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = useRightEndpoint ? C.dim : '#ffffff';
+      ctx.fillText('left', 310, 86);
+      
+      ctx.fillStyle = useRightEndpoint ? C.curve : C.button;
+      ctx.strokeStyle = useRightEndpoint ? C.curve : C.dim;
+      ctx.beginPath();
+      ctx.roundRect(345, 70, 65, 32, 16);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = useRightEndpoint ? '#ffffff' : C.dim;
+      ctx.fillText('right', 377.5, 86);
+      
+      ctx.restore();
+    }
+
+    function drawInfo() {
+      const { sum, dx } = computeRiemannSum();
+      
+      ctx.save();
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('f(x) = x² + 1  on  [1, 5]', W/2, 45);
+      
+      ctx.font = "15px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`Δx = ${dx.toFixed(3)}`, W/2, 75);
+      
+      ctx.font = "16px system-ui";
+      ctx.fillStyle = C.curve;
+      ctx.fillText(`Riemann sum = ${sum.toFixed(4)}`, W/2, H - 55);
+      
+      ctx.fillStyle = C.exactLine;
+      ctx.fillText(`exact area = ${exactArea.toFixed(4)}`, W/2, H - 30);
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawAxes();
+      drawAreaRegion();
+      drawRectangles();
+      drawCurve();
+      drawButtons();
+      drawInfo();
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.curve;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      for (let i = 0; i < nOptions.length; i++) {
+        if (hitNButton(px, py, i)) {
+          n = nOptions[i];
+          return;
+        }
+      }
+      
+      if (hitEndpointToggle(px, py)) {
+        useRightEndpoint = !useRightEndpoint;
+        return;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          n = 4;
+          useRightEndpoint = false;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

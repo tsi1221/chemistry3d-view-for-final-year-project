@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>box plot · IQR · five-number summary</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- datasets -----
+    const dataA = [20, 70, 70, 70, 70, 70, 70, 100];
+    const dataB = [20, 30, 50, 80, 90, 100];
+    
+    // sort and compute five-number summary
+    function getSummary(data) {
+      const sorted = [...data].sort((a, b) => a - b);
+      const n = sorted.length;
+      
+      const min = sorted[0];
+      const max = sorted[n - 1];
+      
+      const median = n % 2 === 0 
+        ? (sorted[n/2 - 1] + sorted[n/2]) / 2 
+        : sorted[Math.floor(n/2)];
+      
+      const lowerHalf = sorted.slice(0, Math.floor(n/2));
+      const upperHalf = sorted.slice(Math.ceil(n/2));
+      
+      const q1 = lowerHalf.length % 2 === 0
+        ? (lowerHalf[lowerHalf.length/2 - 1] + lowerHalf[lowerHalf.length/2]) / 2
+        : lowerHalf[Math.floor(lowerHalf.length/2)];
+      
+      const q3 = upperHalf.length % 2 === 0
+        ? (upperHalf[upperHalf.length/2 - 1] + upperHalf[upperHalf.length/2]) / 2
+        : upperHalf[Math.floor(upperHalf.length/2)];
+      
+      return { min, q1, median, q3, max, iqr: q3 - q1 };
+    }
+    
+    const summaryA = getSummary(dataA);
+    const summaryB = getSummary(dataB);
+    
+    // chart layout
+    const margin = { top: 160, right: 60, bottom: 140, left: 80 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = 160;
+    
+    const boxW = 90;
+    const spacing = 200;
+    const startX = margin.left + (chartW - 2 * boxW - spacing) / 2;
+    const boxY = margin.top + 60;
+    
+    // selected dataset
+    let selected = 0;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+
+    // colors
+    const C = {
+      boxA: '#2563eb',
+      boxB: '#f59e0b',
+      whisker: '#64748b',
+      median: '#ffffff',
+      text: '#1e293b',
+      dim: '#94a3b8'
+    };
+
+    // coordinate mapping
+    const xMin = 10, xMax = 110;
+    function toX(value) {
+      return margin.left + ((value - xMin) / (xMax - xMin)) * chartW;
+    }
+
+    // hit test
+    function hitBox(px, py) {
+      for (let i = 0; i < 2; i++) {
+        const cx = startX + i * (boxW + spacing) + boxW/2;
+        const left = cx - boxW/2;
+        const right = cx + boxW/2;
+        if (px >= left - 20 && px <= right + 20 && py >= boxY - 30 && py <= boxY + chartH + 50) {
+          return i;
+        }
+      }
+      return null;
+    }
+
+    // draw single box plot
+    function drawBox(summary, index) {
+      const cx = startX + index * (boxW + spacing) + boxW/2;
+      const axisY = boxY + chartH/2;
+      
+      const minX = toX(summary.min);
+      const q1X = toX(summary.q1);
+      const medX = toX(summary.median);
+      const q3X = toX(summary.q3);
+      const maxX = toX(summary.max);
+      
+      const color = index === 0 ? C.boxA : C.boxB;
+      const isSelected = index === selected;
+      
+      ctx.save();
+      
+      // whisker caps
+      ctx.strokeStyle = C.whisker;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(minX, axisY - 12);
+      ctx.lineTo(minX, axisY + 12);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(maxX, axisY - 12);
+      ctx.lineTo(maxX, axisY + 12);
+      ctx.stroke();
+      
+      // horizontal whiskers
+      ctx.beginPath();
+      ctx.moveTo(minX, axisY);
+      ctx.lineTo(q1X, axisY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(q3X, axisY);
+      ctx.lineTo(maxX, axisY);
+      ctx.stroke();
+      
+      // box
+      const height = 44;
+      ctx.fillStyle = color + (isSelected ? '' : 'cc');
+      ctx.strokeStyle = color;
+      ctx.lineWidth = isSelected ? 3 : 2;
+      ctx.fillRect(q1X, axisY - height/2, q3X - q1X, height);
+      ctx.strokeRect(q1X, axisY - height/2, q3X - q1X, height);
+      
+      // median line
+      ctx.strokeStyle = C.median;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(medX, axisY - height/2);
+      ctx.lineTo(medX, axisY + height/2);
+      ctx.stroke();
+      
+      // labels
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText(`Min=${summary.min}`, minX, axisY - 28);
+      ctx.fillText(`Q₁=${summary.q1}`, q1X, axisY - 35);
+      ctx.fillText(`${summary.median}`, medX, axisY - (summary.iqr === 0 ? 42 : 35));
+      ctx.fillText(`Q₃=${summary.q3}`, q3X, axisY - 35);
+      ctx.fillText(`Max=${summary.max}`, maxX, axisY - 28);
+      
+      // dataset name and IQR
+      ctx.font = "600 15px system-ui";
+      ctx.fillStyle = color;
+      ctx.fillText(index === 0 ? 'Data A' : 'Data B', cx, boxY - 20);
+      
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`IQR = ${summary.iqr}`, cx, boxY + chartH + 28);
+      
+      ctx.restore();
+    }
+
+    function drawAxes() {
+      const axisY = boxY + chartH/2;
+      ctx.save();
+      ctx.strokeStyle = C.text;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(margin.left, axisY);
+      ctx.lineTo(margin.left + chartW, axisY);
+      ctx.stroke();
+      
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      for (let x = 10; x <= 110; x += 10) {
+        const sx = toX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, axisY - 5);
+        ctx.lineTo(sx, axisY + 5);
+        ctx.strokeStyle = C.text;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillText(x, sx, axisY + 22);
+      }
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.fillText('Value', margin.left + chartW/2, axisY + 50);
+      ctx.restore();
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 20px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('Box-and-Whisker Plots', W/2, 50);
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('min · Q₁ · median · Q₃ · max', W/2, 78);
+      
+      const s = selected === 0 ? summaryA : summaryB;
+      const name = selected === 0 ? 'Data A' : 'Data B';
+      ctx.font = "15px system-ui";
+      ctx.fillStyle = selected === 0 ? C.boxA : C.boxB;
+      ctx.fillText(`${name}: ${s.min}, ${s.q1}, ${s.median}, ${s.q3}, ${s.max}  ·  IQR = ${s.iqr}`, W/2, 115);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawAxes();
+      drawBox(summaryA, 0);
+      drawBox(summaryB, 1);
+      drawTitle();
+      
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('tap boxes · hold to reset', W/2, H-25);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.boxA;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // interaction
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitBox(px, py);
+      if (hit !== null) selected = hit;
+      
+      pointerDown = true;
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) selected = 0;
+        holding = false;
+        holdTimer = null;
+      }, 500);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

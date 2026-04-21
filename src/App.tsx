@@ -212,7 +212,7 @@ const grade11MathLessons: Omit<Item, 'grade'>[] = [
   // Chapter 8: Probability and Combinatorics
   { name: "Tree Diagrams for Counting Fundamental Principle", link: "/grade11/maths/chapter8/1tree_diagrams_for_counting_fundamental_principle.html", chapter: "Chapter 8: Probability and Combinatorics", subject: "Mathematics" },
   { name: "Pascal's Triangle Binomial Theorem Visualization", link: "/grade11/maths/chapter8/2pascals_triangle_binomial_theorem_visualization.html", chapter: "Chapter 8: Probability and Combinatorics", subject: "Mathematics" },
-  { name: "Venn Diagrams Probability Rules Addition", link: "/grade11/maths/chapter8/3venn_diagrams_probability_rules_addition.html", chapter: "Chapter 8: Probability and Combinatorics", subject: "Mathematics" },
+  
 ];
 
 
@@ -273,11 +273,84 @@ const grade10MathematicsLessons: Omit<Item, 'grade'>[] = [
   { name: "Cyclic Quadrilateral Lab", link: "/grade10/maths/chapter5/2cyclic_quadrilateral_lab.html", chapter: "Chapter 5: Geometry & Circles", subject: "Mathematics" },
   { name: "Sector Builder Lab", link: "/grade10/maths/chapter5/3sector_builder_lab.html", chapter: "Chapter 5: Geometry & Circles", subject: "Mathematics" },
 ];
+
+// ----- GRADE 12 MATHEMATICS LESSONS -----
+const grade12MathematicsLessons: Omit<Item, 'grade'>[] = [
+  // Chapter 1: Sequences and Series
+  {
+    name: "Graphs of Sequences",
+    link: "/grade12/maths/chapter1/1graphs_of_sequences.html",
+    chapter: "Chapter 1: Sequences and Series",
+    subject: "Mathematics"
+  },
+  {
+    name: "Pascal's Triangle Binomial Coefficients",
+    link: "/grade12/maths/chapter1/2pascals_triangle_binomial_coefficients.html",
+    chapter: "Chapter 1: Sequences and Series",
+    subject: "Mathematics"
+  },
+  {
+    name: "Infinite Geometric Series Convergence Visualization",
+    link: "/grade12/maths/chapter1/3infinite_geometric_series_convergence_visualization.html",
+    chapter: "Chapter 1: Sequences and Series",
+    subject: "Mathematics"
+  },
+
+  // Chapter 2: Differential Calculus
+  {
+    name: "Slope of Tangent and Secant Lines Visualization",
+    link: "/grade12/maths/chapter2/1slope_tangent_secant_lines_visualization.html",
+    chapter: "Chapter 2: Differential Calculus",
+    subject: "Mathematics"
+  },
+  {
+    name: "Increasing and Decreasing Functions (Derivative Sign Chart)",
+    link: "/grade12/maths/chapter2/2increasing_decreasing_functions_derivative_sign_chart.html",
+    chapter: "Chapter 2: Differential Calculus",
+    subject: "Mathematics"
+  },
+  {
+    name: "Area Under Curve (Riemann Sums Visualization)",
+    link: "/grade12/maths/chapter2/3area_under_curve_riemann_sums_visualization.html",
+    chapter: "Chapter 2: Differential Calculus",
+    subject: "Mathematics"
+  },
+
+  // Chapter 3: Statistics
+  {
+    name: "Frequency Curves and Skewness Visualization",
+    link: "/grade12/maths/chapter3/1frequency_curves_and_skewness_visualization.html",
+    chapter: "Chapter 3: Statistics",
+    subject: "Mathematics"
+  },
+  {
+    name: "Box and Whisker Plot (Interquartile Range Visualization)",
+    link: "/grade12/maths/chapter3/2box_and_whisker_plot_interquartile_range_visualization.html",
+    chapter: "Chapter 3: Statistics",
+    subject: "Mathematics"
+  },
+
+  // Chapter 4: Linear Programming
+  {
+    name: "Graphical Solution of Linear Inequalities (Two Variables)",
+    link: "/grade12/maths/chapter4/1graphical_solution_linear_inequalities_two_variables.html",
+    chapter: "Chapter 4: Linear Programming",
+    subject: "Mathematics"
+  },
+  {
+    name: "Feasible Region of System of Linear Inequalities",
+    link: "/grade12/maths/chapter4/2feasible_region_system_linear_inequalities.html",
+    chapter: "Chapter 4: Linear Programming",
+    subject: "Mathematics"
+  },
+ 
+];
 // Combine all lessons, assigning proper grades
 const allLessons: Item[] = [
   ...grade9Lessons.map(item => ({ ...item, grade: 9 as Grade })),
   ...grade10MathematicsLessons.map(item => ({ ...item, grade: 10 as Grade })),
   ...grade11MathLessons.map(item => ({ ...item, grade: 11 as Grade })),
+   ...grade12MathematicsLessons.map(item => ({ ...item, grade: 12 as Grade })),
   ...grade12ChemistryLessons.map(item => ({ ...item, grade: 12 as Grade })),
   // Grade 11 remains empty for now
   // Biology can be added later with grade 9-12 as needed

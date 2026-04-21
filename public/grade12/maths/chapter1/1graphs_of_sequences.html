@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>sequences · arithmetic & geometric</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- sequence types -----
+    let mode = 'arithmetic'; // 'arithmetic' or 'geometric'
+    
+    // arithmetic: a_n = 2n + 1
+    // geometric: a_n = 2^(n-1) * 2
+    
+    const nMax = 8;
+    
+    function getSequence() {
+      const seq = [];
+      for (let n = 1; n <= nMax; n++) {
+        if (mode === 'arithmetic') {
+          seq.push({ n, value: 2 * n + 1 });
+        } else {
+          seq.push({ n, value: Math.pow(2, n - 1) * 2 });
+        }
+      }
+      return seq;
+    }
+    
+    // chart dimensions
+    const margin = { top: 100, right: 40, bottom: 80, left: 70 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+    
+    // selected point
+    let selectedN = 3;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      point: '#2563eb',
+      line: '#3b82f6',
+      selected: '#f59e0b',
+      grid: '#e2e8f0',
+      axis: '#1e293b',
+      text: '#334155',
+      dim: '#94a3b8',
+      arithmetic: '#2563eb',
+      geometric: '#10b981'
+    };
+
+    // ----- coordinate mapping -----
+    function getX(n) {
+      return margin.left + ((n - 1) / (nMax - 1)) * chartW;
+    }
+    
+    function getY(value, maxY) {
+      return margin.top + chartH - (value / maxY) * chartH;
+    }
+
+    // ----- hit test -----
+    function hitPoint(px, py) {
+      const seq = getSequence();
+      const maxY = mode === 'arithmetic' ? 19 : 260;
+      
+      for (let i = 0; i < seq.length; i++) {
+        const x = getX(seq[i].n);
+        const y = getY(seq[i].value, maxY);
+        if (Math.hypot(px - x, py - y) < 20) {
+          return seq[i].n;
+        }
+      }
+      return null;
+    }
+    
+    function hitToggle(px, py) {
+      return px >= 50 && px <= 200 && py >= 70 && py <= 102;
+    }
+
+    // ----- drawing -----
+    function drawAxes(maxY) {
+      ctx.save();
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + chartH);
+      ctx.lineTo(margin.left + chartW, margin.top + chartH);
+      ctx.stroke();
+      
+      // x-axis labels
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      
+      for (let n = 1; n <= nMax; n++) {
+        const x = getX(n);
+        ctx.fillText(n.toString(), x, margin.top + chartH + 25);
+      }
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.fillText('n (term number)', W/2, margin.top + chartH + 55);
+      
+      // y-axis labels
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.font = "12px system-ui";
+      
+      const step = mode === 'arithmetic' ? 5 : 50;
+      for (let i = 0; i <= maxY; i += step) {
+        const y = getY(i, maxY);
+        ctx.fillStyle = C.dim;
+        ctx.fillText(i.toString(), margin.left - 10, y);
+        
+        ctx.beginPath();
+        ctx.strokeStyle = C.grid;
+        ctx.lineWidth = 0.8;
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + chartW, y);
+        ctx.stroke();
+      }
+      
+      ctx.save();
+      ctx.translate(30, margin.top + chartH/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('aₙ (term value)', 0, 0);
+      ctx.restore();
+      
+      ctx.restore();
+    }
+
+    function drawSequence() {
+      const seq = getSequence();
+      const maxY = mode === 'arithmetic' ? 19 : 260;
+      
+      ctx.save();
+      
+      // line connecting points
+      ctx.strokeStyle = mode === 'arithmetic' ? C.arithmetic : C.geometric;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([]);
+      
+      ctx.beginPath();
+      seq.forEach((p, i) => {
+        const x = getX(p.n);
+        const y = getY(p.value, maxY);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      
+      // points
+      seq.forEach(p => {
+        const x = getX(p.n);
+        const y = getY(p.value, maxY);
+        const isSelected = (p.n === selectedN);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, isSelected ? 11 : 8, 0, 2*Math.PI);
+        ctx.fillStyle = isSelected ? C.selected : (mode === 'arithmetic' ? C.arithmetic : C.geometric);
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        // value label
+        ctx.font = `600 ${isSelected ? 14 : 12}px system-ui`;
+        ctx.fillStyle = isSelected ? C.selected : C.text;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(p.value, x, y - 12);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawToggle() {
+      ctx.save();
+      ctx.font = "13px system-ui";
+      
+      // arithmetic button
+      ctx.fillStyle = mode === 'arithmetic' ? C.arithmetic : '#f8fafc';
+      ctx.strokeStyle = mode === 'arithmetic' ? C.arithmetic : C.dim;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(50, 70, 70, 32, 16);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = mode === 'arithmetic' ? '#ffffff' : C.dim;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText('arithmetic', 85, 86);
+      
+      // geometric button
+      ctx.fillStyle = mode === 'geometric' ? C.geometric : '#f8fafc';
+      ctx.strokeStyle = mode === 'geometric' ? C.geometric : C.dim;
+      ctx.beginPath();
+      ctx.roundRect(130, 70, 80, 32, 16);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = mode === 'geometric' ? '#ffffff' : C.dim;
+      ctx.fillText('geometric', 170, 86);
+      
+      ctx.restore();
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 20px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      
+      const title = mode === 'arithmetic' ? 'Arithmetic Sequence' : 'Geometric Sequence';
+      const formula = mode === 'arithmetic' ? 'aₙ = 2n + 1' : 'aₙ = 2ⁿ';
+      
+      ctx.fillText(title, W/2, 45);
+      
+      ctx.font = "15px system-ui";
+      ctx.fillStyle = mode === 'arithmetic' ? C.arithmetic : C.geometric;
+      ctx.fillText(formula, W/2, 75);
+      
+      // selected term
+      const seq = getSequence();
+      const selected = seq.find(s => s.n === selectedN);
+      if (selected) {
+        ctx.font = "14px system-ui";
+        ctx.fillStyle = C.text;
+        ctx.fillText(`a${selectedN} = ${selected.value}`, W/2, H - 50);
+      }
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      const maxY = mode === 'arithmetic' ? 19 : 260;
+      
+      drawAxes(maxY);
+      drawSequence();
+      drawToggle();
+      drawTitle();
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('tap points · tap toggle · hold to reset', W/2, H-25);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.point;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      if (hitToggle(px, py)) {
+        mode = mode === 'arithmetic' ? 'geometric' : 'arithmetic';
+        selectedN = 3;
+        return;
+      }
+      
+      const hit = hitPoint(px, py);
+      if (hit !== null) {
+        selectedN = hit;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          mode = 'arithmetic';
+          selectedN = 3;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

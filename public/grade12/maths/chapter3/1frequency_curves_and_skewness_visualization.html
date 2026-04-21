@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>frequency curves · skewness</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- three distribution types -----
+    const distributions = [
+      {
+        name: 'symmetrical',
+        title: 'Symmetrical',
+        mean: 0, median: 0, mode: 0,
+        color: '#2563eb',
+        relation: 'mean = median = mode'
+      },
+      {
+        name: 'positive',
+        title: 'Positively Skewed',
+        mean: 0.8, median: 0.3, mode: -0.3,
+        color: '#f59e0b',
+        relation: 'mean > median > mode'
+      },
+      {
+        name: 'negative',
+        title: 'Negatively Skewed',
+        mean: -0.8, median: -0.3, mode: 0.3,
+        color: '#10b981',
+        relation: 'mean < median < mode'
+      }
+    ];
+    
+    // selected distribution (tap to select)
+    let selected = 0;
+    
+    // chart dimensions for each subplot
+    const subplotW = 220;
+    const subplotH = 200;
+    const startX = (W - 3 * subplotW) / 2;
+    const startY = 200;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      curve: ['#2563eb', '#f59e0b', '#10b981'],
+      mean: '#ef4444',
+      median: '#8b5cf6',
+      mode: '#06b6d4',
+      grid: '#e2e8f0',
+      text: '#1e293b',
+      dim: '#94a3b8'
+    };
+
+    // ----- density functions -----
+    function normalDensity(x, mean, sd = 0.8) {
+      return Math.exp(-Math.pow(x - mean, 2) / (2 * sd * sd)) / (sd * Math.sqrt(2 * Math.PI));
+    }
+    
+    function skewedDensity(x, mean, skew, sd = 0.7) {
+      const z = (x - mean) / sd;
+      const pdf = Math.exp(-z*z/2) / (sd * Math.sqrt(2*Math.PI));
+      const cdf = 0.5 * (1 + erf(z / Math.sqrt(2)));
+      return 2 * pdf * cdf;
+    }
+    
+    function erf(x) {
+      const sign = x >= 0 ? 1 : -1;
+      x = Math.abs(x);
+      const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+      const a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+      const t = 1 / (1 + p * x);
+      const y = 1 - ((((a5*t + a4)*t + a3)*t + a2)*t + a1) * t * Math.exp(-x*x);
+      return sign * y;
+    }
+
+    function getCurveY(x, dist) {
+      if (dist.name === 'symmetrical') {
+        return normalDensity(x, 0, 0.8);
+      } else if (dist.name === 'positive') {
+        return skewedDensity(x, 0.3, 0.5, 0.65);
+      } else {
+        return skewedDensity(-x, 0.3, 0.5, 0.65);
+      }
+    }
+
+    // ----- coordinate mapping for a subplot -----
+    function toScreenX(x, index) {
+      const xMin = -3, xMax = 3;
+      const left = startX + index * subplotW;
+      return left + ((x - xMin) / (xMax - xMin)) * subplotW;
+    }
+    
+    function toScreenY(y, baseY) {
+      const yMax = 0.55;
+      return baseY + 30 + subplotH - (y / yMax) * subplotH;
+    }
+
+    // ----- hit test for subplots -----
+    function hitSubplot(px, py) {
+      for (let i = 0; i < 3; i++) {
+        const left = startX + i * subplotW;
+        const right = left + subplotW;
+        const top = startY;
+        const bottom = startY + subplotH + 80;
+        if (px >= left && px <= right && py >= top && py <= bottom) {
+          return i;
+        }
+      }
+      return null;
+    }
+
+    // ----- drawing -----
+    function drawSubplot(dist, index) {
+      const baseY = startY;
+      const centerX = startX + index * subplotW + subplotW/2;
+      
+      ctx.save();
+      
+      // background
+      ctx.fillStyle = index === selected ? 'rgba(37, 99, 235, 0.03)' : '#ffffff';
+      ctx.strokeStyle = index === selected ? C.curve[index] : C.grid;
+      ctx.lineWidth = index === selected ? 2.5 : 1.5;
+      ctx.beginPath();
+      ctx.roundRect(startX + index * subplotW - 5, baseY - 5, subplotW + 10, subplotH + 90, 12);
+      ctx.fill();
+      ctx.stroke();
+      
+      // title
+      ctx.font = "600 15px system-ui";
+      ctx.fillStyle = C.curve[index];
+      ctx.textAlign = "center";
+      ctx.fillText(dist.title, centerX, baseY - 10);
+      
+      // axes
+      ctx.strokeStyle = C.text;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(startX + index * subplotW, baseY + subplotH + 30);
+      ctx.lineTo(startX + index * subplotW + subplotW, baseY + subplotH + 30);
+      ctx.stroke();
+      
+      // x-axis labels
+      ctx.font = "11px system-ui";
+      ctx.fillStyle = C.dim;
+      for (let x = -3; x <= 3; x++) {
+        const sx = toScreenX(x, index);
+        ctx.fillText(x.toString(), sx, baseY + subplotH + 48);
+      }
+      
+      // curve
+      ctx.strokeStyle = C.curve[index];
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for (let x = -3; x <= 3; x += 0.05) {
+        const y = getCurveY(x, dist);
+        const sx = toScreenX(x, index);
+        const sy = toScreenY(y, baseY);
+        if (x === -3) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      
+      // fill under curve (light)
+      ctx.fillStyle = C.curve[index] + '20';
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(-3, index), toScreenY(0, baseY));
+      for (let x = -3; x <= 3; x += 0.05) {
+        ctx.lineTo(toScreenX(x, index), toScreenY(getCurveY(x, dist), baseY));
+      }
+      ctx.lineTo(toScreenX(3, index), toScreenY(0, baseY));
+      ctx.closePath();
+      ctx.fill();
+      
+      // vertical lines for mean, median, mode
+      const markers = [
+        { value: dist.mean, color: C.mean, label: 'mean' },
+        { value: dist.median, color: C.median, label: 'median' },
+        { value: dist.mode, color: C.mode, label: 'mode' }
+      ];
+      
+      markers.forEach((m, i) => {
+        const sx = toScreenX(m.value, index);
+        const curveY = getCurveY(m.value, dist);
+        const sy = toScreenY(curveY, baseY);
+        
+        ctx.strokeStyle = m.color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(sx, baseY + subplotH + 30);
+        ctx.lineTo(sx, sy);
+        ctx.stroke();
+        
+        // label
+        ctx.font = "11px system-ui";
+        ctx.fillStyle = m.color;
+        ctx.textAlign = "center";
+        ctx.fillText(m.label, sx, baseY + subplotH + 65 + i * 14);
+      });
+      
+      // relation text
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.fillText(dist.relation, centerX, baseY + subplotH + 90);
+      
+      ctx.restore();
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 20px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('Frequency Curves & Skewness', W/2, 50);
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('mean (red) · median (purple) · mode (cyan)', W/2, 80);
+      
+      if (selected !== null) {
+        const dist = distributions[selected];
+        ctx.font = "16px system-ui";
+        ctx.fillStyle = C.curve[selected];
+        ctx.fillText(`${dist.title}: ${dist.relation}`, W/2, 130);
+      }
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      distributions.forEach((dist, i) => drawSubplot(dist, i));
+      drawTitle();
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('tap curves · hold to reset', W/2, H-25);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.curve[0];
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitSubplot(px, py);
+      if (hit !== null) {
+        selected = hit;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          selected = 0;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>feasible region · linear inequalities</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- system of inequalities -----
+    // y ≥ -x + 3
+    // y ≤ 2x
+    // x ≥ 0
+    // y ≥ 0
+    
+    const constraints = [
+      { type: '≥', slope: -1, intercept: 3, color: '#2563eb', label: 'y ≥ -x + 3' },
+      { type: '≤', slope: 2, intercept: 0, color: '#f59e0b', label: 'y ≤ 2x' },
+      { type: '≥', vertical: true, value: 0, color: '#10b981', label: 'x ≥ 0' },
+      { type: '≥', horizontal: true, value: 0, color: '#8b5cf6', label: 'y ≥ 0' }
+    ];
+    
+    // corner points of feasible region
+    const corners = [
+      { x: 0, y: 0 },
+      { x: 0, y: 3 },
+      { x: 1, y: 2 }
+    ];
+    
+    // chart dimensions
+    const xMin = -0.5, xMax = 3.5;
+    const yMin = -0.5, yMax = 4.5;
+    
+    const margin = { top: 100, right: 40, bottom: 70, left: 70 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+
+    // colors
+    const C = {
+      feasible: 'rgba(16, 185, 129, 0.2)',
+      feasibleBorder: '#10b981',
+      grid: '#e2e8f0',
+      axis: '#1e293b',
+      text: '#334155',
+      dim: '#94a3b8',
+      corner: '#ef4444'
+    };
+
+    // coordinate mapping
+    function toScreenX(x) {
+      return margin.left + ((x - xMin) / (xMax - xMin)) * chartW;
+    }
+    function toScreenY(y) {
+      return margin.top + chartH - ((y - yMin) / (yMax - yMin)) * chartH;
+    }
+
+    // check if a point satisfies all constraints
+    function isFeasible(x, y) {
+      if (x < 0 || y < 0) return false;
+      if (y < -x + 3 - 0.001) return false;
+      if (y > 2*x + 0.001) return false;
+      return true;
+    }
+
+    // draw axes and grid
+    function drawAxes() {
+      ctx.save();
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      
+      const originX = toScreenX(0);
+      const originY = toScreenY(0);
+      
+      ctx.beginPath();
+      ctx.moveTo(margin.left, originY);
+      ctx.lineTo(margin.left + chartW, originY);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(originX, margin.top);
+      ctx.lineTo(originX, margin.top + chartH);
+      ctx.stroke();
+      
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      for (let x = 0; x <= 3; x++) {
+        const sx = toScreenX(x);
+        ctx.fillText(x.toString(), sx, originY + 18);
+      }
+      
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let y = 0; y <= 4; y++) {
+        const sy = toScreenY(y);
+        ctx.fillText(y.toString(), originX - 8, sy);
+      }
+      
+      // grid
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 0.6;
+      for (let x = 0; x <= 3; x++) {
+        const sx = toScreenX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, margin.top);
+        ctx.lineTo(sx, margin.top + chartH);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= 4; y++) {
+        const sy = toScreenY(y);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, sy);
+        ctx.lineTo(margin.left + chartW, sy);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+
+    // draw feasible region by sampling
+    function drawFeasibleRegion() {
+      ctx.save();
+      
+      // fill feasible region
+      ctx.fillStyle = C.feasible;
+      ctx.beginPath();
+      
+      // trace the boundary of feasible region
+      const points = [
+        { x: 0, y: 0 },
+        { x: 1.5, y: 0 },
+        { x: 1.5, y: 1.5 }
+      ];
+      
+      // draw polygon for feasible region (triangle)
+      ctx.moveTo(toScreenX(0), toScreenY(0));
+      ctx.lineTo(toScreenX(0), toScreenY(3));
+      ctx.lineTo(toScreenX(1), toScreenY(2));
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.strokeStyle = C.feasibleBorder;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    // draw constraint lines
+    function drawConstraints() {
+      ctx.save();
+      
+      constraints.forEach(c => {
+        ctx.strokeStyle = c.color;
+        ctx.lineWidth = 2.5;
+        
+        if (c.vertical) {
+          const x = c.value;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(toScreenX(x), toScreenY(yMin));
+          ctx.lineTo(toScreenX(x), toScreenY(yMax));
+          ctx.stroke();
+        } else if (c.horizontal) {
+          const y = c.value;
+          ctx.setLineDash([]);
+          ctx.beginPath();
+          ctx.moveTo(toScreenX(xMin), toScreenY(y));
+          ctx.lineTo(toScreenX(xMax), toScreenY(y));
+          ctx.stroke();
+        } else {
+          // dashed for strict, solid for non-strict
+          ctx.setLineDash(c.type === '<' || c.type === '>' ? [8, 5] : []);
+          
+          const x1 = xMin;
+          const y1 = c.slope * x1 + c.intercept;
+          const x2 = xMax;
+          const y2 = c.slope * x2 + c.intercept;
+          
+          ctx.beginPath();
+          ctx.moveTo(toScreenX(x1), toScreenY(y1));
+          ctx.lineTo(toScreenX(x2), toScreenY(y2));
+          ctx.stroke();
+        }
+        
+        ctx.setLineDash([]);
+      });
+      
+      ctx.restore();
+    }
+
+    // draw labels for constraints
+    function drawConstraintLabels() {
+      ctx.save();
+      ctx.font = "12px system-ui";
+      
+      constraints.forEach(c => {
+        ctx.fillStyle = c.color;
+        
+        if (c.vertical) {
+          ctx.fillText(c.label, toScreenX(c.value + 0.1), toScreenY(3.8));
+        } else if (c.horizontal) {
+          ctx.fillText(c.label, toScreenX(2.5), toScreenY(c.value + 0.2));
+        } else if (c.slope === -1) {
+          ctx.fillText(c.label, toScreenX(2.2), toScreenY(-2.2 + 3.3));
+        } else if (c.slope === 2) {
+          ctx.fillText(c.label, toScreenX(0.8), toScreenY(2.2));
+        }
+      });
+      
+      ctx.restore();
+    }
+
+    // draw corner points
+    function drawCorners() {
+      ctx.save();
+      
+      corners.forEach(corner => {
+        const sx = toScreenX(corner.x);
+        const sy = toScreenY(corner.y);
+        
+        ctx.beginPath();
+        ctx.arc(sx, sy, 7, 0, 2*Math.PI);
+        ctx.fillStyle = C.corner;
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        ctx.font = "12px system-ui";
+        ctx.fillStyle = C.corner;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`(${corner.x}, ${corner.y})`, sx, sy - 14);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('Feasible Region', W/2, 45);
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('y ≥ -x + 3,  y ≤ 2x,  x ≥ 0,  y ≥ 0', W/2, 72);
+      
+      ctx.fillStyle = C.feasibleBorder;
+      ctx.fillText('feasible region: triangle with vertices (0,0), (0,3), (1,2)', W/2, H-30);
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawAxes();
+      drawFeasibleRegion();
+      drawConstraints();
+      drawConstraintLabels();
+      drawCorners();
+      drawTitle();
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.feasibleBorder;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // interaction
+    function ptrDown(e) {
+      e.preventDefault();
+      pointerDown = true;
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          // reset doesn't change anything here
+        }
+        holding = false;
+        holdTimer = null;
+      }, 500);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

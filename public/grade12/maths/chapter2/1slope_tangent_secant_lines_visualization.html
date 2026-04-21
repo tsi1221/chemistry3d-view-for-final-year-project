@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>secant · tangent · derivative</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- function: f(x) = x² -----
+    function f(x) { return x * x; }
+    function df(x) { return 2 * x; }
+    
+    // fixed point P
+    const a = 2;
+    const P = { x: a, y: f(a) };
+    
+    // moving point Q
+    let h = 1.0; // Q at x = a + h
+    
+    // chart dimensions
+    const xMin = -1, xMax = 5;
+    const yMin = -2, yMax = 26;
+    
+    const margin = { top: 100, right: 40, bottom: 70, left: 70 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+    
+    // dragging
+    let isDragging = false;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      curve: '#2563eb',
+      point: '#3b82f6',
+      secant: '#f59e0b',
+      tangent: '#10b981',
+      grid: '#e2e8f0',
+      axis: '#1e293b',
+      text: '#334155',
+      dim: '#94a3b8'
+    };
+
+    // ----- coordinate mapping -----
+    function toScreenX(x) {
+      return margin.left + ((x - xMin) / (xMax - xMin)) * chartW;
+    }
+    
+    function toScreenY(y) {
+      return margin.top + chartH - ((y - yMin) / (yMax - yMin)) * chartH;
+    }
+    
+    function toWorldX(screenX) {
+      return xMin + ((screenX - margin.left) / chartW) * (xMax - xMin);
+    }
+
+    // ----- hit test for Q point -----
+    function hitQ(px, py) {
+      const qx = a + h;
+      const qy = f(qx);
+      const sx = toScreenX(qx);
+      const sy = toScreenY(qy);
+      return Math.hypot(px - sx, py - sy) < 25;
+    }
+
+    // ----- drawing -----
+    function drawAxes() {
+      ctx.save();
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      
+      // axes
+      const originX = toScreenX(0);
+      const originY = toScreenY(0);
+      
+      ctx.beginPath();
+      ctx.moveTo(margin.left, originY);
+      ctx.lineTo(margin.left + chartW, originY);
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.moveTo(originX, margin.top);
+      ctx.lineTo(originX, margin.top + chartH);
+      ctx.stroke();
+      
+      // labels
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      
+      for (let x = 0; x <= 5; x++) {
+        const sx = toScreenX(x);
+        ctx.fillText(x.toString(), sx, originY + 22);
+      }
+      
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let y = 0; y <= 25; y += 5) {
+        const sy = toScreenY(y);
+        ctx.fillText(y.toString(), originX - 10, sy);
+      }
+      
+      // grid
+      ctx.strokeStyle = C.grid;
+      ctx.lineWidth = 0.8;
+      for (let x = 0; x <= 5; x++) {
+        const sx = toScreenX(x);
+        ctx.beginPath();
+        ctx.moveTo(sx, margin.top);
+        ctx.lineTo(sx, margin.top + chartH);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= 25; y += 5) {
+        const sy = toScreenY(y);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, sy);
+        ctx.lineTo(margin.left + chartW, sy);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    }
+
+    function drawCurve() {
+      ctx.save();
+      ctx.strokeStyle = C.curve;
+      ctx.lineWidth = 3;
+      
+      ctx.beginPath();
+      for (let x = 0; x <= 5; x += 0.05) {
+        const sx = toScreenX(x);
+        const sy = toScreenY(f(x));
+        if (x === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function drawSecantLine() {
+      const qx = a + h;
+      const slope = (f(qx) - f(a)) / h;
+      
+      // extend line beyond points
+      const x1 = Math.max(0, a - 1);
+      const x2 = Math.min(5, qx + 1);
+      const y1 = f(a) + slope * (x1 - a);
+      const y2 = f(a) + slope * (x2 - a);
+      
+      ctx.save();
+      ctx.strokeStyle = C.secant;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([6, 4]);
+      
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(x1), toScreenY(y1));
+      ctx.lineTo(toScreenX(x2), toScreenY(y2));
+      ctx.stroke();
+      
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawTangentLine() {
+      const slope = df(a);
+      const x1 = Math.max(0, a - 1.5);
+      const x2 = Math.min(5, a + 1.5);
+      const y1 = f(a) + slope * (x1 - a);
+      const y2 = f(a) + slope * (x2 - a);
+      
+      ctx.save();
+      ctx.strokeStyle = C.tangent;
+      ctx.lineWidth = 2.5;
+      
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(x1), toScreenY(y1));
+      ctx.lineTo(toScreenX(x2), toScreenY(y2));
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function drawPoints() {
+      const qx = a + h;
+      
+      // P point
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(toScreenX(a), toScreenY(f(a)), 10, 0, 2*Math.PI);
+      ctx.fillStyle = C.point;
+      ctx.shadowColor = 'rgba(0,0,0,0.08)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      ctx.font = "600 14px system-ui";
+      ctx.fillStyle = C.point;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText('P', toScreenX(a), toScreenY(f(a)) - 15);
+      
+      // Q point (draggable)
+      ctx.beginPath();
+      ctx.arc(toScreenX(qx), toScreenY(f(qx)), 11, 0, 2*Math.PI);
+      ctx.fillStyle = C.secant;
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      ctx.fillStyle = C.secant;
+      ctx.fillText('Q', toScreenX(qx), toScreenY(f(qx)) - 18);
+      
+      ctx.restore();
+    }
+
+    function drawInfo() {
+      const qx = a + h;
+      const secantSlope = (f(qx) - f(a)) / h;
+      const tangentSlope = df(a);
+      
+      ctx.save();
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('f(x) = x²', W/2, 45);
+      
+      ctx.font = "15px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`P = (${a}, ${f(a)})`, W/2, 75);
+      
+      ctx.font = "16px system-ui";
+      ctx.fillStyle = C.secant;
+      ctx.fillText(`secant slope = ${secantSlope.toFixed(3)}`, W/2, 105);
+      
+      ctx.fillStyle = C.tangent;
+      ctx.fillText(`tangent slope = ${tangentSlope}`, W/2, 135);
+      
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`h = ${h.toFixed(3)}  ·  as h → 0, secant → tangent`, W/2, H - 30);
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawAxes();
+      drawCurve();
+      drawSecantLine();
+      drawTangentLine();
+      drawPoints();
+      drawInfo();
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.point;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      if (hitQ(px, py)) {
+        isDragging = true;
+        canvas.style.cursor = 'grabbing';
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown && !isDragging) {
+          h = 1.0;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrMove(e) {
+      e.preventDefault();
+      if (!isDragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const px = cx * sx;
+      
+      let worldX = toWorldX(px);
+      worldX = Math.max(a + 0.05, Math.min(5, worldX));
+      h = worldX - a;
+      
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; holding = false; }
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      isDragging = false;
+      pointerDown = false;
+      holding = false;
+      canvas.style.cursor = 'grab';
+    }
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchmove', ptrMove, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mousemove', ptrMove);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>
