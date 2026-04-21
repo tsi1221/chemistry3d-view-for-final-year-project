@@ -2,330 +2,604 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>➕ matrix addition · subtraction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>matrix · add & subtract · touch canvas</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
     }
-
     body {
+      background: #0b1a2f;  /* deep navy backdrop — keeps focus on canvas */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
       font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #fff;
-      min-height: 100dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px;
+      touch-action: none;  /* prevent scroll/pinch on canvas area */
     }
-
-    .card {
-      max-width: 750px;
-      width: 100%;
-      background: #fafcff;
-      border-radius: 28px;
-      border: 1px solid #d0e2ff;
-      padding: 20px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    canvas {
+      display: block;
+      width: min(95vw, 95vh);
+      height: min(95vw, 95vh);
+      background: #f5faff;  /* soft white-blue base */
+      border-radius: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0,20,50,0.25), 0 6px 12px rgba(0,0,0,0.1);
+      touch-action: none;    /* all gestures handled by canvas */
+      cursor: grab;
+      transition: box-shadow 0.2s ease;
     }
-
-    h2 {
-      font-weight: 700;
-      font-size: 1.4rem;
-      color: #0a1e3c;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    canvas:active {
+      cursor: grabbing;
     }
-
-    .subhead {
-      color: #3a628c;
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-    }
-
-    .control-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .mode-btn {
-      flex: 1;
-      min-width: 100px;
-      padding: 12px 8px;
-      border-radius: 40px;
-      border: 1.5px solid #d0e2ff;
-      background: #fff;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      color: #3a628c;
-      transition: 0.15s;
-      text-align: center;
-    }
-
-    .mode-btn.active {
-      background: #3b82f6;
-      border-color: #3b82f6;
-      color: #fff;
-    }
-
-    .matrix-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin: 20px 0;
-    }
-
-    .matrix {
-      display: grid;
-      gap: 8px;
-      background: #f8fcff;
-      padding: 16px;
-      border-radius: 18px;
-      border: 2px solid #d0e2ff;
-    }
-
-    .matrix-cell {
-      width: 65px;
-      height: 65px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.5rem;
-      font-weight: 700;
-      border-radius: 14px;
-      transition: 0.2s;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    }
-
-    .operator {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #3b82f6;
-    }
-
-    .equals {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #10b981;
-    }
-
-    .dimension-selector {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      justify-content: center;
-    }
-
-    .dim-btn {
-      padding: 8px 20px;
-      border-radius: 30px;
-      border: 1.5px solid #d0e2ff;
-      background: #fff;
-      font-weight: 600;
-      cursor: pointer;
-      color: #3a628c;
-    }
-
-    .dim-btn.active {
-      background: #3b82f6;
-      border-color: #3b82f6;
-      color: #fff;
-    }
-
-    .info-note {
-      text-align: center;
-      margin-top: 16px;
-      font-size: 0.85rem;
-      color: #3a628c;
-    }
-
-    .legend {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      margin-top: 16px;
-      font-size: 0.8rem;
-      color: #3a628c;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .color-bar {
-      width: 20px;
-      height: 12px;
-      border-radius: 6px;
-    }
-
-    @media (max-width: 600px) {
-      .matrix-cell {
-        width: 50px;
-        height: 50px;
-        font-size: 1.2rem;
-      }
-      .operator { font-size: 2rem; }
-    }
+    /* no UI panels, no sliders, no text — pure canvas */
   </style>
 </head>
 <body>
-<div class="card">
-  <h2>➕ matrix addition & subtraction</h2>
-  <div class="subhead">element-wise operation · same dimensions required</div>
-
-  <div class="control-row">
-    <button class="mode-btn active" data-op="add">➕ addition</button>
-    <button class="mode-btn" data-op="sub">➖ subtraction</button>
-  </div>
-
-  <div class="matrix-container" id="matrixDisplay">
-    <!-- dynamically filled -->
-  </div>
-
-  <div class="dimension-selector">
-    <button class="dim-btn active" data-dim="2x2">2 × 2</button>
-    <button class="dim-btn" data-dim="2x3">2 × 3</button>
-    <button class="dim-btn" data-dim="3x3">3 × 3</button>
-  </div>
-
-  <div class="info-note" id="infoNote">
-    each colored cell pair is added (or subtracted) to produce the result
-  </div>
-
-  <div class="legend">
-    <div class="legend-item"><div class="color-bar" style="background:#ef4444;"></div> row 1</div>
-    <div class="legend-item"><div class="color-bar" style="background:#3b82f6;"></div> row 2</div>
-    <div class="legend-item"><div class="color-bar" style="background:#10b981;"></div> row 3</div>
-  </div>
-</div>
-
+<canvas id="matrixCanvas" width="800" height="800"></canvas>
 <script>
   (function(){
-    const matrixDisplay = document.getElementById('matrixDisplay');
-    const infoNote = document.getElementById('infoNote');
+    "use strict";
+
+    // ----- CANVAS & CONTEXT -----
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
     
-    let currentOp = 'add';
-    let currentDim = '2x2';
+    // ----- DIMENSIONS & SCALING (responsive) -----
+    let w = 800, h = 800;          // logical canvas size (fixed 800x800)
+    let dpr = window.devicePixelRatio || 1;
     
-    const rowColors = ['#ef4444', '#3b82f6', '#10b981'];
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      const maxSize = Math.min(window.innerWidth * 0.95, window.innerHeight * 0.95);
+      canvas.style.width = `${maxSize}px`;
+      canvas.style.height = `${maxSize}px`;
+      
+      // set canvas pixel dimensions to 800x800 (high-res enough, scaling via CSS)
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      
+      w = 800; h = 800;
+    }
     
-    const matrices = {
-      '2x2': {
-        A: [[2, 5], [7, 3]],
-        B: [[4, 1], [2, 6]]
-      },
-      '2x3': {
-        A: [[3, 1, 6], [4, 5, 2]],
-        B: [[2, 7, 1], [3, 2, 5]]
-      },
-      '3x3': {
-        A: [[1, 5, 3], [6, 2, 4], [7, 1, 8]],
-        B: [[4, 2, 5], [1, 6, 3], [2, 7, 1]]
-      }
+    // ----- MATRIX DATA (3x3 for richer interaction) -----
+    const MAT_SIZE = 3;  // 3x3 matrices
+    
+    // Base matrices — A and B, both 3x3
+    let matrixA = [
+      [1.0, 2.0, 1.5],
+      [5.0, 6.0, 4.0],
+      [3.0, 2.5, 5.0]
+    ];
+    
+    let matrixB = [
+      [3.0, 4.0, 2.0],
+      [7.0, 8.0, 3.5],
+      [2.0, 1.0, 4.0]
+    ];
+    
+    // result matrix (computed live)
+    let matrixResult = Array(MAT_SIZE).fill().map(() => Array(MAT_SIZE).fill(0));
+    
+    // ----- OPERATION MODE: 'add' or 'subtract' (driven by drag gesture) -----
+    let operation = 'add';   // 'add' (pull together) or 'subtract' (pull apart)
+    
+    // ----- POSITIONS FOR DRAG-BASED INTERACTION (NO UI) -----
+    // matrix A: left side (stationary anchor point, but movable via drag)
+    // matrix B: right side, movable by dragging
+    // the relative distance controls operation and mixing
+    
+    // Anchor positions (visual centers)
+    let anchorAX = 240, anchorAY = 400;     // left matrix center
+    let anchorBX = 560, anchorBY = 400;     // right matrix center
+    
+    // current drag offset — we drag B relative to anchor point (but we'll directly move B)
+    let bPosX = anchorBX;
+    let bPosY = anchorBY;
+    
+    // for smooth animation
+    let targetBX = anchorBX;
+    let targetBY = anchorBY;
+    
+    // interaction state
+    let isDragging = false;
+    let dragOffsetX = 0, dragOffsetY = 0;   // offset from B center to pointer
+    
+    // physics easing
+    const EASING = 0.28;
+    
+    // hold interaction (long press) — to reset or give hint? we use hold to reset matrices to original values
+    let holdTimer = null;
+    let isHolding = false;
+    const HOLD_DURATION = 500; // ms
+    
+    // touch/click positions
+    let pointerDown = false;
+    
+    // ----- COLOR THEME (modern blue + white minimal) -----
+    const COLORS = {
+      bg: '#f5faff',
+      cardBg: '#ffffff',
+      gridLine: '#d9e6f5',
+      cellA: '#3b82f6',        // vibrant blue
+      cellB: '#2563eb',        // deeper blue
+      cellResult: '#1e40af',   // rich navy for result
+      textLight: '#f8fafc',
+      textDark: '#0f172a',
+      accentGlow: '#60a5fa',
+      shadow: 'rgba(30, 64, 175, 0.12)',
+      arrow: '#1e3a8a',
+      plusMinusHint: '#0b2b5e'
     };
     
-    function render() {
-      const { A, B } = matrices[currentDim];
-      const rows = A.length;
-      const cols = A[0].length;
+    // ----- HELPER: compute result based on current operation and matrices -----
+    function computeResult() {
+      for (let r = 0; r < MAT_SIZE; r++) {
+        for (let c = 0; c < MAT_SIZE; c++) {
+          if (operation === 'add') {
+            matrixResult[r][c] = matrixA[r][c] + matrixB[r][c];
+          } else {
+            matrixResult[r][c] = matrixA[r][c] - matrixB[r][c];
+          }
+        }
+      }
+    }
+    
+    // ----- determine operation from B's horizontal offset (drag position) -----
+    function updateOperationFromPosition() {
+      // threshold: if B is pulled left of midpoint → subtract, else add
+      const midX = (anchorAX + anchorBX) / 2;  // ~400
+      if (bPosX < midX - 18) {
+        operation = 'subtract';
+      } else {
+        operation = 'add';
+      }
+      computeResult();
+    }
+    
+    // ----- reset matrices to original (hold gesture) -----
+    function resetToOriginal() {
+      matrixA = [
+        [1.0, 2.0, 1.5],
+        [5.0, 6.0, 4.0],
+        [3.0, 2.5, 5.0]
+      ];
+      matrixB = [
+        [3.0, 4.0, 2.0],
+        [7.0, 8.0, 3.5],
+        [2.0, 1.0, 4.0]
+      ];
+      computeResult();
+    }
+    
+    // ----- EASING TOWARD TARGET (physics-like smooth) -----
+    function animatePositions() {
+      // smoothly move B toward target (for drag release, or spring)
+      if (!isDragging) {
+        bPosX += (targetBX - bPosX) * EASING;
+        bPosY += (targetBY - bPosY) * EASING;
+        // update operation based on smooth position (continuous)
+        updateOperationFromPosition();
+      } else {
+        // during drag we set bPos directly, but still recalc operation
+        updateOperationFromPosition();
+      }
+    }
+    
+    // ----- DRAWING (clean, minimal, blue-white, no UI) -----
+    function drawScene() {
+      ctx.clearRect(0, 0, w, h);
       
-      const result = A.map((row, i) => 
-        row.map((val, j) => currentOp === 'add' ? val + B[i][j] : val - B[i][j])
-      );
+      // ----- background gradient (soft) -----
+      const grad = ctx.createLinearGradient(0, 0, w*0.8, h*0.8);
+      grad.addColorStop(0, '#f0f7ff');
+      grad.addColorStop(1, '#e6f0fa');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
       
-      // build matrices
-      const buildMatrix = (data, isResult = false) => {
-        const container = document.createElement('div');
-        container.className = 'matrix';
-        container.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      // subtle grid pattern (blue tint)
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ctx.strokeStyle = '#a0c4e8';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < w; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, h);
+        ctx.strokeStyle = '#b8d4f0';
+        ctx.stroke();
+      }
+      for (let i = 0; i < h; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(w, i);
+        ctx.strokeStyle = '#b8d4f0';
+        ctx.stroke();
+      }
+      ctx.restore();
+      
+      // ----- draw matrix cards (A, B, Result) -----
+      drawMatrixCard(matrixA, anchorAX, anchorBY, 'A', COLORS.cellA);
+      drawMatrixCard(matrixB, bPosX, bPosY, 'B', COLORS.cellB);
+      
+      // Result matrix — centered below, but moves slightly to reflect operation (dynamic)
+      const resultX = (anchorAX + anchorBX) / 2;
+      const resultY = anchorAY + 210;  // below A/B
+      drawMatrixCard(matrixResult, resultX, resultY, operation === 'add' ? 'A+B' : 'A−B', COLORS.cellResult, true);
+      
+      // ----- CONNECTION ARROWS (showing element-wise pairing) -----
+      drawPairingArrows(anchorAX, anchorBY, bPosX, bPosY);
+      
+      // ----- subtle interaction hint: plus / minus between cards (no text UI) -----
+      drawOperationSymbol();
+      
+      // ----- hold indicator (if holding, show subtle reset ring) -----
+      if (isHolding) {
+        ctx.beginPath();
+        ctx.arc(bPosX, bPosY, 70, 0, Math.PI * 2);
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 3.5;
+        ctx.setLineDash([12, 16]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      
+      // tiny hint: dashed line showing the 'add/subtract' threshold
+      ctx.beginPath();
+      ctx.moveTo((anchorAX + anchorBX)/2, anchorAY - 90);
+      ctx.lineTo((anchorAX + anchorBX)/2, anchorAY + 90);
+      ctx.strokeStyle = '#7ca3d9';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([6, 8]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // minimal labels (clean, small)
+      ctx.font = "500 13px system-ui, sans-serif";
+      ctx.fillStyle = '#2c4c7c';
+      ctx.textAlign = "center";
+      ctx.fillText("← pull left : subtract", (anchorAX+anchorBX)/2 - 55, anchorAY - 95);
+      ctx.fillText("pull right : add →", (anchorAX+anchorBX)/2 + 55, anchorAY - 95);
+    }
+    
+    function drawMatrixCard(matrix, cx, cy, label, baseColor, isResult = false) {
+      const cellSize = 48;
+      const gap = 6;
+      const rows = MAT_SIZE, cols = MAT_SIZE;
+      const totalW = cols * cellSize + (cols-1) * gap;
+      const totalH = rows * cellSize + (rows-1) * gap;
+      const startX = cx - totalW/2;
+      const startY = cy - totalH/2;
+      
+      // card background (white with subtle shadow)
+      ctx.save();
+      ctx.shadowColor = COLORS.shadow;
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = COLORS.cardBg;
+      ctx.beginPath();
+      ctx.roundRect(startX-16, startY-16, totalW+32, totalH+44, 18);
+      ctx.fill();
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 2;
+      
+      // label text (minimal)
+      ctx.shadowBlur = 0;
+      ctx.font = isResult ? "600 15px system-ui" : "500 14px system-ui";
+      ctx.fillStyle = '#1e3a5f';
+      ctx.textAlign = "center";
+      ctx.fillText(label, cx, startY - 8);
+      
+      // draw grid cells
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const x = startX + c * (cellSize + gap);
+          const y = startY + r * (cellSize + gap);
+          
+          // cell background (color intensity based on value — subtle)
+          const val = matrix[r][c];
+          // normalized brightness (clamp)
+          let intensity = Math.min(0.85, 0.4 + (val / 12) * 0.5);
+          const cellColor = isResult ? COLORS.cellResult : baseColor;
+          
+          ctx.fillStyle = cellColor;
+          ctx.globalAlpha = 0.82;
+          ctx.beginPath();
+          ctx.roundRect(x, y, cellSize, cellSize, 10);
+          ctx.fill();
+          
+          // inner glow / light edge
+          ctx.globalAlpha = 0.3;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // cell value text
+          ctx.globalAlpha = 1;
+          ctx.font = `600 ${isResult ? 17 : 16}px 'Segoe UI', system-ui, monospace`;
+          ctx.fillStyle = COLORS.textLight;
+          ctx.shadowColor = '#0a1e3c';
+          ctx.shadowBlur = 5;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          
+          let displayVal = val;
+          // format
+          if (Number.isInteger(val)) displayVal = val;
+          else displayVal = val.toFixed(1);
+          
+          ctx.fillText(displayVal, x + cellSize/2, y + cellSize/2);
+          ctx.shadowBlur = 0;
+        }
+      }
+      ctx.restore();
+    }
+    
+    // draw pairing arrows (cell-to-cell) for visual connection
+    function drawPairingArrows(ax, ay, bx, by) {
+      const cellSize = 48, gap = 6;
+      const rows = MAT_SIZE, cols = MAT_SIZE;
+      const totalW = cols * cellSize + (cols-1) * gap;
+      const startAX = ax - totalW/2;
+      const startAY = ay - totalW/2;  // actually startY
+      const startBX = bx - totalW/2;
+      const startBY = by - totalW/2;
+      
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = COLORS.arrow;
+      ctx.fillStyle = '#2a5ea7';
+      ctx.lineCap = 'round';
+      
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const xA = startAX + c*(cellSize+gap) + cellSize/2;
+          const yA = startAY + r*(cellSize+gap) + cellSize/2;
+          const xB = startBX + c*(cellSize+gap) + cellSize/2;
+          const yB = startBY + r*(cellSize+gap) + cellSize/2;
+          
+          // draw curved arrow from A to B (subtle)
+          ctx.beginPath();
+          const cp1x = (xA + xB) / 2 - 12;
+          const cp1y = (yA + yB) / 2 - 8;
+          ctx.moveTo(xA, yA);
+          ctx.quadraticCurveTo(cp1x, cp1y, xB, yB);
+          ctx.strokeStyle = '#3b6cb0';
+          ctx.globalAlpha = 0.35;
+          ctx.stroke();
+          
+          // tiny arrowhead
+          const angle = Math.atan2(yB - cp1y, xB - cp1x);
+          const arrowSize = 9;
+          ctx.globalAlpha = 0.5;
+          ctx.fillStyle = '#2b5f9e';
+          ctx.beginPath();
+          ctx.translate(xB, yB);
+          ctx.rotate(angle);
+          ctx.moveTo(-arrowSize, -arrowSize/2);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(-arrowSize, arrowSize/2);
+          ctx.fill();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+      }
+      ctx.restore();
+    }
+    
+    function drawOperationSymbol() {
+      const midX = (anchorAX + bPosX) / 2;
+      const midY = (anchorAY + bPosY) / 2 - 6;
+      
+      ctx.save();
+      ctx.font = "500 26px system-ui, sans-serif";
+      ctx.fillStyle = '#1e3a5f';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.shadowBlur = 0;
+      const symbol = (operation === 'add') ? '+' : '−';
+      ctx.fillText(symbol, midX, midY);
+      ctx.restore();
+    }
+    
+    // ----- INTERACTION: touch / mouse handling (NO UI) -----
+    function handlePointerDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = w / rect.width;
+      const scaleY = h / rect.height;
+      
+      const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+      const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+      
+      const canvasX = (clientX - rect.left) * scaleX;
+      const canvasY = (clientY - rect.top) * scaleY;
+      
+      // check if within B matrix bounding box (approx)
+      const cellSize = 48, gap = 6;
+      const totalW = MAT_SIZE * cellSize + (MAT_SIZE-1) * gap;
+      const totalH = MAT_SIZE * cellSize + (MAT_SIZE-1) * gap;
+      const left = bPosX - totalW/2 - 20;
+      const right = bPosX + totalW/2 + 20;
+      const top = bPosY - totalH/2 - 20;
+      const bottom = bPosY + totalH/2 + 20;
+      
+      if (canvasX >= left && canvasX <= right && canvasY >= top && canvasY <= bottom) {
+        isDragging = true;
+        dragOffsetX = bPosX - canvasX;
+        dragOffsetY = bPosY - canvasY;
+        canvas.style.cursor = 'grabbing';
         
-        data.forEach((row, i) => {
-          row.forEach((val, j) => {
-            const cell = document.createElement('div');
-            cell.className = 'matrix-cell';
-            
-            if (!isResult) {
-              cell.style.background = rowColors[i % rowColors.length] + '20';
-              cell.style.border = `2px solid ${rowColors[i % rowColors.length]}`;
-              cell.style.color = '#0a1e3c';
-            } else {
-              cell.style.background = '#f0f6ff';
-              cell.style.border = '2px solid #10b981';
-              cell.style.color = '#10b981';
-            }
-            
-            cell.textContent = val;
-            container.appendChild(cell);
-          });
-        });
-        
-        return container;
-      };
+        // cancel any hold timer
+        if (holdTimer) clearTimeout(holdTimer);
+        isHolding = false;
+      } else {
+        // tap/click anywhere else: toggle operation? but we use drag for op; no extra UI
+        // but we could also start hold detection anywhere
+        startHoldDetection();
+      }
       
-      // clear and rebuild
-      matrixDisplay.innerHTML = '';
+      pointerDown = true;
       
-      const matrixA = buildMatrix(A);
-      const matrixB = buildMatrix(B);
-      const matrixR = buildMatrix(result, true);
-      
-      const opSpan = document.createElement('span');
-      opSpan.className = 'operator';
-      opSpan.textContent = currentOp === 'add' ? '+' : '−';
-      
-      const eqSpan = document.createElement('span');
-      eqSpan.className = 'equals';
-      eqSpan.textContent = '=';
-      
-      matrixDisplay.appendChild(matrixA);
-      matrixDisplay.appendChild(opSpan);
-      matrixDisplay.appendChild(matrixB);
-      matrixDisplay.appendChild(eqSpan);
-      matrixDisplay.appendChild(matrixR);
-      
-      infoNote.innerHTML = currentOp === 'add' 
-        ? 'each colored cell pair is added to produce the result' 
-        : 'each colored cell pair is subtracted to produce the result';
+      // start hold detection (long press anywhere resets matrices)
+      if (!isDragging) {
+        startHoldDetection();
+      }
     }
     
-    function setOp(op) {
-      currentOp = op;
-      document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.op === op);
+    function startHoldDetection() {
+      if (holdTimer) clearTimeout(holdTimer);
+      isHolding = true;
+      holdTimer = setTimeout(() => {
+        if (!isDragging && pointerDown) {
+          // HOLD gesture: reset matrices to original
+          resetToOriginal();
+          // also gently return B to anchor
+          targetBX = anchorBX;
+          targetBY = anchorBY;
+          isHolding = false;
+          // visual feedback (ring) will disappear next frame
+        }
+        holdTimer = null;
+      }, HOLD_DURATION);
+    }
+    
+    function handlePointerMove(e) {
+      e.preventDefault();
+      if (!isDragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = w / rect.width;
+      const scaleY = h / rect.height;
+      
+      let clientX, clientY;
+      if (e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      
+      const canvasX = (clientX - rect.left) * scaleX;
+      const canvasY = (clientY - rect.top) * scaleY;
+      
+      // update B position directly (constrained within reasonable bounds)
+      let newX = canvasX + dragOffsetX;
+      let newY = canvasY + dragOffsetY;
+      
+      // soft limits: keep on screen and not overlapping A too much
+      newX = Math.min(720, Math.max(280, newX));
+      newY = Math.min(620, Math.max(220, newY));
+      
+      bPosX = newX;
+      bPosY = newY;
+      
+      // update target to current (so release doesn't jump)
+      targetBX = bPosX;
+      targetBY = bPosY;
+      
+      // operation updated continuously
+      updateOperationFromPosition();
+    }
+    
+    function handlePointerUp(e) {
+      e.preventDefault();
+      if (holdTimer) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+      
+      if (isDragging) {
+        isDragging = false;
+        canvas.style.cursor = 'grab';
+        // spring back toward anchor? we keep smooth easing, but we set target to anchor if not subtract?
+        // but we want to keep user's chosen position; so only gently drift to anchor if they released near?
+        // we keep it where they left, with subtle return toward anchor if left idle (in animation loop)
+        targetBX = bPosX;
+        targetBY = bPosY;
+      }
+      
+      pointerDown = false;
+      isHolding = false;
+      
+      // if B is far left, maybe we leave it; we already set target.
+    }
+    
+    function handlePointerCancel(e) {
+      handlePointerUp(e);
+    }
+    
+    // ----- animation loop -----
+    function animationFrame() {
+      if (!isDragging) {
+        // subtle return toward anchor if idle and not being dragged (magnetic rest)
+        const dist = Math.hypot(bPosX - anchorBX, bPosY - anchorBY);
+        if (dist > 8) {
+          targetBX = anchorBX * 0.08 + bPosX * 0.92; // very slow drift
+          targetBY = anchorBY * 0.08 + bPosY * 0.92;
+        } else {
+          targetBX = anchorBX;
+          targetBY = anchorBY;
+        }
+      }
+      
+      animatePositions();
+      drawScene();
+      requestAnimationFrame(animationFrame);
+    }
+    
+    // ----- attach listeners (touch + mouse) -----
+    function bindEvents() {
+      canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+      canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+      canvas.addEventListener('touchend', handlePointerUp);
+      canvas.addEventListener('touchcancel', handlePointerCancel);
+      
+      canvas.addEventListener('mousedown', handlePointerDown);
+      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseup', handlePointerUp);
+      
+      // prevent context menu on long press
+      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+    
+    // roundRect utility
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      this.moveTo(x + r, y);
+      this.lineTo(x + w - r, y);
+      this.quadraticCurveTo(x + w, y, x + w, y + r);
+      this.lineTo(x + w, y + h - r);
+      this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      this.lineTo(x + r, y + h);
+      this.quadraticCurveTo(x, y + h, x, y + h - r);
+      this.lineTo(x, y + r);
+      this.quadraticCurveTo(x, y, x + r, y);
+      return this;
+    };
+    
+    // initialize
+    function init() {
+      resizeCanvas();
+      computeResult();
+      bPosX = anchorBX;
+      bPosY = anchorBY;
+      targetBX = anchorBX;
+      targetBY = anchorBY;
+      bindEvents();
+      animationFrame();
+      
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        drawScene();
       });
-      render();
     }
     
-    function setDim(dim) {
-      currentDim = dim;
-      document.querySelectorAll('.dim-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.dim === dim);
-      });
-      render();
-    }
-    
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => setOp(btn.dataset.op));
-    });
-    
-    document.querySelectorAll('.dim-btn').forEach(btn => {
-      btn.addEventListener('click', () => setDim(btn.dataset.dim));
-    });
-    
-    render();
+    init();
   })();
 </script>
 </body>

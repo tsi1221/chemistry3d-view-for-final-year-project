@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>tree diagram · counting principle</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- data -----
+    const drinks = ['Tea', 'Coffee', 'Milk'];
+    const foods = ['Bread', 'Cake', 'Sandwich'];
+    
+    // tree structure
+    const root = { x: W/2, y: 80 };
+    
+    // level 1 (drinks)
+    const level1Y = 200;
+    const level1Spacing = 150;
+    const level1Nodes = drinks.map((d, i) => ({
+      label: d,
+      x: root.x - (drinks.length-1)*level1Spacing/2 + i*level1Spacing,
+      y: level1Y,
+      type: 'drink',
+      index: i
+    }));
+    
+    // level 2 (foods)
+    const level2Y = 420;
+    const level2Spacing = 80;
+    const level2Nodes = [];
+    
+    drinks.forEach((d, i) => {
+      const parent = level1Nodes[i];
+      const startX = parent.x - (foods.length-1)*level2Spacing/2;
+      
+      foods.forEach((f, j) => {
+        level2Nodes.push({
+          label: f,
+          x: startX + j*level2Spacing,
+          y: level2Y,
+          type: 'food',
+          parentIndex: i,
+          foodIndex: j
+        });
+      });
+    });
+    
+    // selected path
+    let selectedDrink = 0;
+    let selectedFood = 0;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      branch: '#2563eb',
+      node: '#3b82f6',
+      leaf: '#10b981',
+      highlight: '#f59e0b',
+      text: '#1e293b',
+      dim: '#94a3b8',
+      bg: '#f8fafc'
+    };
+
+    // ----- hit test -----
+    function hitNode(px, py) {
+      for (let i = 0; i < level1Nodes.length; i++) {
+        const n = level1Nodes[i];
+        if (Math.hypot(px - n.x, py - n.y) < 30) {
+          return { level: 1, index: i };
+        }
+      }
+      for (let i = 0; i < level2Nodes.length; i++) {
+        const n = level2Nodes[i];
+        if (Math.hypot(px - n.x, py - n.y) < 25) {
+          return { level: 2, index: i, parent: n.parentIndex, food: n.foodIndex };
+        }
+      }
+      return null;
+    }
+
+    // ----- drawing -----
+    function drawBranches() {
+      ctx.save();
+      ctx.strokeStyle = C.branch;
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      
+      // root to level 1
+      level1Nodes.forEach(n => {
+        ctx.beginPath();
+        ctx.moveTo(root.x, root.y);
+        ctx.lineTo(n.x, n.y);
+        ctx.stroke();
+      });
+      
+      // level 1 to level 2
+      level2Nodes.forEach(n => {
+        const parent = level1Nodes[n.parentIndex];
+        ctx.beginPath();
+        ctx.moveTo(parent.x, parent.y);
+        ctx.lineTo(n.x, n.y);
+        ctx.stroke();
+      });
+      
+      ctx.restore();
+    }
+
+    function drawHighlightedPath() {
+      const drinkNode = level1Nodes[selectedDrink];
+      const foodNode = level2Nodes.find(n => n.parentIndex === selectedDrink && n.foodIndex === selectedFood);
+      
+      ctx.save();
+      ctx.strokeStyle = C.highlight;
+      ctx.lineWidth = 4;
+      
+      // root to drink
+      ctx.beginPath();
+      ctx.moveTo(root.x, root.y);
+      ctx.lineTo(drinkNode.x, drinkNode.y);
+      ctx.stroke();
+      
+      // drink to food
+      ctx.beginPath();
+      ctx.moveTo(drinkNode.x, drinkNode.y);
+      ctx.lineTo(foodNode.x, foodNode.y);
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function drawNodes() {
+      ctx.save();
+      
+      // root
+      ctx.beginPath();
+      ctx.arc(root.x, root.y, 14, 0, 2*Math.PI);
+      ctx.fillStyle = C.node;
+      ctx.shadowColor = 'rgba(0,0,0,0.08)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.font = "600 14px system-ui";
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText('Start', root.x, root.y);
+      
+      // level 1 (drinks)
+      level1Nodes.forEach((n, i) => {
+        const isSelected = (i === selectedDrink);
+        
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, isSelected ? 18 : 14, 0, 2*Math.PI);
+        ctx.fillStyle = isSelected ? C.highlight : C.node;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        ctx.font = "600 14px system-ui";
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(n.label, n.x, n.y);
+      });
+      
+      // level 2 (foods)
+      level2Nodes.forEach(n => {
+        const isSelected = (n.parentIndex === selectedDrink && n.foodIndex === selectedFood);
+        
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, isSelected ? 16 : 12, 0, 2*Math.PI);
+        ctx.fillStyle = isSelected ? C.highlight : C.leaf;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        ctx.font = "500 13px system-ui";
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(n.label, n.x, n.y);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawLabels() {
+      ctx.save();
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      
+      ctx.fillText('Drinks', W/2, 170);
+      ctx.fillText('Foods', W/2, 390);
+      
+      ctx.restore();
+    }
+
+    function drawInfo() {
+      ctx.save();
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('Tree Diagram · Fundamental Counting Principle', W/2, 45);
+      
+      const total = drinks.length * foods.length;
+      ctx.font = "15px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`${drinks.length} drinks × ${foods.length} foods = ${total} possible combinations`, W/2, 520);
+      
+      // current selection
+      const drink = drinks[selectedDrink];
+      const food = foods[selectedFood];
+      ctx.font = "16px system-ui";
+      ctx.fillStyle = C.highlight;
+      ctx.fillText(`${drink} + ${food}`, W/2, 560);
+      
+      // multiplication hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('tap any node · hold to reset', W/2, H-30);
+      
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawBranches();
+      drawHighlightedPath();
+      drawNodes();
+      drawLabels();
+      drawInfo();
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.node;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitNode(px, py);
+      if (hit) {
+        if (hit.level === 1) {
+          selectedDrink = hit.index;
+        } else {
+          selectedDrink = hit.parent;
+          selectedFood = hit.food;
+        }
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          selectedDrink = 0;
+          selectedFood = 0;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

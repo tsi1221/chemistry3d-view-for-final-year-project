@@ -2,444 +2,574 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>✖️ matrix multiplication · row × column</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>matrix · multiplication · row × column</title>
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
     }
-
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #fff;
-      min-height: 100dvh;
+      background: #0b1f2e;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 12px;
+      min-height: 100vh;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      touch-action: none;
     }
-
-    .card {
-      max-width: 850px;
-      width: 100%;
-      background: #fafcff;
-      border-radius: 28px;
-      border: 1px solid #d0e2ff;
-      padding: 20px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #f4f9ff;
+      border-radius: 2.2rem;
+      box-shadow: 0 20px 36px rgba(0,25,60,0.25), inset 0 0 0 1px rgba(255,255,255,0.6);
+      touch-action: none;
+      cursor: grab;
     }
-
-    h2 {
-      font-weight: 700;
-      font-size: 1.4rem;
-      color: #0a1e3c;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .subhead {
-      color: #3a628c;
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-    }
-
-    .example-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-
-    .example-btn {
-      flex: 1;
-      min-width: 100px;
-      padding: 10px 8px;
-      border-radius: 40px;
-      border: 1.5px solid #d0e2ff;
-      background: #fff;
-      font-weight: 600;
-      font-size: 0.8rem;
-      cursor: pointer;
-      color: #3a628c;
-      transition: 0.15s;
-      text-align: center;
-    }
-
-    .example-btn.active {
-      background: #3b82f6;
-      border-color: #3b82f6;
-      color: #fff;
-    }
-
-    .multiplication-container {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin: 24px 0;
-    }
-
-    .matrix {
-      display: grid;
-      gap: 6px;
-      background: #f8fcff;
-      padding: 16px;
-      border-radius: 18px;
-      border: 2px solid #d0e2ff;
-    }
-
-    .matrix-cell {
-      width: 55px;
-      height: 55px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.3rem;
-      font-weight: 600;
-      background: #fff;
-      border-radius: 12px;
-      border: 1.5px solid #d0e2ff;
-      transition: 0.2s;
-    }
-
-    .matrix-cell.highlight-row {
-      background: #dbeafe;
-      border-color: #3b82f6;
-    }
-
-    .matrix-cell.highlight-col {
-      background: #fef3c7;
-      border-color: #f59e0b;
-    }
-
-    .matrix-cell.result-highlight {
-      background: #d1fae5;
-      border-color: #10b981;
-      color: #065f46;
-    }
-
-    .operator {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #3b82f6;
-    }
-
-    .equals {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #10b981;
-    }
-
-    .calc-panel {
-      background: #f0f6ff;
-      border-radius: 20px;
-      padding: 18px;
-      margin-top: 16px;
-      text-align: center;
-    }
-
-    .calc-title {
-      font-size: 0.8rem;
-      color: #3a628c;
-      margin-bottom: 8px;
-    }
-
-    .calc-detail {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
-      font-weight: 600;
-      color: #0a1e3c;
-    }
-
-    .dot-product {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .dot-term {
-      background: #fff;
-      padding: 6px 12px;
-      border-radius: 12px;
-      border: 1.5px solid #d0e2ff;
-    }
-
-    .selector-row {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin: 16px 0;
-    }
-
-    .cell-select-btn {
-      padding: 8px 16px;
-      border-radius: 30px;
-      border: 1.5px solid #d0e2ff;
-      background: #fff;
-      font-weight: 600;
-      font-size: 0.8rem;
-      cursor: pointer;
-      color: #3a628c;
-    }
-
-    .cell-select-btn.active {
-      background: #10b981;
-      border-color: #10b981;
-      color: #fff;
-    }
-
-    .legend {
-      display: flex;
-      gap: 20px;
-      margin-top: 16px;
-      font-size: 0.75rem;
-      color: #3a628c;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    @media (max-width: 650px) {
-      .matrix-cell {
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
-      }
-      .example-btn { min-width: 80px; font-size: 0.7rem; }
-      .calc-detail { font-size: 0.9rem; }
+    canvas:active {
+      cursor: grabbing;
     }
   </style>
 </head>
 <body>
-<div class="card">
-  <h2>✖️ matrix multiplication</h2>
-  <div class="subhead">row × column · dot product · cᵢⱼ = Σ aᵢₖ · bₖⱼ</div>
-
-  <div class="example-row">
-    <button class="example-btn active" data-ex="ex1">📐 2×3 · 3×2</button>
-    <button class="example-btn" data-ex="ex2">📊 2×2 · 2×2</button>
-    <button class="example-btn" data-ex="ex3">🧪 3×2 · 2×3</button>
-  </div>
-
-  <div class="multiplication-container" id="matrixDisplay"></div>
-
-  <div class="selector-row">
-    <button class="cell-select-btn active" data-cell="0,0">c₁₁</button>
-    <button class="cell-select-btn" data-cell="0,1">c₁₂</button>
-    <button class="cell-select-btn" data-cell="1,0">c₂₁</button>
-    <button class="cell-select-btn" data-cell="1,1">c₂₂</button>
-  </div>
-
-  <div class="calc-panel" id="calcPanel">
-    <div class="calc-title">computing selected cell</div>
-    <div class="calc-detail" id="calcDetail">c₁₁ = 1·7 + 2·9 + 3·11 = 58</div>
-    <div class="dot-product" id="dotProduct"></div>
-  </div>
-
-  <div class="legend">
-    <div class="legend-item"><span style="background:#dbeafe; width:20px; height:10px; border-radius:5px;"></span> selected row</div>
-    <div class="legend-item"><span style="background:#fef3c7; width:20px; height:10px; border-radius:5px;"></span> selected column</div>
-    <div class="legend-item"><span style="background:#d1fae5; width:20px; height:10px; border-radius:5px;"></span> result cell</div>
-  </div>
-</div>
-
+<canvas id="multiplyCanvas" width="900" height="900"></canvas>
 <script>
   (function(){
-    const matrixDisplay = document.getElementById('matrixDisplay');
-    const calcDetail = document.getElementById('calcDetail');
-    const dotProduct = document.getElementById('dotProduct');
+    "use strict";
+
+    // ----- CANVAS -----
+    const canvas = document.getElementById('multiplyCanvas');
+    const ctx = canvas.getContext('2d');
     
-    const examples = {
-      ex1: {
-        A: [[1, 2, 3], [4, 5, 6]],
-        B: [[7, 8], [9, 10], [11, 12]],
-        result: [[58, 64], [139, 154]]
-      },
-      ex2: {
-        A: [[2, 3], [1, 4]],
-        B: [[5, 1], [2, 6]],
-        result: [[16, 20], [13, 25]]
-      },
-      ex3: {
-        A: [[1, 2], [3, 4], [5, 6]],
-        B: [[7, 8, 9], [10, 11, 12]],
-        result: [[27, 30, 33], [61, 68, 75], [95, 106, 117]]
-      }
+    // fixed logical resolution (900x900) — crisp and spacious
+    let W = 900, H = 900;
+    let dpr = window.devicePixelRatio || 1;
+    
+    function resizeCanvas() {
+      const maxDim = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${maxDim}px`;
+      canvas.style.height = `${maxDim}px`;
+      canvas.width = 900 * dpr;
+      canvas.height = 900 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 900; H = 900;
+    }
+    
+    // ----- MATRICES (fixed 2x3 · 3x2) -----
+    // Matrix A: 2 rows, 3 columns
+    const matrixA = [
+      [1, 2, 3],
+      [4, 5, 6]
+    ];
+    const rowsA = 2, colsA = 3;
+    
+    // Matrix B: 3 rows, 2 columns
+    const matrixB = [
+      [7, 8],
+      [9, 10],
+      [11, 12]
+    ];
+    const rowsB = 3, colsB = 2;
+    
+    // Result: 2x2
+    let matrixResult = [
+      [0, 0],
+      [0, 0]
+    ];
+    
+    // ----- POSITIONS (touch-driven, NO UI) -----
+    // A is left side, fixed
+    const anchorAX = 230, anchorAY = 400;
+    // B is right side, draggable — movement reveals row/col connections
+    const anchorBX = 620, anchorBY = 400;
+    
+    let bPosX = anchorBX;
+    let bPosY = anchorBY;
+    let targetBX = anchorBX;
+    let targetBY = anchorBY;
+    
+    // Result matrix position (centered below)
+    const resultX = (anchorAX + anchorBX) / 2;   // 425
+    const resultY = anchorAY + 260;              // 660
+    
+    // Interaction
+    let isDragging = false;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    let pointerDown = false;
+    
+    // Easing factor
+    const EASE = 0.26;
+    
+    // Highlight state: when user drags B, we highlight the row/column pair based on proximity
+    // But we'll use drag to show dynamic connections. also tap on result cell? we keep minimal.
+    
+    // hold gesture (long press) to reset B to anchor and show default
+    let holdTimer = null;
+    let isHolding = false;
+    const HOLD_MS = 550;
+    
+    // Color palette: blue + white minimal
+    const COL = {
+      bgGrad1: '#ecf5fe',
+      bgGrad2: '#dbeafe',
+      cardBg: '#ffffff',
+      cellA: '#3b82f6',      // blue
+      cellB: '#2563eb',      // deeper blue
+      cellRes: '#1e3a8a',    // navy
+      textLight: '#f0f9ff',
+      textDark: '#0b2542',
+      arrow: '#2e5a9c',
+      glow: 'rgba(59,130,246,0.2)',
+      shadow: 'rgba(21,50,90,0.12)'
     };
     
-    let currentEx = 'ex1';
-    let selectedCell = { row: 0, col: 0 };
-    
-    function render() {
-      const ex = examples[currentEx];
-      const A = ex.A;
-      const B = ex.B;
-      const R = ex.result;
-      
-      const rowsA = A.length;
-      const colsA = A[0].length;
-      const rowsB = B.length;
-      const colsB = B[0].length;
-      const rowsR = R.length;
-      const colsR = R[0].length;
-      
-      matrixDisplay.innerHTML = '';
-      
-      // build matrix A
-      const matrixA = document.createElement('div');
-      matrixA.className = 'matrix';
-      matrixA.style.gridTemplateColumns = `repeat(${colsA}, 1fr)`;
-      
-      A.forEach((row, i) => {
-        row.forEach((val, j) => {
-          const cell = document.createElement('div');
-          cell.className = 'matrix-cell';
-          if (i === selectedCell.row) cell.classList.add('highlight-row');
-          cell.textContent = val;
-          matrixA.appendChild(cell);
-        });
-      });
-      
-      // build matrix B
-      const matrixB = document.createElement('div');
-      matrixB.className = 'matrix';
-      matrixB.style.gridTemplateColumns = `repeat(${colsB}, 1fr)`;
-      
-      B.forEach((row, i) => {
-        row.forEach((val, j) => {
-          const cell = document.createElement('div');
-          cell.className = 'matrix-cell';
-          if (j === selectedCell.col) cell.classList.add('highlight-col');
-          cell.textContent = val;
-          matrixB.appendChild(cell);
-        });
-      });
-      
-      // build result matrix
-      const matrixR = document.createElement('div');
-      matrixR.className = 'matrix';
-      matrixR.style.gridTemplateColumns = `repeat(${colsR}, 1fr)`;
-      
-      R.forEach((row, i) => {
-        row.forEach((val, j) => {
-          const cell = document.createElement('div');
-          cell.className = 'matrix-cell';
-          if (i === selectedCell.row && j === selectedCell.col) {
-            cell.classList.add('result-highlight');
+    // ----- COMPUTE MULTIPLICATION (row × column) -----
+    function computeMultiplication() {
+      for (let i = 0; i < rowsA; i++) {
+        for (let j = 0; j < colsB; j++) {
+          let sum = 0;
+          for (let k = 0; k < colsA; k++) {  // colsA == rowsB (3)
+            sum += matrixA[i][k] * matrixB[k][j];
           }
-          cell.textContent = val;
-          matrixR.appendChild(cell);
-        });
-      });
-      
-      const opSpan = document.createElement('span');
-      opSpan.className = 'operator';
-      opSpan.textContent = '×';
-      
-      const eqSpan = document.createElement('span');
-      eqSpan.className = 'equals';
-      eqSpan.textContent = '=';
-      
-      matrixDisplay.appendChild(matrixA);
-      matrixDisplay.appendChild(opSpan);
-      matrixDisplay.appendChild(matrixB);
-      matrixDisplay.appendChild(eqSpan);
-      matrixDisplay.appendChild(matrixR);
-      
-      // update calculation panel
-      const rowVals = A[selectedCell.row];
-      const colVals = B.map(row => row[selectedCell.col]);
-      
-      const terms = [];
-      let sum = 0;
-      for (let k = 0; k < rowVals.length; k++) {
-        const prod = rowVals[k] * colVals[k];
-        terms.push(`${rowVals[k]}·${colVals[k]}`);
-        sum += prod;
-      }
-      
-      const cellLabel = `c${selectedCell.row+1}${selectedCell.col+1}`;
-      calcDetail.textContent = `${cellLabel} = ${terms.join(' + ')} = ${sum}`;
-      
-      // dot product visualization
-      dotProduct.innerHTML = '';
-      terms.forEach((term, i) => {
-        const span = document.createElement('span');
-        span.className = 'dot-term';
-        span.textContent = term;
-        dotProduct.appendChild(span);
-        if (i < terms.length - 1) {
-          const plus = document.createElement('span');
-          plus.textContent = '+';
-          plus.style.fontWeight = '700';
-          plus.style.color = '#3b82f6';
-          dotProduct.appendChild(plus);
-        }
-      });
-      const eq = document.createElement('span');
-      eq.textContent = '=';
-      eq.style.fontWeight = '700';
-      eq.style.margin = '0 8px';
-      dotProduct.appendChild(eq);
-      const sumSpan = document.createElement('span');
-      sumSpan.className = 'dot-term';
-      sumSpan.style.background = '#d1fae5';
-      sumSpan.style.borderColor = '#10b981';
-      sumSpan.textContent = sum;
-      dotProduct.appendChild(sumSpan);
-    }
-    
-    function setExample(ex) {
-      currentEx = ex;
-      document.querySelectorAll('.example-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.ex === ex);
-      });
-      
-      // update cell selector buttons visibility
-      const exData = examples[ex];
-      const rows = exData.result.length;
-      const cols = exData.result[0].length;
-      
-      const selectorRow = document.querySelector('.selector-row');
-      selectorRow.innerHTML = '';
-      for (let i = 0; i < rows; i++) {
-        for (let j = 0; j < cols; j++) {
-          const btn = document.createElement('button');
-          btn.className = 'cell-select-btn';
-          if (i === 0 && j === 0) btn.classList.add('active');
-          btn.dataset.cell = `${i},${j}`;
-          btn.textContent = `c${i+1}${j+1}`;
-          btn.addEventListener('click', () => {
-            document.querySelectorAll('.cell-select-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            selectedCell = { row: i, col: j };
-            render();
-          });
-          selectorRow.appendChild(btn);
+          matrixResult[i][j] = sum;
         }
       }
-      
-      selectedCell = { row: 0, col: 0 };
-      render();
     }
     
-    document.querySelectorAll('.example-btn').forEach(btn => {
-      btn.addEventListener('click', () => setExample(btn.dataset.ex));
-    });
+    // reset B to anchor (hold gesture)
+    function resetPosition() {
+      targetBX = anchorBX;
+      targetBY = anchorBY;
+    }
     
-    setExample('ex1');
+    // ----- ANIMATION / EASING -----
+    function updatePosition() {
+      if (!isDragging) {
+        bPosX += (targetBX - bPosX) * EASE;
+        bPosY += (targetBY - bPosY) * EASE;
+      }
+    }
+    
+    // ----- DRAWING (fully visual, no sliders) -----
+    function drawScene() {
+      ctx.clearRect(0, 0, W, H);
+      
+      // soft gradient background
+      const grad = ctx.createLinearGradient(0, 0, W*0.7, H);
+      grad.addColorStop(0, COL.bgGrad1);
+      grad.addColorStop(1, '#d9e9fa');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      
+      // subtle grid (blue theme)
+      ctx.save();
+      ctx.globalAlpha = 0.18;
+      ctx.strokeStyle = '#8bb3e0';
+      ctx.lineWidth = 1;
+      for (let i=0; i<W; i+= 45) {
+        ctx.beginPath();
+        ctx.moveTo(i,0); ctx.lineTo(i,H);
+        ctx.stroke();
+      }
+      for (let i=0; i<H; i+= 45) {
+        ctx.beginPath();
+        ctx.moveTo(0,i); ctx.lineTo(W,i);
+        ctx.stroke();
+      }
+      ctx.restore();
+      
+      // ----- draw matrices A, B, Result -----
+      drawMatrix(matrixA, rowsA, colsA, anchorAX, anchorAY, 'A', COL.cellA);
+      drawMatrix(matrixB, rowsB, colsB, bPosX, bPosY, 'B', COL.cellB);
+      drawMatrix(matrixResult, rowsA, colsB, resultX, resultY, 'A × B', COL.cellRes, true);
+      
+      // ----- DYNAMIC CONNECTION: highlight row/col based on B's position (interaction) -----
+      drawMultiplicationArrows();
+      
+      // draw a subtle hint: "drag B" + multiplication sign
+      ctx.font = "500 15px 'Segoe UI', system-ui";
+      ctx.fillStyle = '#1f4a7a';
+      ctx.textAlign = "center";
+      ctx.fillText("×", (anchorAX + bPosX)/2 - 5, (anchorAY + bPosY)/2 - 6);
+      
+      // hold indicator ring (reset)
+      if (isHolding) {
+        ctx.beginPath();
+        ctx.arc(bPosX, bPosY, 68, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#2d68c4';
+        ctx.lineWidth = 3.2;
+        ctx.setLineDash([10, 14]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      
+      // tiny instructional visual: "drag → see rows·columns"
+      ctx.font = "12px system-ui, sans-serif";
+      ctx.fillStyle = '#3a6699';
+      ctx.fillText("← drag matrix B · row×column lights up →", resultX, resultY + 98);
+    }
+    
+    function drawMatrix(mat, rows, cols, cx, cy, label, baseColor, isResult=false) {
+      const cellW = 52, cellH = 48;
+      const gap = 8;
+      const totalW = cols * cellW + (cols-1) * gap;
+      const totalH = rows * cellH + (rows-1) * gap;
+      const startX = cx - totalW/2;
+      const startY = cy - totalH/2;
+      
+      ctx.save();
+      // card shadow
+      ctx.shadowColor = COL.shadow;
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = COL.cardBg;
+      ctx.beginPath();
+      ctx.roundRect(startX-16, startY-20, totalW+32, totalH+46, 18);
+      ctx.fill();
+      ctx.shadowBlur = 6;
+      
+      // label
+      ctx.shadowBlur = 0;
+      ctx.font = isResult ? "600 16px system-ui" : "500 15px system-ui";
+      ctx.fillStyle = '#153e6b';
+      ctx.textAlign = "center";
+      ctx.fillText(label, cx, startY - 10);
+      
+      for (let r=0; r<rows; r++) {
+        for (let c=0; c<cols; c++) {
+          const x = startX + c*(cellW+gap);
+          const y = startY + r*(cellH+gap);
+          
+          const val = mat[r][c];
+          let display = (Number.isInteger(val) && !isResult) ? val : (isResult ? val : val);
+          if (isResult && !Number.isInteger(val)) display = val.toFixed(0); // integer result
+          
+          ctx.fillStyle = baseColor;
+          ctx.globalAlpha = 0.9;
+          ctx.beginPath();
+          ctx.roundRect(x, y, cellW, cellH, 10);
+          ctx.fill();
+          
+          // inner border
+          ctx.globalAlpha = 0.4;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          ctx.globalAlpha = 1;
+          ctx.font = `600 ${isResult?17:16}px 'Segoe UI', monospace`;
+          ctx.fillStyle = COL.textLight;
+          ctx.shadowColor = '#0a2540';
+          ctx.shadowBlur = 6;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(display, x + cellW/2, y + cellH/2);
+          ctx.shadowBlur = 0;
+        }
+      }
+      ctx.restore();
+    }
+    
+    // draw row·column connections — visual of multiplication
+    function drawMultiplicationArrows() {
+      // Determine which row of A and column of B to highlight based on B's vertical offset
+      // This makes the interaction intuitive: moving B up/down changes row highlight
+      const dy = bPosY - anchorBY;
+      // map to row index (0..rowsA-1) — smooth
+      let rowIdx = Math.floor( ((dy + 60) / 100) ); 
+      rowIdx = Math.min(rowsA-1, Math.max(0, rowIdx));
+      
+      // also column based on horizontal offset
+      const dx = bPosX - anchorBX;
+      let colIdx = Math.floor( ((dx + 45) / 70) );
+      colIdx = Math.min(colsB-1, Math.max(0, colIdx));
+      
+      // positions of A and B
+      const cellW = 52, cellH = 48, gap = 8;
+      
+      // A: 2x3
+      const totalWA = colsA * cellW + (colsA-1)*gap;
+      const totalHA = rowsA * cellH + (rowsA-1)*gap;
+      const startAX = anchorAX - totalWA/2;
+      const startAY = anchorAY - totalHA/2;
+      
+      // B: 3x2
+      const totalWB = colsB * cellW + (colsB-1)*gap;
+      const totalHB = rowsB * cellH + (rowsB-1)*gap;
+      const startBX = bPosX - totalWB/2;
+      const startBY = bPosY - totalHB/2;
+      
+      // Result matrix (2x2) for cell (rowIdx, colIdx)
+      const totalWRes = colsB * cellW + (colsB-1)*gap;
+      const totalHRes = rowsA * cellH + (rowsA-1)*gap;
+      const startResX = resultX - totalWRes/2;
+      const startResY = resultY - totalHRes/2;
+      
+      ctx.save();
+      ctx.lineWidth = 3.2;
+      ctx.lineCap = 'round';
+      
+      // ----- highlight entire row of A (rowIdx) -----
+      for (let c=0; c<colsA; c++) {
+        const x = startAX + c*(cellW+gap);
+        const y = startAY + rowIdx*(cellH+gap);
+        ctx.fillStyle = '#fbbf24';
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        ctx.roundRect(x-2, y-2, cellW+4, cellH+4, 10);
+        ctx.fill();
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+      
+      // ----- highlight entire column of B (colIdx) -----
+      for (let r=0; r<rowsB; r++) {
+        const x = startBX + colIdx*(cellW+gap);
+        const y = startBY + r*(cellH+gap);
+        ctx.fillStyle = '#fbbf24';
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        ctx.roundRect(x-2, y-2, cellW+4, cellH+4, 10);
+        ctx.fill();
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = '#f59e0b';
+        ctx.stroke();
+      }
+      
+      // ----- draw animated arrows from row of A + column of B into result cell -----
+      ctx.globalAlpha = 0.7;
+      ctx.strokeStyle = '#c2410c';
+      ctx.lineWidth = 2.8;
+      
+      // from each element in row A (k index) to corresponding row in B (same k)
+      for (let k=0; k<colsA; k++) {
+        const ax = startAX + k*(cellW+gap) + cellW/2;
+        const ay = startAY + rowIdx*(cellH+gap) + cellH/2;
+        const bx = startBX + colIdx*(cellW+gap) + cellW/2;
+        const by = startBY + k*(cellH+gap) + cellH/2;  // B's row = k
+        
+        // curve to result cell (rowIdx, colIdx)
+        const rx = startResX + colIdx*(cellW+gap) + cellW/2;
+        const ry = startResY + rowIdx*(cellH+gap) + cellH/2;
+        
+        // draw from A to B (dashed)
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.setLineDash([6, 5]);
+        ctx.strokeStyle = '#b45309';
+        ctx.lineWidth = 2.2;
+        ctx.stroke();
+        
+        // B to result
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(rx, ry);
+        ctx.strokeStyle = '#1e4b8a';
+        ctx.setLineDash([]);
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // arrowheads
+        drawArrowhead(bx, by, rx, ry, '#1e4b8a');
+      }
+      
+      // additional: direct A row to result (faint)
+      ctx.globalAlpha = 0.3;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 2;
+      for (let k=0; k<colsA; k++) {
+        const ax = startAX + k*(cellW+gap) + cellW/2;
+        const ay = startAY + rowIdx*(cellH+gap) + cellH/2;
+        const rx = startResX + colIdx*(cellW+gap) + cellW/2;
+        const ry = startResY + rowIdx*(cellH+gap) + cellH/2;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(rx, ry);
+        ctx.stroke();
+      }
+      
+      ctx.setLineDash([]);
+      
+      // highlight result cell (rowIdx, colIdx)
+      ctx.fillStyle = '#fcd34d';
+      ctx.globalAlpha = 0.25;
+      const resX = startResX + colIdx*(cellW+gap);
+      const resY = startResY + rowIdx*(cellH+gap);
+      ctx.beginPath();
+      ctx.roundRect(resX-3, resY-3, cellW+6, cellH+6, 12);
+      ctx.fill();
+      ctx.globalAlpha = 0.8;
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // show formula: sum a·b
+      ctx.font = "500 13px 'Segoe UI', monospace";
+      ctx.fillStyle = '#0f2b4f';
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 0.9;
+      ctx.fillText(`c[${rowIdx+1}][${colIdx+1}] = row${rowIdx+1} · col${colIdx+1}`, resultX, resultY - 80);
+      
+      ctx.restore();
+    }
+    
+    function drawArrowhead(fromX, fromY, toX, toY, color) {
+      const angle = Math.atan2(toY - fromY, toX - fromX);
+      const size = 12;
+      ctx.save();
+      ctx.translate(toX, toY);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(-size, -size/2.2);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-size, size/2.2);
+      ctx.fill();
+      ctx.restore();
+    }
+    
+    // ----- INTERACTION (touch / mouse) -----
+    function handlePointerDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      
+      const clientX = e.clientX ?? (e.touches ? e.touches[0].clientX : 0);
+      const clientY = e.clientY ?? (e.touches ? e.touches[0].clientY : 0);
+      const canvasX = (clientX - rect.left) * scaleX;
+      const canvasY = (clientY - rect.top) * scaleY;
+      
+      // B matrix bounding box (approx)
+      const cellW = 52, cellH = 48, gap = 8;
+      const totalWB = colsB * cellW + (colsB-1)*gap;
+      const totalHB = rowsB * cellH + (rowsB-1)*gap;
+      const left = bPosX - totalWB/2 - 25;
+      const right = bPosX + totalWB/2 + 25;
+      const top = bPosY - totalHB/2 - 25;
+      const bottom = bPosY + totalHB/2 + 25;
+      
+      if (canvasX >= left && canvasX <= right && canvasY >= top && canvasY <= bottom) {
+        isDragging = true;
+        dragOffsetX = bPosX - canvasX;
+        dragOffsetY = bPosY - canvasY;
+        canvas.style.cursor = 'grabbing';
+        if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+        isHolding = false;
+      } else {
+        startHoldDetection();
+      }
+      pointerDown = true;
+    }
+    
+    function startHoldDetection() {
+      if (holdTimer) clearTimeout(holdTimer);
+      isHolding = true;
+      holdTimer = setTimeout(() => {
+        if (!isDragging && pointerDown) {
+          resetPosition();
+          isHolding = false;
+        }
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+    
+    function handlePointerMove(e) {
+      e.preventDefault();
+      if (!isDragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      let clientX, clientY;
+      if (e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      const canvasX = (clientX - rect.left) * scaleX;
+      const canvasY = (clientY - rect.top) * scaleY;
+      
+      let newX = canvasX + dragOffsetX;
+      let newY = canvasY + dragOffsetY;
+      // bounds
+      newX = Math.min(770, Math.max(440, newX));
+      newY = Math.min(580, Math.max(220, newY));
+      
+      bPosX = newX;
+      bPosY = newY;
+      targetBX = bPosX;
+      targetBY = bPosY;
+    }
+    
+    function handlePointerUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      if (isDragging) {
+        isDragging = false;
+        canvas.style.cursor = 'grab';
+      }
+      pointerDown = false;
+      isHolding = false;
+    }
+    
+    function handlePointerCancel(e) { handlePointerUp(e); }
+    
+    // animation loop
+    function animate() {
+      updatePosition();
+      computeMultiplication();  // always based on matrices (static, but dynamic highlighting)
+      drawScene();
+      requestAnimationFrame(animate);
+    }
+    
+    // roundRect
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+    
+    function bindEvents() {
+      canvas.addEventListener('touchstart', handlePointerDown, {passive: false});
+      canvas.addEventListener('touchmove', handlePointerMove, {passive: false});
+      canvas.addEventListener('touchend', handlePointerUp);
+      canvas.addEventListener('touchcancel', handlePointerCancel);
+      canvas.addEventListener('mousedown', handlePointerDown);
+      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseup', handlePointerUp);
+      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+    
+    // init
+    function init() {
+      resizeCanvas();
+      computeMultiplication();
+      bPosX = anchorBX; bPosY = anchorBY;
+      targetBX = anchorBX; targetBY = anchorBY;
+      bindEvents();
+      animate();
+      window.addEventListener('resize', () => { resizeCanvas(); drawScene(); });
+    }
+    
+    init();
   })();
 </script>
 </body>

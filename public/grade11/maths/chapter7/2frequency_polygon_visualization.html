@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>frequency polygon · grouped data</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- data -----
+    const points = [
+      { mid: 150, freq: 7, label: '140–160' },
+      { mid: 170, freq: 20, label: '160–180' },
+      { mid: 190, freq: 33, label: '180–200' },
+      { mid: 210, freq: 25, label: '200–220' },
+      { mid: 230, freq: 11, label: '220–240' },
+      { mid: 250, freq: 4, label: '240–260' }
+    ];
+    
+    const maxFreq = 33;
+    const minMid = 140, maxMid = 260;
+    
+    // chart dimensions
+    const margin = { top: 100, right: 40, bottom: 90, left: 70 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+    
+    // selected point (tap to highlight)
+    let selectedIndex = 2;
+    
+    // show closure to axis
+    let showClosure = true;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      line: '#2563eb',
+      point: '#3b82f6',
+      selected: '#f59e0b',
+      closure: '#94a3b8',
+      grid: '#e2e8f0',
+      axis: '#1e293b',
+      text: '#334155',
+      dim: '#94a3b8'
+    };
+
+    // ----- coordinate mapping -----
+    function getX(mid) {
+      return margin.left + ((mid - minMid) / (maxMid - minMid)) * chartW;
+    }
+    
+    function getY(freq) {
+      return margin.top + chartH - (freq / maxFreq) * chartH;
+    }
+
+    // ----- hit test for points -----
+    function hitPoint(px, py) {
+      for (let i = 0; i < points.length; i++) {
+        const x = getX(points[i].mid);
+        const y = getY(points[i].freq);
+        if (Math.hypot(px - x, py - y) < 20) {
+          return i;
+        }
+      }
+      return null;
+    }
+    
+    function hitToggle(px, py) {
+      return px >= 50 && px <= 160 && py >= 70 && py <= 102;
+    }
+
+    // ----- drawing -----
+    function drawAxes() {
+      ctx.save();
+      ctx.strokeStyle = C.axis;
+      ctx.lineWidth = 2;
+      
+      // axes
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + chartH);
+      ctx.lineTo(margin.left + chartW, margin.top + chartH);
+      ctx.stroke();
+      
+      // x-axis labels (midpoints)
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      
+      points.forEach(p => {
+        const x = getX(p.mid);
+        ctx.fillText(p.mid.toString(), x, margin.top + chartH + 22);
+        ctx.fillText(p.label, x, margin.top + chartH + 40);
+      });
+      
+      // x-axis title
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.fillText('Class midpoint (Birr)', W/2, margin.top + chartH + 65);
+      
+      // y-axis labels and grid
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.font = "12px system-ui";
+      
+      for (let i = 0; i <= maxFreq; i += 5) {
+        const y = getY(i);
+        ctx.fillStyle = C.dim;
+        ctx.fillText(i.toString(), margin.left - 10, y);
+        
+        ctx.beginPath();
+        ctx.strokeStyle = C.grid;
+        ctx.lineWidth = 0.8;
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + chartW, y);
+        ctx.stroke();
+      }
+      
+      // y-axis title
+      ctx.save();
+      ctx.translate(30, margin.top + chartH/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.font = "14px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('Frequency (number of laborers)', 0, 0);
+      ctx.restore();
+      
+      ctx.restore();
+    }
+
+    function drawPolygon() {
+      ctx.save();
+      
+      // closure lines (dashed, to axis)
+      if (showClosure) {
+        ctx.strokeStyle = C.closure;
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([5, 4]);
+        
+        // left closure
+        const firstX = getX(points[0].mid);
+        const firstY = getY(points[0].freq);
+        const prevX = getX(points[0].mid - 20);
+        const axisY = getY(0);
+        
+        ctx.beginPath();
+        ctx.moveTo(prevX, axisY);
+        ctx.lineTo(firstX, firstY);
+        ctx.stroke();
+        
+        // right closure
+        const lastX = getX(points[points.length-1].mid);
+        const lastY = getY(points[points.length-1].freq);
+        const nextX = getX(points[points.length-1].mid + 20);
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(nextX, axisY);
+        ctx.stroke();
+        
+        ctx.setLineDash([]);
+      }
+      
+      // main polygon line
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([]);
+      
+      ctx.beginPath();
+      points.forEach((p, i) => {
+        const x = getX(p.mid);
+        const y = getY(p.freq);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      
+      // points
+      points.forEach((p, i) => {
+        const x = getX(p.mid);
+        const y = getY(p.freq);
+        
+        ctx.beginPath();
+        ctx.arc(x, y, (i === selectedIndex) ? 10 : 7, 0, 2*Math.PI);
+        ctx.fillStyle = (i === selectedIndex) ? C.selected : C.point;
+        ctx.shadowColor = 'rgba(0,0,0,0.08)';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        
+        // frequency label above point
+        ctx.font = "600 13px system-ui";
+        ctx.fillStyle = (i === selectedIndex) ? C.selected : C.text;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(p.freq.toString(), x, y - 12);
+      });
+      
+      ctx.restore();
+    }
+
+    function drawToggle() {
+      ctx.save();
+      ctx.font = "13px system-ui";
+      
+      ctx.fillStyle = showClosure ? C.line : '#f8fafc';
+      ctx.strokeStyle = showClosure ? C.line : C.dim;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(50, 70, 110, 32, 16);
+      ctx.fill();
+      ctx.stroke();
+      
+      ctx.fillStyle = showClosure ? '#ffffff' : C.dim;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText('show closure', 105, 86);
+      ctx.restore();
+    }
+
+    function drawTitle() {
+      ctx.save();
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.text;
+      ctx.textAlign = "center";
+      ctx.fillText('Weekly Wages of Laborers', W/2, 45);
+      
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('frequency polygon', W/2, 70);
+      
+      if (selectedIndex !== null) {
+        const p = points[selectedIndex];
+        ctx.font = "14px system-ui";
+        ctx.fillStyle = C.selected;
+        ctx.fillText(`class: ${p.label} · midpoint: ${p.mid} · freq: ${p.freq}`, W/2, 130);
+      }
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      
+      drawAxes();
+      drawPolygon();
+      drawToggle();
+      drawTitle();
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('tap points · tap toggle · hold to reset', W/2, H-30);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.line;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      if (hitToggle(px, py)) {
+        showClosure = !showClosure;
+        return;
+      }
+      
+      const hit = hitPoint(px, py);
+      if (hit !== null) {
+        selectedIndex = hit;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown) {
+          selectedIndex = 2;
+          showClosure = true;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

@@ -2,457 +2,374 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>📐 gaussian elimination · REF · RREF</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>row reduction · gaussian elimination</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      background: #fff;
-      min-height: 100dvh;
+      background: #0d1f2d;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 12px;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
     }
-
-    .card {
-      max-width: 800px;
-      width: 100%;
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
       background: #fafcff;
-      border-radius: 28px;
-      border: 1px solid #d0e2ff;
-      padding: 20px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+      border-radius: 2.8rem;
+      box-shadow: 0 20px 40px rgba(0,15,40,0.25);
+      touch-action: none;
+      cursor: grab;
     }
-
-    h2 {
-      font-weight: 700;
-      font-size: 1.4rem;
-      color: #0a1e3c;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .subhead {
-      color: #3a628c;
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-    }
-
-    .example-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 20px;
-    }
-
-    .example-btn {
-      flex: 1;
-      min-width: 120px;
-      padding: 10px 8px;
-      border-radius: 40px;
-      border: 1.5px solid #d0e2ff;
-      background: #fff;
-      font-weight: 600;
-      font-size: 0.8rem;
-      cursor: pointer;
-      color: #3a628c;
-      transition: 0.15s;
-      text-align: center;
-    }
-
-    .example-btn.active {
-      background: #3b82f6;
-      border-color: #3b82f6;
-      color: #fff;
-    }
-
-    .matrix-container {
-      background: #f8fcff;
-      border-radius: 20px;
-      padding: 24px 20px;
-      border: 1px solid #d0e2ff;
-      margin-bottom: 16px;
-    }
-
-    .augmented-matrix {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .matrix-part {
-      display: grid;
-      gap: 6px;
-    }
-
-    .matrix-cell {
-      width: 55px;
-      height: 55px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.3rem;
-      font-weight: 600;
-      background: #fff;
-      border-radius: 12px;
-      border: 1.5px solid #d0e2ff;
-      transition: 0.2s;
-    }
-
-    .matrix-cell.pivot {
-      background: #d1fae5;
-      border-color: #10b981;
-      color: #065f46;
-    }
-
-    .matrix-cell.eliminate {
-      background: #fee2e2;
-      border-color: #ef4444;
-    }
-
-    .augment-line {
-      width: 3px;
-      height: 100%;
-      background: #94a3b8;
-      margin: 0 8px;
-    }
-
-    .step-controls {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      margin: 20px 0 12px;
-    }
-
-    .step-btn {
-      width: 50px;
-      height: 50px;
-      border-radius: 50px;
-      border: 1.5px solid #d0e2ff;
-      background: #fff;
-      font-size: 1.5rem;
-      font-weight: 600;
-      cursor: pointer;
-      color: #3b82f6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .step-btn:active {
-      background: #3b82f6;
-      color: #fff;
-    }
-
-    .step-btn:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-
-    .step-indicator {
-      font-weight: 600;
-      color: #3b82f6;
-      min-width: 100px;
-      text-align: center;
-    }
-
-    .operation-label {
-      background: #f0f6ff;
-      border-radius: 40px;
-      padding: 10px 18px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      color: #3b82f6;
-      text-align: center;
-      margin: 8px 0;
-    }
-
-    .solution-box {
-      background: #fef9e7;
-      border-radius: 18px;
-      padding: 16px 20px;
-      border-left: 4px solid #f59e0b;
-      margin-top: 16px;
-    }
-
-    .solution-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      color: #92400e;
-    }
-
-    .solution-value {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #0a1e3c;
-    }
-
-    .legend {
-      display: flex;
-      gap: 20px;
-      margin-top: 12px;
-      font-size: 0.75rem;
-      color: #3a628c;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    @media (max-width: 600px) {
-      .matrix-cell {
-        width: 40px;
-        height: 40px;
-        font-size: 1rem;
-      }
-      .example-btn { min-width: 90px; font-size: 0.7rem; }
-    }
+    canvas:active { cursor: grabbing; }
   </style>
 </head>
 <body>
-<div class="card">
-  <h2>📐 gaussian elimination</h2>
-  <div class="subhead">elementary row operations · REF · RREF</div>
-
-  <div class="example-row">
-    <button class="example-btn active" data-ex="ex1">🧪 3x3 system</button>
-    <button class="example-btn" data-ex="ex2">📊 unique solution</button>
-    <button class="example-btn" data-ex="ex3">🔄 infinite solutions</button>
-  </div>
-
-  <div class="matrix-container">
-    <div class="augmented-matrix" id="matrixDisplay"></div>
-  </div>
-
-  <div class="operation-label" id="operationLabel">R₂ → R₂ - 2R₁</div>
-
-  <div class="step-controls">
-    <button class="step-btn" id="prevBtn">←</button>
-    <span class="step-indicator" id="stepIndicator">step 1/5</span>
-    <button class="step-btn" id="nextBtn">→</button>
-    <button class="step-btn" id="resetBtn">↻</button>
-  </div>
-
-  <div class="solution-box">
-    <div class="solution-label">solution</div>
-    <div class="solution-value" id="solutionDisplay">x = 3, y = -1, z = -1</div>
-  </div>
-
-  <div class="legend">
-    <div class="legend-item"><span style="background:#d1fae5; width:16px; height:10px; border-radius:5px;"></span> pivot</div>
-    <div class="legend-item"><span style="background:#fee2e2; width:16px; height:10px; border-radius:5px;"></span> being eliminated</div>
-    <div class="legend-item"><span style="color:#3b82f6;">↻</span> elementary row op</div>
-  </div>
-</div>
-
+<canvas id="canvas" width="800" height="800"></canvas>
 <script>
   (function(){
-    const matrixDisplay = document.getElementById('matrixDisplay');
-    const operationLabel = document.getElementById('operationLabel');
-    const stepIndicator = document.getElementById('stepIndicator');
-    const solutionDisplay = document.getElementById('solutionDisplay');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const resetBtn = document.getElementById('resetBtn');
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
     
-    const examples = {
-      ex1: {
-        name: '3x3 system',
-        initial: [
-          [1, 2, 1, 2],
-          [2, 5, 1, 5],
-          [1, 3, 3, 0]
-        ],
-        steps: [
-          { op: 'R₂ → R₂ - 2R₁', matrix: [[1,2,1,2],[0,1,-1,1],[1,3,3,0]] },
-          { op: 'R₃ → R₃ - R₁', matrix: [[1,2,1,2],[0,1,-1,1],[0,1,2,-2]] },
-          { op: 'R₃ → R₃ - R₂', matrix: [[1,2,1,2],[0,1,-1,1],[0,0,3,-3]] },
-          { op: 'R₃ → R₃ / 3', matrix: [[1,2,1,2],[0,1,-1,1],[0,0,1,-1]] },
-          { op: 'back substitute', matrix: [[1,0,0,3],[0,1,0,-1],[0,0,1,-1]] }
-        ],
-        solution: 'x = 3, y = -1, z = -1'
-      },
-      ex2: {
-        name: 'unique solution',
-        initial: [
-          [2, 1, -1, 8],
-          [-3, -1, 2, -11],
-          [-2, 1, 2, -3]
-        ],
-        steps: [
-          { op: 'R₁ → R₁ / 2', matrix: [[1,0.5,-0.5,4],[-3,-1,2,-11],[-2,1,2,-3]] },
-          { op: 'R₂ → R₂ + 3R₁', matrix: [[1,0.5,-0.5,4],[0,0.5,0.5,1],[-2,1,2,-3]] },
-          { op: 'R₃ → R₃ + 2R₁', matrix: [[1,0.5,-0.5,4],[0,0.5,0.5,1],[0,2,1,5]] },
-          { op: 'R₂ → R₂ * 2', matrix: [[1,0.5,-0.5,4],[0,1,1,2],[0,2,1,5]] },
-          { op: 'R₃ → R₃ - 2R₂', matrix: [[1,0.5,-0.5,4],[0,1,1,2],[0,0,-1,1]] },
-          { op: 'R₃ → -R₃', matrix: [[1,0.5,-0.5,4],[0,1,1,2],[0,0,1,-1]] },
-          { op: 'back substitute', matrix: [[1,0,0,2],[0,1,0,3],[0,0,1,-1]] }
-        ],
-        solution: 'x = 2, y = 3, z = -1'
-      },
-      ex3: {
-        name: 'infinite solutions',
-        initial: [
-          [1, 2, -1, 3],
-          [2, 4, -2, 6],
-          [1, 1, 1, 4]
-        ],
-        steps: [
-          { op: 'R₂ → R₂ - 2R₁', matrix: [[1,2,-1,3],[0,0,0,0],[1,1,1,4]] },
-          { op: 'R₃ → R₃ - R₁', matrix: [[1,2,-1,3],[0,0,0,0],[0,-1,2,1]] },
-          { op: 'swap R₂ ↔ R₃', matrix: [[1,2,-1,3],[0,-1,2,1],[0,0,0,0]] },
-          { op: 'R₂ → -R₂', matrix: [[1,2,-1,3],[0,1,-2,-1],[0,0,0,0]] },
-          { op: 'R₁ → R₁ - 2R₂', matrix: [[1,0,3,5],[0,1,-2,-1],[0,0,0,0]] }
-        ],
-        solution: 'x = 5 - 3t, y = -1 + 2t, z = t (free)'
-      }
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- 3x4 augmented matrix · solution: x=3, y=-1, z=1 -----
+    const A = [
+      [ 2,  1, -1,   8],
+      [-3, -1,  2, -11],
+      [-2,  1,  2,  -3]
+    ];
+
+    // ----- precomputed reduction steps (clean, minimal) -----
+    const steps = [];
+    
+    // deep copy helper
+    const copy = (m) => m.map(r => [...r]);
+    
+    // step 0: original
+    let m = copy(A);
+    steps.push({ mat: copy(m), op: '', desc: 'initial system' });
+    
+    // step 1: R2 ← R2 + 1.5·R1
+    for (let c=0; c<4; c++) m[1][c] += 1.5 * m[0][c];
+    steps.push({ mat: copy(m), op: 'R₂ + 1.5 R₁', desc: 'eliminate x in row 2' });
+    
+    // step 2: R3 ← R3 + R1
+    for (let c=0; c<4; c++) m[2][c] += m[0][c];
+    steps.push({ mat: copy(m), op: 'R₃ + R₁', desc: 'eliminate x in row 3' });
+    
+    // step 3: R3 ← R3 − 4·R2
+    for (let c=0; c<4; c++) m[2][c] -= 4 * m[1][c];
+    steps.push({ mat: copy(m), op: 'R₃ − 4 R₂', desc: 'eliminate y in row 3' });
+    
+    // step 4: scale to leading 1s (REF)
+    for (let c=0; c<4; c++) m[0][c] /= 2;
+    for (let c=0; c<4; c++) m[1][c] /= 0.5;
+    for (let c=0; c<4; c++) m[2][c] /= -1;
+    steps.push({ mat: copy(m), op: 'scale rows', desc: 'row echelon form' });
+    
+    // step 5: back substitution (RREF)
+    for (let c=0; c<4; c++) m[1][c] -= m[2][c];
+    for (let c=0; c<4; c++) m[0][c] += m[2][c];
+    for (let c=0; c<4; c++) m[0][c] -= 0.5 * m[1][c];
+    steps.push({ mat: copy(m), op: 'back substitute', desc: 'reduced row echelon' });
+    
+    // final: solution
+    steps.push({ mat: copy(m), op: '⎧ x = 3\n⎨ y = −1\n⎩ z = 1', desc: 'solution' });
+
+    const N = steps.length; // 7
+
+    // ----- interaction state (pure gesture) -----
+    let idx = 0;          // integer step index
+    let t = 0;            // interpolation [0,1) toward idx+1
+    let dragging = false;
+    let dragBase = 0;
+    let startRaw = 0;
+    let pointerDown = false;
+    let holdTimer = null;
+    let holding = false;
+    const HOLD_MS = 500;
+
+    // ----- colors: minimal blue + white -----
+    const C = {
+      bg: '#f6faff',
+      card: '#ffffff',
+      cell: '#2d6cc0',
+      pivot: '#eab308',
+      text: '#f0f6ff',
+      dark: '#122b44',
+      line: '#2563eb',
+      shadow: 'rgba(18,52,100,0.1)'
     };
-    
-    let currentEx = 'ex1';
-    let currentStep = 0;
-    
-    function render() {
-      const ex = examples[currentEx];
-      const steps = ex.steps;
-      const matrix = currentStep === 0 ? ex.initial : steps[currentStep - 1].matrix;
-      
-      // build matrix display
-      matrixDisplay.innerHTML = '';
-      
-      const rows = matrix.length;
-      const cols = matrix[0].length;
-      
-      const leftPart = document.createElement('div');
-      leftPart.className = 'matrix-part';
-      leftPart.style.gridTemplateColumns = `repeat(${cols - 1}, 1fr)`;
-      
-      const rightPart = document.createElement('div');
-      rightPart.className = 'matrix-part';
-      rightPart.style.gridTemplateColumns = '1fr';
-      
-      // determine pivot and eliminate cells
-      const isEliminationStep = currentStep > 0 && currentStep <= steps.length;
-      
-      matrix.forEach((row, i) => {
-        row.forEach((val, j) => {
-          const cell = document.createElement('div');
-          cell.className = 'matrix-cell';
+
+    // ----- interpolation -----
+    function currentMatrix() {
+      if (idx >= N-1) return steps[N-1].mat;
+      const a = steps[idx].mat;
+      const b = steps[idx+1].mat;
+      return a.map((r, i) => r.map((v, j) => v * (1-t) + b[i][j] * t));
+    }
+
+    function currentOp() {
+      if (idx >= N-1) return steps[N-1].op;
+      return t < 0.5 ? steps[idx].op : steps[idx+1].op;
+    }
+
+    function currentDesc() {
+      if (idx >= N-1) return steps[N-1].desc;
+      return t < 0.5 ? steps[idx].desc : steps[idx+1].desc;
+    }
+
+    // ----- actions -----
+    function next() { if (idx < N-1) { idx++; t = 0; } }
+    function reset() { idx = 0; t = 0; }
+
+    // ----- draw matrix (clean, centered) -----
+    function drawMatrix(mat, cx, cy) {
+      const rows = 3, cols = 4;
+      const cw = 62, ch = 52, gap = 8;
+      const tw = cols*cw + (cols-1)*gap;
+      const th = rows*ch + (rows-1)*gap;
+      const sx = cx - tw/2, sy = cy - th/2;
+
+      ctx.save();
+      ctx.shadowColor = C.shadow;
+      ctx.shadowBlur = 16;
+      ctx.shadowOffsetY = 4;
+      ctx.fillStyle = C.card;
+      ctx.beginPath();
+      ctx.roundRect(sx-14, sy-14, tw+28, th+28, 18);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // augmented line
+      ctx.beginPath();
+      const lx = sx + 3*cw + 2*gap + gap/2;
+      ctx.moveTo(lx, sy-6);
+      ctx.lineTo(lx, sy+th+6);
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      for (let r=0; r<rows; r++) {
+        for (let c=0; c<cols; c++) {
+          const x = sx + c*(cw+gap);
+          const y = sy + r*(ch+gap);
+          const val = mat[r][c];
+          const isPivot = (r === c && c < 3) && Math.abs(val) > 0.1;
+
+          ctx.fillStyle = isPivot ? C.pivot : C.cell;
+          ctx.beginPath();
+          ctx.roundRect(x, y, cw, ch, 10);
+          ctx.fill();
           
-          let displayVal = val;
-          if (Math.abs(val - Math.round(val)) < 0.001) displayVal = Math.round(val);
-          else if (Math.abs(val) < 0.001) displayVal = 0;
-          else displayVal = val.toFixed(1);
-          
-          cell.textContent = displayVal;
-          
-          // highlight pivots and eliminated cells
-          if (isEliminationStep && currentStep <= steps.length) {
-            const prevMatrix = currentStep === 1 ? ex.initial : steps[currentStep - 2].matrix;
-            
-            if (j < cols - 1) {
-              // check if this is a pivot (1 on diagonal ideally)
-              if (i === j && Math.abs(val - 1) < 0.1) {
-                cell.classList.add('pivot');
-              } else if (prevMatrix && Math.abs(prevMatrix[i][j] - val) > 0.01) {
-                cell.classList.add('eliminate');
-              }
-            }
-          }
-          
-          if (j < cols - 1) {
-            leftPart.appendChild(cell);
-          } else {
-            rightPart.appendChild(cell);
-          }
-        });
-      });
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.globalAlpha = 0.4;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+
+          ctx.font = `600 19px 'Segoe UI', monospace`;
+          ctx.fillStyle = C.text;
+          ctx.shadowColor = '#0a1e30';
+          ctx.shadowBlur = 6;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const disp = Math.abs(val) < 0.001 ? '0' : (Math.abs(val - Math.round(val)) < 0.01 ? val.toFixed(0) : val.toFixed(2));
+          ctx.fillText(disp, x + cw/2, y + ch/2);
+          ctx.shadowBlur = 0;
+        }
+      }
+      ctx.restore();
+    }
+
+    // ----- draw interface (minimal text) -----
+    function drawUI() {
+      const op = currentOp();
+      const desc = currentDesc();
       
-      matrixDisplay.appendChild(leftPart);
+      ctx.save();
+      ctx.font = "500 16px system-ui";
+      ctx.fillStyle = C.dark;
+      ctx.textAlign = "center";
       
-      const augLine = document.createElement('div');
-      augLine.className = 'augment-line';
-      matrixDisplay.appendChild(augLine);
+      // operation pill
+      ctx.fillStyle = '#e2ebf6';
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.roundRect(W/2-150, 90, 300, 48, 40);
+      ctx.fill();
+      ctx.fillStyle = '#1a3d66';
+      ctx.font = "600 16px system-ui";
+      ctx.fillText(op || '·', W/2, 120);
       
-      matrixDisplay.appendChild(rightPart);
+      ctx.font = "500 14px system-ui";
+      ctx.fillStyle = '#2e5780';
+      ctx.fillText(desc, W/2, 150);
+
+      // progress indicator (subtle dots)
+      const dots = N;
+      const dotX = (W - (dots-1)*32)/2;
+      for (let i=0; i<dots; i++) {
+        const x = dotX + i*32;
+        const active = (i === idx && t<0.1) || (i === idx+1 && t>0.9);
+        ctx.beginPath();
+        ctx.arc(x, H-48, active ? 7 : 5, 0, 2*Math.PI);
+        ctx.fillStyle = (i <= idx || (i===idx+1 && t>0.5)) ? '#2563eb' : '#bdd3eb';
+        ctx.fill();
+      }
+
+      // gesture hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#5b7da3';
+      ctx.fillText('← drag · tap → · hold reset', W/2, H-22);
       
-      // update operation label
-      if (currentStep === 0) {
-        operationLabel.textContent = 'initial augmented matrix';
-      } else if (currentStep <= steps.length) {
-        operationLabel.textContent = steps[currentStep - 1].op;
-      } else {
-        operationLabel.textContent = '✓ RREF · solution';
+      // solution text (final step)
+      if (idx === N-1) {
+        ctx.font = "500 17px system-ui";
+        ctx.fillStyle = '#0f3a5c';
+        ctx.fillText('x = 3    y = −1    z = 1', W/2, H-80);
+      }
+      ctx.restore();
+    }
+
+    // ----- interaction handlers -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      
+      dragBase = cx * sx;
+      startRaw = idx + t;
+      dragging = true;
+      pointerDown = true;
+      canvas.style.cursor = 'grabbing';
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown && !dragging) reset();
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrMove(e) {
+      e.preventDefault();
+      if (!dragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const delta = (cx * sx) - dragBase;
+      let raw = startRaw + delta / 160;
+      raw = Math.min(N-1, Math.max(0, raw));
+      
+      const newIdx = Math.floor(raw);
+      const newT = raw - newIdx;
+      if (newIdx !== idx || Math.abs(newT - t) > 0.005) {
+        idx = newIdx;
+        t = Math.min(0.999, newT);
+        if (idx === N-1) t = 0;
       }
       
-      // update step indicator
-      if (currentStep === 0) {
-        stepIndicator.textContent = `initial · step 0/${steps.length}`;
-      } else {
-        stepIndicator.textContent = `step ${currentStep}/${steps.length}`;
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; holding = false; }
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      
+      if (dragging) {
+        const rect = canvas.getBoundingClientRect();
+        const sx = W / rect.width;
+        const cx = (e.clientX ?? (e.changedTouches ? e.changedTouches[0].clientX : 0)) - rect.left;
+        const dist = Math.abs(cx*sx - dragBase);
+        if (dist < 10) next();  // tap advances
+        dragging = false;
+        canvas.style.cursor = 'grab';
+      }
+      pointerDown = false;
+      holding = false;
+    }
+
+    function ptrCancel(e) { ptrUp(e); }
+
+    // ----- animation loop -----
+    function animate() {
+      if (!dragging && t > 0.01) t *= 0.8; else if (!dragging) t = 0;
+      
+      ctx.clearRect(0, 0, W, H);
+      const grad = ctx.createLinearGradient(0, 0, W*0.6, H);
+      grad.addColorStop(0, '#f0f7ff');
+      grad.addColorStop(1, '#e2ecf9');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+      
+      drawMatrix(currentMatrix(), W/2, H/2 - 10);
+      drawUI();
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2-10, 100, 0, 2*Math.PI);
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 3.5;
+        ctx.setLineDash([10, 14]);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
       
-      // update solution
-      solutionDisplay.textContent = ex.solution;
-      
-      // update button states
-      prevBtn.disabled = (currentStep === 0);
-      nextBtn.disabled = (currentStep === steps.length);
+      requestAnimationFrame(animate);
     }
-    
-    function setExample(ex) {
-      currentEx = ex;
-      currentStep = 0;
-      document.querySelectorAll('.example-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.ex === ex);
-      });
-      render();
+
+    // roundRect utility
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchmove', ptrMove, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrCancel);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mousemove', ptrMove);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
     }
-    
-    function nextStep() {
-      const ex = examples[currentEx];
-      if (currentStep < ex.steps.length) {
-        currentStep++;
-        render();
-      }
-    }
-    
-    function prevStep() {
-      if (currentStep > 0) {
-        currentStep--;
-        render();
-      }
-    }
-    
-    function resetSteps() {
-      currentStep = 0;
-      render();
-    }
-    
-    document.querySelectorAll('.example-btn').forEach(btn => {
-      btn.addEventListener('click', () => setExample(btn.dataset.ex));
-    });
-    
-    nextBtn.addEventListener('click', nextStep);
-    prevBtn.addEventListener('click', prevStep);
-    resetBtn.addEventListener('click', resetSteps);
-    
-    render();
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', () => { resize(); });
   })();
 </script>
 </body>

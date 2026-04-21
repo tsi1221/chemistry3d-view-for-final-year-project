@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>translation · points & shapes</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- triangle vertices (original) -----
+    let A = { x: 2, y: 1 };
+    let B = { x: -1, y: 2 };
+    let C_vertex = { x: -3, y: -1 };
+    
+    // translation vector
+    let T = { x: 3, y: 2 };
+    
+    const SCALE = 42;
+    const OX = 420, OY = 420;
+    
+    // dragging
+    let dragging = null; // 'A', 'B', 'C', 'T'
+    let dragOffsetX = 0, dragOffsetY = 0;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const C = {
+      orig: '#2563eb',
+      image: '#f59e0b',
+      vector: '#10b981',
+      arrow: '#64748b',
+      grid: '#f1f5f9',
+      axis: '#cbd5e1',
+      dark: '#1e293b',
+      dim: '#94a3b8'
+    };
+
+    // ----- translated points -----
+    function Ap() { return { x: A.x + T.x, y: A.y + T.y }; }
+    function Bp() { return { x: B.x + T.x, y: B.y + T.y }; }
+    function Cp() { return { x: C_vertex.x + T.x, y: C_vertex.y + T.y }; }
+
+    function toScreen(p) {
+      return { x: OX + p.x * SCALE, y: OY - p.y * SCALE };
+    }
+
+    function hitTest(px, py) {
+      const pts = [
+        { id: 'A', p: A },
+        { id: 'B', p: B },
+        { id: 'C', p: C_vertex },
+        { id: 'T', p: T }
+      ];
+      for (let item of pts) {
+        const sp = toScreen(item.p);
+        if (Math.hypot(px - sp.x, py - sp.y) < 24) return item.id;
+      }
+      return null;
+    }
+
+    function updateFromDrag(px, py) {
+      const dx = (px - OX) / SCALE;
+      const dy = (OY - py) / SCALE;
+      const newVal = { x: Math.round(dx * 2) / 2, y: Math.round(dy * 2) / 2 };
+      
+      if (dragging === 'A') A = newVal;
+      else if (dragging === 'B') B = newVal;
+      else if (dragging === 'C') C_vertex = newVal;
+      else if (dragging === 'T') T = newVal;
+    }
+
+    // ----- drawing -----
+    function drawGrid() {
+      ctx.save();
+      for (let i = -9; i <= 9; i++) {
+        const x = OX + i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(x, 30); ctx.lineTo(x, H-30);
+        ctx.strokeStyle = i === 0 ? C.axis : C.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      for (let i = -9; i <= 9; i++) {
+        const y = OY - i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(30, y); ctx.lineTo(W-30, y);
+        ctx.strokeStyle = i === 0 ? C.axis : C.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      ctx.font = "11px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      for (let i = -8; i <= 8; i++) if (i !== 0) ctx.fillText(i, OX + i*SCALE, OY+18);
+      for (let i = -8; i <= 8; i++) if (i !== 0) ctx.fillText(i, OX-18, OY - i*SCALE+4);
+      ctx.fillText('O', OX-12, OY+18);
+      ctx.restore();
+    }
+
+    function drawTriangle(p1, p2, p3, color, fillAlpha = 0.1) {
+      const s1 = toScreen(p1);
+      const s2 = toScreen(p2);
+      const s3 = toScreen(p3);
+      
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = fillAlpha;
+      ctx.beginPath();
+      ctx.moveTo(s1.x, s1.y);
+      ctx.lineTo(s2.x, s2.y);
+      ctx.lineTo(s3.x, s3.y);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawVertex(p, label, color, isImage = false) {
+      const sp = toScreen(p);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, 7, 0, 2*Math.PI);
+      ctx.fillStyle = color;
+      ctx.shadowColor = 'rgba(0,0,0,0.06)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.font = "600 13px system-ui";
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      const lbl = isImage ? label + "'" : label;
+      ctx.fillText(lbl, sp.x, sp.y - 12);
+      
+      ctx.font = "11px monospace";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`, sp.x, sp.y + 20);
+      ctx.restore();
+    }
+
+    function drawTranslationArrows() {
+      const orig = [A, B, C];
+      const img = [Ap(), Bp(), Cp()];
+      
+      ctx.save();
+      ctx.strokeStyle = C.arrow;
+      ctx.lineWidth = 1.8;
+      ctx.setLineDash([5, 4]);
+      
+      for (let i = 0; i < 3; i++) {
+        const s1 = toScreen(orig[i]);
+        const s2 = toScreen(img[i]);
+        ctx.beginPath();
+        ctx.moveTo(s1.x, s1.y);
+        ctx.lineTo(s2.x, s2.y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawTranslationVector() {
+      const start = toScreen({ x: 0, y: 0 });
+      const end = toScreen(T);
+      
+      ctx.save();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = C.vector;
+      ctx.fillStyle = C.vector;
+      
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const size = 14;
+      ctx.beginPath();
+      ctx.translate(end.x, end.y);
+      ctx.rotate(angle);
+      ctx.moveTo(-size, -size/2.2);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-size, size/2.2);
+      ctx.fill();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      
+      ctx.font = "600 14px system-ui";
+      ctx.fillStyle = C.vector;
+      ctx.textAlign = "center";
+      ctx.fillText(`T = (${T.x.toFixed(1)}, ${T.y.toFixed(1)})`, end.x + 20, end.y - 15);
+      
+      // draggable handle
+      ctx.beginPath();
+      ctx.arc(end.x, end.y, 10, 0, 2*Math.PI);
+      ctx.fillStyle = C.vector;
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawInfo() {
+      ctx.save();
+      ctx.font = "500 14px system-ui";
+      ctx.fillStyle = C.dark;
+      ctx.textAlign = "left";
+      ctx.fillText('original', 50, 90);
+      ctx.fillText(`A(${A.x.toFixed(1)}, ${A.y.toFixed(1)})  B(${B.x.toFixed(1)}, ${B.y.toFixed(1)})  C(${C_vertex.x.toFixed(1)}, ${C_vertex.y.toFixed(1)})`, 50, 115);
+      
+      ctx.fillStyle = C.image;
+      ctx.fillText('image', 50, 150);
+      const a = Ap(), b = Bp(), c = Cp();
+      ctx.fillText(`A'(${a.x.toFixed(1)}, ${a.y.toFixed(1)})  B'(${b.x.toFixed(1)}, ${b.y.toFixed(1)})  C'(${c.x.toFixed(1)}, ${c.y.toFixed(1)})`, 50, 175);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawGrid();
+      
+      drawTranslationArrows();
+      drawTriangle(A, B, C_vertex, C.orig, 0.08);
+      drawTriangle(Ap(), Bp(), Cp(), C.image, 0.06);
+      
+      drawVertex(A, 'A', C.orig);
+      drawVertex(B, 'B', C.orig);
+      drawVertex(C_vertex, 'C', C.orig);
+      drawVertex(Ap(), 'A', C.image, true);
+      drawVertex(Bp(), 'B', C.image, true);
+      drawVertex(Cp(), 'C', C.image, true);
+      
+      drawTranslationVector();
+      drawInfo();
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('drag points or vector · hold to reset', W/2, H-30);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.orig;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitTest(px, py);
+      if (hit) {
+        dragging = hit;
+        const p = hit === 'A' ? A : (hit === 'B' ? B : (hit === 'C' ? C_vertex : T));
+        const sp = toScreen(p);
+        dragOffsetX = sp.x - px;
+        dragOffsetY = sp.y - py;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown && !dragging) {
+          A = { x: 2, y: 1 };
+          B = { x: -1, y: 2 };
+          C_vertex = { x: -3, y: -1 };
+          T = { x: 3, y: 2 };
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrMove(e) {
+      e.preventDefault();
+      if (!dragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      updateFromDrag(px + dragOffsetX, py + dragOffsetY);
+      
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; holding = false; }
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      dragging = null;
+      pointerDown = false;
+      holding = false;
+    }
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchmove', ptrMove, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mousemove', ptrMove);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

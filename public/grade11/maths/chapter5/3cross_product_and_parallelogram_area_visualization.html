@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>cross product · area</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- vectors (example: u = 3i + j, v = 2i + 3j → area = 7) -----
+    let u = { x: 3, y: 1 };
+    let v = { x: 2, y: 3 };
+    
+    const SCALE = 48;
+    const OX = 240, OY = 460;
+    
+    // dragging
+    let dragging = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors — minimal
+    const C = {
+      u: '#2563eb',
+      v: '#0891b2',
+      area: 'rgba(37, 99, 235, 0.08)',
+      border: '#3b82f6',
+      grid: '#f1f5f9',
+      axis: '#cbd5e1',
+      dark: '#1e293b',
+      dim: '#94a3b8',
+      k: '#f59e0b'
+    };
+
+    // ----- math -----
+    function crossMag() {
+      return Math.abs(u.x * v.y - u.y * v.x);
+    }
+    
+    function toScreen(vec) {
+      return { x: OX + vec.x * SCALE, y: OY - vec.y * SCALE };
+    }
+    
+    function hitTest(px, py) {
+      const uTip = toScreen(u);
+      const vTip = toScreen(v);
+      if (Math.hypot(px - uTip.x, py - uTip.y) < 28) return 'u';
+      if (Math.hypot(px - vTip.x, py - vTip.y) < 28) return 'v';
+      return null;
+    }
+    
+    function updateFromDrag(px, py) {
+      const dx = (px - OX) / SCALE;
+      const dy = (OY - py) / SCALE;
+      const newVec = { x: Math.round(dx * 2) / 2, y: Math.round(dy * 2) / 2 };
+      const clamped = { x: Math.max(-1, Math.min(7, newVec.x)), y: Math.max(-1, Math.min(6, newVec.y)) };
+      if (dragging === 'u') u = clamped;
+      else if (dragging === 'v') v = clamped;
+    }
+
+    // ----- drawing -----
+    function drawGrid() {
+      ctx.save();
+      for (let i = -4; i <= 8; i++) {
+        const x = OX + i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(x, 50); ctx.lineTo(x, H-70);
+        ctx.strokeStyle = i === 0 ? C.axis : C.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      for (let i = -4; i <= 8; i++) {
+        const y = OY - i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(30, y); ctx.lineTo(W-30, y);
+        ctx.strokeStyle = i === 0 ? C.axis : C.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      ctx.font = "11px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      for (let i = -3; i <= 7; i++) if (i !== 0) ctx.fillText(i, OX + i*SCALE, OY+18);
+      for (let i = -3; i <= 7; i++) if (i !== 0) ctx.fillText(i, OX-18, OY - i*SCALE+4);
+      ctx.fillText('O', OX-12, OY+18);
+      ctx.restore();
+    }
+
+    function drawParallelogram() {
+      const uTip = toScreen(u);
+      const vTip = toScreen(v);
+      const sumTip = toScreen({ x: u.x + v.x, y: u.y + v.y });
+      
+      ctx.save();
+      ctx.fillStyle = C.area;
+      ctx.beginPath();
+      ctx.moveTo(OX, OY);
+      ctx.lineTo(uTip.x, uTip.y);
+      ctx.lineTo(sumTip.x, sumTip.y);
+      ctx.lineTo(vTip.x, vTip.y);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.strokeStyle = C.border;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      // dashed parallel edges
+      ctx.setLineDash([6, 5]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(uTip.x, uTip.y);
+      ctx.lineTo(sumTip.x, sumTip.y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(vTip.x, vTip.y);
+      ctx.lineTo(sumTip.x, sumTip.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // vertex labels
+      ctx.font = "12px monospace";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('(0,0)', OX-30, OY-8);
+      ctx.fillText(`(${u.x.toFixed(1)},${u.y.toFixed(1)})`, uTip.x+8, uTip.y-8);
+      ctx.fillText(`(${v.x.toFixed(1)},${v.y.toFixed(1)})`, vTip.x+8, vTip.y-8);
+      ctx.fillText(`(${(u.x+v.x).toFixed(1)},${(u.y+v.y).toFixed(1)})`, sumTip.x+8, sumTip.y-8);
+      ctx.restore();
+    }
+
+    function drawVector(vec, color, label, fromX=OX, fromY=OY) {
+      const tip = toScreen(vec);
+      ctx.save();
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.stroke();
+      
+      const angle = Math.atan2(tip.y - fromY, tip.x - fromX);
+      const size = 14;
+      ctx.beginPath();
+      ctx.translate(tip.x, tip.y);
+      ctx.rotate(angle);
+      ctx.moveTo(-size, -size/2.2);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-size, size/2.2);
+      ctx.fill();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      
+      ctx.font = "600 15px system-ui";
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(label, tip.x + 12, tip.y - 12);
+      ctx.restore();
+    }
+
+    function drawFormula() {
+      const area = crossMag();
+      const det = u.x * v.y - u.y * v.x;
+      
+      ctx.save();
+      ctx.font = "500 15px system-ui";
+      ctx.fillStyle = C.dark;
+      ctx.textAlign = "left";
+      
+      ctx.fillText(`u = (${u.x.toFixed(1)}, ${u.y.toFixed(1)})`, 50, 100);
+      ctx.fillText(`v = (${v.x.toFixed(1)}, ${v.y.toFixed(1)})`, 50, 130);
+      
+      ctx.font = "500 14px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`u × v = (${u.x.toFixed(1)}·${v.y.toFixed(1)} − ${u.y.toFixed(1)}·${v.x.toFixed(1)}) k`, 50, 168);
+      
+      ctx.font = "600 17px system-ui";
+      ctx.fillStyle = C.k;
+      ctx.fillText(`= ${det.toFixed(2)} k`, 50, 200);
+      
+      ctx.font = "600 18px system-ui";
+      ctx.fillStyle = C.dark;
+      ctx.fillText(`area = |u × v| = ${area.toFixed(2)}`, 50, 245);
+      
+      // 3D hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.fillText('k points out of screen (right‑hand rule)', 50, 278);
+      ctx.restore();
+    }
+
+    function drawRightHandHint() {
+      const sumTip = toScreen({ x: u.x + v.x, y: u.y + v.y });
+      ctx.save();
+      ctx.font = "12px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      
+      // 3D axis hint
+      ctx.beginPath();
+      ctx.moveTo(sumTip.x+30, sumTip.y-10);
+      ctx.lineTo(sumTip.x+50, sumTip.y-30);
+      ctx.strokeStyle = C.k;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.arc(sumTip.x+52, sumTip.y-32, 4, 0, 2*Math.PI);
+      ctx.fillStyle = C.k;
+      ctx.fill();
+      
+      ctx.fillStyle = C.k;
+      ctx.fillText('k', sumTip.x+62, sumTip.y-32);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawGrid();
+      
+      drawParallelogram();
+      drawVector(v, C.v, 'v');
+      drawVector(u, C.u, 'u');
+      
+      drawFormula();
+      drawRightHandHint();
+      
+      // handles
+      [toScreen(u), toScreen(v)].forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 11, 0, 2*Math.PI);
+        ctx.fillStyle = i === 0 ? C.u : C.v;
+        ctx.shadowColor = 'rgba(0,0,0,0.06)';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      });
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('drag tips · hold to reset', W/2, H-30);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.u;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitTest(px, py);
+      if (hit) {
+        dragging = hit;
+        const tip = hit === 'u' ? toScreen(u) : toScreen(v);
+        dragOffsetX = tip.x - px;
+        dragOffsetY = tip.y - py;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown && !dragging) {
+          u = { x: 3, y: 1 };
+          v = { x: 2, y: 3 };
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrMove(e) {
+      e.preventDefault();
+      if (!dragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      updateFromDrag(px + dragOffsetX, py + dragOffsetY);
+      
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; holding = false; }
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      dragging = null;
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchmove', ptrMove, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mousemove', ptrMove);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

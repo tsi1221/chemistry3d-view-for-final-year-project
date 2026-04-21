@@ -173,6 +173,51 @@ const grade9Lessons: Omit<Item, 'grade'>[] = [
   { name: "Figure 2 - Optics", link: "/grade9/physics/chapter7/Interactive_Temperature_Lab.html", chapter: "Chapter 7: Optics & Light", subject: "Physics" },
 ];
 
+
+// ----- GRADE 11 MATHEMATICS LESSONS -----
+const grade11MathLessons: Omit<Item, 'grade'>[] = [
+  // Chapter 1: Functions and Graphs
+  { name: "Graphs of Power Functions", link: "/grade11/maths/chapter1/1graphs_of_power_functions.html", chapter: "Chapter 1: Functions and Graphs", subject: "Mathematics" },
+  { name: "Graph of Modulus Function", link: "/grade11/maths/chapter1/2graph_of_modulus_function.html", chapter: "Chapter 1: Functions and Graphs", subject: "Mathematics" },
+  { name: "Graphs of Inverse Relations and Functions", link: "/grade11/maths/chapter1/3graphs_of_inverse_relations_and_functions.html", chapter: "Chapter 1: Functions and Graphs", subject: "Mathematics" },
+
+  // Chapter 2: Rational Functions and Inequalities
+  { name: "Graphs of Rational Functions and Asymptotes", link: "/grade11/maths/chapter2/1graphs_of_rational_functions_and_asymptotes.html", chapter: "Chapter 2: Rational Functions and Inequalities", subject: "Mathematics" },
+  { name: "Sign Chart for Rational Inequalities", link: "/grade11/maths/chapter2/2sign_chart_for_rational_inequalities.html", chapter: "Chapter 2: Rational Functions and Inequalities", subject: "Mathematics" },
+  { name: "Partial Fraction Decomposition Visualization", link: "/grade11/maths/chapter2/3partial_fraction_decomposition_visualization.html", chapter: "Chapter 2: Rational Functions and Inequalities", subject: "Mathematics" },
+
+  // Chapter 3: Matrices
+  { name: "Matrix Addition and Subtraction Visualization", link: "/grade11/maths/chapter3/1matrix_addition_and_subtraction_visualization.html", chapter: "Chapter 3: Matrices", subject: "Mathematics" },
+  { name: "Matrix Multiplication Visualization", link: "/grade11/maths/chapter3/2matrix_multiplication_visualization.html", chapter: "Chapter 3: Matrices", subject: "Mathematics" },
+  { name: "Gaussian Elimination Row Operations Visualization", link: "/grade11/maths/chapter3/3gaussian_elimination_row_operations_visualization.html", chapter: "Chapter 3: Matrices", subject: "Mathematics" },
+
+  // Chapter 4: Determinants and Systems of Equations
+  { name: "Determinant of 2x2 Matrix Visualization", link: "/grade11/maths/chapter4/1determinant_of_2x2_matrix_visualization.html", chapter: "Chapter 4: Determinants and Systems of Equations", subject: "Mathematics" },
+  { name: "Cofactor Expansion 3x3 Determinant Visualization", link: "/grade11/maths/chapter4/2cofactor_expansion_3x3_determinant_visualization.html", chapter: "Chapter 4: Determinants and Systems of Equations", subject: "Mathematics" },
+  { name: "Cramer's Rule Systems 2x2 and 3x3 Visualization", link: "/grade11/maths/chapter4/3cramers_rule_systems_2x2_3x3_visualization.html", chapter: "Chapter 4: Determinants and Systems of Equations", subject: "Mathematics" },
+
+  // Chapter 5: Vectors
+  { name: "Vector Addition and Subtraction Visualization", link: "/grade11/maths/chapter5/1vector_addition_and_subtraction_visualization.html", chapter: "Chapter 5: Vectors", subject: "Mathematics" },
+  { name: "Dot Product and Angle Between Vectors Visualization", link: "/grade11/maths/chapter5/2dot_product_and_angle_between_vectors_visualization.html", chapter: "Chapter 5: Vectors", subject: "Mathematics" },
+  { name: "Cross Product and Parallelogram Area Visualization", link: "/grade11/maths/chapter5/3cross_product_and_parallelogram_area_visualization.html", chapter: "Chapter 5: Vectors", subject: "Mathematics" },
+
+  // Chapter 6: Transformations
+  { name: "Translation of Points and Shapes Visualization", link: "/grade11/maths/chapter6/1translation_of_points_and_shapes_visualization.html", chapter: "Chapter 6: Transformations", subject: "Mathematics" },
+  { name: "Reflection Across Axes and Lines Visualization", link: "/grade11/maths/chapter6/2reflection_across_axes_and_lines_visualization.html", chapter: "Chapter 6: Transformations", subject: "Mathematics" },
+  { name: "Rotation About Origin Visualization", link: "/grade11/maths/chapter6/3rotation_about_origin_visualization.html", chapter: "Chapter 6: Transformations", subject: "Mathematics" },
+
+  // Chapter 7: Statistics
+  { name: "Frequency Polygon Visualization", link: "/grade11/maths/chapter7/2frequency_polygon_visualization.html", chapter: "Chapter 7: Statistics", subject: "Mathematics" },
+
+  // Chapter 8: Probability and Combinatorics
+  { name: "Tree Diagrams for Counting Fundamental Principle", link: "/grade11/maths/chapter8/1tree_diagrams_for_counting_fundamental_principle.html", chapter: "Chapter 8: Probability and Combinatorics", subject: "Mathematics" },
+  { name: "Pascal's Triangle Binomial Theorem Visualization", link: "/grade11/maths/chapter8/2pascals_triangle_binomial_theorem_visualization.html", chapter: "Chapter 8: Probability and Combinatorics", subject: "Mathematics" },
+  { name: "Venn Diagrams Probability Rules Addition", link: "/grade11/maths/chapter8/3venn_diagrams_probability_rules_addition.html", chapter: "Chapter 8: Probability and Combinatorics", subject: "Mathematics" },
+];
+
+
+
+
 // ----- GRADE 12 CHEMISTRY LESSONS (new) -----
 const grade12ChemistryLessons: Omit<Item, 'grade'>[] = [
   // Chapter 1: Acid-Base Equilibria
@@ -232,6 +277,7 @@ const grade10MathematicsLessons: Omit<Item, 'grade'>[] = [
 const allLessons: Item[] = [
   ...grade9Lessons.map(item => ({ ...item, grade: 9 as Grade })),
   ...grade10MathematicsLessons.map(item => ({ ...item, grade: 10 as Grade })),
+  ...grade11MathLessons.map(item => ({ ...item, grade: 11 as Grade })),
   ...grade12ChemistryLessons.map(item => ({ ...item, grade: 12 as Grade })),
   // Grade 11 remains empty for now
   // Biology can be added later with grade 9-12 as needed

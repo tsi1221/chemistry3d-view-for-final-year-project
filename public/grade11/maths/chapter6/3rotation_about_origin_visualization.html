@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>rotation · about origin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- triangle vertices -----
+    let A = { x: 2, y: 1 };
+    let B = { x: 5, y: 3 };
+    let C = { x: 3, y: 4 };
+    
+    // rotation angle in degrees
+    let angle = 90;
+    const angles = [30, 90, 180, 270];
+    
+    const SCALE = 38;
+    const OX = 400, OY = 400;
+    
+    // dragging
+    let dragging = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors
+    const COLORS = {
+      orig: '#2563eb',
+      image: '#f59e0b',
+      arc: '#10b981',
+      grid: '#f1f5f9',
+      axis: '#cbd5e1',
+      dark: '#1e293b',
+      dim: '#94a3b8',
+      active: '#3b82f6'
+    };
+
+    // ----- rotation function -----
+    function rotate(p, deg) {
+      const rad = deg * Math.PI / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+      return {
+        x: p.x * cos - p.y * sin,
+        y: p.x * sin + p.y * cos
+      };
+    }
+
+    function Ap() { return rotate(A, angle); }
+    function Bp() { return rotate(B, angle); }
+    function Cp() { return rotate(C, angle); }
+
+    function toScreen(p) {
+      return { x: OX + p.x * SCALE, y: OY - p.y * SCALE };
+    }
+
+    function hitTest(px, py) {
+      const pts = [
+        { id: 'A', p: A },
+        { id: 'B', p: B },
+        { id: 'C', p: C }
+      ];
+      for (let item of pts) {
+        const sp = toScreen(item.p);
+        if (Math.hypot(px - sp.x, py - sp.y) < 24) return item.id;
+      }
+      return null;
+    }
+    
+    function hitAngleButton(px, py) {
+      const startX = 50;
+      for (let i = 0; i < angles.length; i++) {
+        const x = startX + i * 70;
+        if (px >= x && px <= x + 60 && py >= 70 && py <= 102) {
+          return angles[i];
+        }
+      }
+      return null;
+    }
+
+    function updateFromDrag(px, py) {
+      const dx = (px - OX) / SCALE;
+      const dy = (OY - py) / SCALE;
+      const newVal = { x: Math.round(dx * 2) / 2, y: Math.round(dy * 2) / 2 };
+      
+      if (dragging === 'A') A = newVal;
+      else if (dragging === 'B') B = newVal;
+      else if (dragging === 'C') C = newVal;
+    }
+
+    // ----- drawing -----
+    function drawGrid() {
+      ctx.save();
+      for (let i = -9; i <= 9; i++) {
+        const x = OX + i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(x, 30); ctx.lineTo(x, H-30);
+        ctx.strokeStyle = i === 0 ? COLORS.axis : COLORS.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      for (let i = -9; i <= 9; i++) {
+        const y = OY - i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(30, y); ctx.lineTo(W-30, y);
+        ctx.strokeStyle = i === 0 ? COLORS.axis : COLORS.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      ctx.font = "11px system-ui";
+      ctx.fillStyle = COLORS.dim;
+      ctx.textAlign = "center";
+      for (let i = -8; i <= 8; i++) if (i !== 0) ctx.fillText(i, OX + i*SCALE, OY+18);
+      for (let i = -8; i <= 8; i++) if (i !== 0) ctx.fillText(i, OX-18, OY - i*SCALE+4);
+      ctx.fillText('O', OX-12, OY+18);
+      ctx.restore();
+    }
+
+    function drawRotationArcs() {
+      const orig = [A, B, C];
+      
+      ctx.save();
+      ctx.strokeStyle = COLORS.arc;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      
+      orig.forEach(p => {
+        const r = Math.sqrt(p.x*p.x + p.y*p.y);
+        if (r < 0.2) return;
+        
+        const startAngle = Math.atan2(p.y, p.x);
+        const endAngle = startAngle + angle * Math.PI / 180;
+        
+        const radius = r * SCALE;
+        ctx.beginPath();
+        ctx.arc(OX, OY, radius, startAngle, endAngle, angle < 0);
+        ctx.stroke();
+        
+        // arrowhead
+        const midAngle = startAngle + (angle * Math.PI / 360);
+        const ax = OX + Math.cos(midAngle) * radius;
+        const ay = OY + Math.sin(midAngle) * radius;
+        
+        const dir = angle > 0 ? 1 : -1;
+        const arrowAngle = midAngle + dir * 0.5;
+        const size = 10;
+        
+        ctx.setLineDash([]);
+        ctx.fillStyle = COLORS.arc;
+        ctx.beginPath();
+        ctx.translate(ax, ay);
+        ctx.rotate(arrowAngle);
+        ctx.moveTo(-size, -size/2);
+        ctx.lineTo(0, 0);
+        ctx.lineTo(-size, size/2);
+        ctx.fill();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.setLineDash([5, 4]);
+      });
+      
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
+    function drawTriangle(p1, p2, p3, color, fillAlpha = 0.08) {
+      const s1 = toScreen(p1);
+      const s2 = toScreen(p2);
+      const s3 = toScreen(p3);
+      
+      ctx.save();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = fillAlpha;
+      ctx.beginPath();
+      ctx.moveTo(s1.x, s1.y);
+      ctx.lineTo(s2.x, s2.y);
+      ctx.lineTo(s3.x, s3.y);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawVertex(p, label, color, isImage = false) {
+      const sp = toScreen(p);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, 7, 0, 2*Math.PI);
+      ctx.fillStyle = color;
+      ctx.shadowColor = 'rgba(0,0,0,0.06)';
+      ctx.shadowBlur = 8;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      ctx.font = "600 13px system-ui";
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      const lbl = isImage ? label + "'" : label;
+      ctx.fillText(lbl, sp.x, sp.y - 12);
+      
+      ctx.font = "11px monospace";
+      ctx.fillStyle = COLORS.dim;
+      ctx.fillText(`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`, sp.x, sp.y + 20);
+      ctx.restore();
+    }
+
+    function drawAngleButtons() {
+      const startX = 50;
+      
+      ctx.save();
+      ctx.font = "13px system-ui";
+      
+      angles.forEach((a, i) => {
+        const x = startX + i * 70;
+        const isActive = angle === a;
+        
+        ctx.fillStyle = isActive ? COLORS.active : '#f8fafc';
+        ctx.strokeStyle = isActive ? COLORS.active : COLORS.dim;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.roundRect(x, 70, 60, 32, 16);
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.fillStyle = isActive ? '#ffffff' : COLORS.dim;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(a + '°', x + 30, 86);
+      });
+      ctx.restore();
+    }
+
+    function drawInfo() {
+      ctx.save();
+      ctx.font = "500 14px system-ui";
+      ctx.fillStyle = COLORS.dark;
+      ctx.textAlign = "left";
+      ctx.fillText('original', 50, 140);
+      ctx.fillText(`A(${A.x.toFixed(1)}, ${A.y.toFixed(1)})  B(${B.x.toFixed(1)}, ${B.y.toFixed(1)})  C(${C.x.toFixed(1)}, ${C.y.toFixed(1)})`, 50, 165);
+      
+      ctx.fillStyle = COLORS.image;
+      ctx.fillText(`rotated ${angle}°`, 50, 200);
+      const a = Ap(), b = Bp(), c = Cp();
+      ctx.fillText(`A'(${a.x.toFixed(2)}, ${a.y.toFixed(2)})  B'(${b.x.toFixed(2)}, ${b.y.toFixed(2)})  C'(${c.x.toFixed(2)}, ${c.y.toFixed(2)})`, 50, 225);
+      
+      // transformation rule
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = COLORS.dim;
+      let rule = '';
+      if (angle === 90) rule = '(x, y) → (−y, x)';
+      else if (angle === 180) rule = '(x, y) → (−x, −y)';
+      else if (angle === 270) rule = '(x, y) → (y, −x)';
+      else rule = `(x, y) → (x·cos${angle}° − y·sin${angle}°, x·sin${angle}° + y·cos${angle}°)`;
+      ctx.fillText(rule, 50, 260);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawGrid();
+      
+      drawRotationArcs();
+      
+      drawTriangle(A, B, C, COLORS.orig, 0.08);
+      drawTriangle(Ap(), Bp(), Cp(), COLORS.image, 0.06);
+      
+      drawVertex(A, 'A', COLORS.orig);
+      drawVertex(B, 'B', COLORS.orig);
+      drawVertex(C, 'C', COLORS.orig);
+      drawVertex(Ap(), 'A', COLORS.image, true);
+      drawVertex(Bp(), 'B', COLORS.image, true);
+      drawVertex(Cp(), 'C', COLORS.image, true);
+      
+      // origin marker
+      ctx.beginPath();
+      ctx.arc(OX, OY, 6, 0, 2*Math.PI);
+      ctx.fillStyle = COLORS.dark;
+      ctx.fill();
+      
+      drawAngleButtons();
+      drawInfo();
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('drag points · tap angle · hold to reset', W/2, H-30);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = COLORS.orig;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const btn = hitAngleButton(px, py);
+      if (btn) {
+        angle = btn;
+        return;
+      }
+      
+      const hit = hitTest(px, py);
+      if (hit) {
+        dragging = hit;
+        const p = hit === 'A' ? A : (hit === 'B' ? B : C);
+        const sp = toScreen(p);
+        dragOffsetX = sp.x - px;
+        dragOffsetY = sp.y - py;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown && !dragging) {
+          A = { x: 2, y: 1 };
+          B = { x: 5, y: 3 };
+          C = { x: 3, y: 4 };
+          angle = 90;
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrMove(e) {
+      e.preventDefault();
+      if (!dragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      updateFromDrag(px + dragOffsetX, py + dragOffsetY);
+      
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; holding = false; }
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      dragging = null;
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchmove', ptrMove, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mousemove', ptrMove);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>

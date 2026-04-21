@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>dot product · angle</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      touch-action: none;
+    }
+    canvas {
+      display: block;
+      width: min(96vw, 96vh);
+      height: min(96vw, 96vh);
+      background: #ffffff;
+      border-radius: 2.5rem;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body>
+<canvas id="canvas" width="800" height="800"></canvas>
+<script>
+  (function(){
+    "use strict";
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    let W = 800, H = 800;
+    const dpr = window.devicePixelRatio || 1;
+    
+    function resize() {
+      const s = Math.min(window.innerWidth * 0.96, window.innerHeight * 0.96);
+      canvas.style.width = `${s}px`;
+      canvas.style.height = `${s}px`;
+      canvas.width = 800 * dpr;
+      canvas.height = 800 * dpr;
+      ctx.scale(dpr, dpr);
+      W = 800; H = 800;
+    }
+
+    // ----- vectors (example: u = 4i - j, v = 5i + 3j → θ ≈ 45°) -----
+    let u = { x: 4, y: -1 };
+    let v = { x: 5, y: 3 };
+    
+    const SCALE = 38;
+    const OX = 260, OY = 440;
+    
+    // dragging
+    let dragging = null;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    
+    // hold to reset
+    let holdTimer = null;
+    let holding = false;
+    let pointerDown = false;
+    const HOLD_MS = 500;
+
+    // colors — minimal blue
+    const C = {
+      u: '#2563eb',
+      v: '#0891b2',
+      proj: '#8b5cf6',
+      angle: '#f59e0b',
+      grid: '#f1f5f9',
+      axis: '#cbd5e1',
+      dark: '#1e293b',
+      dim: '#94a3b8',
+      pos: '#10b981',
+      zero: '#64748b',
+      neg: '#ef4444'
+    };
+
+    // ----- math -----
+    function mag(vec) { return Math.sqrt(vec.x*vec.x + vec.y*vec.y); }
+    function dot() { return u.x*v.x + u.y*v.y; }
+    function angleDeg() {
+      const mu = mag(u), mv = mag(v);
+      if (mu < 0.01 || mv < 0.01) return 0;
+      const cos = Math.max(-1, Math.min(1, dot() / (mu * mv)));
+      return Math.acos(cos) * 180 / Math.PI;
+    }
+    function projUonV() {
+      const mv2 = v.x*v.x + v.y*v.y;
+      if (mv2 < 0.001) return { x: 0, y: 0 };
+      const scalar = dot() / mv2;
+      return { x: v.x * scalar, y: v.y * scalar };
+    }
+
+    function toScreen(vec) {
+      return { x: OX + vec.x * SCALE, y: OY - vec.y * SCALE };
+    }
+
+    function hitTest(px, py) {
+      const uTip = toScreen(u);
+      const vTip = toScreen(v);
+      if (Math.hypot(px - uTip.x, py - uTip.y) < 28) return 'u';
+      if (Math.hypot(px - vTip.x, py - vTip.y) < 28) return 'v';
+      return null;
+    }
+
+    function updateFromDrag(px, py) {
+      const dx = (px - OX) / SCALE;
+      const dy = (OY - py) / SCALE;
+      const newVec = { x: Math.round(dx * 2) / 2, y: Math.round(dy * 2) / 2 };
+      const clamped = { x: Math.max(-7, Math.min(8, newVec.x)), y: Math.max(-5, Math.min(7, newVec.y)) };
+      if (dragging === 'u') u = clamped;
+      else if (dragging === 'v') v = clamped;
+    }
+
+    // ----- drawing -----
+    function drawGrid() {
+      ctx.save();
+      for (let i = -6; i <= 8; i++) {
+        const x = OX + i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(x, 50); ctx.lineTo(x, H-70);
+        ctx.strokeStyle = i === 0 ? C.axis : C.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      for (let i = -5; i <= 8; i++) {
+        const y = OY - i * SCALE;
+        ctx.beginPath();
+        ctx.moveTo(30, y); ctx.lineTo(W-30, y);
+        ctx.strokeStyle = i === 0 ? C.axis : C.grid;
+        ctx.lineWidth = i === 0 ? 1.5 : 0.6;
+        ctx.stroke();
+      }
+      ctx.font = "11px system-ui";
+      ctx.fillStyle = C.dim;
+      ctx.textAlign = "center";
+      for (let i = -5; i <= 7; i++) if (i !== 0) ctx.fillText(i, OX + i*SCALE, OY+18);
+      for (let i = -4; i <= 7; i++) if (i !== 0) ctx.fillText(i, OX-18, OY - i*SCALE+4);
+      ctx.fillText('O', OX-12, OY+18);
+      ctx.restore();
+    }
+
+    function drawVector(vec, color, label, fromX=OX, fromY=OY, dashed=false, alpha=1) {
+      const tip = toScreen(vec);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      if (dashed) ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineCap = 'round';
+      
+      ctx.beginPath();
+      ctx.moveTo(fromX, fromY);
+      ctx.lineTo(tip.x, tip.y);
+      ctx.stroke();
+      
+      const angle = Math.atan2(tip.y - fromY, tip.x - fromX);
+      const size = 14;
+      ctx.beginPath();
+      ctx.translate(tip.x, tip.y);
+      ctx.rotate(angle);
+      ctx.moveTo(-size, -size/2.2);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(-size, size/2.2);
+      ctx.fill();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      
+      ctx.font = "600 15px system-ui";
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = color;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(label, tip.x + 12, tip.y - 12);
+      
+      ctx.font = "12px monospace";
+      ctx.fillStyle = C.dim;
+      ctx.fillText(`(${vec.x.toFixed(1)}, ${vec.y.toFixed(1)})`, tip.x + 12, tip.y + 8);
+      ctx.restore();
+    }
+
+    function drawAngleArc() {
+      const ang = angleDeg();
+      const mu = mag(u), mv = mag(v);
+      if (mu < 0.2 || mv < 0.2) return;
+      
+      const uAngle = Math.atan2(u.y, u.x);
+      const vAngle = Math.atan2(v.y, v.x);
+      
+      let start = uAngle, end = vAngle;
+      let diff = end - start;
+      while (diff < 0) diff += 2*Math.PI;
+      while (diff > 2*Math.PI) diff -= 2*Math.PI;
+      
+      const radius = 55;
+      
+      ctx.save();
+      ctx.strokeStyle = C.angle;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(OX, OY, radius, start, end, diff > Math.PI);
+      ctx.stroke();
+      
+      const midAngle = start + diff/2;
+      const lx = OX + Math.cos(midAngle) * (radius+22);
+      const ly = OY + Math.sin(midAngle) * (radius+22);
+      ctx.font = "600 14px system-ui";
+      ctx.fillStyle = C.angle;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${ang.toFixed(1)}°`, lx, ly);
+      ctx.restore();
+    }
+
+    function drawProjection() {
+      const proj = projUonV();
+      if (mag(proj) < 0.1) return;
+      const projTip = toScreen(proj);
+      const uTip = toScreen(u);
+      
+      ctx.save();
+      ctx.strokeStyle = C.proj;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(uTip.x, uTip.y);
+      ctx.lineTo(projTip.x, projTip.y);
+      ctx.stroke();
+      
+      // right angle
+      const d = 12;
+      ctx.setLineDash([]);
+      ctx.strokeStyle = C.dim;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(projTip.x - d, projTip.y);
+      ctx.lineTo(projTip.x - d, projTip.y - d);
+      ctx.lineTo(projTip.x, projTip.y - d);
+      ctx.stroke();
+      
+      drawVector(proj, C.proj, 'projᵥu', OX, OY, false, 0.7);
+      ctx.restore();
+    }
+
+    function drawInfo() {
+      const d = dot();
+      const ang = angleDeg();
+      const mu = mag(u), mv = mag(v);
+      
+      let signColor = C.zero;
+      if (d > 0.01) signColor = C.pos;
+      else if (d < -0.01) signColor = C.neg;
+      
+      ctx.save();
+      ctx.font = "500 15px system-ui";
+      ctx.fillStyle = C.dark;
+      ctx.textAlign = "left";
+      
+      ctx.fillText(`u = (${u.x.toFixed(1)}, ${u.y.toFixed(1)})  |u| = ${mu.toFixed(2)}`, 50, 90);
+      ctx.fillText(`v = (${v.x.toFixed(1)}, ${v.y.toFixed(1)})  |v| = ${mv.toFixed(2)}`, 50, 120);
+      
+      ctx.font = "600 16px system-ui";
+      ctx.fillStyle = signColor;
+      ctx.fillText(`u·v = ${d.toFixed(2)}`, 50, 156);
+      
+      ctx.font = "500 14px system-ui";
+      ctx.fillStyle = C.dim;
+      const cosVal = mu*mv > 0.001 ? d/(mu*mv) : 0;
+      ctx.fillText(`cos θ = ${cosVal.toFixed(3)}  →  θ = ${ang.toFixed(1)}°`, 50, 188);
+      
+      let interp = '';
+      if (ang < 3) interp = 'parallel · same direction';
+      else if (ang > 177) interp = 'parallel · opposite';
+      else if (Math.abs(ang - 90) < 3) interp = 'perpendicular · dot = 0';
+      else if (ang < 90) interp = 'acute · dot > 0';
+      else interp = 'obtuse · dot < 0';
+      
+      ctx.fillStyle = signColor;
+      ctx.font = "500 14px system-ui";
+      ctx.fillText(interp, 50, 220);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      drawGrid();
+      
+      drawVector(v, C.v, 'v');
+      drawVector(u, C.u, 'u');
+      
+      drawProjection();
+      drawAngleArc();
+      drawInfo();
+      
+      // handles
+      [toScreen(u), toScreen(v)].forEach((p, i) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 11, 0, 2*Math.PI);
+        ctx.fillStyle = i === 0 ? C.u : C.v;
+        ctx.shadowColor = 'rgba(0,0,0,0.06)';
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      });
+      
+      // hint
+      ctx.font = "13px system-ui";
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = "center";
+      ctx.fillText('drag tips · hold to reset', W/2, H-30);
+      
+      if (holding) {
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, 80, 0, 2*Math.PI);
+        ctx.strokeStyle = C.u;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 12]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // ----- interaction -----
+    function ptrDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      const hit = hitTest(px, py);
+      if (hit) {
+        dragging = hit;
+        const tip = hit === 'u' ? toScreen(u) : toScreen(v);
+        dragOffsetX = tip.x - px;
+        dragOffsetY = tip.y - py;
+      }
+      
+      pointerDown = true;
+      
+      if (holdTimer) clearTimeout(holdTimer);
+      holding = true;
+      holdTimer = setTimeout(() => {
+        if (pointerDown && !dragging) {
+          u = { x: 4, y: -1 };
+          v = { x: 5, y: 3 };
+        }
+        holding = false;
+        holdTimer = null;
+      }, HOLD_MS);
+    }
+
+    function ptrMove(e) {
+      e.preventDefault();
+      if (!dragging) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const sx = W / rect.width, sy = H / rect.height;
+      const cx = (e.clientX ?? e.touches[0].clientX) - rect.left;
+      const cy = (e.clientY ?? e.touches[0].clientY) - rect.top;
+      const px = cx * sx, py = cy * sy;
+      
+      updateFromDrag(px + dragOffsetX, py + dragOffsetY);
+      
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; holding = false; }
+    }
+
+    function ptrUp(e) {
+      e.preventDefault();
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      dragging = null;
+      pointerDown = false;
+      holding = false;
+    }
+
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      if (w < 2*r) r = w/2;
+      if (h < 2*r) r = h/2;
+      this.moveTo(x+r, y);
+      this.lineTo(x+w-r, y);
+      this.quadraticCurveTo(x+w, y, x+w, y+r);
+      this.lineTo(x+w, y+h-r);
+      this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+      this.lineTo(x+r, y+h);
+      this.quadraticCurveTo(x, y+h, x, y+h-r);
+      this.lineTo(x, y+r);
+      this.quadraticCurveTo(x, y, x+r, y);
+      return this;
+    };
+
+    function bind() {
+      canvas.addEventListener('touchstart', ptrDown, {passive: false});
+      canvas.addEventListener('touchmove', ptrMove, {passive: false});
+      canvas.addEventListener('touchend', ptrUp);
+      canvas.addEventListener('touchcancel', ptrUp);
+      canvas.addEventListener('mousedown', ptrDown);
+      window.addEventListener('mousemove', ptrMove);
+      window.addEventListener('mouseup', ptrUp);
+      canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    function animate() {
+      draw();
+      requestAnimationFrame(animate);
+    }
+
+    resize();
+    bind();
+    animate();
+    window.addEventListener('resize', resize);
+  })();
+</script>
+</body>
+</html>
