@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>📈 power functions · even vs odd</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .card {
+      max-width: 750px;
+      width: 100%;
+      background: #fafcff;
+      border-radius: 28px;
+      border: 1px solid #d0e2ff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #0a1e3c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subhead {
+      color: #3a628c;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #d0e2ff;
+      touch-action: none;
+      margin-bottom: 16px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      min-width: 90px;
+      padding: 14px 8px;
+      border-radius: 40px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: #3a628c;
+      transition: 0.15s;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .slider-item {
+      margin: 12px 0;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #0a1e3c;
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      background: #d4e2fa;
+      border-radius: 10px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #3b82f6;
+      border-radius: 22px;
+      border: 3px solid #fff;
+      cursor: grab;
+    }
+
+    .info-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f0f6ff;
+      border-radius: 18px;
+      padding: 12px 16px;
+      margin-top: 12px;
+    }
+
+    .eq {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .prop {
+      font-size: 0.8rem;
+      color: #3a628c;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: #3a628c;
+    }
+
+    @media (max-width: 500px) {
+      .mode-btn { font-size: 0.8rem; padding: 12px 4px; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>📈 power functions · f(x) = xⁿ</h2>
+  <div class="subhead">even · odd · positive · negative · fractional</div>
+
+  <canvas id="powerCanvas"></canvas>
+
+  <div class="control-row">
+    <button class="mode-btn active" data-mode="x2">x²</button>
+    <button class="mode-btn" data-mode="x3">x³</button>
+    <button class="mode-btn" data-mode="x4">x⁴</button>
+    <button class="mode-btn" data-mode="x-1">x⁻¹</button>
+    <button class="mode-btn" data-mode="x12">x½</button>
+    <button class="mode-btn" data-mode="x23">x⅔</button>
+  </div>
+
+  <div class="slider-item">
+    <div class="slider-head">
+      <span>🔍 zoom</span>
+      <span id="zoomVal">1.0</span>
+    </div>
+    <input type="range" id="zoomSlider" min="0.5" max="2.5" value="1.0" step="0.05">
+  </div>
+
+  <div class="info-panel">
+    <div>
+      <div style="font-size:0.7rem; color:#3a628c;">function</div>
+      <div class="eq" id="funcDisplay">f(x) = x²</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:0.7rem; color:#3a628c;">properties</div>
+      <div class="prop" id="propDisplay">even · symmetric · [0,∞)</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span>● even: symmetric</span>
+    <span>● odd: symmetric</span>
+    <span>● negative: asymptotes</span>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const canvas = document.getElementById('powerCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let w = 0, h = 0;
+    const DPR = devicePixelRatio || 1;
+    let mode = 'x2';
+    let zoom = 1.0;
+    
+    const funcDisplay = document.getElementById('funcDisplay');
+    const propDisplay = document.getElementById('propDisplay');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomVal = document.getElementById('zoomVal');
+    
+    const modes = {
+      'x2':  { func: x => Math.pow(x, 2),   label: 'f(x) = x²',   prop: 'even · symmetric · [0,∞)' },
+      'x3':  { func: x => Math.pow(x, 3),   label: 'f(x) = x³',   prop: 'odd · symmetric · ℝ' },
+      'x4':  { func: x => Math.pow(x, 4),   label: 'f(x) = x⁴',   prop: 'even · symmetric · [0,∞)' },
+      'x-1': { func: x => 1 / x,            label: 'f(x) = x⁻¹',  prop: 'odd · asymptotes · x≠0' },
+      'x12': { func: x => Math.sqrt(Math.max(0, x)), label: 'f(x) = x½', prop: 'domain x≥0 · [0,∞)' },
+      'x23': { func: x => Math.pow(Math.max(0, x), 2/3), label: 'f(x) = x⅔', prop: 'even-like · [0,∞)' }
+    };
+    
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      w = rect.width;
+      h = rect.width;
+      canvas.width = w * DPR;
+      canvas.height = h * DPR;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      draw();
+    }
+    
+    function updateUI() {
+      const m = modes[mode];
+      funcDisplay.textContent = m.label;
+      propDisplay.textContent = m.prop;
+      zoomVal.textContent = zoom.toFixed(1);
+      draw();
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      
+      // grid
+      const cx = w/2, cy = h/2;
+      const scale = 50 * zoom;
+      
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 0.8;
+      for (let i = -5; i <= 5; i++) {
+        if (i === 0) continue;
+        const x = cx + i * scale;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+        
+        const y = cy - i * scale;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+      
+      // axes
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(0, cy);
+      ctx.lineTo(w, cy);
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, h);
+      ctx.stroke();
+      
+      // axis arrows
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(w-8, cy-5); ctx.lineTo(w, cy); ctx.lineTo(w-8, cy+5); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx-5, 8); ctx.lineTo(cx, 0); ctx.lineTo(cx+5, 8); ctx.fill();
+      
+      // labels
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('x', w-16, cy-10);
+      ctx.fillText('y', cx+10, 18);
+      
+      // function
+      const fn = modes[mode].func;
+      const isFraction = mode === 'x-1' || mode === 'x12' || mode === 'x23';
+      const color = mode.includes('2') && mode !== 'x23' ? '#3b82f6' : 
+                    (mode === 'x3' ? '#10b981' : 
+                     (mode === 'x-1' ? '#ef4444' : '#8b5cf6'));
+      
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      
+      let first = true;
+      const step = 1 / scale;
+      
+      for (let px = 0; px < w; px++) {
+        const xVal = (px - cx) / scale;
+        let yVal;
+        
+        try {
+          yVal = fn(xVal);
+          if (!isFinite(yVal) || isNaN(yVal)) {
+            first = true;
+            continue;
+          }
+        } catch(e) {
+          first = true;
+          continue;
+        }
+        
+        // avoid jumps for asymptotes
+        if (mode === 'x-1' && Math.abs(xVal) < 0.05) {
+          first = true;
+          continue;
+        }
+        
+        const py = cy - yVal * scale;
+        if (py < -50 || py > h + 50) {
+          first = true;
+          continue;
+        }
+        
+        if (first) {
+          ctx.moveTo(px, py);
+          first = false;
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+      
+      // second branch for odd/negative powers if needed
+      if (mode === 'x-1' || mode === 'x3') {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        first = true;
+        for (let px = 0; px < w; px++) {
+          const xVal = (px - cx) / scale;
+          let yVal;
+          try {
+            yVal = fn(xVal);
+            if (!isFinite(yVal) || isNaN(yVal) || xVal >= 0) { first = true; continue; }
+          } catch(e) { first = true; continue; }
+          
+          if (mode === 'x-1' && Math.abs(xVal) < 0.05) { first = true; continue; }
+          
+          const py = cy - yVal * scale;
+          if (py < -50 || py > h + 50) { first = true; continue; }
+          
+          if (first) { ctx.moveTo(px, py); first = false; }
+          else { ctx.lineTo(px, py); }
+        }
+        ctx.stroke();
+      }
+      
+      // origin label
+      ctx.fillStyle = '#0a1e3c';
+      ctx.font = 'bold 12px system-ui';
+      ctx.fillText('O', cx+6, cy-6);
+    }
+    
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === m);
+      });
+      updateUI();
+    }
+    
+    zoomSlider.addEventListener('input', () => {
+      zoom = parseFloat(zoomSlider.value);
+      updateUI();
+    });
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    
+    window.addEventListener('resize', resize);
+    resize();
+    setMode('x2');
+  })();
+</script>
+</body>
+</html>

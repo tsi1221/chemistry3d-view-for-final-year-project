@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>📉 rational functions · asymptotes</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .card {
+      max-width: 800px;
+      width: 100%;
+      background: #fafcff;
+      border-radius: 28px;
+      border: 1px solid #d0e2ff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #0a1e3c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subhead {
+      color: #3a628c;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1.2 / 1;
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #d0e2ff;
+      touch-action: none;
+      margin-bottom: 16px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      min-width: 70px;
+      padding: 10px 4px;
+      border-radius: 40px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #3a628c;
+      transition: 0.15s;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .slider-item {
+      margin: 12px 0;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: #0a1e3c;
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      background: #d4e2fa;
+      border-radius: 10px;
+     
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #3b82f6;
+      border-radius: 20px;
+      border: 3px solid #fff;
+      cursor: grab;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: #f0f6ff;
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+
+    .info-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      color: #3a628c;
+    }
+
+    .info-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .asymptote-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 8px;
+    }
+
+    .asymptote-item {
+      font-size: 0.8rem;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: #3a628c;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 600px) {
+      .mode-btn { font-size: 0.7rem; padding: 8px 2px; }
+      .info-panel { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>📉 rational functions · asymptotes</h2>
+  <div class="subhead">vertical · horizontal · oblique · holes</div>
+
+  <canvas id="rationalCanvas"></canvas>
+
+  <div class="control-row">
+    <button class="mode-btn active" data-mode="1overx">1/x</button>
+    <button class="mode-btn" data-mode="1overx2">1/x²</button>
+    <button class="mode-btn" data-mode="hole">(x-1)/(x-1)(x+2)</button>
+    <button class="mode-btn" data-mode="linear">(x+1)/(x-2)</button>
+    <button class="mode-btn" data-mode="quadratic">(x+1)/(x²-4)</button>
+    <button class="mode-btn" data-mode="slant">(x²+1)/(x-1)</button>
+  </div>
+
+  <div class="slider-item">
+    <div class="slider-head">
+      <span>🔍 zoom</span>
+      <span id="zoomVal">1.0</span>
+    </div>
+    <input type="range" id="zoomSlider" min="0.4" max="2.2" value="1.0" step="0.05">
+  </div>
+
+  <div class="info-panel">
+    <div class="info-card">
+      <div class="info-label">function</div>
+      <div class="info-value" id="funcDisplay">f(x) = 1/x</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">asymptotes & features</div>
+      <div class="asymptote-list" id="asymptoteDisplay">
+        <span class="asymptote-item" style="color:#ef4444;">VA: x=0</span>
+        <span class="asymptote-item" style="color:#10b981;">HA: y=0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span style="color:#3b82f6;">▬</span> f(x)</div>
+    <div class="legend-item"><span style="color:#ef4444; opacity:0.7;">- -</span> vertical asymptote</div>
+    <div class="legend-item"><span style="color:#10b981; opacity:0.7;">- -</span> horizontal asymptote</div>
+    <div class="legend-item"><span style="color:#f59e0b;">○</span> hole</div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const canvas = document.getElementById('rationalCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let w = 0, h = 0;
+    const DPR = devicePixelRatio || 1;
+    
+    let mode = '1overx';
+    let zoom = 1.0;
+    
+    const funcDisplay = document.getElementById('funcDisplay');
+    const asymptoteDisplay = document.getElementById('asymptoteDisplay');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const zoomVal = document.getElementById('zoomVal');
+    
+    const modes = {
+      '1overx': {
+        func: x => 1 / x,
+        label: 'f(x) = 1/x',
+        asymptotes: [
+          { type: 'VA', value: 0, color: '#ef4444' },
+          { type: 'HA', value: 0, color: '#10b981' }
+        ],
+        holes: []
+      },
+      '1overx2': {
+        func: x => 1 / (x * x),
+        label: 'f(x) = 1/x²',
+        asymptotes: [
+          { type: 'VA', value: 0, color: '#ef4444' },
+          { type: 'HA', value: 0, color: '#10b981' }
+        ],
+        holes: []
+      },
+      'hole': {
+        func: x => {
+          if (Math.abs(x - 1) < 0.01) return NaN;
+          return (x - 1) / ((x - 1) * (x + 2));
+        },
+        label: 'f(x) = (x-1)/((x-1)(x+2))',
+        asymptotes: [
+          { type: 'VA', value: -2, color: '#ef4444' },
+          { type: 'HA', value: 0, color: '#10b981' }
+        ],
+        holes: [1]
+      },
+      'linear': {
+        func: x => (x + 1) / (x - 2),
+        label: 'f(x) = (x+1)/(x-2)',
+        asymptotes: [
+          { type: 'VA', value: 2, color: '#ef4444' },
+          { type: 'HA', value: 1, color: '#10b981' }
+        ],
+        holes: []
+      },
+      'quadratic': {
+        func: x => (x + 1) / (x * x - 4),
+        label: 'f(x) = (x+1)/(x²-4)',
+        asymptotes: [
+          { type: 'VA', value: -2, color: '#ef4444' },
+          { type: 'VA', value: 2, color: '#ef4444' },
+          { type: 'HA', value: 0, color: '#10b981' }
+        ],
+        holes: []
+      },
+      'slant': {
+        func: x => (x * x + 1) / (x - 1),
+        label: 'f(x) = (x²+1)/(x-1)',
+        asymptotes: [
+          { type: 'VA', value: 1, color: '#ef4444' },
+          { type: 'slant', value: 'y = x + 1', color: '#8b5cf6' }
+        ],
+        holes: []
+      }
+    };
+    
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      w = rect.width;
+      h = rect.width * 0.83;
+      canvas.width = w * DPR;
+      canvas.height = h * DPR;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      draw();
+    }
+    
+    function updateUI() {
+      const m = modes[mode];
+      funcDisplay.textContent = m.label;
+      
+      let html = '';
+      m.asymptotes.forEach(a => {
+        if (a.type === 'VA') html += `<span class="asymptote-item" style="color:${a.color};">VA: x=${a.value}</span>`;
+        else if (a.type === 'HA') html += `<span class="asymptote-item" style="color:${a.color};">HA: y=${a.value}</span>`;
+        else html += `<span class="asymptote-item" style="color:${a.color};">oblique: ${a.value}</span>`;
+      });
+      m.holes.forEach(h => {
+        html += `<span class="asymptote-item" style="color:#f59e0b;">hole: x=${h}</span>`;
+      });
+      asymptoteDisplay.innerHTML = html || 'none';
+      
+      zoomVal.textContent = zoom.toFixed(1);
+      draw();
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      
+      const cx = w/2, cy = h/2;
+      const scale = 55 * zoom;
+      
+      // grid
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 0.8;
+      for (let i = -8; i <= 8; i++) {
+        if (i === 0) continue;
+        const x = cx + i * scale;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        const y = cy - i * scale;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      
+      // axes
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+      ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+      ctx.stroke();
+      
+      // labels
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('x', w-16, cy-10);
+      ctx.fillText('y', cx+10, 18);
+      
+      // draw asymptotes
+      const m = modes[mode];
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      
+      m.asymptotes.forEach(a => {
+        if (a.type === 'VA') {
+          const x = cx + a.value * scale;
+          if (x > 0 && x < w) {
+            ctx.strokeStyle = a.color;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+          }
+        } else if (a.type === 'HA') {
+          const y = cy - a.value * scale;
+          if (y > 0 && y < h) {
+            ctx.strokeStyle = a.color;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+          }
+        } else if (a.type === 'slant' && mode === 'slant') {
+          ctx.strokeStyle = a.color;
+          ctx.beginPath();
+          for (let px = 0; px < w; px++) {
+            const xVal = (px - cx) / scale;
+            const yVal = xVal + 1;
+            const py = cy - yVal * scale;
+            if (px === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          }
+          ctx.stroke();
+        }
+      });
+      ctx.setLineDash([]);
+      
+      // draw function
+      const fn = m.func;
+      ctx.beginPath();
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 3;
+      
+      let first = true;
+      const step = 1;
+      
+      for (let px = 0; px < w; px += step) {
+        const xVal = (px - cx) / scale;
+        let yVal;
+        
+        try {
+          yVal = fn(xVal);
+          if (!isFinite(yVal) || isNaN(yVal)) {
+            first = true;
+            continue;
+          }
+        } catch(e) {
+          first = true;
+          continue;
+        }
+        
+        // skip near asymptotes to avoid connecting branches
+        let nearVA = false;
+        m.asymptotes.forEach(a => {
+          if (a.type === 'VA' && Math.abs(xVal - a.value) < 0.08) nearVA = true;
+        });
+        if (nearVA) { first = true; continue; }
+        
+        const py = cy - yVal * scale;
+        if (py < -100 || py > h + 100) { first = true; continue; }
+        
+        if (first) {
+          ctx.moveTo(px, py);
+          first = false;
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+      
+      // draw holes
+      m.holes.forEach(holeX => {
+        const yVal = fn(holeX + 0.001);
+        if (isFinite(yVal)) {
+          const screenX = cx + holeX * scale;
+          const screenY = cy - yVal * scale;
+          
+          ctx.beginPath();
+          ctx.arc(screenX, screenY, 7, 0, 2*Math.PI);
+          ctx.fillStyle = '#fff';
+          ctx.fill();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        }
+      });
+    }
+    
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === m);
+      });
+      updateUI();
+    }
+    
+    zoomSlider.addEventListener('input', () => {
+      zoom = parseFloat(zoomSlider.value);
+      updateUI();
+    });
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    
+    window.addEventListener('resize', resize);
+    resize();
+    setMode('1overx');
+  })();
+</script>
+</body>
+</html>

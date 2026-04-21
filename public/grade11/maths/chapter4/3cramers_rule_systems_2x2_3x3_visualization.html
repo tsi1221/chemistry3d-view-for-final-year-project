@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>📐 cramer's rule · 2×2 & 3×3 systems</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .card {
+      max-width: 900px;
+      width: 100%;
+      background: #fafcff;
+      border-radius: 28px;
+      border: 1px solid #d0e2ff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #0a1e3c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subhead {
+      color: #3a628c;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    .example-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .example-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px 8px;
+      border-radius: 40px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #3a628c;
+      transition: 0.15s;
+      text-align: center;
+    }
+
+    .example-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .system-display {
+      background: #f0f6ff;
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #0a1e3c;
+    }
+
+    .matrices-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 24px 0;
+    }
+
+    .matrix-wrapper {
+      text-align: center;
+    }
+
+    .matrix-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #3a628c;
+      margin-bottom: 6px;
+    }
+
+    .matrix {
+      display: grid;
+      gap: 6px;
+      background: #f8fcff;
+      padding: 14px;
+      border-radius: 16px;
+      border: 2px solid #d0e2ff;
+    }
+
+    .matrix-cell {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 600;
+      background: #fff;
+      border-radius: 10px;
+      border: 1.5px solid #d0e2ff;
+    }
+
+    .matrix-cell.replaced {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+
+    .matrix-cell.constant {
+      background: #fee2e2;
+      border-color: #ef4444;
+    }
+
+    .formula-panel {
+      background: #fef9e7;
+      border-radius: 18px;
+      padding: 18px;
+      margin: 20px 0;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .formula-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+
+    .formula-item {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .solution-box {
+      background: #d1fae5;
+      border-radius: 16px;
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    .solution-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #065f46;
+    }
+
+    .dimension-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .dim-btn {
+      padding: 8px 20px;
+      border-radius: 30px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      color: #3a628c;
+    }
+
+    .dim-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 16px;
+      font-size: 0.75rem;
+      color: #3a628c;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 700px) {
+      .matrix-cell {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+      .formula-item { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>📐 cramer's rule</h2>
+  <div class="subhead">x = det(Aₓ)/det(A) · y = det(Aᵧ)/det(A) · z = det(A₂)/det(A)</div>
+
+  <div class="dimension-toggle">
+    <button class="dim-btn active" data-dim="2x2">2×2 system</button>
+    <button class="dim-btn" data-dim="3x3">3×3 system</button>
+  </div>
+
+  <div class="example-row">
+    <button class="example-btn active" data-ex="ex1">🧪 example 1</button>
+    <button class="example-btn" data-ex="ex2">📊 example 2</button>
+    <button class="example-btn" data-ex="ex3">🔄 example 3</button>
+  </div>
+
+  <div class="system-display" id="systemDisplay">2x + 3y = 8 · x - y = -1</div>
+
+  <div class="matrices-container" id="matricesContainer"></div>
+
+  <div class="formula-panel">
+    <div class="formula-row" id="formulaX"></div>
+    <div class="formula-row" id="formulaY"></div>
+    <div class="formula-row" id="formulaZ" style="display:none;"></div>
+  </div>
+
+  <div class="solution-box">
+    <div style="font-size:0.7rem; color:#065f46;">solution</div>
+    <div class="solution-value" id="solutionDisplay">x = 1, y = 2</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span style="background:#fef3c7; width:20px; height:10px; border-radius:5px;"></span> replaced column</div>
+    <div class="legend-item"><span style="background:#fee2e2; width:20px; height:10px; border-radius:5px;"></span> constants vector</div>
+    <div class="legend-item"><span>det = determinant</span></div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const systemDisplay = document.getElementById('systemDisplay');
+    const matricesContainer = document.getElementById('matricesContainer');
+    const formulaX = document.getElementById('formulaX');
+    const formulaY = document.getElementById('formulaY');
+    const formulaZ = document.getElementById('formulaZ');
+    const solutionDisplay = document.getElementById('solutionDisplay');
+    
+    let currentDim = '2x2';
+    let currentEx = 'ex1';
+    
+    const examples2x2 = {
+      ex1: {
+        A: [[2, 3], [1, -1]],
+        B: [8, -1],
+        solution: [1, 2],
+        system: '2x + 3y = 8 · x - y = -1'
+      },
+      ex2: {
+        A: [[3, 2], [1, 4]],
+        B: [7, 5],
+        solution: [1.8, 0.8],
+        system: '3x + 2y = 7 · x + 4y = 5'
+      },
+      ex3: {
+        A: [[1, 1], [2, -1]],
+        B: [5, 1],
+        solution: [2, 3],
+        system: 'x + y = 5 · 2x - y = 1'
+      }
+    };
+    
+    const examples3x3 = {
+      ex1: {
+        A: [[2, 1, 1], [1, -1, 0], [3, 2, 1]],
+        B: [3, 1, 4],
+        solution: [1, 0, 1],
+        system: '2x + y + z = 3 · x - y = 1 · 3x + 2y + z = 4'
+      },
+      ex2: {
+        A: [[1, 2, 1], [2, 1, 3], [3, 1, 2]],
+        B: [8, 13, 12],
+        solution: [2, 1, 4],
+        system: 'x + 2y + z = 8 · 2x + y + 3z = 13 · 3x + y + 2z = 12'
+      },
+      ex3: {
+        A: [[1, 1, 1], [2, -1, 1], [1, 2, -1]],
+        B: [6, 3, 2],
+        solution: [1, 2, 3],
+        system: 'x + y + z = 6 · 2x - y + z = 3 · x + 2y - z = 2'
+      }
+    };
+    
+    function det2x2(m) {
+      return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+    }
+    
+    function det3x3(m) {
+      return m[0][0] * (m[1][1]*m[2][2] - m[1][2]*m[2][1])
+           - m[0][1] * (m[1][0]*m[2][2] - m[1][2]*m[2][0])
+           + m[0][2] * (m[1][0]*m[2][1] - m[1][1]*m[2][0]);
+    }
+    
+    function replaceCol(A, col, B) {
+      return A.map((row, i) => row.map((val, j) => j === col ? B[i] : val));
+    }
+    
+    function render() {
+      const examples = currentDim === '2x2' ? examples2x2 : examples3x3;
+      const ex = examples[currentEx];
+      const A = ex.A;
+      const B = ex.B;
+      const n = A.length;
+      
+      systemDisplay.textContent = ex.system;
+      
+      // compute determinants
+      const detA = n === 2 ? det2x2(A) : det3x3(A);
+      
+      const modifiedMatrices = [];
+      const dets = [];
+      for (let i = 0; i < n; i++) {
+        const Ai = replaceCol(A, i, B);
+        modifiedMatrices.push(Ai);
+        dets.push(n === 2 ? det2x2(Ai) : det3x3(Ai));
+      }
+      
+      // render matrices
+      matricesContainer.innerHTML = '';
+      
+      // matrix A
+      const wrapperA = document.createElement('div');
+      wrapperA.className = 'matrix-wrapper';
+      wrapperA.innerHTML = `<div class="matrix-label">A (coefficient)</div>`;
+      const matA = document.createElement('div');
+      matA.className = 'matrix';
+      matA.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+      A.forEach(row => row.forEach(val => {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell';
+        cell.textContent = val;
+        matA.appendChild(cell);
+      }));
+      wrapperA.appendChild(matA);
+      matricesContainer.appendChild(wrapperA);
+      
+      // constant vector
+      const wrapperB = document.createElement('div');
+      wrapperB.className = 'matrix-wrapper';
+      wrapperB.innerHTML = `<div class="matrix-label">B (constants)</div>`;
+      const matB = document.createElement('div');
+      matB.className = 'matrix';
+      matB.style.gridTemplateColumns = '1fr';
+      B.forEach(val => {
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell constant';
+        cell.textContent = val;
+        matB.appendChild(cell);
+      });
+      wrapperB.appendChild(matB);
+      matricesContainer.appendChild(wrapperB);
+      
+      // modified matrices
+      const varNames = n === 2 ? ['x', 'y'] : ['x', 'y', 'z'];
+      varNames.forEach((name, i) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'matrix-wrapper';
+        wrapper.innerHTML = `<div class="matrix-label">A${name === 'z' ? '₂' : 'ₓ'} (replace col ${i+1})</div>`;
+        const mat = document.createElement('div');
+        mat.className = 'matrix';
+        mat.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+        modifiedMatrices[i].forEach((row, ri) => row.forEach((val, ci) => {
+          const cell = document.createElement('div');
+          cell.className = 'matrix-cell';
+          if (ci === i) cell.classList.add('replaced');
+          cell.textContent = val;
+          mat.appendChild(cell);
+        }));
+        wrapper.appendChild(mat);
+        matricesContainer.appendChild(wrapper);
+      });
+      
+      // formulas
+      const formatDet = (d) => Number.isInteger(d) ? d : d.toFixed(2);
+      
+      if (n === 2) {
+        formulaX.innerHTML = `<span class="formula-item">x = det(Aₓ)/det(A) = ${formatDet(dets[0])} / ${formatDet(detA)} = ${ex.solution[0].toFixed(2)}</span>`;
+        formulaY.innerHTML = `<span class="formula-item">y = det(Aᵧ)/det(A) = ${formatDet(dets[1])} / ${formatDet(detA)} = ${ex.solution[1].toFixed(2)}</span>`;
+        formulaZ.style.display = 'none';
+        solutionDisplay.textContent = `x = ${ex.solution[0].toFixed(2)}, y = ${ex.solution[1].toFixed(2)}`;
+      } else {
+        formulaX.innerHTML = `<span class="formula-item">x = det(Aₓ)/det(A) = ${formatDet(dets[0])} / ${formatDet(detA)} = ${ex.solution[0].toFixed(2)}</span>`;
+        formulaY.innerHTML = `<span class="formula-item">y = det(Aᵧ)/det(A) = ${formatDet(dets[1])} / ${formatDet(detA)} = ${ex.solution[1].toFixed(2)}</span>`;
+        formulaZ.style.display = 'flex';
+        formulaZ.innerHTML = `<span class="formula-item">z = det(A₂)/det(A) = ${formatDet(dets[2])} / ${formatDet(detA)} = ${ex.solution[2].toFixed(2)}</span>`;
+        solutionDisplay.textContent = `x = ${ex.solution[0].toFixed(2)}, y = ${ex.solution[1].toFixed(2)}, z = ${ex.solution[2].toFixed(2)}`;
+      }
+    }
+    
+    function setDim(dim) {
+      currentDim = dim;
+      document.querySelectorAll('.dim-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.dim === dim);
+      });
+      
+      // reset example to first
+      currentEx = 'ex1';
+      document.querySelectorAll('.example-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === 0);
+      });
+      
+      render();
+    }
+    
+    function setExample(ex) {
+      currentEx = ex;
+      document.querySelectorAll('.example-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.ex === ex);
+      });
+      render();
+    }
+    
+    document.querySelectorAll('.dim-btn').forEach(btn => {
+      btn.addEventListener('click', () => setDim(btn.dataset.dim));
+    });
+    
+    document.querySelectorAll('.example-btn').forEach(btn => {
+      btn.addEventListener('click', () => setExample(btn.dataset.ex));
+    });
+    
+    render();
+  })();
+</script>
+</body>
+</html>

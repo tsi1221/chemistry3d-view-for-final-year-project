@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>📐 modulus function · transformations</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .card {
+      max-width: 750px;
+      width: 100%;
+      background: #fafcff;
+      border-radius: 28px;
+      border: 1px solid #d0e2ff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #0a1e3c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subhead {
+      color: #3a628c;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #d0e2ff;
+      touch-action: none;
+      margin-bottom: 16px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 6px;
+      border-radius: 40px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #3a628c;
+      transition: 0.15s;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .slider-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: #0a1e3c;
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      background: #d4e2fa;
+      border-radius: 10px;
+     
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #3b82f6;
+      border-radius: 20px;
+      border: 3px solid #fff;
+      cursor: grab;
+    }
+
+    .info-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f0f6ff;
+      border-radius: 18px;
+      padding: 14px 18px;
+      margin-top: 12px;
+    }
+
+    .eq {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .transform-desc {
+      font-size: 0.8rem;
+      color: #3a628c;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: #3a628c;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 500px) {
+      .mode-btn { font-size: 0.75rem; padding: 10px 4px; }
+      .slider-group { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>📐 modulus function · f(x) = |x|</h2>
+  <div class="subhead">transformations · shift · reflect · stretch</div>
+
+  <canvas id="modCanvas"></canvas>
+
+  <div class="control-row">
+    <button class="mode-btn active" data-mode="basic">|x|</button>
+    <button class="mode-btn" data-mode="shiftH">|x - h|</button>
+    <button class="mode-btn" data-mode="shiftV">|x| + k</button>
+    <button class="mode-btn" data-mode="reflect">-|x|</button>
+    <button class="mode-btn" data-mode="stretch">a·|x|</button>
+    <button class="mode-btn" data-mode="all">all</button>
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-item" id="hSliderContainer" style="display:none;">
+      <div class="slider-head"><span>↔️ shift (h)</span><span id="hVal">0.0</span></div>
+      <input type="range" id="hSlider" min="-3" max="3" value="0" step="0.1">
+    </div>
+    <div class="slider-item" id="kSliderContainer" style="display:none;">
+      <div class="slider-head"><span>↕️ shift (k)</span><span id="kVal">0.0</span></div>
+      <input type="range" id="kSlider" min="-3" max="3" value="0" step="0.1">
+    </div>
+    <div class="slider-item" id="aSliderContainer" style="display:none;">
+      <div class="slider-head"><span>📏 stretch (a)</span><span id="aVal">1.0</span></div>
+      <input type="range" id="aSlider" min="-3" max="3" value="1.0" step="0.1">
+    </div>
+  </div>
+
+  <div class="info-panel">
+    <div>
+      <div style="font-size:0.7rem; color:#3a628c;">current function</div>
+      <div class="eq" id="funcDisplay">f(x) = |x|</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:0.7rem; color:#3a628c;">transformation</div>
+      <div class="transform-desc" id="transformDesc">basic V-shape</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span style="color:#3b82f6;">▬</span> f(x) = |x| (reference)</div>
+    <div class="legend-item"><span style="color:#ef4444;">▬</span> transformed</div>
+    <div class="legend-item"><span style="color:#10b981;">●</span> vertex</div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const canvas = document.getElementById('modCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let w = 0, h = 0;
+    const DPR = devicePixelRatio || 1;
+    
+    let mode = 'basic';
+    let hShift = 0, kShift = 0, aStretch = 1.0;
+    
+    const funcDisplay = document.getElementById('funcDisplay');
+    const transformDesc = document.getElementById('transformDesc');
+    const hSlider = document.getElementById('hSlider');
+    const kSlider = document.getElementById('kSlider');
+    const aSlider = document.getElementById('aSlider');
+    const hVal = document.getElementById('hVal');
+    const kVal = document.getElementById('kVal');
+    const aVal = document.getElementById('aVal');
+    const hCont = document.getElementById('hSliderContainer');
+    const kCont = document.getElementById('kSliderContainer');
+    const aCont = document.getElementById('aSliderContainer');
+    
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      w = rect.width;
+      h = rect.width;
+      canvas.width = w * DPR;
+      canvas.height = h * DPR;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      draw();
+    }
+    
+    function basicMod(x) { return Math.abs(x); }
+    
+    function transformedMod(x) {
+      if (mode === 'basic') return Math.abs(x);
+      if (mode === 'shiftH') return Math.abs(x - hShift);
+      if (mode === 'shiftV') return Math.abs(x) + kShift;
+      if (mode === 'reflect') return -Math.abs(x);
+      if (mode === 'stretch') return aStretch * Math.abs(x);
+      return aStretch * Math.abs(x - hShift) + kShift;
+    }
+    
+    function updateUI() {
+      let eq = '', desc = '';
+      
+      if (mode === 'basic') {
+        eq = 'f(x) = |x|'; desc = 'basic V-shape · vertex (0,0)';
+      } else if (mode === 'shiftH') {
+        eq = `f(x) = |x ${hShift >= 0 ? '-' : '+'} ${Math.abs(hShift).toFixed(1)}|`;
+        desc = `horizontal shift ${hShift > 0 ? 'right' : 'left'} by ${Math.abs(hShift).toFixed(1)}`;
+      } else if (mode === 'shiftV') {
+        eq = `f(x) = |x| ${kShift >= 0 ? '+' : '-'} ${Math.abs(kShift).toFixed(1)}`;
+        desc = `vertical shift ${kShift > 0 ? 'up' : 'down'} by ${Math.abs(kShift).toFixed(1)}`;
+      } else if (mode === 'reflect') {
+        eq = 'f(x) = -|x|'; desc = 'reflection across x-axis · opens downward';
+      } else if (mode === 'stretch') {
+        eq = `f(x) = ${aStretch.toFixed(1)}·|x|`;
+        desc = aStretch > 0 ? (Math.abs(aStretch) > 1 ? 'vertical stretch' : 'vertical compression') : 'reflected & stretched';
+      } else {
+        eq = `f(x) = ${aStretch.toFixed(1)}·|x ${hShift >= 0 ? '-' : '+'} ${Math.abs(hShift).toFixed(1)}| ${kShift >= 0 ? '+' : '-'} ${Math.abs(kShift).toFixed(1)}`;
+        desc = 'combined transformations';
+      }
+      
+      funcDisplay.textContent = eq;
+      transformDesc.textContent = desc;
+      hVal.textContent = hShift.toFixed(1);
+      kVal.textContent = kShift.toFixed(1);
+      aVal.textContent = aStretch.toFixed(1);
+      
+      draw();
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      
+      const cx = w/2, cy = h/2;
+      const scale = 45;
+      
+      // grid
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 0.8;
+      for (let i = -6; i <= 6; i++) {
+        if (i === 0) continue;
+        const x = cx + i * scale;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        const y = cy - i * scale;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      
+      // axes
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+      ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+      ctx.stroke();
+      
+      // arrows
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(w-8, cy-5); ctx.lineTo(w, cy); ctx.lineTo(w-8, cy+5); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(cx-5, 8); ctx.lineTo(cx, 0); ctx.lineTo(cx+5, 8); ctx.fill();
+      
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('x', w-16, cy-10);
+      ctx.fillText('y', cx+10, 18);
+      ctx.fillText('O', cx+6, cy-6);
+      
+      // reference |x| (gray)
+      ctx.beginPath();
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      
+      for (let px = 0; px < w; px++) {
+        const xVal = (px - cx) / scale;
+        const yVal = Math.abs(xVal);
+        const py = cy - yVal * scale;
+        if (px === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // transformed function
+      ctx.beginPath();
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3.5;
+      
+      let first = true;
+      for (let px = 0; px < w; px++) {
+        const xVal = (px - cx) / scale;
+        let yVal;
+        try {
+          yVal = transformedMod(xVal);
+          if (!isFinite(yVal) || isNaN(yVal)) { first = true; continue; }
+        } catch(e) { first = true; continue; }
+        
+        const py = cy - yVal * scale;
+        if (py < -20 || py > h + 20) { first = true; continue; }
+        
+        if (first) { ctx.moveTo(px, py); first = false; }
+        else { ctx.lineTo(px, py); }
+      }
+      ctx.stroke();
+      
+      // vertex point
+      let vx, vy;
+      if (mode === 'shiftH') { vx = hShift; vy = 0; }
+      else if (mode === 'shiftV') { vx = 0; vy = kShift; }
+      else if (mode === 'reflect') { vx = 0; vy = 0; }
+      else if (mode === 'stretch') { vx = 0; vy = 0; }
+      else if (mode === 'all') { vx = hShift; vy = kShift; }
+      else { vx = 0; vy = 0; }
+      
+      if (mode === 'reflect' || (mode === 'stretch' && aStretch < 0) || (mode === 'all' && aStretch < 0)) {
+        // vertex is still at (h, k) but the V opens down
+      }
+      
+      const vScreenX = cx + vx * scale;
+      const vScreenY = cy - vy * scale;
+      
+      ctx.beginPath();
+      ctx.arc(vScreenX, vScreenY, 7, 0, 2*Math.PI);
+      ctx.fillStyle = '#10b981';
+      ctx.shadowColor = '#10b98180';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+    
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === m);
+      });
+      
+      // show/hide sliders
+      hCont.style.display = (mode === 'shiftH' || mode === 'all') ? 'block' : 'none';
+      kCont.style.display = (mode === 'shiftV' || mode === 'all') ? 'block' : 'none';
+      aCont.style.display = (mode === 'stretch' || mode === 'all') ? 'block' : 'none';
+      
+      if (mode === 'basic') { hShift = 0; kShift = 0; aStretch = 1.0; }
+      else if (mode === 'reflect') { hShift = 0; kShift = 0; aStretch = -1.0; }
+      
+      hSlider.value = hShift;
+      kSlider.value = kShift;
+      aSlider.value = aStretch;
+      
+      updateUI();
+    }
+    
+    hSlider.addEventListener('input', () => {
+      hShift = parseFloat(hSlider.value);
+      updateUI();
+    });
+    kSlider.addEventListener('input', () => {
+      kShift = parseFloat(kSlider.value);
+      updateUI();
+    });
+    aSlider.addEventListener('input', () => {
+      aStretch = parseFloat(aSlider.value);
+      updateUI();
+    });
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    
+    window.addEventListener('resize', resize);
+    resize();
+    setMode('basic');
+  })();
+</script>
+</body>
+</html>

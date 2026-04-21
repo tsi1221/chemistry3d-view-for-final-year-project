@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>✖️ matrix multiplication · row × column</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .card {
+      max-width: 850px;
+      width: 100%;
+      background: #fafcff;
+      border-radius: 28px;
+      border: 1px solid #d0e2ff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #0a1e3c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subhead {
+      color: #3a628c;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    .example-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .example-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px 8px;
+      border-radius: 40px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #3a628c;
+      transition: 0.15s;
+      text-align: center;
+    }
+
+    .example-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .multiplication-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 24px 0;
+    }
+
+    .matrix {
+      display: grid;
+      gap: 6px;
+      background: #f8fcff;
+      padding: 16px;
+      border-radius: 18px;
+      border: 2px solid #d0e2ff;
+    }
+
+    .matrix-cell {
+      width: 55px;
+      height: 55px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 600;
+      background: #fff;
+      border-radius: 12px;
+      border: 1.5px solid #d0e2ff;
+      transition: 0.2s;
+    }
+
+    .matrix-cell.highlight-row {
+      background: #dbeafe;
+      border-color: #3b82f6;
+    }
+
+    .matrix-cell.highlight-col {
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+
+    .matrix-cell.result-highlight {
+      background: #d1fae5;
+      border-color: #10b981;
+      color: #065f46;
+    }
+
+    .operator {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .equals {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #10b981;
+    }
+
+    .calc-panel {
+      background: #f0f6ff;
+      border-radius: 20px;
+      padding: 18px;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .calc-title {
+      font-size: 0.8rem;
+      color: #3a628c;
+      margin-bottom: 8px;
+    }
+
+    .calc-detail {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #0a1e3c;
+    }
+
+    .dot-product {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dot-term {
+      background: #fff;
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: 1.5px solid #d0e2ff;
+    }
+
+    .selector-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 16px 0;
+    }
+
+    .cell-select-btn {
+      padding: 8px 16px;
+      border-radius: 30px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #3a628c;
+    }
+
+    .cell-select-btn.active {
+      background: #10b981;
+      border-color: #10b981;
+      color: #fff;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 16px;
+      font-size: 0.75rem;
+      color: #3a628c;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 650px) {
+      .matrix-cell {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+      }
+      .example-btn { min-width: 80px; font-size: 0.7rem; }
+      .calc-detail { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>✖️ matrix multiplication</h2>
+  <div class="subhead">row × column · dot product · cᵢⱼ = Σ aᵢₖ · bₖⱼ</div>
+
+  <div class="example-row">
+    <button class="example-btn active" data-ex="ex1">📐 2×3 · 3×2</button>
+    <button class="example-btn" data-ex="ex2">📊 2×2 · 2×2</button>
+    <button class="example-btn" data-ex="ex3">🧪 3×2 · 2×3</button>
+  </div>
+
+  <div class="multiplication-container" id="matrixDisplay"></div>
+
+  <div class="selector-row">
+    <button class="cell-select-btn active" data-cell="0,0">c₁₁</button>
+    <button class="cell-select-btn" data-cell="0,1">c₁₂</button>
+    <button class="cell-select-btn" data-cell="1,0">c₂₁</button>
+    <button class="cell-select-btn" data-cell="1,1">c₂₂</button>
+  </div>
+
+  <div class="calc-panel" id="calcPanel">
+    <div class="calc-title">computing selected cell</div>
+    <div class="calc-detail" id="calcDetail">c₁₁ = 1·7 + 2·9 + 3·11 = 58</div>
+    <div class="dot-product" id="dotProduct"></div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span style="background:#dbeafe; width:20px; height:10px; border-radius:5px;"></span> selected row</div>
+    <div class="legend-item"><span style="background:#fef3c7; width:20px; height:10px; border-radius:5px;"></span> selected column</div>
+    <div class="legend-item"><span style="background:#d1fae5; width:20px; height:10px; border-radius:5px;"></span> result cell</div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const matrixDisplay = document.getElementById('matrixDisplay');
+    const calcDetail = document.getElementById('calcDetail');
+    const dotProduct = document.getElementById('dotProduct');
+    
+    const examples = {
+      ex1: {
+        A: [[1, 2, 3], [4, 5, 6]],
+        B: [[7, 8], [9, 10], [11, 12]],
+        result: [[58, 64], [139, 154]]
+      },
+      ex2: {
+        A: [[2, 3], [1, 4]],
+        B: [[5, 1], [2, 6]],
+        result: [[16, 20], [13, 25]]
+      },
+      ex3: {
+        A: [[1, 2], [3, 4], [5, 6]],
+        B: [[7, 8, 9], [10, 11, 12]],
+        result: [[27, 30, 33], [61, 68, 75], [95, 106, 117]]
+      }
+    };
+    
+    let currentEx = 'ex1';
+    let selectedCell = { row: 0, col: 0 };
+    
+    function render() {
+      const ex = examples[currentEx];
+      const A = ex.A;
+      const B = ex.B;
+      const R = ex.result;
+      
+      const rowsA = A.length;
+      const colsA = A[0].length;
+      const rowsB = B.length;
+      const colsB = B[0].length;
+      const rowsR = R.length;
+      const colsR = R[0].length;
+      
+      matrixDisplay.innerHTML = '';
+      
+      // build matrix A
+      const matrixA = document.createElement('div');
+      matrixA.className = 'matrix';
+      matrixA.style.gridTemplateColumns = `repeat(${colsA}, 1fr)`;
+      
+      A.forEach((row, i) => {
+        row.forEach((val, j) => {
+          const cell = document.createElement('div');
+          cell.className = 'matrix-cell';
+          if (i === selectedCell.row) cell.classList.add('highlight-row');
+          cell.textContent = val;
+          matrixA.appendChild(cell);
+        });
+      });
+      
+      // build matrix B
+      const matrixB = document.createElement('div');
+      matrixB.className = 'matrix';
+      matrixB.style.gridTemplateColumns = `repeat(${colsB}, 1fr)`;
+      
+      B.forEach((row, i) => {
+        row.forEach((val, j) => {
+          const cell = document.createElement('div');
+          cell.className = 'matrix-cell';
+          if (j === selectedCell.col) cell.classList.add('highlight-col');
+          cell.textContent = val;
+          matrixB.appendChild(cell);
+        });
+      });
+      
+      // build result matrix
+      const matrixR = document.createElement('div');
+      matrixR.className = 'matrix';
+      matrixR.style.gridTemplateColumns = `repeat(${colsR}, 1fr)`;
+      
+      R.forEach((row, i) => {
+        row.forEach((val, j) => {
+          const cell = document.createElement('div');
+          cell.className = 'matrix-cell';
+          if (i === selectedCell.row && j === selectedCell.col) {
+            cell.classList.add('result-highlight');
+          }
+          cell.textContent = val;
+          matrixR.appendChild(cell);
+        });
+      });
+      
+      const opSpan = document.createElement('span');
+      opSpan.className = 'operator';
+      opSpan.textContent = '×';
+      
+      const eqSpan = document.createElement('span');
+      eqSpan.className = 'equals';
+      eqSpan.textContent = '=';
+      
+      matrixDisplay.appendChild(matrixA);
+      matrixDisplay.appendChild(opSpan);
+      matrixDisplay.appendChild(matrixB);
+      matrixDisplay.appendChild(eqSpan);
+      matrixDisplay.appendChild(matrixR);
+      
+      // update calculation panel
+      const rowVals = A[selectedCell.row];
+      const colVals = B.map(row => row[selectedCell.col]);
+      
+      const terms = [];
+      let sum = 0;
+      for (let k = 0; k < rowVals.length; k++) {
+        const prod = rowVals[k] * colVals[k];
+        terms.push(`${rowVals[k]}·${colVals[k]}`);
+        sum += prod;
+      }
+      
+      const cellLabel = `c${selectedCell.row+1}${selectedCell.col+1}`;
+      calcDetail.textContent = `${cellLabel} = ${terms.join(' + ')} = ${sum}`;
+      
+      // dot product visualization
+      dotProduct.innerHTML = '';
+      terms.forEach((term, i) => {
+        const span = document.createElement('span');
+        span.className = 'dot-term';
+        span.textContent = term;
+        dotProduct.appendChild(span);
+        if (i < terms.length - 1) {
+          const plus = document.createElement('span');
+          plus.textContent = '+';
+          plus.style.fontWeight = '700';
+          plus.style.color = '#3b82f6';
+          dotProduct.appendChild(plus);
+        }
+      });
+      const eq = document.createElement('span');
+      eq.textContent = '=';
+      eq.style.fontWeight = '700';
+      eq.style.margin = '0 8px';
+      dotProduct.appendChild(eq);
+      const sumSpan = document.createElement('span');
+      sumSpan.className = 'dot-term';
+      sumSpan.style.background = '#d1fae5';
+      sumSpan.style.borderColor = '#10b981';
+      sumSpan.textContent = sum;
+      dotProduct.appendChild(sumSpan);
+    }
+    
+    function setExample(ex) {
+      currentEx = ex;
+      document.querySelectorAll('.example-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.ex === ex);
+      });
+      
+      // update cell selector buttons visibility
+      const exData = examples[ex];
+      const rows = exData.result.length;
+      const cols = exData.result[0].length;
+      
+      const selectorRow = document.querySelector('.selector-row');
+      selectorRow.innerHTML = '';
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const btn = document.createElement('button');
+          btn.className = 'cell-select-btn';
+          if (i === 0 && j === 0) btn.classList.add('active');
+          btn.dataset.cell = `${i},${j}`;
+          btn.textContent = `c${i+1}${j+1}`;
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.cell-select-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedCell = { row: i, col: j };
+            render();
+          });
+          selectorRow.appendChild(btn);
+        }
+      }
+      
+      selectedCell = { row: 0, col: 0 };
+      render();
+    }
+    
+    document.querySelectorAll('.example-btn').forEach(btn => {
+      btn.addEventListener('click', () => setExample(btn.dataset.ex));
+    });
+    
+    setExample('ex1');
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>🔄 inverse functions · reflection over y=x</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .card {
+      max-width: 750px;
+      width: 100%;
+      background: #fafcff;
+      border-radius: 28px;
+      border: 1px solid #d0e2ff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #0a1e3c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subhead {
+      color: #3a628c;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #ffffff;
+      border-radius: 18px;
+      border: 1px solid #d0e2ff;
+      touch-action: none;
+      margin-bottom: 16px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 12px 6px;
+      border-radius: 40px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #3a628c;
+      transition: 0.15s;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .slider-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: #0a1e3c;
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 6px;
+      background: #d4e2fa;
+      border-radius: 10px;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: #3b82f6;
+      border-radius: 20px;
+      border: 3px solid #fff;
+      cursor: grab;
+    }
+
+    .info-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f0f6ff;
+      border-radius: 18px;
+      padding: 14px 18px;
+      margin-top: 12px;
+    }
+
+    .eq {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .inverse-eq {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #ef4444;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: #3a628c;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .point-display {
+      background: #fef9e7;
+      border-radius: 12px;
+      padding: 8px 12px;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: #92400e;
+      text-align: center;
+    }
+
+    @media (max-width: 500px) {
+      .mode-btn { font-size: 0.75rem; padding: 10px 4px; }
+      .slider-group { grid-template-columns: 1fr; }
+      .eq { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>🔄 inverse functions · reflection</h2>
+  <div class="subhead">f(x) and f⁻¹(x) are symmetric over y = x</div>
+
+  <canvas id="inverseCanvas"></canvas>
+
+  <div class="control-row">
+    <button class="mode-btn active" data-mode="linear">📈 linear</button>
+    <button class="mode-btn" data-mode="square">📐 square</button>
+    <button class="mode-btn" data-mode="cube">📊 cube</button>
+    <button class="mode-btn" data-mode="sqrt">√ root</button>
+    <button class="mode-btn" data-mode="exp">📈 exp</button>
+    <button class="mode-btn" data-mode="log">📉 log</button>
+  </div>
+
+  <div class="slider-group" id="paramContainer">
+    <div class="slider-item">
+      <div class="slider-head"><span>📐 slope (a)</span><span id="aVal">2.0</span></div>
+      <input type="range" id="aSlider" min="-3" max="3" value="2.0" step="0.1">
+    </div>
+    <div class="slider-item">
+      <div class="slider-head"><span>📍 intercept (b)</span><span id="bVal">1.0</span></div>
+      <input type="range" id="bSlider" min="-3" max="3" value="1.0" step="0.1">
+    </div>
+  </div>
+
+  <div class="info-panel">
+    <div>
+      <div style="font-size:0.7rem; color:#3a628c;">function</div>
+      <div class="eq" id="funcDisplay">f(x) = 2x + 1</div>
+      <div class="inverse-eq" id="invDisplay">f⁻¹(x) = (x - 1)/2</div>
+    </div>
+  </div>
+
+  <div class="point-display" id="pointInfo">
+    click or tap on canvas to test a point
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span style="color:#3b82f6;">▬</span> f(x)</div>
+    <div class="legend-item"><span style="color:#ef4444;">▬</span> f⁻¹(x)</div>
+    <div class="legend-item"><span style="color:#10b981; opacity:0.5;">▬</span> y = x (mirror)</div>
+    <div class="legend-item"><span style="color:#f59e0b;">●</span> test point</div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const canvas = document.getElementById('inverseCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let w = 0, h = 0;
+    const DPR = devicePixelRatio || 1;
+    
+    let mode = 'linear';
+    let a = 2.0, b = 1.0;
+    let testX = null, testY = null;
+    
+    const funcDisplay = document.getElementById('funcDisplay');
+    const invDisplay = document.getElementById('invDisplay');
+    const pointInfo = document.getElementById('pointInfo');
+    const aSlider = document.getElementById('aSlider');
+    const bSlider = document.getElementById('bSlider');
+    const aVal = document.getElementById('aVal');
+    const bVal = document.getElementById('bVal');
+    const paramContainer = document.getElementById('paramContainer');
+    
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      w = rect.width;
+      h = rect.width;
+      canvas.width = w * DPR;
+      canvas.height = h * DPR;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      draw();
+    }
+    
+    function f(x) {
+      if (mode === 'linear') return a * x + b;
+      if (mode === 'square') return x * x;
+      if (mode === 'cube') return x * x * x;
+      if (mode === 'sqrt') return Math.sqrt(Math.max(0, x));
+      if (mode === 'exp') return Math.pow(2, x);
+      return Math.log2(Math.max(0.001, x));
+    }
+    
+    function fInv(y) {
+      if (mode === 'linear') return (y - b) / a;
+      if (mode === 'square') return y >= 0 ? Math.sqrt(y) : NaN;
+      if (mode === 'cube') return Math.cbrt(y);
+      if (mode === 'sqrt') return y * y;
+      if (mode === 'exp') return Math.log2(Math.max(0.001, y));
+      return Math.pow(2, y);
+    }
+    
+    function getEq() {
+      if (mode === 'linear') return `f(x) = ${a.toFixed(1)}x ${b >= 0 ? '+' : '-'} ${Math.abs(b).toFixed(1)}`;
+      if (mode === 'square') return 'f(x) = x²';
+      if (mode === 'cube') return 'f(x) = x³';
+      if (mode === 'sqrt') return 'f(x) = √x';
+      if (mode === 'exp') return 'f(x) = 2ˣ';
+      return 'f(x) = log₂(x)';
+    }
+    
+    function getInvEq() {
+      if (mode === 'linear') return `f⁻¹(x) = (x ${b >= 0 ? '-' : '+'} ${Math.abs(b).toFixed(1)}) / ${a.toFixed(1)}`;
+      if (mode === 'square') return 'f⁻¹(x) = √x  (x ≥ 0)';
+      if (mode === 'cube') return 'f⁻¹(x) = ∛x';
+      if (mode === 'sqrt') return 'f⁻¹(x) = x²  (x ≥ 0)';
+      if (mode === 'exp') return 'f⁻¹(x) = log₂(x)';
+      return 'f⁻¹(x) = 2ˣ';
+    }
+    
+    function updateUI() {
+      aVal.textContent = a.toFixed(1);
+      bVal.textContent = b.toFixed(1);
+      funcDisplay.textContent = getEq();
+      invDisplay.textContent = getInvEq();
+      
+      paramContainer.style.display = mode === 'linear' ? 'grid' : 'none';
+      draw();
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      
+      const cx = w/2, cy = h/2;
+      const scale = 50;
+      
+      // grid
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 0.8;
+      for (let i = -6; i <= 6; i++) {
+        if (i === 0) continue;
+        const x = cx + i * scale;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        const y = cy - i * scale;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+      
+      // axes
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(0, cy); ctx.lineTo(w, cy);
+      ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
+      ctx.stroke();
+      
+      // y = x line (mirror)
+      ctx.beginPath();
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 6]);
+      ctx.moveTo(0, h);
+      ctx.lineTo(w, 0);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // labels
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('x', w-16, cy-10);
+      ctx.fillText('y', cx+10, 18);
+      ctx.fillText('y = x', w-50, 30);
+      
+      // draw f(x)
+      ctx.beginPath();
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 3;
+      
+      let first = true;
+      for (let px = 0; px < w; px++) {
+        const xVal = (px - cx) / scale;
+        let yVal;
+        try {
+          yVal = f(xVal);
+          if (!isFinite(yVal) || isNaN(yVal)) { first = true; continue; }
+        } catch(e) { first = true; continue; }
+        
+        const py = cy - yVal * scale;
+        if (py < -50 || py > h + 50) { first = true; continue; }
+        
+        if (first) { ctx.moveTo(px, py); first = false; }
+        else { ctx.lineTo(px, py); }
+      }
+      ctx.stroke();
+      
+      // draw f⁻¹(x)
+      ctx.beginPath();
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3;
+      
+      first = true;
+      for (let px = 0; px < w; px++) {
+        const xVal = (px - cx) / scale;
+        let yVal;
+        try {
+          yVal = fInv(xVal);
+          if (!isFinite(yVal) || isNaN(yVal)) { first = true; continue; }
+        } catch(e) { first = true; continue; }
+        
+        const py = cy - yVal * scale;
+        if (py < -50 || py > h + 50) { first = true; continue; }
+        
+        if (first) { ctx.moveTo(px, py); first = false; }
+        else { ctx.lineTo(px, py); }
+      }
+      ctx.stroke();
+      
+      // test point
+      if (testX !== null && testY !== null) {
+        const screenX = cx + testX * scale;
+        const screenY = cy - testY * scale;
+        
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, 7, 0, 2*Math.PI);
+        ctx.fillStyle = '#f59e0b';
+        ctx.shadowColor = '#f59e0b80';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        
+        const invY = fInv(testY);
+        const invScreenX = cx + testY * scale;
+        const invScreenY = cy - invY * scale;
+        
+        ctx.beginPath();
+        ctx.arc(invScreenX, invScreenY, 7, 0, 2*Math.PI);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        // connecting line
+        ctx.beginPath();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.moveTo(screenX, screenY);
+        ctx.lineTo(invScreenX, invScreenY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    
+    function handleCanvasClick(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = w / rect.width;
+      const scaleY = h / rect.height;
+      const clickX = (e.clientX - rect.left) * scaleX;
+      const clickY = (e.clientY - rect.top) * scaleY;
+      
+      const cx = w/2, cy = h/2;
+      const scale = 50;
+      
+      testX = (clickX - cx) / scale;
+      testY = f(testX);
+      
+      if (isFinite(testY) && !isNaN(testY)) {
+        const invY = fInv(testY);
+        pointInfo.innerHTML = `f(${testX.toFixed(2)}) = ${testY.toFixed(2)}  ·  f⁻¹(${testY.toFixed(2)}) = ${invY.toFixed(2)}`;
+      } else {
+        pointInfo.innerHTML = 'point outside domain';
+      }
+      
+      draw();
+    }
+    
+    function setMode(m) {
+      mode = m;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === m);
+      });
+      testX = null; testY = null;
+      pointInfo.innerHTML = 'click or tap on canvas to test a point';
+      updateUI();
+    }
+    
+    aSlider.addEventListener('input', () => {
+      a = parseFloat(aSlider.value);
+      updateUI();
+    });
+    bSlider.addEventListener('input', () => {
+      b = parseFloat(bSlider.value);
+      updateUI();
+    });
+    
+    canvas.addEventListener('click', handleCanvasClick);
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleCanvasClick(touch);
+    }, { passive: false });
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    
+    window.addEventListener('resize', resize);
+    resize();
+    setMode('linear');
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>📊 sign chart · rational inequalities</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .card {
+      max-width: 750px;
+      width: 100%;
+      background: #fafcff;
+      border-radius: 28px;
+      border: 1px solid #d0e2ff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.04);
+    }
+
+    h2 {
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #0a1e3c;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .subhead {
+      color: #3a628c;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+
+    .expr-display {
+      background: #f0f6ff;
+      border-radius: 20px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .expr {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #3b82f6;
+    }
+
+    .inequality {
+      font-size: 1.2rem;
+      color: #0a1e3c;
+      margin-top: 6px;
+    }
+
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 12px 8px;
+      border-radius: 40px;
+      border: 1.5px solid #d0e2ff;
+      background: #fff;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #3a628c;
+      transition: 0.15s;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: #fff;
+    }
+
+    .number-line-container {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 24px 16px;
+      border: 1px solid #d0e2ff;
+      margin-bottom: 20px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 140px;
+      touch-action: none;
+    }
+
+    .intervals {
+      display: flex;
+      margin-top: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .interval {
+      flex: 1;
+      text-align: center;
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+    .interval.pos {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .interval.neg {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .solution-box {
+      background: #fef9e7;
+      border-radius: 18px;
+      padding: 16px 18px;
+      border-left: 4px solid #f59e0b;
+      margin-top: 16px;
+    }
+
+    .solution-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #92400e;
+    }
+
+    .solution-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0a1e3c;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: #3a628c;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    @media (max-width: 500px) {
+      .expr { font-size: 1.3rem; }
+      .mode-btn { min-width: 70px; font-size: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h2>📊 sign chart · rational inequalities</h2>
+  <div class="subhead">critical points · intervals · solution sets</div>
+
+  <div class="expr-display">
+    <div class="expr" id="exprDisplay">(x + 1) / (x - 1)</div>
+    <div class="inequality" id="ineqDisplay">> 0</div>
+  </div>
+
+  <div class="control-row">
+    <button class="mode-btn active" data-mode="ex1">(x+1)/(x-1) > 0</button>
+    <button class="mode-btn" data-mode="ex2">(x-2)/(x+3) ≤ 0</button>
+    <button class="mode-btn" data-mode="ex3">x/(x²-4) ≥ 0</button>
+    <button class="mode-btn" data-mode="ex4">(x²-1)/(x-2) < 0</button>
+  </div>
+
+  <div class="number-line-container">
+    <canvas id="signCanvas"></canvas>
+    <div class="intervals" id="intervalLabels"></div>
+  </div>
+
+  <div class="solution-box">
+    <div class="solution-label">solution set</div>
+    <div class="solution-value" id="solutionDisplay">(-1, 1)</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span style="background:#d1fae5; width:20px; height:12px; border-radius:6px;"></span> positive (+)</div>
+    <div class="legend-item"><span style="background:#fee2e2; width:20px; height:12px; border-radius:6px;"></span> negative (−)</div>
+    <div class="legend-item"><span style="color:#3b82f6;">●</span> zero (included)</div>
+    <div class="legend-item"><span style="color:#ef4444;">○</span> undefined (excluded)</div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const canvas = document.getElementById('signCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    let w = 0, h = 0;
+    const DPR = devicePixelRatio || 1;
+    
+    const exprDisplay = document.getElementById('exprDisplay');
+    const ineqDisplay = document.getElementById('ineqDisplay');
+    const solutionDisplay = document.getElementById('solutionDisplay');
+    const intervalLabels = document.getElementById('intervalLabels');
+    
+    const examples = {
+      ex1: {
+        expr: '(x + 1) / (x - 1)',
+        ineq: '> 0',
+        numerator: x => x + 1,
+        denominator: x => x - 1,
+        critical: [-1, 1],
+        zeros: [-1],
+        undefined: [1],
+        test: (sign, zeroIncluded, undefinedIncluded) => {
+          // sign array: intervals between -∞, -1, 1, ∞
+          // for > 0: positive intervals only, exclude critical points
+          return sign.map((s, i) => s > 0 ? i : -1).filter(i => i !== -1);
+        }
+      },
+      ex2: {
+        expr: '(x - 2) / (x + 3)',
+        ineq: '≤ 0',
+        numerator: x => x - 2,
+        denominator: x => x + 3,
+        critical: [-3, 2],
+        zeros: [2],
+        undefined: [-3],
+        test: (sign, zeroIncluded, undefinedIncluded) => {
+          // ≤ 0: negative intervals + zeros
+          const parts = [];
+          sign.forEach((s, i) => {
+            if (s < 0) parts.push(i);
+          });
+          if (zeroIncluded[0]) parts.push('zero');
+          return parts;
+        }
+      },
+      ex3: {
+        expr: 'x / (x² - 4)',
+        ineq: '≥ 0',
+        numerator: x => x,
+        denominator: x => x * x - 4,
+        critical: [-2, 0, 2],
+        zeros: [0],
+        undefined: [-2, 2],
+        test: (sign, zeroIncluded, undefinedIncluded) => {
+          const parts = [];
+          sign.forEach((s, i) => {
+            if (s > 0) parts.push(i);
+          });
+          if (zeroIncluded[0]) parts.push('zero');
+          return parts;
+        }
+      },
+      ex4: {
+        expr: '(x² - 1) / (x - 2)',
+        ineq: '< 0',
+        numerator: x => x * x - 1,
+        denominator: x => x - 2,
+        critical: [-1, 1, 2],
+        zeros: [-1, 1],
+        undefined: [2],
+        test: (sign, zeroIncluded, undefinedIncluded) => {
+          const parts = [];
+          sign.forEach((s, i) => {
+            if (s < 0) parts.push(i);
+          });
+          return parts;
+        }
+      }
+    };
+    
+    let currentMode = 'ex1';
+    
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      w = rect.width;
+      h = 130;
+      canvas.width = w * DPR;
+      canvas.height = h * DPR;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      draw();
+    }
+    
+    function getSigns(ex) {
+      const crits = [...ex.critical].sort((a,b) => a - b);
+      const intervals = [];
+      const testPoints = [];
+      
+      // test points between critical points
+      if (crits.length > 0) {
+        testPoints.push(crits[0] - 1);
+        for (let i = 0; i < crits.length - 1; i++) {
+          testPoints.push((crits[i] + crits[i+1]) / 2);
+        }
+        testPoints.push(crits[crits.length - 1] + 1);
+      } else {
+        testPoints.push(0);
+      }
+      
+      const signs = testPoints.map(x => {
+        const num = ex.numerator(x);
+        const den = ex.denominator(x);
+        const val = num / den;
+        if (isNaN(val) || !isFinite(val)) return 0;
+        return val > 0 ? 1 : -1;
+      });
+      
+      // map to intervals
+      const intervalSigns = [];
+      for (let i = 0; i <= crits.length; i++) {
+        intervalSigns.push(signs[i]);
+      }
+      
+      return { crits, intervalSigns };
+    }
+    
+    function formatSolution(ex, crits, intervalSigns) {
+      const parts = [];
+      const zeroIncluded = ex.ineq.includes('=') || ex.ineq.includes('≥') || ex.ineq.includes('≤');
+      
+      // build intervals
+      const intervals = [];
+      if (crits.length === 0) {
+        intervals.push({ start: '-∞', end: '∞' });
+      } else {
+        intervals.push({ start: '-∞', end: crits[0] });
+        for (let i = 0; i < crits.length - 1; i++) {
+          intervals.push({ start: crits[i], end: crits[i+1] });
+        }
+        intervals.push({ start: crits[crits.length - 1], end: '∞' });
+      }
+      
+      const isPositiveIneq = ex.ineq.includes('>') && !ex.ineq.includes('<');
+      const isNegativeIneq = ex.ineq.includes('<');
+      
+      intervals.forEach((inv, i) => {
+        const sign = intervalSigns[i];
+        let include = false;
+        
+        if (isPositiveIneq && sign > 0) include = true;
+        else if (isNegativeIneq && sign < 0) include = true;
+        else if (ex.ineq.includes('≥') && sign > 0) include = true;
+        else if (ex.ineq.includes('≤') && sign < 0) include = true;
+        
+        if (include) {
+          let left = inv.start === '-∞' ? '(-∞' : `(${inv.start}`;
+          let right = inv.end === '∞' ? '∞)' : `${inv.end})`;
+          
+          // check if endpoints are zeros (included)
+          if (zeroIncluded) {
+            if (inv.start !== '-∞' && ex.zeros.includes(inv.start)) left = `[${inv.start}`;
+            if (inv.end !== '∞' && ex.zeros.includes(inv.end)) right = `${inv.end}]`;
+          }
+          
+          // undefined points always excluded
+          if (inv.start !== '-∞' && ex.undefined.includes(inv.start)) left = `(${inv.start}`;
+          if (inv.end !== '∞' && ex.undefined.includes(inv.end)) right = `${inv.end})`;
+          
+          parts.push(left + ', ' + right);
+        }
+      });
+      
+      // standalone zeros
+      if (zeroIncluded) {
+        ex.zeros.forEach(z => {
+          if (!ex.undefined.includes(z)) {
+            const inAnyInterval = intervals.some(inv => 
+              (inv.start !== '-∞' && inv.start < z && inv.end !== '∞' && inv.end > z) ||
+              (inv.start === '-∞' && inv.end > z) ||
+              (inv.end === '∞' && inv.start < z)
+            );
+            if (!inAnyInterval) parts.push(`{${z}}`);
+          }
+        });
+      }
+      
+      return parts.length ? parts.join(' ∪ ') : '∅ (no solution)';
+    }
+    
+    function updateUI() {
+      const ex = examples[currentMode];
+      exprDisplay.textContent = ex.expr;
+      ineqDisplay.textContent = ex.ineq;
+      
+      const { crits, intervalSigns } = getSigns(ex);
+      const solution = formatSolution(ex, crits, intervalSigns);
+      solutionDisplay.textContent = solution;
+      
+      draw();
+    }
+    
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      
+      const ex = examples[currentMode];
+      const { crits, intervalSigns } = getSigns(ex);
+      
+      const sortedCrits = [...crits].sort((a,b) => a - b);
+      const allPoints = [...sortedCrits];
+      
+      // map to canvas
+      const margin = 50;
+      const lineY = h/2 + 15;
+      
+      let minX = allPoints.length ? Math.min(...allPoints) - 1.5 : -3;
+      let maxX = allPoints.length ? Math.max(...allPoints) + 1.5 : 3;
+      
+      const mapX = (val) => {
+        return margin + (val - minX) / (maxX - minX) * (w - 2 * margin);
+      };
+      
+      // draw number line
+      ctx.beginPath();
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 3;
+      ctx.moveTo(margin - 15, lineY);
+      ctx.lineTo(w - margin + 15, lineY);
+      ctx.stroke();
+      
+      // arrow
+      ctx.fillStyle = '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(w - margin + 20, lineY - 6);
+      ctx.lineTo(w - margin + 30, lineY);
+      ctx.lineTo(w - margin + 20, lineY + 6);
+      ctx.fill();
+      
+      // draw colored intervals
+      const intervals = [];
+      if (sortedCrits.length === 0) {
+        intervals.push({ start: minX - 0.5, end: maxX + 0.5, sign: intervalSigns[0] });
+      } else {
+        intervals.push({ start: minX - 0.5, end: sortedCrits[0], sign: intervalSigns[0] });
+        for (let i = 0; i < sortedCrits.length - 1; i++) {
+          intervals.push({ start: sortedCrits[i], end: sortedCrits[i+1], sign: intervalSigns[i+1] });
+        }
+        intervals.push({ start: sortedCrits[sortedCrits.length - 1], end: maxX + 0.5, sign: intervalSigns[intervalSigns.length - 1] });
+      }
+      
+      intervals.forEach(inv => {
+        const x1 = mapX(inv.start);
+        const x2 = mapX(inv.end);
+        
+        ctx.fillStyle = inv.sign > 0 ? '#d1fae5' : '#fee2e2';
+        ctx.fillRect(x1, lineY - 18, x2 - x1, 36);
+      });
+      
+      // redraw line on top
+      ctx.beginPath();
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 3;
+      ctx.moveTo(margin - 15, lineY);
+      ctx.lineTo(w - margin + 15, lineY);
+      ctx.stroke();
+      
+      // draw points
+      sortedCrits.forEach(c => {
+        const x = mapX(c);
+        const isZero = ex.zeros.includes(c);
+        const isUndef = ex.undefined.includes(c);
+        
+        ctx.beginPath();
+        ctx.arc(x, lineY, 8, 0, 2*Math.PI);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        
+        if (isUndef) {
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = '#3b82f6';
+          ctx.fill();
+        }
+        
+        // label
+        ctx.font = 'bold 12px system-ui';
+        ctx.fillStyle = '#0a1e3c';
+        ctx.textAlign = 'center';
+        ctx.fillText(c, x, lineY - 20);
+      });
+      
+      // interval labels below
+      const labelContainer = document.getElementById('intervalLabels');
+      const intervalNames = [];
+      if (sortedCrits.length === 0) {
+        intervalNames.push({ text: intervalSigns[0] > 0 ? '+' : '−', sign: intervalSigns[0] });
+      } else {
+        intervalNames.push({ text: intervalSigns[0] > 0 ? '+' : '−', sign: intervalSigns[0] });
+        for (let i = 0; i < sortedCrits.length - 1; i++) {
+          intervalNames.push({ text: intervalSigns[i+1] > 0 ? '+' : '−', sign: intervalSigns[i+1] });
+        }
+        intervalNames.push({ text: intervalSigns[intervalSigns.length - 1] > 0 ? '+' : '−', sign: intervalSigns[intervalSigns.length - 1] });
+      }
+      
+      labelContainer.innerHTML = intervalNames.map(inv => 
+        `<div class="interval ${inv.sign > 0 ? 'pos' : 'neg'}">${inv.text}</div>`
+      ).join('');
+    }
+    
+    function setMode(m) {
+      currentMode = m;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === m);
+      });
+      updateUI();
+    }
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));
+    });
+    
+    window.addEventListener('resize', resize);
+    resize();
+    setMode('ex1');
+  })();
+</script>
+</body>
+</html>
