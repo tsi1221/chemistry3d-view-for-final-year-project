@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relative Velocity | Calculator & Lab</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --panel: #ffffff;
+            --primary: #2563eb;
+            --secondary: #d946ef;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+
+        .menu-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+        }
+
+        .side-menu {
+            position: absolute;
+            top: 0;
+            left: -340px;
+            width: 320px;
+            height: 100%;
+            background: var(--panel);
+            z-index: 90;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 5px 0 15px rgba(0,0,0,0.05);
+            padding: 80px 24px 24px 24px;
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .side-menu.open { left: 0; }
+
+        .label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin: 20px 0 10px 0;
+            display: block;
+        }
+
+        .calc-display {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .input-group {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .math { font-family: "Times New Roman", serif; font-style: italic; font-weight: bold; }
+
+        input[type="range"] {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.1s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #f1f5f9; color: var(--text); }
+
+        #hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="menu-btn" id="menuToggle">☰ SIMULATION SETTINGS</button>
+
+    <div class="side-menu" id="sideMenu">
+        <span class="label">Live Calculation</span>
+        <div class="calc-display" id="resultArea">
+            v<sub>AB</sub> = v<sub>A</sub> - v<sub>B</sub><br>
+            v<sub>AB</sub> = <span id="vA_disp">0</span> - (<span id="vB_disp">0</span>)<br>
+            <span style="color: #fb7185;">Result: <span id="res_disp">0</span> m/s</span>
+        </div>
+
+        <span class="label">Adjust Velocities</span>
+        <div class="input-group">
+            <div style="display:flex; justify-content: space-between;">
+                <span class="math" style="color: var(--primary)">v<sub>A</sub> (Blue)</span>
+                <span id="vA_val">20 m/s</span>
+            </div>
+            <input type="range" id="sliderA" min="-100" max="100" value="20">
+        </div>
+
+        <div class="input-group">
+            <div style="display:flex; justify-content: space-between;">
+                <span class="math" style="color: var(--secondary)">v<sub>B</sub> (Pink)</span>
+                <span id="vB_val">-20 m/s</span>
+            </div>
+            <input type="range" id="sliderB" min="-100" max="100" value="-20">
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="playBtn">RUN SIMULATION</button>
+            <button class="btn btn-secondary" id="resetBtn">RESET POSITIONS</button>
+        </div>
+    </div>
+
+    <div id="hint">Drag cars to change starting positions</div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let state = {
+            running: false,
+            lastTime: 0,
+            dragged: null
+        };
+
+        const carA = { x: 150, y: 0, v: 20, color: '#2563eb', label: 'A', w: 90, h: 45 };
+        const carB = { x: 0, y: 0, v: -20, color: '#d946ef', label: 'B', w: 90, h: 45 };
+
+        function init() {
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Menu
+            document.getElementById('menuToggle').onclick = () => {
+                document.getElementById('sideMenu').classList.toggle('open');
+            };
+
+            // Sliders
+            document.getElementById('sliderA').oninput = (e) => {
+                carA.v = parseInt(e.target.value);
+                document.getElementById('vA_val').innerText = carA.v + " m/s";
+                calculate();
+            };
+
+            document.getElementById('sliderB').oninput = (e) => {
+                carB.v = parseInt(e.target.value);
+                document.getElementById('vB_val').innerText = carB.v + " m/s";
+                calculate();
+            };
+
+            document.getElementById('playBtn').onclick = function() {
+                state.running = !state.running;
+                this.innerText = state.running ? "STOP" : "RUN SIMULATION";
+                state.lastTime = performance.now();
+                if(state.running) document.getElementById('hint').style.display = 'none';
+                document.getElementById('sideMenu').classList.toggle('open');
+            };
+
+            document.getElementById('resetBtn').onclick = () => {
+                state.running = false;
+                carA.x = 100;
+                carB.x = canvas.width - 200;
+                document.getElementById('playBtn').innerText = "RUN SIMULATION";
+                document.getElementById('hint').style.display = 'block';
+            };
+
+            // Drag
+            canvas.addEventListener('mousedown', e => {
+                [carA, carB].forEach(c => {
+                    if(e.clientX > c.x && e.clientX < c.x + c.w && e.clientY > c.y && e.clientY < c.y + c.h) state.dragged = c;
+                });
+            });
+            window.addEventListener('mousemove', e => {
+                if(state.dragged) state.dragged.x = e.clientX - state.dragged.w/2;
+            });
+            window.addEventListener('mouseup', () => state.dragged = null);
+
+            calculate();
+            requestAnimationFrame(loop);
+        }
+
+        function calculate() {
+            const rel = carA.v - carB.v;
+            document.getElementById('vA_disp').innerText = carA.v;
+            document.getElementById('vB_disp').innerText = carB.v;
+            document.getElementById('res_disp').innerText = rel;
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            carA.y = canvas.height * 0.45;
+            carB.y = canvas.height * 0.6;
+            carB.x = canvas.width - 200;
+        }
+
+        function loop(now) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const dt = (now - state.lastTime) / 1000;
+            state.lastTime = now;
+
+            if (state.running) {
+                carA.x += carA.v * dt * 2; // Scale for visual impact
+                carB.x += carB.v * dt * 2;
+                
+                // Wrap around logic
+                if (carA.x > canvas.width) carA.x = -carA.w;
+                if (carA.x < -carA.w) carA.x = canvas.width;
+                if (carB.x > canvas.width) carB.x = -carB.w;
+                if (carB.x < -carB.w) carB.x = canvas.width;
+            }
+
+            drawWorld();
+            drawCar(carA);
+            drawCar(carB);
+
+            requestAnimationFrame(loop);
+        }
+
+        function drawWorld() {
+            const groundY = canvas.height * 0.4;
+            const h = canvas.height * 0.35;
+            
+            // Road
+            ctx.fillStyle = "#cbd5e1";
+            ctx.fillRect(0, groundY, canvas.width, h);
+            
+            // Markers
+            ctx.strokeStyle = "white";
+            ctx.setLineDash([30, 30]);
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY + h/2);
+            ctx.lineTo(canvas.width, groundY + h/2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawCar(car) {
+            ctx.fillStyle = car.color;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "rgba(0,0,0,0.1)";
+            ctx.beginPath();
+            ctx.roundRect(car.x, car.y, car.w, car.h, 10);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Windows
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            ctx.fillRect(car.x + (car.v >= 0 ? 55 : 10), car.y + 5, 25, car.h - 10);
+
+            // Text
+            ctx.fillStyle = "white";
+            ctx.font = "bold 16px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText(car.label, car.x + car.w/2, car.y + car.h/2 + 6);
+
+            // Vector Arrow
+            if (car.v !== 0) {
+                const arrowLen = car.v * 0.8;
+                ctx.strokeStyle = car.color;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(car.x + car.w/2, car.y - 15);
+                ctx.lineTo(car.x + car.w/2 + arrowLen, car.y - 15);
+                ctx.stroke();
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

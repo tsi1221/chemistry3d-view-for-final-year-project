@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vector representations</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #2563eb;
+            --secondary: #d946ef;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            --accent: #10b981;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; padding: 0; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body, html { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text);
+            overflow: hidden;
+            height: 100%; width: 100%;
+            position: fixed; /* Prevents background scrolling */
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 10px; right: 10px;
+            z-index: 100;
+            width: 320px;
+            max-width: calc(100vw - 20px);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: var(--primary);
+            color: white; padding: 12px;
+            border-radius: 8px; font-weight: 700;
+            cursor: pointer; margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .panel {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            .panel.hidden { display: none; }
+        }
+
+        h1 { font-size: 1.1rem; margin-bottom: 4px; }
+        .desc { font-size: 0.8rem; opacity: 0.7; margin-bottom: 12px; line-height: 1.4; }
+
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            padding: 10px 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: #f1f5f9;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .stats {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-family: monospace;
+        }
+
+        button.action-btn {
+            width: 100%; padding: 12px; border: none; border-radius: 8px; 
+            background: #cbd5e1; color: var(--text); font-weight: 600;
+        }
+
+        canvas { 
+            display: block; 
+            touch-action: none; /* Disables default browser touch behavior */
+            width: 100vw; 
+            height: 100vh; 
+        }
+
+        .instructions {
+            position: absolute; bottom: 30px; width: 100%;
+            text-align: center; font-size: 0.8rem; color: #64748b; pointer-events: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="menu-toggle" id="menuToggle">Vector Concepts</div>
+        <div class="panel" id="controlsPanel">
+            <h1>Vector Lab</h1>
+            <p class="desc" id="conceptDesc">Explore geometric representations of vectors.</p>
+            
+            <div class="mode-grid">
+                <button class="mode-btn active" data-mode="free">Free Draw</button>
+                <button class="mode-btn" data-mode="null">Zero Vector</button>
+                <button class="mode-btn" data-mode="unit">Unit Vector</button>
+                <button class="mode-btn" data-mode="negative">Negative</button>
+                <button class="mode-btn" data-mode="equal" style="grid-column: span 2;">Equal Vectors</button>
+            </div>
+
+            <div class="stats">
+                <div style="display:flex; justify-content:space-between"><span>|A|:</span> <b id="magVal">0.0</b></div>
+                <div style="display:flex; justify-content:space-between"><span>θ:</span> <b id="angleVal">0°</b></div>
+            </div>
+
+            <button class="action-btn" id="resetBtn">Reset Position</button>
+        </div>
+    </div>
+
+    <div class="instructions">Use your finger to move the Tail (Blue) or Head (Red)</div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const magVal = document.getElementById('magVal');
+        const angleVal = document.getElementById('angleVal');
+        const conceptDesc = document.getElementById('conceptDesc');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const controlsPanel = document.getElementById('controlsPanel');
+        const menuToggle = document.getElementById('menuToggle');
+        
+        let width, height, dpr;
+        let isDraggingTail = false;
+        let isDraggingHead = false;
+        let currentMode = 'free';
+
+        const vector = {
+            tailX: 100, tailY: 400,
+            headX: 250, headY: 250,
+            scale: 25 
+        };
+
+        const descriptions = {
+            free: "Drag freely to change magnitude and direction.",
+            null: "Zero Vector: Tail and Head are locked at the same point.",
+            unit: "Unit Vector: Magnitude is locked to 1. Drag to rotate.",
+            negative: "Negative Vector: Shows -A pointing in the opposite direction.",
+            equal: "Equal Vectors: Shows vector B with identical properties."
+        };
+
+        menuToggle.onclick = () => controlsPanel.classList.toggle('hidden');
+
+        modeBtns.forEach(btn => {
+            btn.onclick = () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                conceptDesc.innerText = descriptions[currentMode];
+                if (currentMode === 'null') {
+                    vector.headX = vector.tailX;
+                    vector.headY = vector.tailY;
+                } else if (currentMode === 'unit') {
+                    const angle = Math.atan2(vector.headY - vector.tailY, vector.headX - vector.tailX);
+                    vector.headX = vector.tailX + Math.cos(angle) * vector.scale;
+                    vector.headY = vector.tailY + Math.sin(angle) * vector.scale;
+                }
+            };
+        });
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+        }
+
+        function drawVector(tx, ty, hx, hy, color, label, isDashed = false) {
+            const dx = hx - tx;
+            const dy = hy - ty;
+            const angle = Math.atan2(dy, dx);
+            const headLen = 15;
+
+            ctx.beginPath();
+            if(isDashed) ctx.setLineDash([5, 5]);
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(hx, hy);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.beginPath();
+            ctx.moveTo(hx, hy);
+            ctx.lineTo(hx - headLen * Math.cos(angle - Math.PI/7), hy - headLen * Math.sin(angle - Math.PI/7));
+            ctx.lineTo(hx - headLen * Math.cos(angle + Math.PI/7), hy - headLen * Math.sin(angle + Math.PI/7));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+
+            ctx.fillStyle = color;
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillText(label, hx + 12, hy);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw A
+            drawVector(vector.tailX, vector.tailY, vector.headX, vector.headY, '#2563eb', 'A');
+
+            if (currentMode === 'negative') {
+                const dx = vector.headX - vector.tailX;
+                const dy = vector.headY - vector.tailY;
+                drawVector(vector.tailX, vector.tailY, vector.tailX - dx, vector.tailY - dy, '#ef4444', '-A', true);
+            } else if (currentMode === 'equal') {
+                const dx = vector.headX - vector.tailX;
+                const dy = vector.headY - vector.tailY;
+                drawVector(vector.tailX + 60, vector.tailY + 60, vector.tailX + 60 + dx, vector.tailY + 60 + dy, '#10b981', 'B', true);
+            }
+
+            // Handles (Circles for dragging)
+            ctx.beginPath();
+            ctx.arc(vector.tailX, vector.tailY, 10, 0, Math.PI*2);
+            ctx.fillStyle = '#2563eb';
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(vector.headX, vector.headY, 10, 0, Math.PI*2);
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+
+            const dist = Math.hypot(vector.headX - vector.tailX, vector.headY - vector.tailY);
+            const angle = Math.atan2(vector.headY - vector.tailY, vector.headX - vector.tailX);
+            magVal.innerText = (dist / vector.scale).toFixed(2);
+            angleVal.innerText = ((-angle * 180 / Math.PI + 360) % 360).toFixed(0) + '°';
+
+            requestAnimationFrame(animate);
+        }
+
+        function getCoords(e) {
+            const t = e.touches ? e.touches[0] : e;
+            return { x: t.clientX, y: t.clientY };
+        }
+
+        function onStart(e) {
+            const p = getCoords(e);
+            const hitArea = 40; // Larger hit area for fingers
+            if (Math.hypot(p.x - vector.tailX, p.y - vector.tailY) < hitArea) isDraggingTail = true;
+            else if (Math.hypot(p.x - vector.headX, p.y - vector.headY) < hitArea) isDraggingHead = true;
+            
+            if(isDraggingTail || isDraggingHead) e.preventDefault();
+        }
+
+        function onMove(e) {
+            if (!isDraggingTail && !isDraggingHead) return;
+            e.preventDefault();
+            const p = getCoords(e);
+
+            if (isDraggingTail) {
+                vector.tailX = p.x;
+                vector.tailY = p.y;
+                if (currentMode === 'null') { vector.headX = p.x; vector.headY = p.y; }
+            } else if (isDraggingHead && currentMode !== 'null') {
+                if (currentMode === 'unit') {
+                    const angle = Math.atan2(p.y - vector.tailY, p.x - vector.tailX);
+                    vector.headX = vector.tailX + Math.cos(angle) * vector.scale;
+                    vector.headY = vector.tailY + Math.sin(angle) * vector.scale;
+                } else {
+                    vector.headX = p.x;
+                    vector.headY = p.y;
+                }
+            }
+        }
+
+        // Combined listeners
+        canvas.addEventListener('touchstart', onStart, {passive: false});
+        window.addEventListener('touchmove', onMove, {passive: false});
+        window.addEventListener('touchend', () => isDraggingTail = isDraggingHead = false);
+        
+        canvas.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', () => isDraggingTail = isDraggingHead = false);
+
+        document.getElementById('resetBtn').onclick = () => {
+            vector.tailX = width/2 - 50; vector.tailY = height/2 + 50;
+            vector.headX = width/2 + 50; vector.headY = height/2 - 50;
+        };
+
+        window.onresize = resize;
+        resize();
+        animate();
+    </script>
+</body>
+</html>

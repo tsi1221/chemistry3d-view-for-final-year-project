@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stress and Strain Visualizer</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --primary: #6366f1;
+            --tensile: #10b981;
+            --compressive: #f59e0b;
+            --shear: #ec4899;
+            --bulk: #3b82f6;
+            --text: #1e293b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .ui-header {
+            padding: 1rem 2rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .main-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        canvas {
+            flex: 1;
+            touch-action: none;
+            background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%);
+        }
+
+        .controls {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            z-index: 10;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .stats-overlay {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(4px);
+            padding: 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid var(--border);
+            pointer-events: none;
+            min-width: 200px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+            font-family: monospace;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .instruction {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="ui-header">
+    <h2 style="margin:0; font-size: 1.25rem;">Mechanical Stress & Strain</h2>
+    <button class="mode-btn" onclick="resetSim()">Reset Simulation</button>
+</div>
+
+<div class="main-container">
+    <div class="stats-overlay" id="stats">
+        <div style="font-weight: bold; margin-bottom: 0.5rem;" id="modeName">TENSILE STRESS</div>
+        <div class="stat-row">Force (F): <span id="valF">0 N</span></div>
+        <div class="stat-row">Area (A): <span id="valA">100 m²</span></div>
+        <div class="stat-row">Stress (σ): <span id="valStress">0 Pa</span></div>
+        <div class="stat-row">Strain (ε): <span id="valStrain">0.00</span></div>
+    </div>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="controls">
+    <div class="control-group">
+        <label>Deformation Mode</label>
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setMode('tensile', this)">Tensile</button>
+            <button class="mode-btn" onclick="setMode('compressive', this)">Compressive</button>
+            <button class="mode-btn" onclick="setMode('shear', this)">Shear</button>
+            <button class="mode-btn" onclick="setMode('bulk', this)">Bulk</button>
+        </div>
+    </div>
+    <div class="control-group">
+        <label>Applied Force (F)</label>
+        <input type="range" id="forceRange" min="-100" max="100" value="0">
+        <div class="instruction">Interact: Drag object to apply manual force</div>
+    </div>
+    <div class="control-group">
+        <label>Cross-section Area (A)</label>
+        <input type="range" id="areaRange" min="50" max="150" value="100">
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const forceInput = document.getElementById('forceRange');
+    const areaInput = document.getElementById('areaRange');
+
+    let width, height;
+    let mode = 'tensile';
+    let isDragging = false;
+    let mouseX = 0, mouseY = 0;
+    
+    // Physical state
+    let state = {
+        force: 0,
+        area: 100,
+        deformation: 0,
+        baseSize: 120,
+        modulus: 0.5 // Simplified stiffness
+    };
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        
+        canvas.addEventListener('mousedown', startInteraction);
+        canvas.addEventListener('mousemove', handleInteraction);
+        window.addEventListener('mouseup', endInteraction);
+        
+        canvas.addEventListener('touchstart', (e) => startInteraction(e.touches[0]));
+        canvas.addEventListener('touchmove', (e) => handleInteraction(e.touches[0]));
+        window.addEventListener('touchend', endInteraction);
+
+        animate();
+    }
+
+    function resize() {
+        width = canvas.clientWidth;
+        height = canvas.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+    }
+
+    function setMode(newMode, btn) {
+        mode = newMode;
+        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('modeName').innerText = newMode.toUpperCase() + ' STRESS';
+        resetSim();
+        
+        // Adjust slider ranges based on mode
+        if(mode === 'compressive') {
+            forceInput.min = 0; forceInput.max = 100; forceInput.value = 50;
+        } else if (mode === 'tensile') {
+            forceInput.min = 0; forceInput.max = 100; forceInput.value = 50;
+        } else {
+            forceInput.min = -100; forceInput.max = 100; forceInput.value = 0;
+        }
+    }
+
+    function resetSim() {
+        state.force = 0;
+        forceInput.value = 0;
+    }
+
+    function startInteraction(e) {
+        isDragging = true;
+        updateMousePos(e);
+    }
+
+    function handleInteraction(e) {
+        if (!isDragging) return;
+        updateMousePos(e);
+        
+        // Map mouse movement to force
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        if (mode === 'tensile' || mode === 'compressive') {
+            state.force = (mouseX - (centerX + state.baseSize)) * 0.5;
+        } else if (mode === 'shear') {
+            state.force = (mouseX - centerX) * 0.5;
+        } else if (mode === 'bulk') {
+            const dist = Math.sqrt((mouseX-centerX)**2 + (mouseY-centerY)**2);
+            state.force = (state.baseSize - dist) * 0.5;
+        }
+        forceInput.value = state.force;
+    }
+
+    function endInteraction() {
+        isDragging = false;
+    }
+
+    function updateMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+    }
+
+    function drawArrow(x, y, len, angle, color) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(len, 0);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(len, 0);
+        ctx.lineTo(len - 10, -5);
+        ctx.lineTo(len - 10, 5);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function updatePhysics() {
+        if (!isDragging) {
+            state.force = parseFloat(forceInput.value);
+        }
+        state.area = parseFloat(areaInput.value);
+        
+        // Stress = F / A
+        const stress = state.force / (state.area / 100);
+        // Strain = Stress / Modulus (Simplified Hooke's Law)
+        state.deformation = stress * state.modulus;
+
+        // Update UI labels
+        document.getElementById('valF').innerText = `${Math.round(state.force)} N`;
+        document.getElementById('valA').innerText = `${Math.round(state.area)} m²`;
+        document.getElementById('valStress').innerText = `${stress.toFixed(1)} Pa`;
+        document.getElementById('valStrain').innerText = (state.deformation / state.baseSize).toFixed(3);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+        const cx = width / 2;
+        const cy = height / 2;
+        const bs = state.baseSize;
+        const def = state.deformation;
+        const areaFactor = state.area / 100;
+
+        ctx.lineJoin = 'round';
+
+        if (mode === 'tensile' || mode === 'compressive') {
+            const currentWidth = bs + def;
+            const currentHeight = bs / (1 + (def/bs) * 0.3); // Poisson effect simulation
+            
+            ctx.fillStyle = mode === 'tensile' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)';
+            ctx.strokeStyle = mode === 'tensile' ? varColor('--tensile') : varColor('--compressive');
+            ctx.lineWidth = 4 * areaFactor;
+
+            ctx.strokeRect(cx - currentWidth, cy - currentHeight/2, currentWidth * 2, currentHeight);
+            ctx.fillRect(cx - currentWidth, cy - currentHeight/2, currentWidth * 2, currentHeight);
+
+            // Force arrows
+            const arrowColor = mode === 'tensile' ? varColor('--tensile') : varColor('--compressive');
+            if (state.force > 0) {
+                drawArrow(cx + currentWidth + 10, cy, 40, 0, arrowColor);
+                drawArrow(cx - currentWidth - 10, cy, 40, Math.PI, arrowColor);
+            } else if (state.force < 0) {
+                drawArrow(cx + currentWidth + 50, cy, -40, 0, arrowColor);
+                drawArrow(cx - currentWidth - 50, cy, -40, Math.PI, arrowColor);
+            }
+        } 
+        else if (mode === 'shear') {
+            const offset = def;
+            ctx.fillStyle = 'rgba(236, 72, 153, 0.2)';
+            ctx.strokeStyle = varColor('--shear');
+            ctx.lineWidth = 4 * areaFactor;
+
+            ctx.beginPath();
+            ctx.moveTo(cx - bs + offset, cy - bs);
+            ctx.lineTo(cx + bs + offset, cy - bs);
+            ctx.lineTo(cx + bs - offset, cy + bs);
+            ctx.lineTo(cx - bs - offset, cy + bs);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            if (state.force !== 0) {
+                drawArrow(cx + offset, cy - bs - 20, state.force, 0, varColor('--shear'));
+                drawArrow(cx - offset, cy + bs + 20, -state.force, 0, varColor('--shear'));
+            }
+        }
+        else if (mode === 'bulk') {
+            const s = bs + def;
+            ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+            ctx.strokeStyle = varColor('--bulk');
+            ctx.lineWidth = 4 * areaFactor;
+
+            ctx.beginPath();
+            ctx.arc(cx, cy, Math.max(10, s), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Radial force arrows
+            for(let a=0; a<Math.PI*2; a+=Math.PI/4) {
+                const ox = Math.cos(a) * (s + 10);
+                const oy = Math.sin(a) * (s + 10);
+                drawArrow(cx + ox, cy + oy, state.force * 0.5, a + Math.PI, varColor('--bulk'));
+            }
+        }
+    }
+
+    function varColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function animate() {
+        updatePhysics();
+        draw();
+        requestAnimationFrame(animate);
+    }
+
+    init();
+</script>
+</body>
+</html>

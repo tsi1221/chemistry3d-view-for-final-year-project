@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Physics: Scalars & Vectors</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --primary: #2563eb;
+            --secondary: #dc2626;
+            --text: #0f172a;
+            --accent: #059669;
+            --border: #e2e8f0;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body, html { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text);
+            overflow: hidden; /* Prevents bounce scrolling on mobile */
+            height: 100%;
+            width: 100%;
+            position: fixed; /* Critical for mobile sizing */
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            width: 280px;
+            max-width: calc(100vw - 20px);
+        }
+
+        .menu-toggle {
+            display: none;
+            background: var(--primary);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .panel {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            border: 1px solid var(--border);
+            transition: opacity 0.2s ease;
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; }
+            .panel.hidden { display: none; }
+        }
+
+        h1 { font-size: 1rem; margin-bottom: 4px; }
+        .desc { font-size: 0.8rem; opacity: 0.6; margin-bottom: 12px; line-height: 1.3; }
+
+        .control-group { margin-bottom: 12px; }
+        label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; margin-bottom: 6px; }
+        
+        input[type="range"] { 
+            width: 100%; 
+            height: 5px;
+            background: var(--border);
+            border-radius: 10px;
+            appearance: none;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--primary);
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .stats-box {
+            background: #f1f5f9;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .val-vector { color: var(--secondary); font-weight: bold; }
+
+        .btn-stack { display: flex; gap: 6px; }
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: #e2e8f0;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        button.reset { background: var(--primary); color: white; }
+
+        canvas { 
+            display: block; 
+            touch-action: none; /* Disables browser-level gestures */
+            background: #ffffff;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <div class="menu-toggle" id="menuToggle">Settings & Stats</div>
+        <div class="panel" id="controlsPanel">
+            <h1>Vectors vs Scalars</h1>
+            <p class="desc">Modify <b>Scalar Magnitude</b> with the slider. Drag the ball to change the <b>Vector Direction</b>.</p>
+            
+            <div class="control-group">
+                <label>Speed (Scalar) <span id="speedDisplay">3.0</span></label>
+                <input type="range" id="magSlider" min="0" max="15" step="0.1" value="3.0">
+            </div>
+
+            <div class="stats-box">
+                <div class="stat-row"><span>Scalar Speed:</span> <span id="sVal">3.0</span></div>
+                <div class="stat-row"><span>Vector (v):</span> <span class="val-vector" id="vVal">[2.1, 2.1]</span></div>
+            </div>
+
+            <div class="btn-stack">
+                <button class="reset" id="resetBtn">Reset</button>
+                <button id="clearBtn">Clear Path</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="hint">Interact with the blue ball</div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const magSlider = document.getElementById('magSlider');
+        const speedDisplay = document.getElementById('speedDisplay');
+        const sVal = document.getElementById('sVal');
+        const vVal = document.getElementById('vVal');
+        const resetBtn = document.getElementById('resetBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const menuToggle = document.getElementById('menuToggle');
+        const controlsPanel = document.getElementById('controlsPanel');
+
+        let trail = [];
+        let isDragging = false;
+        
+        const state = {
+            x: 0,
+            y: 0,
+            vx: 2.1,
+            vy: 2.1,
+            magnitude: 3.0,
+            radius: 20,
+            touchX: 0,
+            touchY: 0
+        };
+
+        // UI for mobile
+        menuToggle.addEventListener('click', () => {
+            controlsPanel.classList.toggle('hidden');
+        });
+
+        function resize() {
+            // Precise viewport dimensions
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            ctx.scale(dpr, dpr);
+            
+            // Set initial position if not set
+            if (state.x === 0) {
+                state.x = w / 2;
+                state.y = h / 2;
+            }
+        }
+
+        function updateVelocity() {
+            const currentMag = Math.sqrt(state.vx**2 + state.vy**2);
+            if (currentMag === 0) {
+                state.vx = state.magnitude;
+                state.vy = 0;
+            } else {
+                state.vx = (state.vx / currentMag) * state.magnitude;
+                state.vy = (state.vy / currentMag) * state.magnitude;
+            }
+            sVal.innerText = state.magnitude.toFixed(1);
+            vVal.innerText = `[${state.vx.toFixed(1)}, ${state.vy.toFixed(1)}]`;
+        }
+
+        function drawArrow(x, y, vx, vy, color, label) {
+            const head = 8;
+            const angle = Math.atan2(vy, vx);
+            const length = Math.max(40, state.magnitude * 8); // Scale visual arrow with magnitude
+            const tx = x + Math.cos(angle) * length;
+            const ty = y + Math.sin(angle) * length;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(tx, ty);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(tx - head * Math.cos(angle - Math.PI / 6), ty - head * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(tx - head * Math.cos(angle + Math.PI / 6), ty - head * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            
+            if (label) {
+                ctx.fillStyle = color;
+                ctx.font = "bold 12px sans-serif";
+                ctx.fillText(label, tx + 10, ty + 5);
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+
+            // Path trail
+            if (trail.length > 1) {
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(37, 99, 235, 0.15)";
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(trail[0].x, trail[0].y);
+                for (let i = 1; i < trail.length; i++) ctx.lineTo(trail[i].x, trail[i].y);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            if (!isDragging) {
+                state.x += state.vx;
+                state.y += state.vy;
+
+                // Screen bounce logic
+                if (state.x < state.radius || state.x > window.innerWidth - state.radius) state.vx *= -1;
+                if (state.y < state.radius || state.y > window.innerHeight - state.radius) state.vy *= -1;
+
+                trail.push({x: state.x, y: state.y});
+                if (trail.length > 50) trail.shift();
+            }
+
+            // Draw vector visualization
+            if (isDragging) {
+                const dx = state.touchX - state.x;
+                const dy = state.touchY - state.y;
+                drawArrow(state.x, state.y, dx, dy, "#dc2626", "New Direction");
+            } else {
+                drawArrow(state.x, state.y, state.vx, state.vy, "#2563eb", "Velocity");
+            }
+
+            // Main object
+            ctx.beginPath();
+            ctx.arc(state.x, state.y, state.radius, 0, Math.PI * 2);
+            ctx.fillStyle = isDragging ? "#94a3b8" : "#2563eb";
+            ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            requestAnimationFrame(animate);
+        }
+
+        function getEventCoords(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX, y: clientY };
+        }
+
+        function startDrag(e) {
+            const coords = getEventCoords(e);
+            const dist = Math.hypot(coords.x - state.x, coords.y - state.y);
+            if (dist < state.radius * 3) { // Larger hit area for mobile
+                isDragging = true;
+                state.touchX = coords.x;
+                state.touchY = coords.y;
+            }
+        }
+
+        function doDrag(e) {
+            if (!isDragging) return;
+            const coords = getEventCoords(e);
+            state.touchX = coords.x;
+            state.touchY = coords.y;
+        }
+
+        function stopDrag() {
+            if (!isDragging) return;
+            const dx = state.touchX - state.x;
+            const dy = state.touchY - state.y;
+            const mag = Math.hypot(dx, dy);
+            if (mag > 5) {
+                state.vx = (dx / mag) * state.magnitude;
+                state.vy = (dy / mag) * state.magnitude;
+            }
+            isDragging = false;
+            updateVelocity();
+        }
+
+        // Interaction bindings
+        canvas.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', doDrag);
+        window.addEventListener('mouseup', stopDrag);
+
+        canvas.addEventListener('touchstart', (e) => { 
+            startDrag(e); 
+            // Only prevent default if we're actually touching the ball
+            if (isDragging) e.preventDefault(); 
+        }, {passive: false});
+        window.addEventListener('touchmove', (e) => { 
+            if (isDragging) {
+                e.preventDefault();
+                doDrag(e);
+            }
+        }, {passive: false});
+        window.addEventListener('touchend', stopDrag);
+
+        magSlider.oninput = (e) => {
+            state.magnitude = parseFloat(e.target.value);
+            speedDisplay.innerText = state.magnitude.toFixed(1);
+            updateVelocity();
+        };
+
+        resetBtn.onclick = () => {
+            state.x = window.innerWidth / 2;
+            state.y = window.innerHeight / 2;
+            trail = [];
+        };
+
+        clearBtn.onclick = () => { trail = []; };
+
+        window.addEventListener('resize', resize);
+        
+        // Initial Startup
+        resize();
+        updateVelocity();
+        animate();
+    </script>
+</body>
+</html>

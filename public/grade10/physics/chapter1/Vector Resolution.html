@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vector Resolution - Light Mode</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --grid: #e2e8f0;
+            --panel: #f8fafc;
+            --text: #1e293b;
+            --vecA: #2563eb;    /* Primary Blue */
+            --compX: #ea580c;   /* Sharp Orange */
+            --compY: #be185d;   /* Deep Pink */
+            --border: #cbd5e1;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body, html { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: var(--bg); color: var(--text);
+            overflow: hidden; height: 100%; width: 100%; position: fixed;
+        }
+
+        #ui-layer {
+            position: absolute; top: 15px; left: 15px; z-index: 100;
+            width: 300px; max-width: calc(100vw - 30px);
+        }
+
+        .panel {
+            background: var(--panel); padding: 18px; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--border);
+        }
+
+        h1 { font-size: 1.1rem; margin-bottom: 8px; color: #0f172a; }
+        p { font-size: 0.8rem; margin-bottom: 12px; line-height: 1.4; color: #64748b; }
+
+        .stats {
+            background: #ffffff; padding: 12px; border-radius: 8px;
+            border: 1px solid var(--border);
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+            font-size: 0.85rem; line-height: 1.6;
+        }
+
+        .legend { margin-top: 12px; font-size: 0.75rem; display: flex; flex-direction: column; gap: 6px; }
+        .l-item { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        canvas { display: block; touch-action: none; width: 100vw; height: 100vh; }
+        
+        .hint {
+            position: absolute; bottom: 25px; width: 100%; text-align: center;
+            font-size: 0.85rem; color: #94a3b8; pointer-events: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="panel">
+            <h1>Vector Resolution</h1>
+            <p>Moving the car resolves the path into <b>Horizontal</b> and <b>Vertical</b> steps.</p>
+
+            <div class="stats" id="statPanel">
+                |A|: 0.0 units<br>
+                Ax: 0.0 units<br>
+                Ay: 0.0 units
+            </div>
+
+            <div class="legend">
+                <div class="l-item"><div class="dot" style="background:var(--vecA)"></div> Path A (Vector)</div>
+                <div class="l-item"><div class="dot" style="background:var(--compX)"></div> Ax (West-East)</div>
+                <div class="l-item"><div class="dot" style="background:var(--compY)"></div> Ay (North-South)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hint">Drag the car to see the components change</div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const statPanel = document.getElementById('statPanel');
+        
+        let width, height, dpr;
+        let isDragging = false;
+        const origin = { x: 0, y: 0 };
+        const car = { x: 0, y: 0 };
+        const gridUnit = 20; 
+
+        function drawCar(x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            // Shadow
+            ctx.fillStyle = "rgba(0,0,0,0.1)";
+            ctx.fillRect(-14, -6, 30, 16);
+            // Body
+            ctx.fillStyle = "#2563eb";
+            ctx.fillRect(-15, -8, 30, 16);
+            // Glass
+            ctx.fillStyle = "#bae6fd";
+            ctx.fillRect(6, -6, 5, 12);
+            ctx.restore();
+        }
+
+        function drawArrow(x1, y1, x2, y2, color, label, isDashed = false) {
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const length = Math.hypot(x2-x1, y2-y1);
+            if (length < 5) return;
+
+            ctx.beginPath();
+            if(isDashed) ctx.setLineDash([5, 5]);
+            ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - 12 * Math.cos(angle - 0.4), y2 - 12 * Math.sin(angle - 0.4));
+            ctx.lineTo(x2 - 12 * Math.cos(angle + 0.4), y2 - 12 * Math.sin(angle + 0.4));
+            ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+            
+            // Label
+            ctx.fillStyle = color; ctx.font = "bold 13px sans-serif";
+            ctx.fillText(label, x2 + (x1 < x2 ? 8 : -25), y2 + (y1 < y2 ? 18 : -10));
+        }
+
+        function animate() {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw City Grid
+            ctx.strokeStyle = "#f1f5f9"; ctx.lineWidth = 1;
+            for(let i=0; i<width; i+=gridUnit) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,height); ctx.stroke(); }
+            for(let i=0; i<height; i+=gridUnit) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(width,i); ctx.stroke(); }
+
+            // Draw Coordinate Axes
+            ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(width, origin.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, height); ctx.stroke();
+
+            // Projections (Dashed guide lines)
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.beginPath(); ctx.moveTo(car.x, car.y); ctx.lineTo(car.x, origin.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(car.x, car.y); ctx.lineTo(origin.x, car.y); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Components
+            drawArrow(origin.x, origin.y, car.x, origin.y, '#ea580c', 'Ax');
+            drawArrow(origin.x, origin.y, origin.x, car.y, '#be185d', 'Ay');
+
+            // Main Vector
+            const angle = Math.atan2(car.y - origin.y, car.x - origin.x);
+            drawArrow(origin.x, origin.y, car.x, car.y, '#2563eb', 'A');
+            drawCar(car.x, car.y, angle);
+
+            // Calculation
+            const ux = (car.x - origin.x) / gridUnit;
+            const uy = (origin.y - car.y) / gridUnit; 
+            const mag = Math.hypot(ux, uy);
+
+            statPanel.innerHTML = `|A|: ${mag.toFixed(1)} u<br>Ax: ${ux.toFixed(1)} u<br>Ay: ${uy.toFixed(1)} u`;
+
+            requestAnimationFrame(animate);
+        }
+
+        function handleInput(e) {
+            if (!isDragging) return;
+            const t = e.touches ? e.touches[0] : e;
+            car.x = t.clientX;
+            car.y = t.clientY;
+            if(e.cancelable) e.preventDefault();
+        }
+
+        window.addEventListener('mousedown', () => isDragging = true);
+        window.addEventListener('touchstart', (e) => { isDragging = true; }, {passive: true});
+        window.addEventListener('mousemove', handleInput);
+        window.addEventListener('touchmove', handleInput, {passive: false});
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('touchend', () => isDragging = false);
+
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr; canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            origin.x = width * 0.25; origin.y = height * 0.65;
+            car.x = width * 0.6; car.y = height * 0.35;
+        }
+
+        window.onresize = resize;
+        resize(); animate();
+    </script>
+</body>
+</html>

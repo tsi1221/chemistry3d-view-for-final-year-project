@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Distance vs Displacement · Vector Lab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: #fafbfc;
+            overflow: hidden;
+            touch-action: pan-y;
+            color: #1a1e2b;
+        }
+        
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .app-title .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Stats Bar */
+        .stats-bar {
+            padding: 16px 24px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 40px;
+            flex-shrink: 0;
+        }
+        
+        .stat-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .stat-content {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #7c879c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+        }
+        
+        #dist-val {
+            color: #e67e22;
+        }
+        
+        #disp-val {
+            color: #3b82f6;
+        }
+        
+        /* Main Simulation Area */
+        .simulation-container {
+            flex-grow: 1;
+            background: #fafbfc;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            touch-action: none;
+        }
+        
+        .canvas-card {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
+            border: 1px solid #eef2f6;
+            overflow: hidden;
+        }
+        
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 1;
+        }
+        
+        #vectorCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        
+        /* Controls */
+        .controls-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 16px 24px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .control-btn {
+            padding: 12px 28px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-btn.primary {
+            background: #10b981;
+            color: white;
+        }
+        
+        .control-btn.primary:hover {
+            background: #059669;
+        }
+        
+        .control-btn.secondary {
+            background: #f5f7fa;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
+        }
+        
+        .control-btn.secondary:hover {
+            background: #eef2f6;
+        }
+        
+        /* Hint */
+        .hint-wrapper {
+            padding: 12px 24px 16px 24px;
+            text-align: center;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+        }
+        
+        .hint-text {
+            display: inline-block;
+            padding: 8px 20px;
+            background: #f5f7fa;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: #5b687c;
+            border: 1px solid #eef2f6;
+        }
+        
+        .hint-text span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .color-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin: 0 4px;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 12px 16px;
+            }
+            
+            .app-title h1 {
+                font-size: 1.1rem;
+            }
+            
+            .stats-bar {
+                padding: 12px 16px;
+                gap: 20px;
+            }
+            
+            .stat-box {
+                gap: 8px;
+            }
+            
+            .stat-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+            }
+            
+            .stat-value {
+                font-size: 1.4rem;
+            }
+            
+            .simulation-container {
+                padding: 12px;
+            }
+            
+            .controls-bar {
+                padding: 12px 16px;
+            }
+            
+            .control-btn {
+                padding: 10px 18px;
+                font-size: 0.85rem;
+            }
+        }
+        
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        button:focus-visible {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>📐 Distance vs Displacement</h1>
+            <span class="badge">Vector Lab</span>
+        </div>
+    </header>
+
+    <div class="stats-bar">
+        <div class="stat-box">
+            <div class="stat-icon" style="background: #fff3e0;">
+                <span style="color: #e67e22;">🧵</span>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Distance (Scalar)</span>
+                <span class="stat-value" id="dist-val">0</span>
+            </div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-icon" style="background: #dbeafe;">
+                <span style="color: #3b82f6;">➡️</span>
+            </div>
+            <div class="stat-content">
+                <span class="stat-label">Displacement (Vector)</span>
+                <span class="stat-value" id="disp-val">0</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="simulation-container">
+        <div class="canvas-card">
+            <div class="canvas-wrapper">
+                <canvas id="vectorCanvas" width="1000" height="500"></canvas>
+            </div>
+            
+            <!-- Controls -->
+            <div class="controls-bar">
+                <button class="control-btn primary" id="straightenBtn">
+                    <span>📏</span> Straighten & Compare
+                </button>
+                <button class="control-btn secondary" id="clearBtn">
+                    <span>🗑️</span> Clear Path
+                </button>
+            </div>
+            
+            <!-- Hint -->
+            <div class="hint-wrapper">
+                <div class="hint-text">
+                    <span>
+                        <span class="color-dot" style="background: #e67e22;"></span> Draw winding path
+                        <span class="color-dot" style="background: #3b82f6; margin-left: 16px;"></span> Direct displacement
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('vectorCanvas');
+        const ctx = canvas.getContext('2d');
+        const distLabel = document.getElementById('dist-val');
+        const dispLabel = document.getElementById('disp-val');
+        
+        // Canvas internal dimensions
+        const width = 1000;
+        const height = 500;
+        
+        function resizeCanvas() {
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let path = [];
+        let isDrawing = false;
+        let isStraightened = false;
+        let straightenedAnim = 0;
+
+        function clearLab() {
+            path = [];
+            isStraightened = false;
+            straightenedAnim = 0;
+            distLabel.innerText = "0";
+            dispLabel.innerText = "0";
+        }
+
+        function straightenThread() {
+            if (path.length < 2) return;
+            isStraightened = true;
+        }
+
+        // Unified Pointer Events
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let clientX, clientY;
+            
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function handlePointerDown(e) {
+            e.preventDefault();
+            
+            if(isStraightened) clearLab();
+            isDrawing = true;
+            
+            const coords = getCanvasCoords(e);
+            path.push({x: coords.x, y: coords.y});
+            
+            canvas.setPointerCapture(e.pointerId);
+        }
+
+        function handlePointerMove(e) {
+            e.preventDefault();
+            
+            if(isDrawing) {
+                const coords = getCanvasCoords(e);
+                path.push({x: coords.x, y: coords.y});
+            }
+        }
+
+        function handlePointerUp(e) {
+            e.preventDefault();
+            isDrawing = false;
+            canvas.releasePointerCapture(e.pointerId);
+        }
+
+        function calculateStats() {
+            if (path.length < 2) return;
+            
+            let distance = 0;
+            for(let i = 1; i < path.length; i++) {
+                distance += Math.hypot(path[i].x - path[i-1].x, path[i].y - path[i-1].y);
+            }
+            
+            const start = path[0];
+            const end = path[path.length - 1];
+            const displacement = Math.hypot(end.x - start.x, end.y - start.y);
+            
+            distLabel.innerText = Math.round(distance);
+            dispLabel.innerText = Math.round(displacement);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Subtle grid background
+            ctx.strokeStyle = '#f1f5f9';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < width; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, height);
+                ctx.stroke();
+            }
+            for (let i = 0; i < height; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(width, i);
+                ctx.stroke();
+            }
+            
+            if (path.length > 1) {
+                const start = path[0];
+                const end = path[path.length - 1];
+                
+                // 1. Draw Distance (The Thread) - CORE LOGIC PRESERVED
+                ctx.beginPath();
+                ctx.strokeStyle = "#e67e22";
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.setLineDash([]);
+                
+                if (!isStraightened) {
+                    // Regular Winding Path with glow effect
+                    ctx.shadowColor = '#e67e22';
+                    ctx.shadowBlur = 8;
+                    ctx.moveTo(start.x, start.y);
+                    for(let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+                    ctx.stroke();
+                    
+                    // Path dots
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#e67e22';
+                    for(let i = 0; i < path.length; i += Math.max(1, Math.floor(path.length / 30))) {
+                        ctx.beginPath();
+                        ctx.arc(path[i].x, path[i].y, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else {
+                    // Animated Straightening - CORE LOGIC PRESERVED
+                    ctx.shadowBlur = 0;
+                    if(straightenedAnim < 1) straightenedAnim += 0.02;
+                    
+                    let totalDist = parseFloat(distLabel.innerText) || 0;
+                    
+                    // Draw original path faded
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#fde68a";
+                    ctx.lineWidth = 2;
+                    ctx.moveTo(start.x, start.y);
+                    for(let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+                    ctx.stroke();
+                    
+                    // Draw straightened line
+                    ctx.beginPath();
+                    ctx.strokeStyle = "#e67e22";
+                    ctx.lineWidth = 5;
+                    ctx.shadowColor = '#e67e22';
+                    ctx.shadowBlur = 10;
+                    ctx.moveTo(start.x, start.y + 45);
+                    ctx.lineTo(start.x + (totalDist * straightenedAnim), start.y + 45);
+                    ctx.stroke();
+                    
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = "#e67e22";
+                    ctx.font = "600 13px Inter, sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.fillText("⟵ UNROLLED DISTANCE (SCALAR) ⟶", start.x, start.y + 35);
+                    
+                    // Tick marks on straightened line
+                    ctx.strokeStyle = "#e67e22";
+                    ctx.lineWidth = 2;
+                    for (let i = 0; i <= 10; i++) {
+                        const tickX = start.x + (totalDist * straightenedAnim * i / 10);
+                        ctx.beginPath();
+                        ctx.moveTo(tickX, start.y + 35);
+                        ctx.lineTo(tickX, start.y + 55);
+                        ctx.stroke();
+                    }
+                }
+                
+                ctx.shadowBlur = 0;
+                
+                // 2. Draw Displacement (The Steel Rod / Arrow) - CORE LOGIC PRESERVED
+                ctx.beginPath();
+                ctx.strokeStyle = "#3b82f6";
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = '#3b82f6';
+                ctx.shadowBlur = 12;
+                ctx.moveTo(start.x, start.y);
+                ctx.lineTo(end.x, end.y);
+                ctx.stroke();
+                
+                // Arrow Head
+                ctx.shadowBlur = 8;
+                const angle = Math.atan2(end.y - start.y, end.x - start.x);
+                ctx.beginPath();
+                ctx.fillStyle = "#3b82f6";
+                ctx.moveTo(end.x, end.y);
+                ctx.lineTo(end.x - 18 * Math.cos(angle - Math.PI/6), end.y - 18 * Math.sin(angle - Math.PI/6));
+                ctx.lineTo(end.x - 18 * Math.cos(angle + Math.PI/6), end.y - 18 * Math.sin(angle + Math.PI/6));
+                ctx.fill();
+                
+                ctx.shadowBlur = 0;
+                
+                // Start Point
+                ctx.fillStyle = "#1e293b";
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(start.x, start.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = "#10b981";
+                ctx.beginPath();
+                ctx.arc(start.x, start.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // End Point
+                ctx.fillStyle = "#1e293b";
+                ctx.beginPath();
+                ctx.arc(end.x, end.y, 7, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = "#ef4444";
+                ctx.beginPath();
+                ctx.arc(end.x, end.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.shadowBlur = 0;
+                
+                // Labels
+                ctx.font = "600 12px Inter, sans-serif";
+                ctx.fillStyle = "#10b981";
+                ctx.fillText("START", start.x - 25, start.y - 18);
+                ctx.fillStyle = "#ef4444";
+                ctx.fillText("FINISH", end.x + 10, end.y - 18);
+                
+                // Displacement value label
+                const midX = (start.x + end.x) / 2;
+                const midY = (start.y + end.y) / 2;
+                ctx.fillStyle = "#3b82f6";
+                ctx.font = "600 13px Inter, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(dispLabel.innerText + " m", midX, midY - 15);
+                ctx.textAlign = "left";
+            } else {
+                // Empty canvas hint
+                ctx.fillStyle = "#cbd5e1";
+                ctx.font = "500 16px Inter, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText("👆 Draw a winding path here", width / 2, height / 2 - 10);
+                ctx.font = "400 13px Inter, sans-serif";
+                ctx.fillText("Distance = orange thread · Displacement = blue arrow", width / 2, height / 2 + 15);
+                ctx.textAlign = "left";
+            }
+            
+            if(!isStraightened) calculateStats();
+            requestAnimationFrame(draw);
+        }
+
+        // Event listeners
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointercancel', handlePointerUp);
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        document.getElementById('straightenBtn').addEventListener('click', straightenThread);
+        document.getElementById('clearBtn').addEventListener('click', clearLab);
+        
+        // Touch events for buttons
+        document.getElementById('straightenBtn').addEventListener('touchstart', (e) => { e.preventDefault(); straightenThread(); }, { passive: false });
+        document.getElementById('clearBtn').addEventListener('touchstart', (e) => { e.preventDefault(); clearLab(); }, { passive: false });
+        
+        draw();
+    </script>
+</body>
+</html>

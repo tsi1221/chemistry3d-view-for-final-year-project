@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vector Operation</title>
+    <style>
+        :root {
+            --bg: #e2e8f0;
+            --card: #ffffff;
+            --vecA: #2563eb;
+            --vecB: #d946ef;
+            --vecR: #059669;
+            --text: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        body, html { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); color: var(--text);
+            overflow: hidden; height: 100%; width: 100%; position: fixed;
+        }
+
+        #ui-layer {
+            position: absolute; top: 12px; right: 12px; z-index: 100;
+            width: 320px; max-width: calc(100vw - 24px);
+        }
+
+        .panel {
+            background: var(--card); padding: 18px; border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15); border: 1px solid #cbd5e1;
+        }
+
+        h1 { font-size: 1.2rem; margin-bottom: 10px; color: #334155; }
+        
+        .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        
+        .mode-btn {
+            padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;
+            background: #f8fafc; font-size: 0.75rem; font-weight: 700; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .mode-btn.active { background: var(--vecA); color: white; border-color: var(--vecA); }
+
+        .stats {
+            background: #f1f5f9; padding: 12px; border-radius: 10px;
+            font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; line-height: 1.6;
+        }
+
+        canvas { display: block; touch-action: none; width: 100vw; height: 100vh; background: #94a3b8; }
+
+        .hint {
+            position: absolute; bottom: 25px; width: 100%; text-align: center;
+            font-size: 0.85rem; color: #f8fafc; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="panel">
+            <h1>Vector Operation</h1>
+            <div class="mode-grid">
+                <button class="mode-btn active" data-mode="triangle">Successive Trips</button>
+                <button class="mode-btn" data-mode="parallelogram">Dual Towing</button>
+            </div>
+
+            <div class="stats" id="statPanel">
+                Trip A: 0 km<br>
+                Trip B: 0 km<br>
+                <b>Total Resultant: 0 km</b>
+            </div>
+        </div>
+    </div>
+
+    <div class="hint">Drag the CARS to change the paths!</div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const statPanel = document.getElementById('statPanel');
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        
+        let width, height, dpr, currentMode = 'triangle';
+        let activePoint = null;
+
+        const state = {
+            a: { x: 100, y: 400, hx: 250, hy: 300 },
+            b: { x: 250, y: 300, hx: 400, hy: 400 }
+        };
+
+        modeBtns.forEach(btn => {
+            btn.onclick = () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.dataset.mode;
+                resetPositions();
+            };
+        });
+
+        function drawCar(x, y, angle, color) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            
+            // Car Body
+            ctx.fillStyle = color;
+            ctx.fillRect(-15, -8, 30, 16);
+            // Windshield
+            ctx.fillStyle = "rgba(255,255,255,0.5)";
+            ctx.fillRect(5, -6, 5, 12);
+            // Wheels
+            ctx.fillStyle = "#000";
+            ctx.fillRect(-12, -10, 8, 3);
+            ctx.fillRect(4, -10, 8, 3);
+            ctx.fillRect(-12, 7, 8, 3);
+            ctx.fillRect(4, 7, 8, 3);
+            
+            ctx.restore();
+        }
+
+        function drawVector(x1, y1, x2, y2, color, label, isDashed = false) {
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            ctx.beginPath();
+            if(isDashed) ctx.setLineDash([8, 8]);
+            ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+            ctx.strokeStyle = color; ctx.lineWidth = 4; ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - 15 * Math.cos(angle - 0.4), y2 - 15 * Math.sin(angle - 0.4));
+            ctx.lineTo(x2 - 15 * Math.cos(angle + 0.4), y2 - 15 * Math.sin(angle + 0.4));
+            ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+
+            drawCar(x2, y2, angle, color);
+            
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 16px sans-serif";
+            ctx.strokeStyle = "#000"; ctx.lineWidth = 3;
+            ctx.strokeText(label, x1 + (x2-x1)/2, y1 + (y2-y1)/2 - 15);
+            ctx.fillText(label, x1 + (x2-x1)/2, y1 + (y2-y1)/2 - 15);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw Road Grid
+            ctx.strokeStyle = "rgba(255,255,255,0.1)";
+            ctx.lineWidth = 1;
+            for(let i=0; i<width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,height); ctx.stroke(); }
+            for(let i=0; i<height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(width,i); ctx.stroke(); }
+
+            const ax = state.a.hx - state.a.x, ay = state.a.hy - state.a.y;
+            const bx = state.b.hx - state.b.x, by = state.b.hy - state.b.y;
+
+            if (currentMode === 'triangle') {
+                state.b.x = state.a.hx; state.b.y = state.a.hy;
+                drawVector(state.a.x, state.a.y, state.a.hx, state.a.hy, 'var(--vecA)', 'Trip A');
+                drawVector(state.b.x, state.b.y, state.b.hx, state.b.hy, 'var(--vecB)', 'Trip B');
+                // Resultant
+                drawVector(state.a.x, state.a.y, state.b.hx, state.b.hy, 'var(--vecR)', 'Final Displacement', true);
+            } else {
+                state.b.x = state.a.x; state.b.y = state.a.y;
+                drawVector(state.a.x, state.a.y, state.a.hx, state.a.hy, 'var(--vecA)', 'Towing A');
+                drawVector(state.b.x, state.b.y, state.b.hx, state.b.hy, 'var(--vecB)', 'Towing B');
+                drawVector(state.a.x, state.a.y, state.a.x + ax + bx, state.a.y + ay + by, 'var(--vecR)', 'Net Force', true);
+            }
+
+            const magR = Math.hypot(ax + bx, ay + by) / 10;
+            statPanel.innerHTML = `Trip A: ${(Math.hypot(ax, ay)/10).toFixed(1)} km<br>Trip B: ${(Math.hypot(bx, by)/10).toFixed(1)} km<br><b>Resultant: ${magR.toFixed(1)} km</b>`;
+            requestAnimationFrame(animate);
+        }
+
+        function getCoords(e) {
+            const t = e.touches ? e.touches[0] : e;
+            return { x: t.clientX, y: t.clientY };
+        }
+
+        function onStart(e) {
+            const p = getCoords(e);
+            if (Math.hypot(p.x - state.a.hx, p.y - state.a.hy) < 40) activePoint = 'ah';
+            else if (Math.hypot(p.x - state.b.hx, p.y - state.b.hy) < 40) activePoint = 'bh';
+            else if (Math.hypot(p.x - state.a.x, p.y - state.a.y) < 40) activePoint = 'origin';
+            if(activePoint) e.preventDefault();
+        }
+
+        function onMove(e) {
+            if (!activePoint) return;
+            const p = getCoords(e);
+            if (activePoint === 'ah') { state.a.hx = p.x; state.a.hy = p.y; }
+            if (activePoint === 'bh') { state.b.hx = p.x; state.b.hy = p.y; }
+            if (activePoint === 'origin') {
+                const dax = state.a.hx - state.a.x, day = state.a.hy - state.a.y;
+                const dbx = state.b.hx - state.b.x, dby = state.b.hy - state.b.y;
+                state.a.x = p.x; state.a.y = p.y;
+                state.a.hx = p.x + dax; state.a.hy = p.y + day;
+                state.b.hx = state.b.x + dbx; state.b.hy = state.b.y + dby;
+            }
+        }
+
+        function resetPositions() {
+            state.a = { x: width * 0.2, y: height * 0.6, hx: width * 0.5, hy: height * 0.5 };
+            state.b = { x: width * 0.5, y: height * 0.5, hx: width * 0.7, hy: height * 0.7 };
+        }
+
+        canvas.addEventListener('touchstart', onStart, {passive: false});
+        window.addEventListener('touchmove', onMove, {passive: false});
+        window.addEventListener('touchend', () => activePoint = null);
+        canvas.addEventListener('mousedown', onStart);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', () => activePoint = null);
+
+        function resize() {
+            width = window.innerWidth; height = window.innerHeight;
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr; canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            resetPositions();
+        }
+
+        window.onresize = resize;
+        resize(); animate();
+    </script>
+</body>
+</html>

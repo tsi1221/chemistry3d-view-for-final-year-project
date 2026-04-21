@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Free Fall Lab | Drag & Drop</title>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --panel: #ffffff;
+            --primary: #2563eb;
+            --text: #1e293b;
+            --accent: #f59e0b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+
+        /* Responsive Menu Overlay */
+        .menu-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+            pointer-events: auto;
+        }
+
+        .side-menu {
+            position: absolute;
+            top: 0;
+            left: -340px;
+            width: 300px;
+            height: 100%;
+            background: var(--panel);
+            z-index: 90;
+            transition: left 0.3s ease;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.05);
+            padding: 80px 20px 20px 20px;
+            border-right: 1px solid var(--border);
+            pointer-events: auto;
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .card-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .equation-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .equation-toggle.active {
+            background: #eff6ff;
+            border-color: var(--primary);
+        }
+
+        .math {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: #f1f5f9; color: #64748b; }
+        .btn:active { transform: scale(0.98); }
+
+        .hint-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 600px) {
+            .side-menu { width: 80%; left: -100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <button class="menu-btn" id="menuToggle">☰ LAB MENU</button>
+
+    <div class="side-menu" id="sideMenu">
+        <span class="card-title">Mathematical Physics</span>
+        
+        <div id="toggle_v" class="equation-toggle active">
+            <span class="math">v = g · t</span>
+            <span style="font-size: 0.7rem; color: var(--primary);">VELOCITY</span>
+        </div>
+        
+        <div id="toggle_h" class="equation-toggle active">
+            <span class="math">h = ½gt²</span>
+            <span style="font-size: 0.7rem; color: var(--primary);">POSITION</span>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="dropBtn">DROP BALL</button>
+            <button class="btn btn-secondary" id="resetBtn">RESET EXPERIMENT</button>
+        </div>
+
+        <div style="margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <span class="card-title">Live Stats</span>
+            <div style="display: flex; justify-content: space-between; font-size: 1.1rem;">
+                <span>Height:</span>
+                <span id="hText" style="font-weight: bold; color: var(--primary);">0.0 m</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="hint-overlay" id="hint">Drag and Drop the ball to set height</div>
+
+    <canvas id="simCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const G = 9.8;
+        const PXM = 50; 
+        
+        let state = {
+            isFalling: false,
+            time: 0,
+            lastTime: 0,
+            h0: 8, 
+            currentH: 8,
+            v: 0,
+            useV: true,
+            useH: true,
+            isDragging: false,
+            menuOpen: false
+        };
+
+        const ball = { x: 0, y: 0, radius: 28 };
+
+        function init() {
+            window.addEventListener('resize', resize);
+            resize();
+
+            // Menu Logic
+            const menu = document.getElementById('sideMenu');
+            document.getElementById('menuToggle').onclick = () => {
+                state.menuOpen = !state.menuOpen;
+                menu.classList.toggle('open');
+            };
+
+            // Toggles
+            document.getElementById('toggle_v').onclick = function() {
+                state.useV = !state.useV;
+                this.classList.toggle('active');
+            };
+            document.getElementById('toggle_h').onclick = function() {
+                state.useH = !state.useH;
+                this.classList.toggle('active');
+            };
+
+            document.getElementById('dropBtn').onclick = () => {
+                if (state.isFalling) {
+                    state.isFalling = false;
+                    document.getElementById('dropBtn').innerText = "RESUME";
+                } else {
+                    state.isFalling = true;
+                    state.lastTime = performance.now();
+                    document.getElementById('dropBtn').innerText = "PAUSE";
+                    document.getElementById('hint').style.display = 'none';
+                    menu.classList.toggle('open');
+                }
+            };
+
+            document.getElementById('resetBtn').onclick = reset;
+
+            // Drag and Drop Events
+            canvas.addEventListener('mousedown', startDrag);
+            canvas.addEventListener('mousemove', drag);
+            window.addEventListener('mouseup', endDrag);
+            
+            canvas.addEventListener('touchstart', (e) => startDrag(e.touches[0]), {passive: false});
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); drag(e.touches[0]); }, {passive: false});
+            canvas.addEventListener('touchend', endDrag);
+
+            updateBallPos();
+            requestAnimationFrame(loop);
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ball.x = Math.max(canvas.width * 0.7, 200); 
+            updateBallPos();
+        }
+
+        function updateBallPos() {
+            const groundY = canvas.height - 100;
+            ball.y = groundY - (state.currentH * PXM);
+        }
+
+        function reset() {
+            state.isFalling = false;
+            state.time = 0;
+            state.v = 0;
+            state.currentH = state.h0;
+            document.getElementById('dropBtn').innerText = "DROP BALL";
+            document.getElementById('hint').style.display = 'block';
+            updateBallPos();
+        }
+
+        function startDrag(e) {
+            if (state.isFalling) return;
+            const dist = Math.hypot(e.clientX - ball.x, e.clientY - ball.y);
+            if (dist < ball.radius * 2) {
+                state.isDragging = true;
+            }
+        }
+
+        function drag(e) {
+            if (!state.isDragging) return;
+            const groundY = canvas.height - 100;
+            const newY = Math.min(Math.max(50, e.clientY), groundY - ball.radius);
+            state.currentH = (groundY - newY) / PXM;
+            state.h0 = state.currentH;
+            document.getElementById('hText').innerText = state.currentH.toFixed(1) + " m";
+            updateBallPos();
+        }
+
+        function endDrag() {
+            state.isDragging = false;
+        }
+
+        function loop(now) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const groundY = canvas.height - 100;
+
+            if (state.isFalling) {
+                const dt = (now - state.lastTime) / 1000;
+                state.lastTime = now;
+                state.time += dt;
+
+                if (state.useV) state.v = G * state.time;
+                else state.v = 0;
+
+                if (state.useH) {
+                    const dropDist = 0.5 * G * Math.pow(state.time, 2);
+                    state.currentH = state.h0 - dropDist;
+                } else if (state.useV) {
+                    state.currentH -= (state.v * dt);
+                }
+
+                if (state.currentH <= 0) {
+                    state.currentH = 0;
+                    state.v = 0;
+                    state.isFalling = false;
+                    document.getElementById('dropBtn').innerText = "DROP BALL";
+                }
+                updateBallPos();
+            }
+
+            drawEnvironment(groundY);
+            drawBall();
+            requestAnimationFrame(loop);
+        }
+
+        function drawEnvironment(groundY) {
+            // Ground
+            const grad = ctx.createLinearGradient(0, groundY, 0, canvas.height);
+            grad.addColorStop(0, '#e2e8f0');
+            grad.addColorStop(1, '#cbd5e1');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+            
+            // Ruler
+            const rx = ball.x - 120;
+            ctx.strokeStyle = "#94a3b8";
+            ctx.beginPath();
+            ctx.moveTo(rx, groundY);
+            ctx.lineTo(rx, 50);
+            for (let i = 0; i <= 20; i++) {
+                const y = groundY - (i * PXM);
+                if (y < 40) break;
+                ctx.moveTo(rx, y);
+                ctx.lineTo(rx - (i % 5 === 0 ? 15 : 8), y);
+                if (i % 5 === 0) {
+                    ctx.fillStyle = "#64748b";
+                    ctx.font = "bold 12px Inter";
+                    ctx.fillText(i + "m", rx - 45, y + 4);
+                }
+            }
+            ctx.stroke();
+        }
+
+        function drawBall() {
+            // Drop Shadow
+            ctx.beginPath();
+            const shadowOpacity = Math.max(0, 0.2 - (state.currentH * 0.02));
+            ctx.ellipse(ball.x, canvas.height - 100, ball.radius * 0.8, 6, 0, 0, Math.PI*2);
+            ctx.fillStyle = `rgba(0,0,0,${shadowOpacity})`;
+            ctx.fill();
+
+            // Ball
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = varColor('--primary');
+            ctx.shadowBlur = state.isDragging ? 20 : 0;
+            ctx.shadowColor = "rgba(37, 99, 235, 0.4)";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 5;
+            ctx.stroke();
+
+            // Real-time Velocity Label
+            ctx.fillStyle = "white";
+            ctx.font = "bold 14px Inter";
+            ctx.textAlign = "center";
+            ctx.fillText(state.v.toFixed(1), ball.x, ball.y + 2);
+            ctx.font = "8px Inter";
+            ctx.fillText("m/s", ball.x, ball.y + 12);
+        }
+
+        function varColor(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        }
+
+        init();
+    </script>
+</body>
+</html>

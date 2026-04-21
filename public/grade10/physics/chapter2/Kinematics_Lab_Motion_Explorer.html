@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kinematics Lab · Motion Explorer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #1a1e2b;
+            --accent: #3b82f6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #fafbfc;
+            --card: #ffffff;
+            --border: #eef2f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+            background: var(--bg); 
+            color: #1a1e2b; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .app-header {
+            padding: 16px 24px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        
+        .app-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .app-title h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--primary);
+        }
+        
+        .app-title span {
+            color: var(--accent);
+        }
+        
+        .app-title .badge {
+            background: var(--border);
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+
+        /* Tabs */
+        .tabs-container {
+            padding: 12px 24px 0 24px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        
+        .tabs-container::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #7c879c;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            touch-action: manipulation;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary);
+            background: #f5f7fa;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Main Content */
+        .simulation-container {
+            flex-grow: 1;
+            background: var(--bg);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .lab-content {
+            display: none;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .lab-content.active {
+            display: block;
+        }
+
+        /* Canvas Card */
+        .canvas-card {
+            background: var(--card);
+            border-radius: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        #raceCanvas, #traceCanvas, #vectorCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .race-wrapper { aspect-ratio: 18 / 7; }
+        .trace-wrapper { aspect-ratio: 9 / 4; }
+        .vector-wrapper { aspect-ratio: 3 / 1; }
+
+        /* Dashboard */
+        .dashboard { 
+            display: flex; 
+            justify-content: space-around; 
+            background: var(--card); 
+            padding: 20px 24px; 
+            border-top: 1px solid var(--border);
+        }
+
+        .hud-item {
+            text-align: center;
+        }
+
+        .hud-label { 
+            font-size: 0.7rem; 
+            color: #7c879c; 
+            text-transform: uppercase; 
+            font-weight: 700; 
+            letter-spacing: 0.5px;
+        }
+        
+        .hud-value { 
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace; 
+            font-weight: 700; 
+            font-size: 1.6rem; 
+        }
+
+        /* Controls */
+        .controls-panel { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 12px; 
+            align-items: center; 
+            justify-content: center; 
+            background: var(--card); 
+            padding: 16px 24px; 
+            border-top: 1px solid var(--border);
+        }
+
+        button { 
+            background: var(--primary); 
+            border: none; 
+            color: white; 
+            padding: 12px 24px; 
+            border-radius: 40px; 
+            font-weight: 600; 
+            font-size: 0.9rem;
+            cursor: pointer; 
+            transition: all 0.2s; 
+            touch-action: manipulation;
+            border: 1px solid transparent;
+        }
+
+        button:hover { 
+            background: #2d3445; 
+            transform: translateY(-1px); 
+        }
+
+        button.secondary {
+            background: #f5f7fa;
+            color: #5b687c;
+            border: 1px solid var(--border);
+        }
+
+        button.secondary:hover {
+            background: #eef2f6;
+        }
+
+        button.gas {
+            background: var(--accent);
+        }
+
+        button.brake {
+            background: var(--danger);
+        }
+
+        /* Slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px;
+        }
+
+        .slider-container label {
+            color: #5b687c;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            .app-header { padding: 12px 16px; }
+            .app-title h1 { font-size: 1.1rem; }
+            .tabs-container { padding: 8px 16px 0; }
+            .tab-btn { padding: 8px 16px; font-size: 0.85rem; }
+            .simulation-container { padding: 12px; }
+            .dashboard { padding: 16px; }
+            .hud-value { font-size: 1.3rem; }
+            .controls-panel { padding: 12px 16px; }
+            button { padding: 10px 18px; }
+        }
+
+        /* RoundRect */
+        
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-title">
+            <h1>⚡ EdTwin <span>Kinematics Lab</span></h1>
+            <span class="badge">Motion Explorer</span>
+        </div>
+    </header>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="openTab(event, 'lab1')">🏁 Speed Race</button>
+        <button class="tab-btn" onclick="openTab(event, 'lab2')">📐 Elastic Trace</button>
+        <button class="tab-btn" onclick="openTab(event, 'lab3')">🎯 Dual-Arrow Engine</button>
+    </div>
+
+    <div class="simulation-container">
+        <!-- LAB 1: SPEED RACE -->
+        <div id="lab1" class="lab-content active">
+            <div class="canvas-card">
+                <div class="canvas-wrapper race-wrapper">
+                    <canvas id="raceCanvas" width="900" height="350"></canvas>
+                </div>
+                <div class="dashboard">
+                    <div class="hud-item">
+                        <div class="hud-label">Race Clock</div>
+                        <div id="clock" class="hud-value" style="color:#10b981">0.0s</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">🐢 Turtle vₐᵥ</div>
+                        <div id="t-av" class="hud-value" style="color:#3b82f6">0.0</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">🐇 Rabbit vₐᵥ</div>
+                        <div id="r-av" class="hud-value" style="color:#ef4444">0.0</div>
+                    </div>
+                </div>
+                <div class="controls-panel">
+                    <button id="playBtn" onclick="startRace()">▶ START RACE</button>
+                    <button class="secondary" onclick="resetRace()">↻ RESET</button>
+                    <div class="slider-container">
+                        <label>Sim Speed: <span id="speedVal">1x</span></label>
+                        <input type="range" id="simSpeed" min="0.5" max="4" step="0.5" value="1" oninput="updateSpeedDisplay()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LAB 2: ELASTIC TRACE -->
+        <div id="lab2" class="lab-content">
+            <div class="canvas-card">
+                <div class="dashboard">
+                    <div class="hud-item">
+                        <div class="hud-label">Time (Δt)</div>
+                        <div id="t-val" class="hud-value">0.0 s</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">Displacement (Δx⃗)</div>
+                        <div id="dx-val" class="hud-value" style="color:#10b981;">0.0 m</div>
+                    </div>
+                    <div class="hud-item">
+                        <div class="hud-label">Avg Velocity (v⃗ₐᵥ)</div>
+                        <div id="vav-val" class="hud-value" style="color:#f59e0b;">0.0 m/s</div>
+                    </div>
+                </div>
+                <div class="canvas-wrapper trace-wrapper">
+                    <canvas id="traceCanvas" width="900" height="400"></canvas>
+                </div>
+                <div class="controls-panel">
+                    <button onclick="startSim()">▶ Run Diagonal Path</button>
+                    <button class="secondary" onclick="resetSim()">↻ RESET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LAB 3: DUAL ARROW -->
+        <div id="lab3" class="lab-content">
+            <div class="canvas-card">
+                <div class="legend">
+                    <span><span class="legend-dot" style="background:#10b981;"></span>Velocity (Green)</span>
+                    <span><span class="legend-dot" style="background:#3b82f6;"></span>Acceleration (Blue)</span>
+                </div>
+                <div class="canvas-wrapper vector-wrapper">
+                    <canvas id="vectorCanvas" width="900" height="300"></canvas>
+                </div>
+                <div class="controls-panel">
+                    <button class="gas" onmousedown="setAccel(0.12)" onmouseup="setAccel(0)" onmouseleave="setAccel(0)" ontouchstart="setAccel(0.12)" ontouchend="setAccel(0)">🚀 GAS (Forward)</button>
+                    <button class="brake" onmousedown="setAccel(-0.12)" onmouseup="setAccel(0)" onmouseleave="setAccel(0)" ontouchstart="setAccel(-0.12)" ontouchend="setAccel(0)">🛑 BRAKE (Backward)</button>
+                    <button class="secondary" onclick="resetVectorSim()">↻ RESET</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.moveTo(x + r, y);
+            this.lineTo(x + w - r, y);
+            this.quadraticCurveTo(x + w, y, x + w, y + r);
+            this.lineTo(x + w, y + h - r);
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            this.lineTo(x + r, y + h);
+            this.quadraticCurveTo(x, y + h, x, y + h - r);
+            this.lineTo(x, y + r);
+            this.quadraticCurveTo(x, y, x + r, y);
+            return this;
+        };
+        // --- TAB LOGIC ---
+        function openTab(evt, labId) {
+            let tabcontent = document.getElementsByClassName("lab-content");
+            let tablinks = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < tabcontent.length; i++) tabcontent[i].classList.remove("active");
+            for (let i = 0; i < tablinks.length; i++) tablinks[i].classList.remove("active");
+            document.getElementById(labId).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        // --- LAB 1: SPEED RACE (VISUALLY ENHANCED) ---
+        const raceCanvas = document.getElementById('raceCanvas');
+        const rCtx = raceCanvas.getContext('2d');
+        let rRunning = false, rTime = 0;
+        const sX = 80, fLine = 820, tW = fLine - sX;
+        let turtle = { x: sX, s: 0, vIns: 50, vAv: 0 };
+        let rabbit = { x: sX, s: 0, vIns: 100, vAv: 0, status: 'racing' };
+
+        function updateSpeedDisplay() { document.getElementById('speedVal').innerText = document.getElementById('simSpeed').value + "x"; }
+        function startRace() { rRunning = !rRunning; document.getElementById('playBtn').innerHTML = rRunning ? "⏸ PAUSE" : "▶ RESUME"; }
+        function resetRace() { rRunning = false; rTime = 0; turtle = { x: sX, s: 0, vIns: 50, vAv: 0 }; rabbit = { x: sX, s: 0, vIns: 100, vAv: 0, status: 'racing' }; document.getElementById('playBtn').innerHTML = "▶ START RACE"; updateHUD1(); }
+        function updateHUD1() {
+            document.getElementById('clock').innerText = (rTime / 60).toFixed(1) + "s";
+            document.getElementById('t-av').innerText = turtle.vAv.toFixed(1) + " km/h";
+            document.getElementById('r-av').innerText = rabbit.vAv.toFixed(1) + " km/h";
+        }
+
+        function drawRace() {
+            rCtx.clearRect(0, 0, 900, 350);
+            
+            // Track background with gradient
+            const trackGrad1 = rCtx.createLinearGradient(sX, 90, fLine, 130);
+            trackGrad1.addColorStop(0, '#f1f5f9');
+            trackGrad1.addColorStop(1, '#e2e8f0');
+            rCtx.fillStyle = trackGrad1;
+            rCtx.fillRect(sX-5, 90, tW+10, 40);
+            
+            const trackGrad2 = rCtx.createLinearGradient(sX, 220, fLine, 260);
+            trackGrad2.addColorStop(0, '#f1f5f9');
+            trackGrad2.addColorStop(1, '#e2e8f0');
+            rCtx.fillStyle = trackGrad2;
+            rCtx.fillRect(sX-5, 220, tW+10, 40);
+            
+            // Track lines with shadow
+            rCtx.shadowColor = 'rgba(0,0,0,0.05)';
+            rCtx.shadowBlur = 4;
+            rCtx.strokeStyle = "#cbd5e1"; 
+            rCtx.lineWidth = 36; 
+            rCtx.lineCap = "round";
+            rCtx.beginPath(); rCtx.moveTo(sX, 110); rCtx.lineTo(fLine, 110); rCtx.stroke();
+            rCtx.beginPath(); rCtx.moveTo(sX, 240); rCtx.lineTo(fLine, 240); rCtx.stroke();
+            
+            rCtx.shadowBlur = 0;
+            rCtx.strokeStyle = "#94a3b8"; 
+            rCtx.lineWidth = 2;
+            rCtx.beginPath(); rCtx.moveTo(sX, 110); rCtx.lineTo(fLine, 110); rCtx.stroke();
+            rCtx.beginPath(); rCtx.moveTo(sX, 240); rCtx.lineTo(fLine, 240); rCtx.stroke();
+            
+            // Finish line with glow
+            rCtx.shadowColor = '#10b981';
+            rCtx.shadowBlur = 10;
+            rCtx.strokeStyle = "#10b981"; 
+            rCtx.lineWidth = 5;
+            rCtx.beginPath(); rCtx.moveTo(fLine, 70); rCtx.lineTo(fLine, 280); rCtx.stroke();
+            rCtx.shadowBlur = 0;
+            
+            // Checkered pattern
+            rCtx.fillStyle = "#10b981";
+            for (let i = 0; i < 6; i++) {
+                rCtx.fillRect(fLine-3, 70 + i*35, 6, 17);
+            }
+            
+            // Lane labels
+            rCtx.fillStyle = "#64748b";
+            rCtx.font = "500 11px Inter, sans-serif";
+            rCtx.fillText("TURTLE LANE", sX, 85);
+            rCtx.fillText("RABBIT LANE", sX, 215);
+
+            if (rRunning) {
+                const mult = parseFloat(document.getElementById('simSpeed').value);
+                for(let i=0; i<mult; i++) {
+                    rTime++;
+                    let tH = (rTime/60)/3600;
+                    if (turtle.x < fLine) { turtle.s += (50/3600)/60; turtle.x = sX + (turtle.s * tW); turtle.vAv = turtle.s / tH; }
+                    if (rabbit.x < fLine) {
+                        if (rabbit.s < 0.5 || rTime > 1800) { rabbit.vIns = 100; rabbit.s += (100/3600)/60; rabbit.status = 'racing'; }
+                        else { rabbit.vIns = 0; rabbit.status = 'stopped'; }
+                        rabbit.x = sX + (rabbit.s * tW); rabbit.vAv = rabbit.s / tH;
+                    }
+                }
+                if (turtle.x >= fLine && rabbit.x >= fLine) { rRunning = false; document.getElementById('playBtn').innerHTML = "▶ START RACE"; }
+                updateHUD1();
+            }
+            
+            drawCar(rCtx, turtle.x, 110, "#3b82f6", turtle.vIns, "🐢 Turtle", false);
+            drawCar(rCtx, rabbit.x, 240, "#ef4444", rabbit.vIns, "🐇 Rabbit", rabbit.status === 'stopped');
+            
+            requestAnimationFrame(drawRace);
+        }
+
+        function drawCar(ctx, x, y, color, speed, name, isStopped) {
+            ctx.shadowColor = color + '40';
+            ctx.shadowBlur = 12;
+            
+            // Car body
+            ctx.fillStyle = isStopped ? "#ef4444" : color;
+            ctx.beginPath(); 
+            ctx.roundRect(x - 30, y - 18, 60, 36, 10); 
+            ctx.fill();
+            
+            // Windows
+            ctx.fillStyle = "#1e293b";
+            ctx.beginPath(); 
+            ctx.roundRect(x - 10, y - 12, 25, 12, 4); 
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            
+            // Wheels
+            ctx.fillStyle = "#1e293b";
+            ctx.beginPath(); ctx.arc(x - 18, y + 18, 8, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 18, y + 18, 8, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#64748b";
+            ctx.beginPath(); ctx.arc(x - 18, y + 18, 4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(x + 18, y + 18, 4, 0, Math.PI*2); ctx.fill();
+            
+            // Speed label
+            ctx.fillStyle = "#1e293b";
+            ctx.font = "600 12px Inter, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(speed + " km/h", x, y - 30);
+            ctx.fillStyle = color;
+            ctx.fillText(name, x, y - 45);
+            
+            if (isStopped) { 
+                ctx.fillStyle = "#ef4444"; 
+                ctx.font = "600 11px Inter, sans-serif"; 
+                ctx.fillText("⏸ WAITING...", x, y + 45); 
+            }
+        }
+
+        // --- LAB 2: ELASTIC TRACE (VISUALLY ENHANCED) ---
+        const traceCanvas = document.getElementById('traceCanvas');
+        const tCtx = traceCanvas.getContext('2d');
+        let tRunning = false, tTime = 0, ghosts = [], finalTrace = false, lastA = 0;
+        const tStartX = 100, tStartY = 320, tEndX = 800, tEndY = 100;
+        let rider = { x: tStartX, y: tStartY, s: 0, vInsX: 0, vInsY: 0, vAv: 0 };
+        const tripData = [[0,0], [120,0.4], [200,0.45], [300,0.6], [420,0.3], [500,0.7], [600,1.0]];
+
+        function startSim() { if(!tRunning) tRunning = true; }
+        function resetSim() { tRunning = false; tTime = 0; ghosts = []; finalTrace = false; rider = { x: tStartX, y: tStartY, s: 0, vInsX: 0, vInsY: 0, vAv: 0 }; }
+
+        function drawTrace() {
+            tCtx.clearRect(0, 0, 900, 400);
+            
+            // Grid background
+            tCtx.strokeStyle = '#f1f5f9';
+            tCtx.lineWidth = 0.5;
+            for (let i = 0; i < 900; i += 50) {
+                tCtx.beginPath(); tCtx.moveTo(i, 0); tCtx.lineTo(i, 400); tCtx.stroke();
+            }
+            for (let i = 0; i < 400; i += 50) {
+                tCtx.beginPath(); tCtx.moveTo(0, i); tCtx.lineTo(900, i); tCtx.stroke();
+            }
+            
+            // Ideal path
+            tCtx.strokeStyle = "#cbd5e1"; 
+            tCtx.lineWidth = 2;
+            tCtx.setLineDash([8, 6]);
+            tCtx.beginPath(); 
+            tCtx.moveTo(tStartX, tStartY); 
+            tCtx.lineTo(tEndX, tEndY); 
+            tCtx.stroke();
+            tCtx.setLineDash([]);
+            
+            // Start/End markers
+            tCtx.fillStyle = "#10b981";
+            tCtx.shadowColor = '#10b981';
+            tCtx.shadowBlur = 10;
+            tCtx.beginPath(); tCtx.arc(tStartX, tStartY, 8, 0, Math.PI*2); tCtx.fill();
+            tCtx.fillStyle = "#ef4444";
+            tCtx.shadowColor = '#ef4444';
+            tCtx.beginPath(); tCtx.arc(tEndX, tEndY, 8, 0, Math.PI*2); tCtx.fill();
+            tCtx.shadowBlur = 0;
+            
+            tCtx.fillStyle = "#64748b";
+            tCtx.font = "500 11px Inter, sans-serif";
+            tCtx.fillText("START", tStartX - 30, tStartY - 15);
+            tCtx.fillText("FINISH", tEndX + 10, tEndY - 15);
+
+            if (tRunning) {
+                tTime++;
+                let curS = 0;
+                for(let i=1; i<tripData.length; i++) {
+                    if (tTime <= tripData[i][0]) {
+                        let p1 = tripData[i-1], p2 = tripData[i];
+                        curS = p1[1] + (p2[1]-p1[1]) * (tTime-p1[0]) / (p2[0]-p1[0]); break;
+                    }
+                }
+                const px = rider.x, py = rider.y;
+                rider.x = tStartX + (curS * (tEndX - tStartX));
+                rider.y = tStartY + (curS * (tEndY - tStartY));
+                rider.vInsX = (rider.x - px) * 60; rider.vInsY = (rider.y - py) * 60;
+                let a = (rider.x - px);
+                if (Math.abs(a - lastA) > 1 && tTime > 20) { ghosts.push({x: rider.x, y: rider.y, vx: rider.vInsX, vy: rider.vInsY}); lastA = a; }
+                let dx = Math.hypot((rider.x-tStartX), (rider.y-tStartY));
+                rider.vAv = dx / (tTime/60);
+                if (tTime >= 600) { tRunning = false; finalTrace = true; }
+                
+                document.getElementById('t-val').innerText = (tTime/60).toFixed(1) + " s";
+                document.getElementById('dx-val').innerText = dx.toFixed(1) + " m";
+                document.getElementById('vav-val').innerText = rider.vAv.toFixed(1) + " m/s";
+            }
+
+            ghosts.forEach(g => {
+                tCtx.fillStyle = "rgba(59, 130, 246, 0.15)"; 
+                tCtx.beginPath(); tCtx.arc(g.x, g.y, 18, 0, Math.PI*2); tCtx.fill();
+                tCtx.strokeStyle = "rgba(239, 68, 68, 0.5)"; 
+                tCtx.lineWidth = 3;
+                tCtx.beginPath(); 
+                tCtx.moveTo(g.x, g.y); 
+                tCtx.lineTo(g.x+g.vx*0.25, g.y+g.vy*0.25); 
+                tCtx.stroke();
+            });
+
+            // Rider with glow
+            tCtx.shadowColor = '#3b82f6';
+            tCtx.shadowBlur = 20;
+            tCtx.fillStyle = "#3b82f6"; 
+            tCtx.beginPath(); 
+            tCtx.arc(rider.x, rider.y, 16, 0, Math.PI*2); 
+            tCtx.fill();
+            tCtx.shadowBlur = 0;
+            tCtx.fillStyle = "white";
+            tCtx.font = "bold 12px Inter, sans-serif";
+            tCtx.textAlign = "center";
+            tCtx.textBaseline = "middle";
+            tCtx.fillText("RIDER", rider.x, rider.y);
+            
+            if (finalTrace) {
+                tCtx.strokeStyle = "#f59e0b"; 
+                tCtx.lineWidth = 5;
+                tCtx.shadowColor = '#f59e0b';
+                tCtx.shadowBlur = 12;
+                tCtx.beginPath(); 
+                tCtx.moveTo(tStartX, tStartY); 
+                tCtx.lineTo(rider.x, rider.y); 
+                tCtx.stroke();
+                tCtx.shadowBlur = 0;
+            }
+            
+            requestAnimationFrame(drawTrace);
+        }
+
+        // --- LAB 3: DUAL ARROW (VISUALLY ENHANCED) ---
+        const vCanvas = document.getElementById('vectorCanvas');
+        const vCtx = vCanvas.getContext('2d');
+        let vCar = { x: 100, v: 0, a: 0 };
+
+        function setAccel(val) { vCar.a = val; }
+        function resetVectorSim() { vCar = { x: 100, v: 0, a: 0 }; }
+
+        function drawVectorArrow(ctx, x, y, len, col, label) {
+            if (Math.abs(len) < 2) return;
+            ctx.shadowColor = col + '40';
+            ctx.shadowBlur = 10;
+            ctx.strokeStyle = col; 
+            ctx.fillStyle = col; 
+            ctx.lineWidth = 5;
+            ctx.lineCap = 'round';
+            ctx.beginPath(); 
+            ctx.moveTo(x, y); 
+            ctx.lineTo(x + len, y); 
+            ctx.stroke();
+            
+            let dir = len > 0 ? 1 : -1;
+            ctx.beginPath(); 
+            ctx.moveTo(x+len, y); 
+            ctx.lineTo(x+len-12*dir, y-6); 
+            ctx.lineTo(x+len-12*dir, y+6); 
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.font = "600 12px Inter, sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(label, x + len/2, y - 15);
+        }
+
+        function updateVectorSim() {
+            vCar.v += vCar.a; 
+            vCar.x += vCar.v;
+            if (vCar.x > 850) { vCar.x = 850; vCar.v = 0; }
+            if (vCar.x < 50) { vCar.x = 50; vCar.v = 0; }
+            
+            vCtx.clearRect(0, 0, 900, 300);
+            
+            // Road
+            vCtx.fillStyle = '#f1f5f9';
+            vCtx.fillRect(0, 140, 900, 20);
+            vCtx.strokeStyle = '#cbd5e1';
+            vCtx.lineWidth = 2;
+            vCtx.beginPath(); vCtx.moveTo(0, 150); vCtx.lineTo(900, 150); vCtx.stroke();
+            
+            // Center line
+            vCtx.strokeStyle = '#94a3b8';
+            vCtx.lineWidth = 1;
+            vCtx.setLineDash([20, 20]);
+            vCtx.beginPath(); vCtx.moveTo(0, 150); vCtx.lineTo(900, 150); vCtx.stroke();
+            vCtx.setLineDash([]);
+            
+            // Car
+            vCtx.shadowColor = '#1e293b40';
+            vCtx.shadowBlur = 12;
+            vCtx.shadowOffsetY = 3;
+            vCtx.fillStyle = "#1e293b"; 
+            vCtx.beginPath(); 
+            vCtx.roundRect(vCar.x-35, 135, 70, 30, 8); 
+            vCtx.fill();
+            
+            vCtx.fillStyle = "#3b82f6";
+            vCtx.beginPath(); 
+            vCtx.roundRect(vCar.x-15, 140, 25, 12, 4); 
+            vCtx.fill();
+            
+            vCtx.shadowBlur = 0;
+            vCtx.shadowOffsetY = 0;
+            
+            // Wheels
+            vCtx.fillStyle = "#1e293b";
+            vCtx.beginPath(); vCtx.arc(vCar.x-20, 165, 8, 0, Math.PI*2); vCtx.fill();
+            vCtx.beginPath(); vCtx.arc(vCar.x+20, 165, 8, 0, Math.PI*2); vCtx.fill();
+            
+            drawVectorArrow(vCtx, vCar.x, 110, vCar.v*25, "#10b981", "v");
+            drawVectorArrow(vCtx, vCar.x, 195, vCar.a*600, "#3b82f6", "a");
+            
+            requestAnimationFrame(updateVectorSim);
+        }
+
+        // Initialize
+        drawRace();
+        drawTrace();
+        updateVectorSim();
+    </script>
+</body>
+</html>

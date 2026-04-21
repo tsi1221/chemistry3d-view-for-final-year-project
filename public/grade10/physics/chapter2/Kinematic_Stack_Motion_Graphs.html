@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kinematic Stack · Motion Graphs</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #fafbfc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+        
+        .lab-container {
+            background: #ffffff;
+            padding: 28px;
+            border-radius: 28px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 1200px;
+            border: 1px solid #eef2f6;
+        }
+        
+        /* Header */
+        .lab-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .lab-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #1a1e2b;
+        }
+        
+        .lab-header .badge {
+            background: #eef2f6;
+            color: #5b687c;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+        
+        /* Car Track */
+        .car-track {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            height: 70px;
+            border-radius: 16px;
+            position: relative;
+            margin-bottom: 28px;
+            border-bottom: 4px solid #3b82f6;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .track-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: repeating-linear-gradient(90deg, #fbbf24 0px, #fbbf24 20px, transparent 20px, transparent 40px);
+            transform: translateY(-50%);
+            opacity: 0.6;
+        }
+        
+        .track-markers {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        
+        #car {
+            width: 44px;
+            height: 24px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            position: absolute;
+            bottom: 12px;
+            border-radius: 8px;
+            border: 2px solid #93c5fd;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 0 0 2px rgba(255,255,255,0.1);
+            transition: left 0.05s ease;
+        }
+        
+        #car::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 8px;
+            width: 12px;
+            height: 6px;
+            background: #93c5fd;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        #car::after {
+            content: '';
+            position: absolute;
+            bottom: -3px;
+            left: 6px;
+            width: 8px;
+            height: 6px;
+            background: #1e293b;
+            border-radius: 3px;
+            box-shadow: 24px 0 0 #1e293b;
+        }
+        
+        /* Graph Row */
+        .graph-row {
+            display: flex;
+            gap: 18px;
+            justify-content: space-between;
+            width: 100%;
+        }
+        
+        .graph-box {
+            flex: 1;
+            text-align: center;
+            background: #fafbfc;
+            border-radius: 20px;
+            padding: 16px 12px 12px 12px;
+            border: 1px solid #eef2f6;
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .graph-box:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        
+        .graph-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .graph-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        
+        .label-box {
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        canvas {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #eef2f6;
+            width: 100%;
+            height: 220px;
+            display: block;
+        }
+        
+        /* Current Value Display */
+        .current-value {
+            margin-top: 10px;
+            font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 28px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            color: white;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .btn-gas {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+        
+        .btn-brake {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        }
+        
+        /* Hint */
+        .hint-text {
+            text-align: center;
+            margin-top: 16px;
+            color: #7c879c;
+            font-size: 0.8rem;
+        }
+        
+        /* Mobile */
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .lab-container { padding: 16px; }
+            .graph-row { flex-direction: column; gap: 12px; }
+            canvas { height: 180px; }
+            button { padding: 12px 20px; font-size: 0.9rem; }
+            .lab-header h2 { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="lab-container">
+    <div class="lab-header">
+        <h2>📊 Horizontal Kinematic Stack</h2>
+        <span class="badge">x · v · a</span>
+    </div>
+
+    <div class="car-track">
+        <div class="track-line"></div>
+        <div id="car"></div>
+        <div class="track-markers">
+            <span>0 m</span>
+            <span>1050 m</span>
+        </div>
+    </div>
+
+    <div class="graph-row">
+        <div class="graph-box">
+            <div class="graph-header">
+                <div class="graph-icon" style="background: #f3e8ff; color: #8b5cf6;">x</div>
+                <div class="label-box" style="color: #8b5cf6;">Position</div>
+            </div>
+            <canvas id="canvasX"></canvas>
+            <div class="current-value" id="xValue" style="color: #8b5cf6;">0.0 m</div>
+        </div>
+        <div class="graph-box">
+            <div class="graph-header">
+                <div class="graph-icon" style="background: #ecfdf5; color: #10b981;">v</div>
+                <div class="label-box" style="color: #10b981;">Velocity</div>
+            </div>
+            <canvas id="canvasV"></canvas>
+            <div class="current-value" id="vValue" style="color: #10b981;">0.0 m/s</div>
+        </div>
+        <div class="graph-box">
+            <div class="graph-header">
+                <div class="graph-icon" style="background: #eff6ff; color: #3b82f6;">a</div>
+                <div class="label-box" style="color: #3b82f6;">Acceleration</div>
+            </div>
+            <canvas id="canvasA"></canvas>
+            <div class="current-value" id="aValue" style="color: #3b82f6;">0.0 m/s²</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-gas" id="gasBtn">
+            <span>🚀</span> APPLY GAS
+        </button>
+        <button class="btn-brake" id="brakeBtn">
+            <span>🛑</span> APPLY BRAKE
+        </button>
+        <button class="btn-reset" id="resetBtn">
+            <span>↻</span> RESET LAB
+        </button>
+    </div>
+    
+    <div class="hint-text">
+        <span>💡 Hold GAS or BRAKE to accelerate · Graphs update in real-time</span>
+    </div>
+</div>
+
+<script>
+    const carEl = document.getElementById('car');
+    const canvases = {
+        x: document.getElementById('canvasX'),
+        v: document.getElementById('canvasV'),
+        a: document.getElementById('canvasA')
+    };
+    const ctxs = {
+        x: canvases.x.getContext('2d'),
+        v: canvases.v.getContext('2d'),
+        a: canvases.a.getContext('2d')
+    };
+
+    let state = { x: 50, v: 0, a: 0 };
+    let history = []; 
+    const maxHistory = 200;
+
+    function applyAccel(val) { 
+        state.a = val; 
+    }
+
+    function resetSim() {
+        state = { x: 50, v: 0, a: 0 };
+        history = [];
+        updateValueDisplays();
+    }
+
+    function updateValueDisplays() {
+        document.getElementById('xValue').innerHTML = state.x.toFixed(1) + ' <span style="font-size:0.8rem;font-weight:400;">m</span>';
+        document.getElementById('vValue').innerHTML = state.v.toFixed(1) + ' <span style="font-size:0.8rem;font-weight:400;">m/s</span>';
+        document.getElementById('aValue').innerHTML = state.a.toFixed(2) + ' <span style="font-size:0.8rem;font-weight:400;">m/s²</span>';
+    }
+
+    function drawSingleGraph(key, color, dataKey, scale, unit) {
+        const ctx = ctxs[key];
+        const c = canvases[key];
+        const w = c.width;
+        const h = c.height;
+        
+        // Shift the graph area DOWN by 15px (axis stays at h/2)
+        const graphOffsetY = 18;
+        const zeroY = h/2;
+
+        ctx.clearRect(0, 0, w, h);
+        
+        // Background grid
+        ctx.strokeStyle = "#f1f5f9";
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < w; i += 25) {
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, h);
+            ctx.stroke();
+        }
+        for (let i = 0; i < h; i += 25) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(w, i);
+            ctx.stroke();
+        }
+        
+        // Zero Line (Axis - preserved at h/2)
+        ctx.strokeStyle = "#cbd5e1"; 
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); 
+        ctx.moveTo(0, zeroY); 
+        ctx.lineTo(w, zeroY); 
+        ctx.stroke();
+        
+        // Axis label
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "9px Inter, sans-serif";
+        ctx.textAlign = "right";
+        ctx.fillText("0", 15, zeroY - 4);
+        
+        // Fill area under curve
+        if (history.length > 1) {
+            ctx.fillStyle = color + '10';
+            ctx.beginPath();
+            const firstX = 0;
+            const firstY = zeroY - (history[0][dataKey] * scale) + graphOffsetY;
+            ctx.moveTo(firstX, zeroY);
+            ctx.lineTo(firstX, firstY);
+            
+            for(let i = 1; i < history.length; i++) {
+                const xPos = (i / maxHistory) * w;
+                const val = history[i][dataKey];
+                const yPos = zeroY - (val * scale) + graphOffsetY;
+                ctx.lineTo(xPos, yPos);
+            }
+            
+            const lastX = ((history.length - 1) / maxHistory) * w;
+            ctx.lineTo(lastX, zeroY);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Data Plot (Shifted down by graphOffsetY)
+        ctx.strokeStyle = color; 
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = color + '60';
+        ctx.shadowBlur = 8;
+        
+        ctx.beginPath();
+        for(let i = 0; i < history.length; i++) {
+            const xPos = (i / maxHistory) * w;
+            const val = history[i][dataKey];
+            const yPos = zeroY - (val * scale) + graphOffsetY;
+            if(i === 0) ctx.moveTo(xPos, yPos);
+            else ctx.lineTo(xPos, yPos);
+        }
+        ctx.stroke();
+        
+        // Current point highlight
+        if (history.length > 0) {
+            const lastIdx = history.length - 1;
+            const xPos = (lastIdx / maxHistory) * w;
+            const val = history[lastIdx][dataKey];
+            const yPos = zeroY - (val * scale) + graphOffsetY;
+            
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(xPos, yPos, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(xPos, yPos, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        ctx.shadowBlur = 0;
+        
+        // Time axis label
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "9px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("time →", w - 25, h - 8);
+    }
+
+    function loop() {
+        // Physics
+        state.v += state.a;
+        state.x += state.v;
+        state.v *= 0.97;
+
+        if(state.x < 0) { state.x = 0; state.v = 0; }
+        if(state.x > 1050) { state.x = 1050; state.v = 0; }
+
+        carEl.style.left = (state.x / 1050 * 95) + "%";
+
+        history.push({...state});
+        if(history.length > maxHistory) history.shift();
+
+        drawSingleGraph('x', '#8b5cf6', 'x', 0.12, 'm');
+        drawSingleGraph('v', '#10b981', 'v', 5, 'm/s');
+        drawSingleGraph('a', '#3b82f6', 'a', 180, 'm/s²');
+        
+        updateValueDisplays();
+
+        requestAnimationFrame(loop);
+    }
+
+    // Initialize canvas sizes
+    function resizeCanvases() {
+        Object.values(canvases).forEach(c => {
+            const container = c.parentElement;
+            c.width = container.clientWidth - 24;
+            c.height = 220;
+        });
+    }
+    
+    window.addEventListener('resize', resizeCanvases);
+    resizeCanvases();
+
+    // Event listeners with touch support
+    const gasBtn = document.getElementById('gasBtn');
+    const brakeBtn = document.getElementById('brakeBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    
+    function handleGasStart(e) { e.preventDefault(); applyAccel(0.25); }
+    function handleGasEnd(e) { e.preventDefault(); applyAccel(0); }
+    function handleBrakeStart(e) { e.preventDefault(); applyAccel(-0.25); }
+    function handleBrakeEnd(e) { e.preventDefault(); applyAccel(0); }
+    
+    gasBtn.addEventListener('mousedown', handleGasStart);
+    gasBtn.addEventListener('mouseup', handleGasEnd);
+    gasBtn.addEventListener('mouseleave', handleGasEnd);
+    gasBtn.addEventListener('touchstart', handleGasStart, { passive: false });
+    gasBtn.addEventListener('touchend', handleGasEnd);
+    gasBtn.addEventListener('touchcancel', handleGasEnd);
+    
+    brakeBtn.addEventListener('mousedown', handleBrakeStart);
+    brakeBtn.addEventListener('mouseup', handleBrakeEnd);
+    brakeBtn.addEventListener('mouseleave', handleBrakeEnd);
+    brakeBtn.addEventListener('touchstart', handleBrakeStart, { passive: false });
+    brakeBtn.addEventListener('touchend', handleBrakeEnd);
+    brakeBtn.addEventListener('touchcancel', handleBrakeEnd);
+    
+    resetBtn.addEventListener('click', resetSim);
+    resetBtn.addEventListener('touchstart', (e) => { e.preventDefault(); resetSim(); }, { passive: false });
+
+    loop();
+</script>
+</body>
+</html>

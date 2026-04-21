@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Density & Specific Gravity Visualizer</title>
+    <style>
+        :root {
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --primary: #0ea5e9;
+            --water: #38bdf8;
+            --text: #0f172a;
+            --border: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            max-width: 1000px;
+        }
+
+        header {
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .main-layout {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        #canvas-wrapper {
+            position: relative;
+            flex: 2;
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        .controls {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: var(--card);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            min-width: 250px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .data-display {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .stat-val { font-weight: bold; color: var(--primary); }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        input[type="range"] { width: 100%; }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .btn:hover { filter: brightness(0.9); }
+
+        .instruction-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; overflow-y: auto; }
+            #canvas-wrapper { height: 300px; flex: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <header>
+        <h2 style="margin:0">Density & Specific Gravity</h2>
+    </header>
+
+    <div class="main-layout">
+        <div id="canvas-wrapper">
+            <canvas id="mainCanvas"></canvas>
+            <div class="instruction-overlay">Drag the object to test buoyancy</div>
+        </div>
+
+        <div class="controls">
+            <div class="data-display">
+                <div class="stat-line"><span>Object Density:</span> <span class="stat-val" id="disp-p">500 kg/m³</span></div>
+                <div class="stat-line"><span>Water Density:</span> <span class="stat-val">1000 kg/m³</span></div>
+                <div class="stat-line"><span>Specific Gravity (SG):</span> <span class="stat-val" id="disp-sg">0.50</span></div>
+            </div>
+
+            <div class="control-group">
+                <label id="label-mass">Mass: 5.0 kg</label>
+                <input type="range" id="massInput" min="1" max="20" step="0.1" value="5">
+            </div>
+
+            <div class="control-group">
+                <label id="label-vol">Volume: 0.010 m³</label>
+                <input type="range" id="volInput" min="0.005" max="0.03" step="0.001" value="0.01">
+            </div>
+
+            <div class="control-group">
+                <label>Material Presets</label>
+                <select id="materialPreset" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                    <option value="custom">Custom</option>
+                    <option value="wood">Wood (ρ ≈ 600)</option>
+                    <option value="ice">Ice (ρ ≈ 917)</option>
+                    <option value="rock">Rock (ρ ≈ 2700)</option>
+                    <option value="oil">Oil (ρ ≈ 800)</option>
+                </select>
+            </div>
+
+            <button class="btn" id="resetBtn">Reset Position</button>
+            
+            <p style="font-size: 0.75rem; color: #64748b; line-height: 1.4;">
+                If <b>SG < 1</b>, the object floats.<br>
+                If <b>SG > 1</b>, the object sinks.
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const massInput = document.getElementById('massInput');
+    const volInput = document.getElementById('volInput');
+    const labelMass = document.getElementById('label-mass');
+    const labelVol = document.getElementById('label-vol');
+    const dispP = document.getElementById('disp-p');
+    const dispSG = document.getElementById('disp-sg');
+    const materialSelect = document.getElementById('materialPreset');
+    const resetBtn = document.getElementById('resetBtn');
+
+    let width, height;
+    const waterLevel = 0.6; // 60% from top
+    const waterDensity = 1000; // kg/m^3
+
+    // Simulation Object
+    let obj = {
+        x: 0, y: 0,
+        vx: 0, vy: 0,
+        mass: 5.0,
+        vol: 0.01,
+        size: 60, // visual pixels
+        isDragging: false
+    };
+
+    function init() {
+        resize();
+        window.addEventListener('resize', resize);
+        
+        canvas.addEventListener('mousedown', startDrag);
+        canvas.addEventListener('mousemove', drag);
+        window.addEventListener('mouseup', endDrag);
+        
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDrag(e.touches[0]); }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); drag(e.touches[0]); }, {passive: false});
+        window.addEventListener('touchend', endDrag);
+
+        massInput.oninput = updateParams;
+        volInput.oninput = updateParams;
+        materialSelect.onchange = applyPreset;
+        resetBtn.onclick = resetPosition;
+
+        resetPosition();
+        updateParams();
+        animate();
+    }
+
+    function resize() {
+        width = canvas.parentElement.clientWidth;
+        height = canvas.parentElement.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        obj.x = width / 2;
+    }
+
+    function updateParams() {
+        obj.mass = parseFloat(massInput.value);
+        obj.vol = parseFloat(volInput.value);
+        
+        labelMass.innerText = `Mass: ${obj.mass.toFixed(1)} kg`;
+        labelVol.innerText = `Volume: ${obj.vol.toFixed(3)} m³`;
+        
+        const density = obj.mass / obj.vol;
+        const sg = density / waterDensity;
+        
+        dispP.innerText = `${Math.round(density)} kg/m³`;
+        dispSG.innerText = sg.toFixed(2);
+        
+        // Scale visual size based on volume (cubic root for 2D representation)
+        obj.size = Math.pow(obj.vol * 1000000, 1/3) * 3; 
+        
+        if(materialSelect.value !== "custom") {
+             // Check if sliders match preset; if not, set to custom
+        }
+    }
+
+    function applyPreset() {
+        const val = materialSelect.value;
+        if(val === 'wood') { massInput.value = 6; volInput.value = 0.010; }
+        else if(val === 'ice') { massInput.value = 9.2; volInput.value = 0.010; }
+        else if(val === 'rock') { massInput.value = 20; volInput.value = 0.007; }
+        else if(val === 'oil') { massInput.value = 4; volInput.value = 0.005; }
+        updateParams();
+    }
+
+    function resetPosition() {
+        obj.y = height * waterLevel - 150;
+        obj.vy = 0;
+        obj.vx = 0;
+    }
+
+    function startDrag(e) {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        
+        if (mx > obj.x - obj.size/2 && mx < obj.x + obj.size/2 &&
+            my > obj.y - obj.size/2 && my < obj.y + obj.size/2) {
+            obj.isDragging = true;
+        }
+    }
+
+    function drag(e) {
+        if (!obj.isDragging) return;
+        const rect = canvas.getBoundingClientRect();
+        obj.x = e.clientX - rect.left;
+        obj.y = e.clientY - rect.top;
+        obj.vx = 0;
+        obj.vy = 0;
+    }
+
+    function endDrag() { obj.isDragging = false; }
+
+    function animate() {
+        if (!obj.isDragging) {
+            const gravity = 0.5;
+            const wLevelPx = height * waterLevel;
+            
+            // Forces
+            let forceY = obj.mass * gravity; // Gravity
+            
+            // Buoyancy Logic
+            const top = obj.y - obj.size/2;
+            const bottom = obj.y + obj.size/2;
+            
+            if (bottom > wLevelPx) {
+                // Calculate submerged portion (0 to 1)
+                let submergedHeight = Math.min(obj.size, bottom - wLevelPx);
+                let submergedRatio = submergedHeight / obj.size;
+                
+                // Archimedes' Principle: Fb = weight of displaced fluid
+                // Fb = ρ_fluid * V_displaced * g
+                const buoyancy = (waterDensity * (obj.vol * submergedRatio) * gravity) * 100;
+                forceY -= buoyancy;
+                
+                // Water Resistance (Damping)
+                obj.vy *= 0.9; 
+            } else {
+                // Air Resistance
+                obj.vy *= 0.99;
+            }
+
+            obj.vy += forceY / obj.mass;
+            obj.y += obj.vy;
+
+            // Containment
+            if (obj.y + obj.size/2 > height) {
+                obj.y = height - obj.size/2;
+                obj.vy *= -0.2;
+            }
+        }
+
+        draw();
+        requestAnimationFrame(animate);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Draw Water
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.fillRect(0, height * waterLevel, width, height * (1-waterLevel));
+        
+        // Water surface line
+        ctx.strokeStyle = 'rgba(14, 165, 233, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, height * waterLevel);
+        ctx.lineTo(width, height * waterLevel);
+        ctx.stroke();
+
+        // Draw Object
+        ctx.save();
+        ctx.translate(obj.x, obj.y);
+        
+        // Change color based on density relative to water
+        const density = obj.mass / obj.vol;
+        const colorRatio = Math.min(1, density / 2000);
+        ctx.fillStyle = `rgb(${100 + colorRatio * 100}, ${100 - colorRatio * 50}, 50)`;
+        
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        
+        ctx.beginPath();
+        ctx.roundRect(-obj.size/2, -obj.size/2, obj.size, obj.size, 4);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.stroke();
+        
+        // Texture/Detail to show "compactness"
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        const dots = Math.floor(density / 200);
+        for(let i=0; i<dots; i++) {
+            ctx.beginPath();
+            ctx.arc(((i*7)%obj.size) - obj.size/2, ((i*13)%obj.size) - obj.size/2, 2, 0, Math.PI*2);
+            ctx.fill();
+        }
+        
+        ctx.restore();
+    }
+
+    init();
+</script>
+</body>
+</html>
