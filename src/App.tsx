@@ -218,6 +218,8 @@ const grade11MathLessons: Omit<Item, 'grade'>[] = [
 
 
 
+
+
 // ----- GRADE 12 CHEMISTRY LESSONS (new) -----
 const grade12ChemistryLessons: Omit<Item, 'grade'>[] = [
   // Chapter 1: Acid-Base Equilibria
@@ -273,7 +275,98 @@ const grade10MathematicsLessons: Omit<Item, 'grade'>[] = [
   { name: "Cyclic Quadrilateral Lab", link: "/grade10/maths/chapter5/2cyclic_quadrilateral_lab.html", chapter: "Chapter 5: Geometry & Circles", subject: "Mathematics" },
   { name: "Sector Builder Lab", link: "/grade10/maths/chapter5/3sector_builder_lab.html", chapter: "Chapter 5: Geometry & Circles", subject: "Mathematics" },
 ];
-
+const grade10PhysicsLessons:Omit<Item, 'grade'>[] = [
+  {
+    name: "Vector and Scalar Lab",
+    link: "/grade10/physics/chapter1/Physics_Scalars_&_Vectors.html",
+    chapter: "Chapter 1: Scalars & Vectors",
+    subject: "Physics"
+  },
+  {
+    name: "Vector Resolution Lab",
+    link: "/grade10/physics/chapter1/Vector_Resolution.html",
+    chapter: "Chapter 1: Scalars & Vectors",
+    subject: "Physics"
+  },
+  {
+    name: "Vector Operation Lab",
+    link: "/grade10/physics/chapter1/Vector_Operation.html",
+    chapter: "Chapter 1: Scalars & Vectors",
+    subject: "Physics"
+  },
+  {
+    name: "Vector Representation Lab",
+    link: "/grade10/physics/chapter1/Vector_representation.html",
+    chapter: "Chapter 1: Scalars & Vectors",
+    subject: "Physics"
+  },
+  {
+    name: "Distance and Displacement Lab",
+    link: "/grade10/physics/chapter2/Distance_vs_Displacement_Vector_Lab.html",
+    chapter: "Chapter 2: Uniform acceleration",
+    subject: "Physics"
+  },
+  {
+    name: "Free Fall Lab",
+    link: "/grade10/physics/chapter2/Free_Fall_Lab.html",
+    chapter: "Chapter 2: Uniform acceleration",
+    subject: "Physics"
+  },
+  {
+    name: "Kinematics Lab Motion Explorer",
+    link: "/grade10/physics/chapter2/Kinematics_Stack_Motion_Graphs.html",
+    chapter: "Chapter 2: Uniform acceleration",
+    subject: "Physics"
+  },
+  {
+    name: "Kinematics Lab Motion Explorer",
+    link: "/grade10/physics/chapter2/Kinematics_Lab_Motion_Explorer.html",
+    chapter: "Chapter 2: Uniform acceleration",
+    subject: "Physics"
+  },
+  {
+    name: "Motion Explorer Graphs",
+    link: "/grade10/physics/chapter2/Motion_Tracer_x_t_Graph.html",
+    chapter: "Chapter 2: Uniform acceleration",
+    subject: "Physics"
+  },
+  {
+    name: "Relative Motion Lab",
+    link: "/grade10/physics/chapter2/Relative_Velocity.html",
+    chapter: "Chapter 2: Uniform acceleration",
+    subject: "Physics"
+  },
+  {
+    name: "Density and Pressure Lab",
+    link: "/grade10/physics/chapter3/Density_&_Gravity_Visualizer.html",
+    chapter: "Chapter 3: Fluid Mechanics",
+    subject: "Physics"
+  },
+  {
+    name: "Elasticity and Plasticity Lab",
+    link: "/grade10/physics/chapter3/Elasticity_vs_Plasticity_Visualization.html",
+    chapter: "Chapter 3: Fluid Mechanics",
+    subject: "Physics"
+  },
+  {
+    name: "Interactive Young's Modulus Lab",
+    link: "/grade10/physics/chapter3/Interactive_Young_Modulus_Lab.html",
+    chapter: "Chapter 3: Fluid Mechanics",
+    subject: "Physics"
+  },
+  {
+    name: "Stress-Strain Curve Lab",
+    link: "/grade10/physics/chapter3/Stress_and_Strain_Visualizer.html",
+    chapter: "Chapter 3: Fluid Mechanics",
+    subject: "Physics"
+  },
+  {
+    name: "Static equilibrium and Torque Lab",
+    link: "/grade10/physics/chapter3/Static_Equilibrium_Lab.html",
+    chapter: "Chapter 3: Fluid Mechanics",
+    subject: "Physics"
+  },
+]
 // ----- GRADE 12 MATHEMATICS LESSONS -----
 const grade12MathematicsLessons: Omit<Item, 'grade'>[] = [
   // Chapter 1: Sequences and Series
@@ -352,6 +445,7 @@ const allLessons: Item[] = [
   ...grade11MathLessons.map(item => ({ ...item, grade: 11 as Grade })),
    ...grade12MathematicsLessons.map(item => ({ ...item, grade: 12 as Grade })),
   ...grade12ChemistryLessons.map(item => ({ ...item, grade: 12 as Grade })),
+    ...grade10PhysicsLessons.map(item => ({ ...item, grade: 10 as Grade })),
   // Grade 11 remains empty for now
   // Biology can be added later with grade 9-12 as needed
 ];
