@@ -184,6 +184,7 @@ body {
   position: relative;
   display: flex;
   transition: transform 0.1s ease;
+  touch-action: manipulation;
 }
 
 .card {
@@ -202,6 +203,10 @@ body {
   width: 100%;
   background: #ffffffdd;
   backdrop-filter: blur(2px);
+  flex: 1;
+  z-index: 1;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
 
 .card:hover {
@@ -209,6 +214,10 @@ body {
   box-shadow: 0 12px 22px -12px rgba(0, 0, 0, 0.15);
   border-color: #cbdde9;
   background: white;
+}
+
+.card:active {
+  transform: translateY(-1px);
 }
 
 .number {
@@ -249,6 +258,10 @@ body {
   color: #94a3b8;
   backdrop-filter: blur(4px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  z-index: 2;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  padding: 0;
 }
 
 .fav-btn.active {
@@ -260,6 +273,10 @@ body {
 .fav-btn:hover {
   transform: scale(1.05);
   background: #fffbee;
+}
+
+.fav-btn:active {
+  transform: scale(0.95);
 }
 
 .empty-state {
@@ -299,5 +316,35 @@ footer {
   }
   .favorite-filter {
     justify-content: center;
+  }
+  
+  /* Improve touch targets on mobile */
+  .card {
+    padding: 1.2rem 1.2rem 1.2rem 3.2rem;
+    min-height: 60px;
+  }
+  
+  .fav-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+    right: 8px;
+    top: 8px;
+  }
+  
+  .number {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    margin-left: -2rem;
+  }
+  
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .grade-btn, .subject-btn {
+    padding: 0.65rem 1.5rem;
+    font-size: 0.95rem;
   }
 }
