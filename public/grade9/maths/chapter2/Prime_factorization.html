@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title> Prime factorization</title>
+    <title>Prime factorization</title>
     <style>
         :root {
             --bg: #f8f9fa;
@@ -20,7 +20,12 @@
             --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
 
         body {
             font-family: var(--font-sans);
@@ -29,84 +34,103 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
-        #canvas { 
-            display: block; 
-            touch-action: none; 
+        #canvas {
+            display: block;
+            touch-action: none;
             background: linear-gradient(135deg, #fafbfc 0%, #f0f2f5 100%);
             cursor: default;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
-        
+
         #canvas.dragging-node {
             cursor: grabbing;
         }
 
         .ui-container {
-            position: absolute;
+            position: fixed;
             inset: 0;
             pointer-events: none;
-            padding: 20px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            z-index: 10;
         }
 
         .panel {
             background: var(--surface);
             border: 1px solid var(--border-light);
             border-radius: 14px;
-            padding: 18px;
+            padding: 16px;
             pointer-events: auto;
             box-shadow: var(--shadow-sm);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
-        .header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start; 
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
         }
 
-        .lab-title h1 { 
-            font-size: 1rem; 
+        .lab-title h1 {
+            font-size: 0.9rem;
             font-weight: 600;
             letter-spacing: -0.01em;
-            color: var(--accent-blue); 
-            text-transform: uppercase; 
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            white-space: nowrap;
         }
-        .lab-title p { 
-            font-size: 0.7rem; 
+
+        .lab-title p {
+            font-size: 0.65rem;
             color: var(--text-secondary);
             margin-top: 2px;
         }
 
-        .controls { 
-            width: 300px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
+        .controls {
+            width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 240px;
         }
 
-        .input-group { 
-            display: flex; 
-            gap: 8px; 
+        .input-group {
+            display: flex;
+            gap: 8px;
         }
-        
+
         input {
             flex: 1;
             background: var(--bg);
             border: 1px solid var(--border-medium);
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 10px 12px;
             color: var(--text-primary);
             font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
             font-size: 1rem;
             outline: none;
             transition: border-color 0.15s;
+            min-width: 0;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
-        input:focus { 
-            border-color: var(--accent-blue); 
+        input:focus {
+            border-color: var(--accent-blue);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
@@ -114,27 +138,34 @@
             background: var(--accent-blue);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 16px;
             border-radius: 8px;
             font-weight: 500;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: all 0.15s;
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            min-height: 40px;
         }
 
-        button:hover { 
-            background: #2563eb; 
+        button:hover {
+            background: #2563eb;
         }
-        button:active { 
-            transform: scale(0.98); 
+
+        button:active {
+            transform: scale(0.98);
         }
-        button.secondary { 
-            background: transparent; 
-            border: 1px solid var(--border-medium); 
+
+        button.secondary {
+            background: transparent;
+            border: 1px solid var(--border-medium);
             color: var(--text-primary);
         }
+
         button.secondary:hover {
             background: var(--bg);
             border-color: var(--border-medium);
@@ -143,82 +174,98 @@
         .btn-group {
             display: flex;
             gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group button {
+            flex: 1;
+            min-width: fit-content;
         }
 
         #decomposeBtn {
             background: var(--danger);
-            flex: 1;
+            flex: 1.5;
         }
+
         #decomposeBtn:hover {
             background: #dc2626;
         }
 
         .instructions {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: var(--text-secondary);
             line-height: 1.5;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .overlay-msg {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
             transition: opacity 0.3s;
             pointer-events: none;
+            z-index: 5;
         }
 
-        .msg-text { 
-            font-size: 1.4rem; 
+        .msg-text {
+            font-size: 1.2rem;
             font-weight: 500;
             letter-spacing: -0.02em;
+            text-shadow: 0 1px 4px rgba(255,255,255,0.8);
         }
 
-        .footer { 
-            display: flex; 
+        .footer {
+            display: flex;
             justify-content: space-between;
-            align-items: flex-end; 
+            align-items: flex-end;
+            gap: 10px;
         }
 
         .footer .panel {
             text-align: right;
-            min-width: 180px;
+            min-width: 160px;
+            max-width: 100%;
         }
 
         #formula-display {
             font-family: 'SF Mono', 'Monaco', monospace;
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: 500;
             color: var(--accent-gold);
+            word-break: break-all;
         }
 
         #type-label {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: var(--accent-blue);
+            margin-top: 2px;
         }
 
         .zoom-controls {
-            position: absolute;
+            position: fixed;
             bottom: 20px;
             right: 20px;
             display: flex;
             gap: 8px;
             pointer-events: auto;
+            z-index: 15;
         }
 
         .zoom-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 20px;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 22px;
             background: var(--surface);
             border: 1px solid var(--border-light);
             color: var(--text-primary);
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: 500;
             display: flex;
             align-items: center;
@@ -227,6 +274,8 @@
             box-shadow: var(--shadow-sm);
             transition: all 0.15s;
             padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .zoom-btn:hover {
@@ -237,560 +286,1116 @@
         .zoom-level {
             background: var(--surface);
             border: 1px solid var(--border-light);
-            border-radius: 20px;
+            border-radius: 22px;
             padding: 0 16px;
             display: flex;
             align-items: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 500;
             color: var(--text-secondary);
             box-shadow: var(--shadow-sm);
+            min-height: 44px;
         }
 
         .drag-hint {
-            position: absolute;
+            position: fixed;
             bottom: 20px;
             left: 20px;
             background: var(--surface);
             border: 1px solid var(--border-light);
             border-radius: 20px;
-            padding: 6px 14px;
+            padding: 8px 16px;
             font-size: 0.7rem;
             color: var(--text-secondary);
             pointer-events: none;
             box-shadow: var(--shadow-sm);
             opacity: 0.7;
+            z-index: 15;
+            white-space: nowrap;
         }
 
-        @media (max-width: 600px) {
-            .controls { width: 100%; }
-            .header { flex-direction: column; gap: 12px; }
-            .footer { flex-direction: column; align-items: flex-start; gap: 8px; }
-            .drag-hint { display: none; }
-            .zoom-controls { bottom: 80px; }
-            .panel { padding: 14px; }
+        /* Hamburger Menu Button */
+        .hamburger-btn {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            pointer-events: auto;
+            box-shadow: var(--shadow-sm);
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .hamburger-btn:hover {
+            background: var(--bg);
+        }
+
+        .hamburger-btn .icon {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text-primary);
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .hamburger-btn .icon::before,
+        .hamburger-btn .icon::after {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text-primary);
+            position: absolute;
+            left: 0;
+            transition: all 0.3s;
+        }
+
+        .hamburger-btn .icon::before {
+            top: -6px;
+        }
+
+        .hamburger-btn .icon::after {
+            top: 6px;
+        }
+
+        .hamburger-btn.open .icon {
+            background: transparent;
+        }
+
+        .hamburger-btn.open .icon::before {
+            top: 0;
+            transform: rotate(45deg);
+        }
+
+        .hamburger-btn.open .icon::after {
+            top: 0;
+            transform: rotate(-45deg);
+        }
+
+        /* Mobile Menu Overlay */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 90;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .mobile-menu-overlay.active {
+            opacity: 1;
+        }
+
+        /* Mobile Menu Panel */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 320px;
+            max-width: 85vw;
+            height: 100vh;
+            height: 100dvh;
+            background: var(--surface);
+            z-index: 95;
+            pointer-events: auto;
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .mobile-menu.open {
+            right: 0;
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .mobile-menu-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+        }
+
+        .mobile-menu-close {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mobile-menu-section {
+            margin-bottom: 20px;
+        }
+
+        .mobile-menu-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .mobile-menu .input-group {
+            margin-bottom: 12px;
+        }
+
+        .mobile-menu .btn-group {
+            margin-bottom: 12px;
+        }
+
+        .mobile-menu .instructions {
+            margin-bottom: 16px;
+        }
+
+        .mobile-menu-info {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+        }
+
+        .mobile-menu-info #mobile-formula-display {
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--accent-gold);
+            word-break: break-all;
+            margin-bottom: 4px;
+        }
+
+        .mobile-menu-info #mobile-type-label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent-blue);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .mobile-menu-overlay {
+                display: block;
+            }
+
+            .mobile-menu {
+                display: block;
+            }
+
+            .header .controls {
+                display: none;
+            }
+
+            .ui-container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .lab-title {
+                background: var(--surface);
+                border: 1px solid var(--border-light);
+                border-radius: 12px;
+                padding: 10px 14px;
+                box-shadow: var(--shadow-sm);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+            }
+
+            .lab-title h1 {
+                font-size: 0.8rem;
+            }
+
+            .lab-title p {
+                font-size: 0.6rem;
+            }
+
+            input {
+                padding: 12px 14px;
+                font-size: 1rem;
+                min-height: 44px;
+            }
+
+            button {
+                padding: 12px 14px;
+                font-size: 0.7rem;
+                min-height: 44px;
+            }
+
+            .instructions {
+                font-size: 0.6rem;
+                line-height: 1.4;
+            }
+
+            .footer {
+                flex-direction: column-reverse;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .footer .panel {
+                text-align: left;
+                min-width: unset;
+                padding: 14px;
+                width: 100%;
+            }
+
+            #formula-display {
+                font-size: 0.9rem;
+            }
+
+            .drag-hint {
+                position: static;
+                margin-top: 8px;
+                text-align: center;
+                font-size: 0.6rem;
+                padding: 6px 12px;
+                border-radius: 12px;
+            }
+
+            .zoom-controls {
+                bottom: 16px;
+                right: 16px;
+                gap: 6px;
+            }
+
+            .zoom-btn {
+                width: 40px;
+                height: 40px;
+                min-width: 40px;
+                min-height: 40px;
+                border-radius: 20px;
+                font-size: 1.2rem;
+            }
+
+            .zoom-level {
+                padding: 0 12px;
+                font-size: 0.7rem;
+                min-height: 40px;
+            }
+
+            .overlay-msg .msg-text {
+                font-size: 1rem;
+            }
+
+            .panel {
+                border-radius: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ui-container {
+                padding: 8px;
+            }
+
+            .lab-title {
+                padding: 8px 12px;
+            }
+
+            .mobile-menu {
+                width: 100%;
+                max-width: 100vw;
+                padding: 16px;
+            }
+
+            .btn-group {
+                gap: 6px;
+            }
+
+            .btn-group button {
+                padding: 10px 8px;
+                font-size: 0.65rem;
+                min-height: 40px;
+            }
+
+            input {
+                padding: 10px 12px;
+                font-size: 0.95rem;
+                min-height: 40px;
+            }
+
+            button {
+                padding: 10px 12px;
+                font-size: 0.65rem;
+                min-height: 40px;
+            }
+
+            .lab-title h1 {
+                font-size: 0.75rem;
+            }
+
+            #formula-display {
+                font-size: 0.85rem;
+            }
+
+            .zoom-controls {
+                bottom: 12px;
+                right: 12px;
+            }
+
+            .zoom-btn {
+                width: 36px;
+                height: 36px;
+                min-width: 36px;
+                min-height: 36px;
+                border-radius: 18px;
+                font-size: 1.1rem;
+            }
+
+            .zoom-level {
+                padding: 0 10px;
+                font-size: 0.65rem;
+                min-height: 36px;
+            }
+
+            .instructions {
+                font-size: 0.55rem;
+            }
+
+            .footer .panel {
+                padding: 12px;
+            }
+        }
+
+        /* Tablet landscape optimization */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .controls {
+                width: 260px;
+            }
+
+            .ui-container {
+                padding: 14px;
+            }
+        }
+
+        /* Accessibility focus styles */
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
         }
     </style>
 </head>
 <body>
 
-<canvas id="canvas"></canvas>
+    <canvas id="canvas"></canvas>
 
-<div class="ui-container">
-    <div class="header">
-        <div class="lab-title">
-            <h1>Factor Tree Lab</h1>
-            <p>Visual prime decomposition</p>
+    <!-- Hamburger Menu Button -->
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
+        <span class="icon"></span>
+    </button>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <!-- Mobile Menu Panel -->
+    <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Controls menu">
+        <div class="mobile-menu-header">
+            <div class="mobile-menu-title">Factor Tree Lab</div>
+            <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
         </div>
-        
-        <div class="panel controls">
+
+        <div class="mobile-menu-section">
+            <div class="mobile-menu-label">Input</div>
             <div class="input-group">
-                <input type="number" id="numInput" value="60" min="2" max="1000" placeholder="Enter number">
-                <button id="spawnBtn">Go</button>
+                <input type="number" id="mobileNumInput" value="60" min="2" max="1000" placeholder="Enter number" aria-label="Enter a number">
+                <button id="mobileSpawnBtn" aria-label="Generate tree">Go</button>
             </div>
+        </div>
+
+        <div class="mobile-menu-section">
+            <div class="mobile-menu-label">Actions</div>
             <div class="btn-group">
-                <button id="decomposeBtn">Grow tree</button>
-                <button id="clearBtn" class="secondary">Reset</button>
-                <button id="resetPositionsBtn" class="secondary">↻</button>
+                <button id="mobileDecomposeBtn" aria-label="Grow tree">Grow tree</button>
+                <button id="mobileClearBtn" class="secondary" aria-label="Reset canvas">Reset</button>
+                <button id="mobileResetPositionsBtn" class="secondary" aria-label="Reset positions">↻</button>
             </div>
+        </div>
+
+        <div class="mobile-menu-section">
             <p class="instructions">
                 Enter a number (2–1000) → Grow tree<br>
                 Drag nodes to reposition · Scroll to zoom · ↻ to reset positions
             </p>
         </div>
-    </div>
 
-    <div class="overlay-msg" id="overlay" style="opacity: 0;">
-        <div class="msg-text" id="statusText"></div>
-    </div>
-
-    <div class="footer">
-        <div class="drag-hint">
-            ✥ Drag nodes to arrange · Scroll to zoom
-        </div>
-        <div class="panel">
-            <div id="formula-display"></div>
-            <div id="type-label">—</div>
+        <div class="mobile-menu-section">
+            <div class="mobile-menu-label">Node Info</div>
+            <div class="mobile-menu-info">
+                <div id="mobile-formula-display"></div>
+                <div id="mobile-type-label">—</div>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="zoom-controls">
-    <button class="zoom-btn" id="zoomOut">−</button>
-    <div class="zoom-level" id="zoomLevel">100%</div>
-    <button class="zoom-btn" id="zoomIn">+</button>
-</div>
+    <div class="ui-container">
+        <div class="header">
+            <div class="lab-title">
+                <h1>Factor Tree Lab</h1>
+                <p>Visual prime decomposition</p>
+            </div>
 
-<script>
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const numInput = document.getElementById('numInput');
-    const spawnBtn = document.getElementById('spawnBtn');
-    const decomposeBtn = document.getElementById('decomposeBtn');
-    const clearBtn = document.getElementById('clearBtn');
-    const resetPositionsBtn = document.getElementById('resetPositionsBtn');
-    const formulaDisplay = document.getElementById('formula-display');
-    const typeLabel = document.getElementById('type-label');
-    const statusText = document.getElementById('statusText');
-    const overlay = document.getElementById('overlay');
-    const zoomInBtn = document.getElementById('zoomIn');
-    const zoomOutBtn = document.getElementById('zoomOut');
-    const zoomLevelEl = document.getElementById('zoomLevel');
+            <div class="panel controls">
+                <div class="input-group">
+                    <input type="number" id="numInput" value="60" min="2" max="1000" placeholder="Enter number" aria-label="Enter a number">
+                    <button id="spawnBtn" aria-label="Generate tree">Go</button>
+                </div>
+                <div class="btn-group">
+                    <button id="decomposeBtn" aria-label="Grow tree">Grow tree</button>
+                    <button id="clearBtn" class="secondary" aria-label="Reset canvas">Reset</button>
+                    <button id="resetPositionsBtn" class="secondary" aria-label="Reset positions">↻</button>
+                </div>
+                <p class="instructions">
+                    Enter a number (2–1000) → Grow tree<br>
+                    Drag nodes to reposition · Scroll to zoom · ↻ to reset positions
+                </p>
+            </div>
+        </div>
 
-    let width, height;
-    let treeRoot = null;
-    let nodes = [];
-    let mouse = { x: 0, y: 0 };
-    let laserAlpha = 0;
-    let targetX = 0;
+        <div class="overlay-msg" id="overlay" style="opacity: 0;">
+            <div class="msg-text" id="statusText"></div>
+        </div>
 
-    // Transform variables
-    let panX = 0;
-    let panY = 0;
-    let zoom = 1.0;
-    const MIN_ZOOM = 0.3;
-    const MAX_ZOOM = 2.0;
-    const ZOOM_STEP = 0.1;
-    
-    // Dragging variables
-    let draggedNode = null;
-    let isDraggingNode = false;
-    let dragOffsetX = 0;
-    let dragOffsetY = 0;
+        <div class="footer">
+            <div class="drag-hint" aria-hidden="true">
+                ✥ Drag nodes to arrange · Scroll to zoom
+            </div>
+            <div class="panel">
+                <div id="formula-display"></div>
+                <div id="type-label">—</div>
+            </div>
+        </div>
+    </div>
 
-    const NODE_RADIUS = 26;
-    const LEVEL_HEIGHT = 100;
-    const HORIZONTAL_SPACING = 1.4;
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoomOut" aria-label="Zoom out">−</button>
+        <div class="zoom-level" id="zoomLevel" aria-live="polite">100%</div>
+        <button class="zoom-btn" id="zoomIn" aria-label="Zoom in">+</button>
+    </div>
 
-    function isPrime(n) {
-        if (n < 2) return false;
-        for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return false;
-        return true;
-    }
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Desktop controls
+        const numInput = document.getElementById('numInput');
+        const spawnBtn = document.getElementById('spawnBtn');
+        const decomposeBtn = document.getElementById('decomposeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resetPositionsBtn = document.getElementById('resetPositionsBtn');
+        const formulaDisplay = document.getElementById('formula-display');
+        const typeLabel = document.getElementById('type-label');
+        
+        // Mobile controls
+        const mobileNumInput = document.getElementById('mobileNumInput');
+        const mobileSpawnBtn = document.getElementById('mobileSpawnBtn');
+        const mobileDecomposeBtn = document.getElementById('mobileDecomposeBtn');
+        const mobileClearBtn = document.getElementById('mobileClearBtn');
+        const mobileResetPositionsBtn = document.getElementById('mobileResetPositionsBtn');
+        const mobileFormulaDisplay = document.getElementById('mobile-formula-display');
+        const mobileTypeLabel = document.getElementById('mobile-type-label');
+        
+        // Mobile menu elements
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuClose = document.getElementById('mobileMenuClose');
+        
+        const statusText = document.getElementById('statusText');
+        const overlay = document.getElementById('overlay');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const zoomLevelEl = document.getElementById('zoomLevel');
 
-    function getSmallestFactor(n) {
-        for (let i = 2; i <= Math.sqrt(n); i++) if (n % i === 0) return i;
-        return n;
-    }
+        let width, height;
+        let treeRoot = null;
+        let nodes = [];
+        let mouse = { x: 0, y: 0 };
+        let laserAlpha = 0;
+        let targetX = 0;
 
-    class TreeNode {
-        constructor(val, level, x, y, parent = null) {
-            this.val = val;
-            this.level = level;
-            this.originalX = x;
-            this.originalY = y;
-            this.userOffsetX = 0;
-            this.userOffsetY = 0;
-            this.x = x;
-            this.y = y;
-            this.parent = parent;
-            this.isPrime = isPrime(val);
-            this.left = null;
-            this.right = null;
-            this.t = 0;
+        // Transform variables
+        let panX = 0;
+        let panY = 0;
+        let zoom = 1.0;
+        const MIN_ZOOM = 0.3;
+        const MAX_ZOOM = 2.0;
+        const ZOOM_STEP = 0.1;
+
+        // Dragging variables
+        let draggedNode = null;
+        let isDraggingNode = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        const NODE_RADIUS = 26;
+        const LEVEL_HEIGHT = 100;
+        const HORIZONTAL_SPACING = 1.4;
+
+        function isPrime(n) {
+            if (n < 2) return false;
+            for (let i = 2; i <= Math.sqrt(n); i++)
+                if (n % i === 0) return false;
+            return true;
         }
 
-        // Apply user offset to current position
-        applyUserOffset() {
-            this.x = (this.originalX + this.userOffsetX + panX) * zoom;
-            this.y = (this.originalY + this.userOffsetY + panY) * zoom;
+        function getSmallestFactor(n) {
+            for (let i = 2; i <= Math.sqrt(n); i++)
+                if (n % i === 0) return i;
+            return n;
         }
 
-        // Update positions for zoom/pan changes
-        updateTransform() {
-            this.x = (this.originalX + this.userOffsetX + panX) * zoom;
-            this.y = (this.originalY + this.userOffsetY + panY) * zoom;
-            
-            if (this.left) this.left.updateTransform();
-            if (this.right) this.right.updateTransform();
-        }
-
-        resetUserOffset() {
-            this.userOffsetX = 0;
-            this.userOffsetY = 0;
-            if (this.left) this.left.resetUserOffset();
-            if (this.right) this.right.resetUserOffset();
-            this.updateTransform();
-        }
-
-        update() {
-            // No automatic movement - nodes stay where user puts them
-            // Only update if not being dragged
-            if (!isDraggingNode || this !== draggedNode) {
-                // Keep current position
+        class TreeNode {
+            constructor(val, level, x, y, parent = null) {
+                this.val = val;
+                this.level = level;
+                this.originalX = x;
+                this.originalY = y;
+                this.userOffsetX = 0;
+                this.userOffsetY = 0;
+                this.x = x;
+                this.y = y;
+                this.parent = parent;
+                this.isPrime = isPrime(val);
+                this.left = null;
+                this.right = null;
+                this.t = 0;
             }
-        }
 
-        draw() {
-            // Draw connections
-            if (this.left && this.right) {
+            applyUserOffset() {
+                this.x = (this.originalX + this.userOffsetX + panX) * zoom;
+                this.y = (this.originalY + this.userOffsetY + panY) * zoom;
+            }
+
+            updateTransform() {
+                this.x = (this.originalX + this.userOffsetX + panX) * zoom;
+                this.y = (this.originalY + this.userOffsetY + panY) * zoom;
+
+                if (this.left) this.left.updateTransform();
+                if (this.right) this.right.updateTransform();
+            }
+
+            resetUserOffset() {
+                this.userOffsetX = 0;
+                this.userOffsetY = 0;
+                if (this.left) this.left.resetUserOffset();
+                if (this.right) this.right.resetUserOffset();
+                this.updateTransform();
+            }
+
+            update() {
+                if (!isDraggingNode || this !== draggedNode) {
+                    // Keep current position
+                }
+            }
+
+            draw() {
+                if (this.left && this.right) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#d4d4d8';
+                    ctx.lineWidth = 1.5 * zoom;
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.left.x, this.left.y);
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.right.x, this.right.y);
+                    ctx.stroke();
+                }
+
+                const scaledMouseX = mouse.x / zoom;
+                const scaledMouseY = mouse.y / zoom;
+                const scaledNodeX = this.x / zoom;
+                const scaledNodeY = this.y / zoom;
+
+                const isHovered = Math.hypot(scaledNodeX - scaledMouseX, scaledNodeY - scaledMouseY) < NODE_RADIUS;
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                if (this.isPrime) {
+                    this.drawPrimeNode(isHovered || this === draggedNode);
+                } else {
+                    this.drawCompositeNode(isHovered || this === draggedNode);
+                }
+
+                ctx.font = `600 ${NODE_RADIUS * 0.55 * zoom}px 'SF Mono', Monaco, monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = this.isPrime ? '#ffffff' : '#1a1a1a';
+                ctx.fillText(this.val, 0, 0);
+
+                ctx.restore();
+
+                if (isHovered) this.updateInfo();
+            }
+
+            drawPrimeNode(hovered) {
+                const r = (NODE_RADIUS + (hovered ? 2 : 0)) * zoom;
+
+                const grad = ctx.createRadialGradient(-5 * zoom, -5 * zoom, 0, 0, 0, r);
+                grad.addColorStop(0, '#60a5fa');
+                grad.addColorStop(1, '#2563eb');
+
+                ctx.shadowColor = 'rgba(59, 130, 246, 0.2)';
+                ctx.shadowBlur = (hovered ? 12 : 6) * zoom;
+                ctx.shadowOffsetY = 2 * zoom;
+
                 ctx.beginPath();
-                ctx.strokeStyle = '#d4d4d8';
-                ctx.lineWidth = 1.5 * zoom;
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.left.x, this.left.y);
-                ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.right.x, this.right.y);
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2.5 * zoom;
                 ctx.stroke();
             }
 
-            const scaledMouseX = mouse.x / zoom;
-            const scaledMouseY = mouse.y / zoom;
-            const scaledNodeX = this.x / zoom;
-            const scaledNodeY = this.y / zoom;
-            
-            const isHovered = Math.hypot(scaledNodeX - scaledMouseX, scaledNodeY - scaledMouseY) < NODE_RADIUS;
-            
-            ctx.save();
-            ctx.translate(this.x, this.y);
-            
-            if (this.isPrime) {
-                this.drawPrimeNode(isHovered || this === draggedNode);
-            } else {
-                this.drawCompositeNode(isHovered || this === draggedNode);
+            drawCompositeNode(hovered) {
+                const r = NODE_RADIUS * zoom;
+
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.05)';
+                ctx.shadowBlur = 6 * zoom;
+                ctx.shadowOffsetY = 2 * zoom;
+
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fillStyle = hovered ? '#fef9c3' : '#ffffff';
+                ctx.fill();
+
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetY = 0;
+                ctx.strokeStyle = hovered ? '#e6a700' : '#d4d4d8';
+                ctx.lineWidth = (hovered ? 2 : 1.5) * zoom;
+                ctx.setLineDash(hovered ? [] : [4 * zoom, 3 * zoom]);
+                ctx.stroke();
+                ctx.setLineDash([]);
             }
 
-            ctx.font = `600 ${NODE_RADIUS * 0.55 * zoom}px 'SF Mono', Monaco, monospace`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = this.isPrime ? '#ffffff' : '#1a1a1a';
-            ctx.fillText(this.val, 0, 0);
-
-            ctx.restore();
-
-            if (isHovered) this.updateInfo();
-        }
-
-        drawPrimeNode(hovered) {
-            const r = (NODE_RADIUS + (hovered ? 2 : 0)) * zoom;
-            
-            const grad = ctx.createRadialGradient(-5 * zoom, -5 * zoom, 0, 0, 0, r);
-            grad.addColorStop(0, '#60a5fa');
-            grad.addColorStop(1, '#2563eb');
-
-            ctx.shadowColor = 'rgba(59, 130, 246, 0.2)';
-            ctx.shadowBlur = (hovered ? 12 : 6) * zoom;
-            ctx.shadowOffsetY = 2 * zoom;
-            
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
-            ctx.fillStyle = grad;
-            ctx.fill();
-            
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetY = 0;
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2.5 * zoom;
-            ctx.stroke();
-        }
-
-        drawCompositeNode(hovered) {
-            const r = NODE_RADIUS * zoom;
-            
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.05)';
-            ctx.shadowBlur = 6 * zoom;
-            ctx.shadowOffsetY = 2 * zoom;
-            
-            ctx.beginPath();
-            ctx.arc(0, 0, r, 0, Math.PI * 2);
-            ctx.fillStyle = hovered ? '#fef9c3' : '#ffffff';
-            ctx.fill();
-            
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetY = 0;
-            ctx.strokeStyle = hovered ? '#e6a700' : '#d4d4d8';
-            ctx.lineWidth = (hovered ? 2 : 1.5) * zoom;
-            ctx.setLineDash(hovered ? [] : [4 * zoom, 3 * zoom]);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        updateInfo() {
-            if (this.isPrime) {
-                formulaDisplay.textContent = `${this.val} · prime`;
-                typeLabel.textContent = 'Prime leaf';
-                typeLabel.style.color = '#3b82f6';
-            } else {
-                formulaDisplay.textContent = `${this.left.val} × ${this.right.val}`;
-                typeLabel.textContent = 'Composite branch';
-                typeLabel.style.color = '#e6a700';
+            updateInfo() {
+                if (this.isPrime) {
+                    const text = `${this.val} · prime`;
+                    const type = 'Prime leaf';
+                    const color = '#3b82f6';
+                    formulaDisplay.textContent = text;
+                    typeLabel.textContent = type;
+                    typeLabel.style.color = color;
+                    mobileFormulaDisplay.textContent = text;
+                    mobileTypeLabel.textContent = type;
+                    mobileTypeLabel.style.color = color;
+                } else {
+                    const text = `${this.left.val} × ${this.right.val}`;
+                    const type = 'Composite branch';
+                    const color = '#e6a700';
+                    formulaDisplay.textContent = text;
+                    typeLabel.textContent = type;
+                    typeLabel.style.color = color;
+                    mobileFormulaDisplay.textContent = text;
+                    mobileTypeLabel.textContent = type;
+                    mobileTypeLabel.style.color = color;
+                }
             }
         }
-    }
 
-    function getPrimeFactors(n) {
-        const factors = [];
-        let d = 2;
-        let temp = n;
-        while (temp > 1) {
-            while (temp % d === 0) {
-                factors.push(d);
-                temp /= d;
+        function getPrimeFactors(n) {
+            const factors = [];
+            let d = 2;
+            let temp = n;
+            while (temp > 1) {
+                while (temp % d === 0) {
+                    factors.push(d);
+                    temp /= d;
+                }
+                d++;
             }
-            d++;
+            return factors;
         }
-        return factors;
-    }
 
-    function buildTree(node, widthAlloc, startX) {
-        nodes.push(node);
-        if (node.isPrime) return;
+        function buildTree(node, widthAlloc, startX) {
+            nodes.push(node);
+            if (node.isPrime) return;
 
-        const factor = getSmallestFactor(node.val);
-        const otherFactor = node.val / factor;
+            const factor = getSmallestFactor(node.val);
+            const otherFactor = node.val / factor;
 
-        const nextY = node.originalY + LEVEL_HEIGHT;
-        const leftX = startX + widthAlloc / (2 * HORIZONTAL_SPACING);
-        const rightX = startX + widthAlloc * (1 - 1 / (2 * HORIZONTAL_SPACING));
+            const nextY = node.originalY + LEVEL_HEIGHT;
+            const leftX = startX + widthAlloc / (2 * HORIZONTAL_SPACING);
+            const rightX = startX + widthAlloc * (1 - 1 / (2 * HORIZONTAL_SPACING));
 
-        node.left = new TreeNode(factor, node.level + 1, leftX, nextY, node);
-        node.right = new TreeNode(otherFactor, node.level + 1, rightX, nextY, node);
+            node.left = new TreeNode(factor, node.level + 1, leftX, nextY, node);
+            node.right = new TreeNode(otherFactor, node.level + 1, rightX, nextY, node);
 
-        buildTree(node.left, widthAlloc / 2, startX);
-        buildTree(node.right, widthAlloc / 2, startX + widthAlloc / 2);
-    }
+            buildTree(node.left, widthAlloc / 2, startX);
+            buildTree(node.right, widthAlloc / 2, startX + widthAlloc / 2);
+        }
 
-    function resize() {
-        width = window.innerWidth;
-        height = window.innerHeight;
-        canvas.width = width * devicePixelRatio;
-        canvas.height = height * devicePixelRatio;
-        canvas.style.width = width + 'px';
-        canvas.style.height = height + 'px';
-        ctx.scale(devicePixelRatio, devicePixelRatio);
-        if (treeRoot) resetTree();
-    }
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width * devicePixelRatio;
+            canvas.height = height * devicePixelRatio;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+            if (treeRoot) resetTree();
+        }
 
-    function resetTree() {
-        nodes = [];
-        treeRoot = null;
-        formulaDisplay.textContent = '';
-        typeLabel.textContent = '—';
-        panX = width / 2;
-        panY = 100;
-        draggedNode = null;
-        isDraggingNode = false;
-    }
+        function resetTree() {
+            nodes = [];
+            treeRoot = null;
+            formulaDisplay.textContent = '';
+            typeLabel.textContent = '—';
+            typeLabel.style.color = '#3b82f6';
+            mobileFormulaDisplay.textContent = '';
+            mobileTypeLabel.textContent = '—';
+            mobileTypeLabel.style.color = '#3b82f6';
+            panX = width / 2;
+            panY = 100;
+            draggedNode = null;
+            isDraggingNode = false;
+        }
 
-    function resetNodePositions() {
-        if (!treeRoot) return;
-        treeRoot.resetUserOffset();
-        showStatus('Positions reset', '#6b7280');
-    }
+        function resetNodePositions() {
+            if (!treeRoot) return;
+            treeRoot.resetUserOffset();
+            showStatus('Positions reset', '#6b7280');
+        }
 
-    function updateZoomDisplay() {
-        zoomLevelEl.textContent = Math.round(zoom * 100) + '%';
-    }
+        function updateZoomDisplay() {
+            zoomLevelEl.textContent = Math.round(zoom * 100) + '%';
+        }
 
-    function setZoom(newZoom) {
-        zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-        updateZoomDisplay();
-        
-        if (treeRoot) {
+        function setZoom(newZoom) {
+            zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+            updateZoomDisplay();
+
+            if (treeRoot) {
+                treeRoot.updateTransform();
+            }
+        }
+
+        function growTree() {
+            resetTree();
+            // Use the appropriate input based on which one was last used
+            const activeInput = document.activeElement === mobileNumInput ? mobileNumInput : numInput;
+            const val = parseInt(activeInput.value);
+            
+            // Sync both inputs
+            numInput.value = val;
+            mobileNumInput.value = val;
+            
+            if (isNaN(val) || val < 2) {
+                showStatus('Enter a number ≥ 2', '#ef4444');
+                return;
+            }
+
+            if (val > 1000) {
+                showStatus('Maximum: 1000', '#ef4444');
+                return;
+            }
+
+            panX = width / 2;
+            panY = 100;
+
+            const baseX = 0;
+            const baseY = 0;
+
+            treeRoot = new TreeNode(val, 0, baseX, baseY);
+            buildTree(treeRoot, width * 1.0, -width * 0.5);
+
             treeRoot.updateTransform();
-        }
-    }
 
-    function growTree() {
-        resetTree();
-        const val = parseInt(numInput.value);
-        if (isNaN(val) || val < 2) {
-            showStatus('Enter a number ≥ 2', '#ef4444');
-            return;
-        }
+            targetX = treeRoot.x;
+            laserAlpha = 0.6;
 
-        if (val > 1000) {
-            showStatus('Maximum: 1000', '#ef4444');
-            return;
-        }
-
-        panX = width / 2;
-        panY = 100;
-        
-        const baseX = 0;
-        const baseY = 0;
-        
-        treeRoot = new TreeNode(val, 0, baseX, baseY);
-        buildTree(treeRoot, width * 1.0, -width * 0.5);
-        
-        treeRoot.updateTransform();
-        
-        targetX = treeRoot.x;
-        laserAlpha = 0.6;
-
-        if (treeRoot.isPrime) {
-            showStatus(`${val} is prime`, '#3b82f6');
-        } else {
-            const factors = getPrimeFactors(val);
-            showStatus(`${val} = ${factors.join(' × ')}`, '#e6a700');
-        }
-    }
-
-    function showStatus(text, color) {
-        statusText.textContent = text;
-        statusText.style.color = color;
-        overlay.style.opacity = '1';
-        setTimeout(() => overlay.style.opacity = '0', 2000);
-    }
-
-    function findNodeUnderMouse(px, py) {
-        for (let i = nodes.length - 1; i >= 0; i--) {
-            const node = nodes[i];
-            const scaledX = node.x / zoom;
-            const scaledY = node.y / zoom;
-            const scaledMouseX = px / zoom;
-            const scaledMouseY = py / zoom;
-            const dist = Math.hypot(scaledX - scaledMouseX, scaledY - scaledMouseY);
-            if (dist < NODE_RADIUS) {
-                return node;
+            if (treeRoot.isPrime) {
+                showStatus(`${val} is prime`, '#3b82f6');
+            } else {
+                const factors = getPrimeFactors(val);
+                showStatus(`${val} = ${factors.join(' × ')}`, '#e6a700');
             }
         }
-        return null;
-    }
 
-    function startDrag(px, py) {
-        const node = findNodeUnderMouse(px, py);
-        if (node) {
-            draggedNode = node;
-            isDraggingNode = true;
-            
-            const scaledX = node.x / zoom;
-            const scaledY = node.y / zoom;
+        function showStatus(text, color) {
+            statusText.textContent = text;
+            statusText.style.color = color;
+            overlay.style.opacity = '1';
+            setTimeout(() => overlay.style.opacity = '0', 2000);
+        }
+
+        function findNodeUnderMouse(px, py) {
+            for (let i = nodes.length - 1; i >= 0; i--) {
+                const node = nodes[i];
+                const scaledX = node.x / zoom;
+                const scaledY = node.y / zoom;
+                const scaledMouseX = px / zoom;
+                const scaledMouseY = py / zoom;
+                const dist = Math.hypot(scaledX - scaledMouseX, scaledY - scaledMouseY);
+                if (dist < NODE_RADIUS) {
+                    return node;
+                }
+            }
+            return null;
+        }
+
+        function startDrag(px, py) {
+            const node = findNodeUnderMouse(px, py);
+            if (node) {
+                draggedNode = node;
+                isDraggingNode = true;
+
+                const scaledX = node.x / zoom;
+                const scaledY = node.y / zoom;
+                const scaledMouseX = px / zoom;
+                const scaledMouseY = py / zoom;
+
+                dragOffsetX = scaledX - scaledMouseX;
+                dragOffsetY = scaledY - scaledMouseY;
+
+                canvas.classList.add('dragging-node');
+            }
+        }
+
+        function updateDrag(px, py) {
+            if (!isDraggingNode || !draggedNode) return;
+
             const scaledMouseX = px / zoom;
             const scaledMouseY = py / zoom;
-            
-            dragOffsetX = scaledX - scaledMouseX;
-            dragOffsetY = scaledY - scaledMouseY;
-            
-            canvas.classList.add('dragging-node');
-        }
-    }
 
-    function updateDrag(px, py) {
-        if (!isDraggingNode || !draggedNode) return;
-        
-        const scaledMouseX = px / zoom;
-        const scaledMouseY = py / zoom;
-        
-        // Calculate new position in world space
-        const newWorldX = scaledMouseX + dragOffsetX;
-        const newWorldY = scaledMouseY + dragOffsetY;
-        
-        // Update user offset based on new position
-        draggedNode.userOffsetX = newWorldX - draggedNode.originalX - panX;
-        draggedNode.userOffsetY = newWorldY - draggedNode.originalY - panY;
-        
-        // Update this node's position
-        draggedNode.x = (draggedNode.originalX + draggedNode.userOffsetX + panX) * zoom;
-        draggedNode.y = (draggedNode.originalY + draggedNode.userOffsetY + panY) * zoom;
-    }
+            const newWorldX = scaledMouseX + dragOffsetX;
+            const newWorldY = scaledMouseY + dragOffsetY;
 
-    function endDrag() {
-        draggedNode = null;
-        isDraggingNode = false;
-        canvas.classList.remove('dragging-node');
-    }
+            draggedNode.userOffsetX = newWorldX - draggedNode.originalX - panX;
+            draggedNode.userOffsetY = newWorldY - draggedNode.originalY - panY;
 
-    function loop() {
-        ctx.clearRect(0, 0, width, height);
-
-        if (laserAlpha > 0) {
-            ctx.beginPath();
-            const grad = ctx.createLinearGradient(targetX, 0, targetX, height);
-            grad.addColorStop(0, 'rgba(239, 68, 68, 0)');
-            grad.addColorStop(0.15, `rgba(239, 68, 68, ${laserAlpha * 0.3})`);
-            grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 1.5;
-            ctx.moveTo(targetX, 0);
-            ctx.lineTo(targetX, height);
-            ctx.stroke();
-            laserAlpha -= 0.015;
+            draggedNode.x = (draggedNode.originalX + draggedNode.userOffsetX + panX) * zoom;
+            draggedNode.y = (draggedNode.originalY + draggedNode.userOffsetY + panY) * zoom;
         }
 
-        nodes.forEach(n => {
-            n.update();
-            n.draw();
+        function endDrag() {
+            draggedNode = null;
+            isDraggingNode = false;
+            canvas.classList.remove('dragging-node');
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, width, height);
+
+            if (laserAlpha > 0) {
+                ctx.beginPath();
+                const grad = ctx.createLinearGradient(targetX, 0, targetX, height);
+                grad.addColorStop(0, 'rgba(239, 68, 68, 0)');
+                grad.addColorStop(0.15, `rgba(239, 68, 68, ${laserAlpha * 0.3})`);
+                grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(targetX, 0);
+                ctx.lineTo(targetX, height);
+                ctx.stroke();
+                laserAlpha -= 0.015;
+            }
+
+            nodes.forEach(n => {
+                n.update();
+                n.draw();
+            });
+
+            requestAnimationFrame(loop);
+        }
+
+        // Mobile menu functions
+        function openMobileMenu() {
+            mobileMenu.classList.add('open');
+            mobileMenuOverlay.classList.add('active');
+            hamburgerBtn.classList.add('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'true');
+            // Sync input values
+            mobileNumInput.value = numInput.value;
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('active');
+            hamburgerBtn.classList.remove('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'false');
+            // Sync input values back
+            numInput.value = mobileNumInput.value;
+        }
+
+        function toggleMobileMenu() {
+            if (mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+
+        // Sync inputs when they change
+        numInput.addEventListener('input', () => {
+            mobileNumInput.value = numInput.value;
         });
 
-        requestAnimationFrame(loop);
-    }
+        mobileNumInput.addEventListener('input', () => {
+            numInput.value = mobileNumInput.value;
+        });
 
-    // Event listeners
-    window.addEventListener('resize', resize);
-    
-    spawnBtn.onclick = decomposeBtn.onclick = growTree;
-    
-    clearBtn.onclick = () => {
-        resetTree();
-        showStatus('Cleared', '#6b7280');
+        // Mobile menu event listeners
+        hamburgerBtn.addEventListener('click', toggleMobileMenu);
+        mobileMenuClose.addEventListener('click', closeMobileMenu);
+        mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+
+        // Close mobile menu on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            }
+        });
+
+        // Event listeners for desktop controls
+        window.addEventListener('resize', resize);
+
+        spawnBtn.onclick = decomposeBtn.onclick = growTree;
+        
+        // Event listeners for mobile controls
+        mobileSpawnBtn.onclick = mobileDecomposeBtn.onclick = () => {
+            growTree();
+            // Close menu on mobile after action for better UX
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        };
+
+        clearBtn.onclick = () => {
+            resetTree();
+            showStatus('Cleared', '#6b7280');
+            setZoom(1.0);
+        };
+
+        mobileClearBtn.onclick = () => {
+            resetTree();
+            showStatus('Cleared', '#6b7280');
+            setZoom(1.0);
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        };
+
+        resetPositionsBtn.onclick = resetNodePositions;
+
+        mobileResetPositionsBtn.onclick = () => {
+            resetNodePositions();
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        };
+
+        // Zoom controls
+        zoomInBtn.onclick = () => setZoom(zoom + ZOOM_STEP);
+        zoomOutBtn.onclick = () => setZoom(zoom - ZOOM_STEP);
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+            setZoom(zoom + delta);
+        }, { passive: false });
+
+        const getCoord = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        };
+
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getCoord(e);
+            startDrag(pos.x, pos.y);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            const pos = getCoord(e);
+            mouse.x = pos.x;
+            mouse.y = pos.y;
+
+            if (isDraggingNode) {
+                updateDrag(pos.x, pos.y);
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            endDrag();
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const pos = getCoord(e);
+            startDrag(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const pos = getCoord(e);
+            mouse.x = pos.x;
+            mouse.y = pos.y;
+
+            if (isDraggingNode) {
+                updateDrag(pos.x, pos.y);
+            }
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            endDrag();
+        });
+
+        // Initialize
+        resize();
         setZoom(1.0);
-    };
-    
-    resetPositionsBtn.onclick = resetNodePositions;
-
-    // Zoom controls
-    zoomInBtn.onclick = () => setZoom(zoom + ZOOM_STEP);
-    zoomOutBtn.onclick = () => setZoom(zoom - ZOOM_STEP);
-
-    canvas.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
-        setZoom(zoom + delta);
-    }, { passive: false });
-
-    const getCoord = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return { x: clientX - rect.left, y: clientY - rect.top };
-    };
-
-    canvas.addEventListener('mousedown', (e) => {
-        const pos = getCoord(e);
-        startDrag(pos.x, pos.y);
-    });
-
-    window.addEventListener('mousemove', (e) => {
-        const pos = getCoord(e);
-        mouse.x = pos.x;
-        mouse.y = pos.y;
-        
-        if (isDraggingNode) {
-            updateDrag(pos.x, pos.y);
-        }
-    });
-
-    window.addEventListener('mouseup', () => {
-        endDrag();
-    });
-
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const pos = getCoord(e);
-        startDrag(pos.x, pos.y);
-    });
-
-    canvas.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const pos = getCoord(e);
-        mouse.x = pos.x;
-        mouse.y = pos.y;
-        
-        if (isDraggingNode) {
-            updateDrag(pos.x, pos.y);
-        }
-    });
-
-    canvas.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        endDrag();
-    });
-
-    // Initialize
-    resize();
-    setZoom(1.0);
-    loop();
-</script>
+        loop();
+    </script>
 </body>
 </html>

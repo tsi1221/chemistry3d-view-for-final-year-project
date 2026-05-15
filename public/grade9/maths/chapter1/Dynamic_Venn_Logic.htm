@@ -33,6 +33,9 @@
       --shadow-sm: 0 10px 25px -5px rgba(0,0,0,0.03), 0 8px 10px -6px rgba(0,0,0,0.02);
       --radius-xl: 28px;
       --radius-pill: 999px;
+      /* responsive spacing tokens */
+      --sidebar-width: 340px;
+      --sidebar-width-mobile: 280px;
     }
 
     body {
@@ -52,9 +55,9 @@
       position: relative;
     }
 
-    /* Sidebar – clean educational panel */
+    /* Sidebar – clean educational panel, improved scrolling and touch */
     .sidebar {
-      width: 340px;
+      width: var(--sidebar-width);
       background: var(--card);
       border-right: 1px solid var(--border-light);
       display: flex;
@@ -62,42 +65,61 @@
       padding: 24px 20px;
       box-shadow: var(--shadow-sm);
       z-index: 10;
-      transition: transform 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
       overflow-y: auto;
       gap: 20px;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* Custom scrollbar for better mobile/desktop */
+    .sidebar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .sidebar::-webkit-scrollbar-track {
+      background: var(--border-light);
+      border-radius: 10px;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 10px;
     }
 
     .sidebar-header h2 {
       font-family: 'Poppins', sans-serif;
       font-weight: 600;
-      font-size: 1.6rem;
+      font-size: clamp(1.3rem, 5vw, 1.6rem);
       color: var(--primary);
       letter-spacing: -0.5px;
     }
 
     .sidebar-header p {
       color: var(--muted);
-      font-size: 0.85rem;
+      font-size: clamp(0.75rem, 3vw, 0.85rem);
       margin-top: 4px;
     }
 
     .set-list {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
 
     .set-card {
       background: #FFFFFF;
       border: 1px solid var(--border-light);
-      border-radius: 18px;
-      padding: 12px 14px;
+      border-radius: 20px;
+      padding: 14px 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       transition: all 0.2s ease;
+      /* improve touch target */
+      cursor: pointer;
+      touch-action: manipulation;
     }
 
+    /* Ensure active borders are visible on mobile */
     .set-card.active-primary {
       border-left: 5px solid var(--primary);
       background: #F5F3FF;
@@ -111,64 +133,80 @@
     .set-info {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     .set-color-dot {
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
+      flex-shrink: 0;
     }
 
     .set-name {
       font-weight: 600;
       font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
     }
 
     .set-actions {
       display: flex;
-      gap: 6px;
+      gap: 10px;
     }
 
+    /* larger touch area for icon buttons */
     .icon-btn {
       background: transparent;
       border: none;
-      font-size: 1.1rem;
-      padding: 6px 8px;
-      border-radius: 12px;
+      font-size: 1.2rem;
+      padding: 8px 10px;
+      border-radius: 30px;
       color: var(--muted);
       cursor: pointer;
       transition: 0.2s;
+      touch-action: manipulation;
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .icon-btn:hover {
+    .icon-btn:active {
       background: #F1F5F9;
-      color: var(--primary);
+      transform: scale(0.96);
     }
 
     .operation-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 12px;
       margin: 8px 0;
     }
 
+    /* operation pill buttons with better touch area */
     .op-pill {
       background: white;
       border: 1px solid var(--border-light);
       border-radius: var(--radius-pill);
-      padding: 14px 8px;
-      font-weight: 500;
+      padding: 12px 8px;
+      font-weight: 600;
       font-size: 0.9rem;
       color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
       font-family: 'Inter', sans-serif;
-      height: 52px;
+      min-height: 52px;
+      touch-action: manipulation;
+      text-align: center;
+    }
+
+    .op-pill:active {
+      transform: scale(0.97);
     }
 
     .op-pill.active {
@@ -178,35 +216,41 @@
       box-shadow: 0 8px 16px -6px rgba(59,59,152,0.3);
     }
 
+    /* Explanation box improves readability */
     .explanation-box {
       background: #F8FAFC;
-      border-radius: 20px;
-      padding: 16px;
+      border-radius: 24px;
+      padding: 18px 16px;
       border: 1px solid #E2E8F0;
       margin-top: 8px;
     }
 
     .explanation-title {
       font-family: 'Poppins', sans-serif;
-      font-weight: 600;
-      font-size: 1.2rem;
+      font-weight: 700;
+      font-size: clamp(1rem, 4vw, 1.2rem);
       color: var(--primary);
     }
 
     .explanation-desc {
       color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 6px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      margin-top: 8px;
     }
 
+    /* cardinality row flex wrap for small */
     .cardinality-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
       background: white;
-      border-radius: 16px;
-      padding: 12px;
+      border-radius: 20px;
+      padding: 14px;
       margin-top: 6px;
+      font-size: 0.9rem;
     }
 
     /* Canvas area */
@@ -215,6 +259,7 @@
       position: relative;
       background: var(--bg);
       overflow: hidden;
+      touch-action: none;
     }
 
     canvas {
@@ -229,48 +274,57 @@
       cursor: grabbing;
     }
 
+    /* floating notation - improved responsiveness */
     .floating-notation {
       position: absolute;
       bottom: 30px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.92);
       backdrop-filter: blur(12px);
-      padding: 12px 28px;
+      padding: 12px 24px;
       border-radius: 60px;
       font-family: 'Poppins', sans-serif;
-      font-weight: 600;
-      font-size: 1.5rem;
+      font-weight: 700;
+      font-size: clamp(1rem, 5vw, 1.5rem);
       color: var(--primary);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-      border: 1px solid rgba(59,59,152,0.1);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      border: 1px solid rgba(59,59,152,0.15);
       pointer-events: none;
       white-space: nowrap;
       z-index: 20;
+      letter-spacing: -0.3px;
     }
 
+    /* mobile toolbar redesigned for better ergonomics */
     .mobile-toolbar {
       display: none;
       position: absolute;
       bottom: 20px;
-      left: 20px;
-      right: 20px;
-      background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(12px);
-      border-radius: 40px;
-      padding: 10px 16px;
+      left: 16px;
+      right: 16px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(16px);
+      border-radius: 60px;
+      padding: 8px 12px;
       justify-content: space-around;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      border: 1px solid white;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+      border: 1px solid rgba(255,255,255,0.8);
       z-index: 25;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
     .mobile-toolbar .op-pill {
-      height: 44px;
-      padding: 8px 16px;
-      font-size: 1rem;
-      background: transparent;
-      border: none;
+      flex: 1;
+      min-width: 60px;
+      height: 52px;
+      padding: 8px 4px;
+      font-size: 1.1rem;
+      background: rgba(255,255,255,0.8);
+      border: 1px solid var(--border-light);
+      border-radius: 40px;
+      font-weight: 600;
     }
 
     .mobile-toolbar .op-pill.active {
@@ -278,6 +332,35 @@
       color: white;
     }
 
+    /* menu toggle button (hamburger) */
+    .menu-toggle {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 35;
+      background: white;
+      backdrop-filter: blur(8px);
+      border-radius: 40px;
+      width: 48px;
+      height: 48px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      border: 1px solid var(--border-light);
+      cursor: pointer;
+      font-size: 24px;
+      color: var(--primary);
+      transition: 0.2s;
+      touch-action: manipulation;
+    }
+
+    .menu-toggle:active {
+      transform: scale(0.94);
+      background: #f1f5f9;
+    }
+
+    /* Responsive breakpoints and improvements */
     @media (max-width: 800px) {
       .sidebar {
         position: absolute;
@@ -285,10 +368,12 @@
         top: 0;
         bottom: 0;
         transform: translateX(-100%);
-        width: 280px;
+        width: var(--sidebar-width-mobile);
         z-index: 30;
-        border-radius: 0 24px 24px 0;
-        transition: transform 0.25s ease;
+        border-radius: 0 28px 28px 0;
+        transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.2);
+        box-shadow: 15px 0 35px rgba(0,0,0,0.1);
+        padding: 24px 18px;
       }
 
       .sidebar.open {
@@ -300,15 +385,103 @@
       }
 
       .floating-notation {
-        bottom: 100px;
-        font-size: 1.2rem;
-        padding: 8px 22px;
+        bottom: 90px;
+        font-size: 1.1rem;
+        padding: 8px 20px;
+        white-space: nowrap;
       }
+
+      .menu-toggle {
+        display: flex;
+      }
+
+      .operation-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+      
+      /* improve side padding for small devices */
+      .workspace {
+        overflow: hidden;
+      }
+      
+      /* set cards larger touch on mobile */
+      .set-card {
+        padding: 16px 14px;
+      }
+      
+      .icon-btn {
+        padding: 10px 12px;
+      }
+    }
+
+    /* Tablet-specific improvements */
+    @media (min-width: 801px) and (max-width: 1100px) {
+      .sidebar {
+        width: 300px;
+        padding: 22px 18px;
+      }
+      
+      .operation-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .floating-notation {
+        bottom: 30px;
+        font-size: 1.3rem;
+      }
+    }
+    
+    /* For very small phones (<= 480px) */
+    @media (max-width: 480px) {
+      .mobile-toolbar {
+        padding: 8px 8px;
+        gap: 5px;
+      }
+      .mobile-toolbar .op-pill {
+        min-width: 55px;
+        height: 48px;
+        font-size: 1rem;
+      }
+      
+      .floating-notation {
+        bottom: 100px;
+        font-size: 0.95rem;
+        padding: 6px 16px;
+        white-space: nowrap;
+      }
+      
+      .sidebar {
+        padding: 20px 14px;
+      }
+      
+      .cardinality-row {
+        font-size: 0.8rem;
+        gap: 8px;
+      }
+      
+      .explanation-box {
+        padding: 14px;
+      }
+    }
+
+    /* Prevent horizontal overflow */
+    body, .workspace, .canvas-container {
+      overflow-x: hidden;
+    }
+    
+    /* accessibility: focus outlines */
+    button:focus-visible, .op-pill:focus-visible, .icon-btn:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
     }
   </style>
 </head>
 <body>
 <div class="workspace">
+  <!-- Hamburger menu toggle (mobile only) -->
+  <div class="menu-toggle" id="menuToggle" aria-label="Open sidebar menu">☰</div>
+  
   <!-- Educational Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
@@ -317,9 +490,9 @@
     </div>
     <div class="set-list" id="circleListContainer"></div>
     <div style="margin-top: 6px;">
-      <div style="display: flex; gap: 8px;">
-        <input type="text" id="newSetName" placeholder="Set name" maxlength="3" style="flex:1; padding: 12px; border:1px solid #E2E8F0; border-radius: 20px; font-family: Inter;">
-        <button id="addSetBtn" style="background: var(--primary); color:white; border:none; border-radius: 30px; padding: 0 20px; font-weight:600;">+ Add</button>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <input type="text" id="newSetName" placeholder="Set name" maxlength="3" style="flex:1; min-width: 120px; padding: 14px 16px; border:1px solid #E2E8F0; border-radius: 30px; font-family: Inter; font-size: 1rem; touch-action: manipulation;">
+        <button id="addSetBtn" style="background: var(--primary); color:white; border:none; border-radius: 40px; padding: 0 24px; font-weight:600; font-size: 0.9rem; touch-action: manipulation; min-height: 52px; cursor: pointer;">+ Add</button>
       </div>
     </div>
     <div class="operation-grid" id="operationGrid"></div>
@@ -332,7 +505,7 @@
       <span>|B| = <strong id="cardB">0</strong></span>
       <span>|A∩B| = <strong id="cardIntersect">0</strong></span>
     </div>
-    <button id="toggleSidebarMobile" style="display:none; margin-top:auto; background:#F1F5F9; border:none; padding:12px; border-radius:20px;">Close panel</button>
+    <button id="toggleSidebarMobile" style="margin-top: auto; background:#F1F5F9; border:none; padding:14px; border-radius:30px; font-weight:500; font-size:0.9rem; touch-action: manipulation; cursor: pointer; display: flex; align-items: center; justify-content: center; gap:6px;">✖ Close panel</button>
   </div>
 
   <!-- Canvas mathematical workspace -->
@@ -378,7 +551,7 @@
         id: nextId++,
         name: name.toUpperCase().substring(0,3),
         x, y, r,
-        color: isFirst ? 'primary' : 'secondary', // alternate for clarity
+        color: isFirst ? 'primary' : 'secondary',
         fill: isFirst ? PRIMARY_FILL : SECONDARY_FILL,
         stroke: isFirst ? PRIMARY : SECONDARY
       };
@@ -489,7 +662,7 @@
       }
     }
 
-    // ---- Canvas drawing with educational style ----
+    // ---- Canvas drawing ----
     function drawGrid() {
       ctx.strokeStyle = '#CBD5E1';
       ctx.lineWidth = 0.6;
@@ -517,7 +690,6 @@
       ctx.lineWidth = (isA || isB) ? 3.5 : 2.5;
       ctx.stroke();
 
-      // Soft glow for selected
       if (isA || isB) {
         ctx.shadowColor = isA ? PRIMARY : SECONDARY;
         ctx.shadowBlur = 14;
@@ -527,7 +699,6 @@
         ctx.shadowBlur = 0;
       }
 
-      // Label
       ctx.font = 'bold 22px "Poppins", sans-serif';
       ctx.fillStyle = '#1E293B';
       ctx.fillText(c.name, c.x - 12, c.y - c.r * 0.65);
@@ -581,15 +752,12 @@
     function drawCanvas() {
       ctx.clearRect(0, 0, width, height);
       drawGrid();
-      
       circles.forEach(c => {
         const isA = selectedA?.id === c.id;
         const isB = selectedB?.id === c.id;
         drawCircle(c, isA, isB);
       });
-
       drawOperationHighlight();
-
       if (selectedA && selectedB && currentOp !== 'comp') {
         ctx.beginPath();
         ctx.moveTo(selectedA.x, selectedA.y);
@@ -607,7 +775,7 @@
       requestAnimationFrame(animate);
     }
 
-    // ---- Interaction ----
+    // ---- Interaction (unchanged logic, only event handling preserved) ----
     function getCanvasCoords(e) {
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -688,9 +856,9 @@
             <span class="set-name">${c.name}</span>
           </div>
           <div class="set-actions">
-            <button class="icon-btn sel-a" data-id="${c.id}">⭐</button>
-            <button class="icon-btn sel-b" data-id="${c.id}">🔹</button>
-            <button class="icon-btn del" data-id="${c.id}">🗑️</button>
+            <button class="icon-btn sel-a" data-id="${c.id}" aria-label="Select as set A">⭐</button>
+            <button class="icon-btn sel-b" data-id="${c.id}" aria-label="Select as set B">🔹</button>
+            <button class="icon-btn del" data-id="${c.id}" aria-label="Delete set">🗑️</button>
           </div>
         `;
         container.appendChild(div);
@@ -708,7 +876,6 @@
         deleteCircle(parseInt(e.currentTarget.dataset.id));
       }));
 
-      // Update operation buttons active state
       document.querySelectorAll('.op-pill').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.op === currentOp);
       });
@@ -740,22 +907,33 @@
       });
     }
 
-    // Mobile sidebar toggle
+    // Mobile sidebar improvements: toggle with hamburger and close
     const sidebar = document.getElementById('sidebar');
-    document.getElementById('toggleSidebarMobile').addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+    const menuToggle = document.getElementById('menuToggle');
+    const closeBtn = document.getElementById('toggleSidebarMobile');
+    
+    if (menuToggle) {
+      menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+    }
+    closeBtn.addEventListener('click', () => {
+      sidebar.classList.remove('open');
     });
-    // Open sidebar on canvas tap if mobile (simple toggle)
+    
+    // close sidebar when clicking outside on canvas (for mobile only)
     canvas.addEventListener('dblclick', () => {
-      if (window.innerWidth <= 800) sidebar.classList.toggle('open');
+      if (window.innerWidth <= 800) sidebar.classList.remove('open');
     });
-
+    
+    // also single tap on backdrop? let's keep double click same behavior but also if you click away from menu? no logic change.
     window.addEventListener('resize', () => {
       resizeCanvas();
       recalculateAndUpdate();
+      if (window.innerWidth > 800) sidebar.classList.remove('open');
     });
 
-    // Event listeners
+    // preserve all events
     canvas.addEventListener('mousedown', onPointerDown);
     window.addEventListener('mousemove', (e) => { if (isDragging) onPointerMove(e); });
     window.addEventListener('mouseup', onPointerUp);
@@ -773,7 +951,6 @@
       input.value = '';
     });
 
-    // Init
     function init() {
       resizeCanvas();
       circles = [];

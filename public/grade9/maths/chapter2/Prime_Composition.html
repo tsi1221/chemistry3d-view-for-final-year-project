@@ -34,20 +34,29 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
         #canvas {
             display: block;
             touch-action: none;
             filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.05));
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
         }
 
         /* UI Overlay - Clean, Light, Frosted Glass */
         .ui-container {
-            position: absolute;
+            position: fixed;
             inset: 0;
             pointer-events: none;
-            padding: 24px 28px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -57,9 +66,10 @@
         .panel {
             background: var(--panel-bg);
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--panel-border);
-            border-radius: 28px;
-            padding: 20px 24px;
+            border-radius: 24px;
+            padding: 18px 20px;
             pointer-events: auto;
             box-shadow: var(--shadow-sm);
             transition: all 0.2s ease;
@@ -69,22 +79,23 @@
             width: 320px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 14px;
         }
 
         .title-block h1 {
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             font-weight: 600;
             letter-spacing: -0.3px;
             background: linear-gradient(135deg, #1e4b6e, #2c6e9e);
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            line-height: 1.3;
         }
 
         .title-block .sub {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: 450;
             color: var(--text-secondary);
             letter-spacing: 0.3px;
@@ -100,6 +111,7 @@
             padding: 4px;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
             transition: 0.2s;
+            min-width: 0;
         }
 
         .input-wrapper:focus-within {
@@ -118,6 +130,9 @@
             font-weight: 500;
             outline: none;
             border-radius: 60px;
+            min-width: 0;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         button {
@@ -132,6 +147,10 @@
             cursor: pointer;
             transition: all 0.2s ease;
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            min-height: 44px;
         }
 
         button:hover {
@@ -140,15 +159,20 @@
             box-shadow: 0 4px 12px rgba(44, 110, 158, 0.2);
         }
 
+        button:active {
+            transform: scale(0.95);
+        }
+
         .data-readout {
             font-family: 'SF Mono', 'Courier New', monospace;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             background: rgba(255, 255, 255, 0.6);
-            border-radius: 20px;
-            padding: 12px 14px;
+            border-radius: 16px;
+            padding: 10px 12px;
             color: var(--text-secondary);
             border: 1px solid rgba(0, 0, 0, 0.03);
-            line-height: 1.6;
+            line-height: 1.7;
+            word-break: break-word;
         }
 
         .highlight {
@@ -166,60 +190,464 @@
             justify-content: space-between;
             align-items: flex-end;
             width: 100%;
-            gap: 20px;
+            gap: 16px;
             flex-wrap: wrap;
         }
 
+        .hud-bottom .panel {
+            flex: 1;
+            min-width: 180px;
+        }
+
         #result-display {
-            font-size: 2.2rem;
+            font-size: 2rem;
             font-weight: 600;
             letter-spacing: -0.5px;
             color: var(--accent);
             line-height: 1.2;
+            word-break: break-word;
         }
 
         .helper-text {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             opacity: 0.6;
-            margin-top: 12px;
+            margin-top: 10px;
             color: var(--text-secondary);
+            line-height: 1.5;
         }
 
         #factor-list {
             font-family: 'SF Mono', monospace;
             font-weight: 500;
             color: var(--comp-glow);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             word-break: break-word;
-        }
-
-        @media (max-width: 680px) {
-            .ui-container { padding: 16px; }
-            .controls { width: 100%; }
-            .hud-bottom { flex-direction: column; align-items: stretch; }
-            #result-display { font-size: 1.8rem; }
+            line-height: 1.6;
         }
 
         /* subtle canvas background overlay for readability */
         .canvas-overlay-light {
-            position: absolute;
+            position: fixed;
             bottom: 16px;
             right: 20px;
             pointer-events: none;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             background: rgba(255,255,240,0.7);
             backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             padding: 4px 12px;
             border-radius: 40px;
             color: #5f7f9a;
             z-index: 20;
+            white-space: nowrap;
+        }
+
+        /* Hamburger Menu Button */
+        .hamburger-btn {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 14px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            pointer-events: auto;
+            box-shadow: var(--shadow-sm);
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .hamburger-btn:hover {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .hamburger-btn .icon {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text-primary);
+            position: relative;
+            transition: all 0.3s;
+            border-radius: 1px;
+        }
+
+        .hamburger-btn .icon::before,
+        .hamburger-btn .icon::after {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text-primary);
+            position: absolute;
+            left: 0;
+            transition: all 0.3s;
+            border-radius: 1px;
+        }
+
+        .hamburger-btn .icon::before {
+            top: -6px;
+        }
+
+        .hamburger-btn .icon::after {
+            top: 6px;
+        }
+
+        .hamburger-btn.open .icon {
+            background: transparent;
+        }
+
+        .hamburger-btn.open .icon::before {
+            top: 0;
+            transform: rotate(45deg);
+        }
+
+        .hamburger-btn.open .icon::after {
+            top: 0;
+            transform: rotate(-45deg);
+        }
+
+        /* Mobile Menu Overlay */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 90;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .mobile-menu-overlay.active {
+            opacity: 1;
+        }
+
+        /* Mobile Menu Panel */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 340px;
+            max-width: 90vw;
+            height: 100vh;
+            height: 100dvh;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 95;
+            pointer-events: auto;
+            box-shadow: -4px 0 30px rgba(0, 0, 0, 0.08);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .mobile-menu.open {
+            right: 0;
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .mobile-menu-title {
+            font-size: 1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #1e4b6e, #2c6e9e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .mobile-menu-close {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+            border-radius: 10px;
+            background: transparent;
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s;
+        }
+
+        .mobile-menu-close:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .mobile-menu-section {
+            margin-bottom: 18px;
+        }
+
+        .mobile-menu-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .mobile-menu .input-wrapper {
+            margin-bottom: 12px;
+        }
+
+        .mobile-menu .data-readout {
+            margin-bottom: 12px;
+            font-size: 0.65rem;
+        }
+
+        .mobile-menu .helper-text {
+            margin-bottom: 16px;
+            font-size: 0.55rem;
+        }
+
+        .mobile-menu-info {
+            background: rgba(240, 244, 250, 0.5);
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 12px;
+        }
+
+        .mobile-menu-info #mobile-result-display {
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: var(--accent);
+            line-height: 1.2;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .mobile-menu-info #mobile-factor-list {
+            font-family: 'SF Mono', monospace;
+            font-weight: 500;
+            color: var(--comp-glow);
+            font-size: 0.75rem;
+            word-break: break-word;
+            line-height: 1.6;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .mobile-menu-overlay {
+                display: block;
+            }
+
+            .mobile-menu {
+                display: block;
+            }
+
+            .header .controls {
+                display: none;
+            }
+
+            .ui-container {
+                padding: 12px;
+            }
+
+            .panel {
+                border-radius: 20px;
+                padding: 14px 16px;
+            }
+
+            .hud-bottom {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .hud-bottom .panel {
+                min-width: unset;
+                width: 100%;
+            }
+
+            #result-display {
+                font-size: 1.5rem;
+            }
+
+            #factor-list {
+                font-size: 0.7rem;
+            }
+
+            .canvas-overlay-light {
+                bottom: 12px;
+                right: 12px;
+                font-size: 0.55rem;
+                padding: 4px 10px;
+            }
+
+            input {
+                padding: 10px 14px;
+                font-size: 0.95rem;
+                min-height: 44px;
+            }
+
+            button {
+                padding: 0 22px;
+                font-size: 0.7rem;
+                min-height: 44px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .ui-container {
+                padding: 8px;
+            }
+
+            .panel {
+                border-radius: 16px;
+                padding: 12px 14px;
+            }
+
+            .mobile-menu {
+                width: 100%;
+                max-width: 100vw;
+                padding: 16px;
+            }
+
+            .hud-bottom {
+                gap: 8px;
+            }
+
+            #result-display {
+                font-size: 1.3rem;
+            }
+
+            .mobile-menu-info #mobile-result-display {
+                font-size: 1.2rem;
+            }
+
+            input {
+                padding: 10px 12px;
+                font-size: 0.9rem;
+            }
+
+            button {
+                padding: 0 18px;
+                font-size: 0.65rem;
+            }
+
+            .canvas-overlay-light {
+                bottom: 8px;
+                right: 8px;
+                font-size: 0.5rem;
+            }
+
+            .data-readout {
+                font-size: 0.6rem;
+                padding: 8px 10px;
+                border-radius: 12px;
+            }
+
+            .helper-text {
+                font-size: 0.55rem;
+            }
+        }
+
+        /* Tablet landscape optimization */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .controls {
+                width: 280px;
+            }
+
+            .ui-container {
+                padding: 16px;
+            }
+
+            #result-display {
+                font-size: 1.7rem;
+            }
+        }
+
+        /* Accessibility focus styles */
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
     </style>
 </head>
 <body>
 
 <canvas id="canvas"></canvas>
-<div class="canvas-overlay-light">⚡ interactive | drag to rotate | scroll zoom</div>
+<div class="canvas-overlay-light" aria-hidden="true">⚡ interactive | drag to rotate | scroll zoom</div>
+
+<!-- Hamburger Menu Button -->
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
+    <span class="icon"></span>
+</button>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+<!-- Mobile Menu Panel -->
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Controls menu">
+    <div class="mobile-menu-header">
+        <div class="mobile-menu-title">✦ Atomic Decomposer</div>
+        <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+    </div>
+
+    <div class="mobile-menu-section">
+        <div class="mobile-menu-label">Input</div>
+        <div class="input-wrapper">
+            <input type="number" id="mobileNumInput" value="42" min="2" max="10000" aria-label="Enter a number">
+            <button id="mobileAnalyzeBtn">Analyze</button>
+        </div>
+    </div>
+
+    <div class="mobile-menu-section">
+        <div class="data-readout" id="mobileReadout">
+            ⚛️ ready for input<br>
+            ⟳ enter a number to scan
+        </div>
+    </div>
+
+    <div class="mobile-menu-section">
+        <div class="helper-text">
+            🖱️ drag to rotate view • scroll to zoom • tap to explore
+        </div>
+    </div>
+
+    <div class="mobile-menu-section">
+        <div class="mobile-menu-label">Decomposition Status</div>
+        <div class="mobile-menu-info">
+            <div id="mobile-result-display">—</div>
+            <div id="mobile-factor-list" style="color: var(--comp-glow); font-family: monospace;">—</div>
+        </div>
+    </div>
+</div>
 
 <div class="ui-container">
     <div class="header">
@@ -230,7 +658,7 @@
             </div>
 
             <div class="input-wrapper">
-                <input type="number" id="numInput" value="42" min="2" max="10000">
+                <input type="number" id="numInput" value="42" min="2" max="10000" aria-label="Enter a number">
                 <button id="analyzeBtn">Analyze</button>
             </div>
 
@@ -247,12 +675,12 @@
 
     <div class="hud-bottom">
         <div class="panel">
-            <div style="font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 6px; color: var(--text-secondary);">DECOMPOSITION STATUS</div>
+            <div style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 6px; color: var(--text-secondary);">DECOMPOSITION STATUS</div>
             <div id="result-display">—</div>
         </div>
         
-        <div class="panel" style="min-width: 200px;">
-            <div style="font-size: 0.7rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px; color: var(--text-secondary);">DIVISOR CLUSTERS</div>
+        <div class="panel">
+            <div style="font-size: 0.65rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 8px; color: var(--text-secondary);">DIVISOR CLUSTERS</div>
             <div id="factor-list" style="color: var(--comp-glow); font-family: monospace;">—</div>
         </div>
     </div>
@@ -263,11 +691,26 @@
         // ========== CORE LOGIC (preserved entirely, unchanged behavior) ==========
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        
+        // Desktop controls
         const numInput = document.getElementById('numInput');
         const analyzeBtn = document.getElementById('analyzeBtn');
         const readout = document.getElementById('readout');
         const resultDisplay = document.getElementById('result-display');
         const factorList = document.getElementById('factor-list');
+        
+        // Mobile controls
+        const mobileNumInput = document.getElementById('mobileNumInput');
+        const mobileAnalyzeBtn = document.getElementById('mobileAnalyzeBtn');
+        const mobileReadout = document.getElementById('mobileReadout');
+        const mobileResultDisplay = document.getElementById('mobile-result-display');
+        const mobileFactorList = document.getElementById('mobile-factor-list');
+        
+        // Mobile menu elements
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuClose = document.getElementById('mobileMenuClose');
 
         let width, height;
         let particles = [];
@@ -354,19 +797,27 @@
         }
 
         function analyze() {
-            let val = parseInt(numInput.value);
+            // Use the appropriate input based on which was last used
+            const activeInput = document.activeElement === mobileNumInput ? mobileNumInput : numInput;
+            let val = parseInt(activeInput.value);
+            
             if (isNaN(val) || val < 2) {
                 val = 2;
-                numInput.value = 2;
+                activeInput.value = 2;
             }
             if (val > 10000) val = 10000;
+            
+            // Sync both inputs
+            numInput.value = val;
+            mobileNumInput.value = val;
+            
             targetNum = val;
             particles = [];
             
             const divArray = getDivisors(val);
             const primeStatus = isPrime(val);
 
-            // UI update (clean, readable)
+            // UI update (clean, readable) - Desktop
             resultDisplay.textContent = primeStatus ? "PRIME ELEMENT" : "COMPOSITE FIELD";
             resultDisplay.style.color = primeStatus ? "var(--accent)" : "var(--comp-glow)";
             
@@ -378,6 +829,19 @@
             `;
 
             factorList.textContent = divArray.length > 0 ? divArray.join('  •  ') : "∅ (only 1 & itself)";
+
+            // UI update - Mobile
+            mobileResultDisplay.textContent = primeStatus ? "PRIME ELEMENT" : "COMPOSITE FIELD";
+            mobileResultDisplay.style.color = primeStatus ? "var(--accent)" : "var(--comp-glow)";
+            
+            mobileReadout.innerHTML = `
+                🧬 TARGET: <span class="highlight">${val}</span><br>
+                🔬 TYPE: <span class="${primeStatus ? 'highlight' : 'warning'}">${primeStatus ? 'PRIME (stable core)' : 'COMPOSITE (resonant)'}</span><br>
+                📡 DIVISOR COUNT: ${divArray.length}<br>
+                ✨ decomposition complete
+            `;
+
+            mobileFactorList.textContent = divArray.length > 0 ? divArray.join('  •  ') : "∅ (only 1 & itself)";
 
             // center nucleus
             particles.push(new Particle(val, 0, 0, true, 0, 0));
@@ -438,18 +902,85 @@
             requestAnimationFrame(loop);
         }
 
+        // ---------- MOBILE MENU FUNCTIONS ----------
+        function openMobileMenu() {
+            mobileMenu.classList.add('open');
+            mobileMenuOverlay.classList.add('active');
+            hamburgerBtn.classList.add('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'true');
+            // Sync input values
+            mobileNumInput.value = numInput.value;
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('active');
+            hamburgerBtn.classList.remove('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'false');
+            // Sync input values back
+            numInput.value = mobileNumInput.value;
+        }
+
+        function toggleMobileMenu() {
+            if (mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+
+        // Sync inputs when they change
+        numInput.addEventListener('input', () => {
+            mobileNumInput.value = numInput.value;
+        });
+
+        mobileNumInput.addEventListener('input', () => {
+            numInput.value = mobileNumInput.value;
+        });
+
+        // Mobile menu event listeners
+        hamburgerBtn.addEventListener('click', toggleMobileMenu);
+        mobileMenuClose.addEventListener('click', closeMobileMenu);
+        mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+
+        // Close mobile menu on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            }
+        });
+
         // ---------- INTERACTION (unchanged, only preserve original functionality) ----------
         window.addEventListener('resize', () => {
             resize();
         });
         
+        // Desktop analyze button
         analyzeBtn.onclick = () => {
             analyze();
         };
         
-        // optional: trigger on enter key
+        // Mobile analyze button
+        mobileAnalyzeBtn.onclick = () => {
+            analyze();
+            // Close menu on mobile after action for better UX
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        };
+        
+        // optional: trigger on enter key for both inputs
         numInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') analyze();
+        });
+        
+        mobileNumInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                analyze();
+                if (window.innerWidth <= 768) {
+                    closeMobileMenu();
+                }
+            }
         });
         
         // wheel zoom (exactly original behavior)

@@ -6,14 +6,14 @@
     <title>Equal Equivalent Universal Subset Proper-Subset Visualizer</title>
     <style>
         :root {
-            --bg-color: #0a0b10;
-            --u-bg: #11141d;
-            --text-color: #e0e6ed;
-            --accent-equal: #ffca28; /* Gold */
-            --accent-equiv: #00e5ff; /* Cyan */
-            --accent-subset: #7c4dff; /* Purple */
-            --panel-bg: rgba(20, 25, 35, 0.9);
-            --border-color: rgba(255, 255, 255, 0.1);
+            --bg-color: #ffffff;
+            --u-bg: #f8f9fa;
+            --text-color: #1e293b;
+            --accent-equal: #d4af37; /* Gold - slightly adjusted for white bg */
+            --accent-equiv: #0891b2; /* Cyan - richer for contrast */
+            --accent-subset: #7c3aed; /* Purple */
+            --panel-bg: rgba(255, 255, 255, 0.92);
+            --border-color: rgba(0, 0, 0, 0.08);
             --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
@@ -36,30 +36,35 @@
         .panel {
             background: var(--panel-bg); border: 1px solid var(--border-color);
             border-radius: 12px; padding: 15px; pointer-events: auto;
-            backdrop-filter: blur(8px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
 
         /* Top Bar */
         .header { align-self: center; display: flex; gap: 10px; align-items: center; }
-        h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; color: #888; }
+        h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; }
         
         .mode-selector { display: flex; gap: 5px; }
         .btn {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.03); border: 1px solid rgba(0, 0, 0, 0.1);
             color: var(--text-color); padding: 8px 16px; border-radius: 6px;
             cursor: pointer; transition: all 0.2s; font-size: 0.85rem; font-weight: 600;
         }
-        .btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
-        .btn.active { background: #fff; color: #000; border-color: #fff; }
+        .btn:hover { background: rgba(0, 0, 0, 0.05); border-color: rgba(0, 0, 0, 0.2); }
+        .btn.active { background: #1e293b; color: #ffffff; border-color: #1e293b; }
 
         /* Dynamic Notation Display */
         .notation-display {
             position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
             font-family: 'Cambria Math', 'Times New Roman', serif;
             font-size: 2.5rem; text-align: center; pointer-events: auto;
-            text-shadow: 0 0 15px rgba(255,255,255,0.3);
+            text-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0.2rem 1rem;
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
         }
-        .not-equal { color: #ff5252; }
+        .not-equal { color: #dc2626; }
         .is-equal { color: var(--accent-equal); }
         .is-equiv { color: var(--accent-equiv); }
         .is-subset { color: var(--accent-subset); }
@@ -70,38 +75,48 @@
         .control-group.active { display: grid; }
         
         .btn-action { width: 100%; }
-        .btn-equal { border-color: var(--accent-equal); color: var(--accent-equal); }
-        .btn-equal:hover { background: rgba(255, 202, 40, 0.1); }
-        .btn-equiv { border-color: var(--accent-equiv); color: var(--accent-equiv); }
-        .btn-equiv:hover { background: rgba(0, 229, 255, 0.1); }
-        .btn-subset { border-color: var(--accent-subset); color: var(--accent-subset); }
-        .btn-subset:hover { background: rgba(124, 77, 255, 0.1); }
+        .btn-equal { border-color: var(--accent-equal); color: var(--accent-equal); background: rgba(212, 175, 55, 0.05); }
+        .btn-equal:hover { background: rgba(212, 175, 55, 0.12); }
+        .btn-equiv { border-color: var(--accent-equiv); color: var(--accent-equiv); background: rgba(8, 145, 178, 0.05); }
+        .btn-equiv:hover { background: rgba(8, 145, 178, 0.12); }
+        .btn-subset { border-color: var(--accent-subset); color: var(--accent-subset); background: rgba(124, 58, 237, 0.05); }
+        .btn-subset:hover { background: rgba(124, 58, 237, 0.1); }
 
         /* Subset Info Panel */
         .subset-info {
             position: absolute; top: 150px; right: 20px;
             width: 180px; font-family: monospace; font-size: 0.85rem;
-            color: #aaa; pointer-events: auto;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            color: #334155; pointer-events: auto;
         }
         .subset-info div { margin-bottom: 5px; }
         .subset-info span { color: var(--accent-subset); font-weight: bold; font-size: 1.1rem; }
 
         /* Instructions Overlay */
         .instructions-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.9);
+            position: fixed; inset: 0; background: rgba(255, 255, 255, 0.96);
             display: flex; justify-content: center; align-items: center;
             z-index: 100; pointer-events: auto; transition: opacity 0.3s;
         }
         .instructions-overlay.hidden { opacity: 0; pointer-events: none; }
         .instructions-content {
-            background: #111; border: 1px solid #333; border-radius: 12px;
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px;
             padding: 30px; max-width: 500px; text-align: center;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.1);
         }
         .instructions-content h2 { color: var(--accent-equiv); margin-top: 0; }
-        .instructions-content p { line-height: 1.6; color: #bbb; margin-bottom: 25px; }
+        .instructions-content p { line-height: 1.6; color: #334155; margin-bottom: 25px; }
+        .instructions-content .btn.active {
+            background: #1e293b;
+            border: none;
+            color: white;
+            padding: 10px 24px;
+        }
 
         @media (max-width: 600px) {
-            .notation-display { font-size: 1.8rem; top: 120px; }
+            .notation-display { font-size: 1.6rem; top: 120px; white-space: nowrap; padding: 0.2rem 0.8rem; }
             .subset-info { top: auto; bottom: 150px; right: 10px; width: 120px; font-size: 0.75rem; }
             h1 { display: none; }
             .instructions-content { padding: 20px; }
@@ -169,8 +184,8 @@
     let uRect = { x: 0, y: 0, w: 0, h: 0 };
 
     // Sets A and B
-    let setA = { id: 'A', x: 0, y: 0, r: 0, targetR: 0, color: 'rgba(100, 150, 255, 0.15)', stroke: '#339af0' };
-    let setB = { id: 'B', x: 0, y: 0, r: 0, targetR: 0, color: 'rgba(255, 100, 100, 0.1)', stroke: '#ff6b6b' };
+    let setA = { id: 'A', x: 0, y: 0, r: 0, targetR: 0, color: 'rgba(59, 130, 246, 0.12)', stroke: '#3b82f6' };
+    let setB = { id: 'B', x: 0, y: 0, r: 0, targetR: 0, color: 'rgba(239, 68, 68, 0.08)', stroke: '#ef4444' };
     const GHOST_EMPTY_SET_R = 15;
 
     // Elements
@@ -222,21 +237,21 @@
 
             // Glower if pulsed
             if (this.pulse > 0.1) {
-                ctx.shadowColor = (this.inSet === 'A') ? setA.stroke : (this.inSet === 'B' ? setB.stroke : '#fff');
+                ctx.shadowColor = (this.inSet === 'A') ? setA.stroke : (this.inSet === 'B' ? setB.stroke : '#64748b');
                 ctx.shadowBlur = this.pulse * 15;
             }
 
             // Circle
             ctx.beginPath();
             ctx.arc(0, 0, this.r, 0, Math.PI * 2);
-            ctx.fillStyle = (draggedElement === this) ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)';
+            ctx.fillStyle = (draggedElement === this) ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.8)';
             ctx.fill();
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.lineWidth = 1.2;
             ctx.stroke();
 
             // Value
-            ctx.fillStyle = '#fff';
+            ctx.fillStyle = '#1e293b';
             ctx.font = 'bold 16px sans-serif';
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(this.val, 0, 1);
@@ -427,27 +442,27 @@
         ctx.beginPath();
         const ghostY = s.y + s.r * 0.7;
         ctx.arc(s.x, ghostY, GHOST_EMPTY_SET_R, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.03)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; ctx.lineWidth = 1; ctx.setLineDash([3,3]); ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '16px serif'; ctx.fillText('∅', s.x, ghostY + 5);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'; ctx.font = '16px serif'; ctx.fillText('∅', s.x, ghostY + 5);
 
         ctx.restore();
     }
 
     function drawUniverse() {
-        // Subtle stardust effect
+        // Clean white background for universal set panel
         ctx.fillStyle = varToHex('--u-bg');
         ctx.fillRect(uRect.x, uRect.y, uRect.w, uRect.h);
         
-        ctx.strokeStyle = varToHex('--border-color'); ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)'; ctx.lineWidth = 2;
         ctx.strokeRect(uRect.x, uRect.y, uRect.w, uRect.h);
 
-        ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = 'bold 24px monospace'; ctx.textAlign = 'right';
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'; ctx.font = 'bold 24px monospace'; ctx.textAlign = 'right';
         ctx.fillText('U', uRect.x + uRect.w - 20, uRect.y + 40);
 
-        // Dust particles
-        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        // Dust particles in subtle gray
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
         for(let i=0; i<50; i++) {
             const lx = (Math.sin(time*0.1 + i)*0.5+0.5) * uRect.w + uRect.x;
             const ly = (Math.cos(time*0.15 + i*2)*0.5+0.5) * uRect.h + uRect.y;

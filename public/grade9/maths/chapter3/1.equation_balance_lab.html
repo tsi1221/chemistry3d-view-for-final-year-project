@@ -13,12 +13,21 @@
         body {
             margin: 0;
             min-height: 100vh;
+            min-height: 100dvh;
             background: #f5f7fb;
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* main container - white background, clean shadows */
@@ -30,6 +39,11 @@
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             transition: all 0.2s;
+            margin: auto;
+            max-height: calc(100vh - 40px);
+            max-height: calc(100dvh - 40px);
+            display: flex;
+            flex-direction: column;
         }
 
         /* header - soft neutral */
@@ -38,6 +52,7 @@
             padding: 1.2rem 1.8rem;
             text-align: center;
             border-bottom: 1px solid #eef2f8;
+            flex-shrink: 0;
         }
 
         .lab-header h1 {
@@ -60,13 +75,10 @@
             grid-template-columns: 1fr 300px;
             gap: 1.5rem;
             padding: 1.5rem;
-        }
-
-        @media (max-width: 780px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
         }
 
         /* canvas area */
@@ -77,6 +89,9 @@
             overflow: hidden;
             padding: 0.8rem;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
         }
 
         .equation-preview {
@@ -87,20 +102,30 @@
             margin-bottom: 1rem;
             font-family: 'JetBrains Mono', monospace;
             border-left: 4px solid #f59e0b;
+            flex-shrink: 0;
         }
 
         .equation-preview span {
-            font-size: 1.6rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: #0f3b5c;
             letter-spacing: 1px;
             word-break: break-word;
         }
 
+        .canvas-wrapper {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         canvas {
             display: block;
             width: 100%;
             height: auto;
+            max-width: 100%;
             background: #ffffff;
             border-radius: 1rem;
             cursor: grab;
@@ -122,6 +147,9 @@
             flex-direction: column;
             gap: 1.4rem;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
         }
 
         .input-group {
@@ -129,21 +157,26 @@
             border-radius: 1.2rem;
             padding: 1rem;
             border: 1px solid #eef2f8;
+            flex-shrink: 0;
         }
 
         .input-label {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             margin-bottom: 0.6rem;
             font-weight: 500;
             color: #2c3e66;
             font-size: 0.85rem;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .input-label span:first-child {
             background: #f1f5f9;
             padding: 0.2rem 0.7rem;
             border-radius: 2rem;
+            white-space: nowrap;
         }
 
         .input-label .value-badge {
@@ -153,6 +186,7 @@
             border-radius: 2rem;
             font-family: monospace;
             font-weight: bold;
+            white-space: nowrap;
         }
 
         /* equation input */
@@ -165,6 +199,7 @@
 
         .equation-input-wrapper input {
             flex: 1;
+            min-width: 120px;
             background: #ffffff;
             border: 1px solid #dce3ec;
             padding: 12px 14px;
@@ -174,6 +209,9 @@
             font-size: 0.9rem;
             outline: none;
             transition: 0.15s;
+            -webkit-appearance: none;
+            appearance: none;
+            min-height: 44px;
         }
 
         .equation-input-wrapper input:focus {
@@ -194,6 +232,10 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            min-height: 44px;
+            white-space: nowrap;
         }
 
         button:active {
@@ -212,6 +254,7 @@
 
         .x-stepper input {
             flex: 1;
+            min-width: 60px;
             background: #ffffff;
             border: 1px solid #dce3ec;
             padding: 12px;
@@ -221,6 +264,9 @@
             font-size: 1rem;
             text-align: center;
             font-family: monospace;
+            -webkit-appearance: none;
+            appearance: none;
+            min-height: 44px;
         }
 
         .x-stepper button {
@@ -228,6 +274,8 @@
             padding: 10px 18px;
             font-size: 1.2rem;
             font-weight: bold;
+            min-width: 44px;
+            justify-content: center;
         }
 
         .drag-hint {
@@ -238,6 +286,7 @@
             background: #f8fafc;
             padding: 6px;
             border-radius: 40px;
+            word-break: break-word;
         }
 
         .reset-btn {
@@ -265,6 +314,9 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s ease;
+            white-space: nowrap;
+            max-width: 90vw;
+            text-align: center;
         }
 
         .balance-toast.visible {
@@ -278,6 +330,332 @@
             border-top: 1px solid #eef2f8;
             color: #7e8ba3;
             background: #ffffff;
+            flex-shrink: 0;
+        }
+
+        /* Hamburger Menu Button */
+        .hamburger-btn {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #eef2f8;
+            color: #1e293b;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 100;
+            pointer-events: auto;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .hamburger-btn:hover {
+            background: #f8fafc;
+        }
+
+        .hamburger-btn .icon {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #1e293b;
+            position: relative;
+            transition: all 0.3s;
+            border-radius: 1px;
+        }
+
+        .hamburger-btn .icon::before,
+        .hamburger-btn .icon::after {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #1e293b;
+            position: absolute;
+            left: 0;
+            transition: all 0.3s;
+            border-radius: 1px;
+        }
+
+        .hamburger-btn .icon::before {
+            top: -6px;
+        }
+
+        .hamburger-btn .icon::after {
+            top: 6px;
+        }
+
+        .hamburger-btn.open .icon {
+            background: transparent;
+        }
+
+        .hamburger-btn.open .icon::before {
+            top: 0;
+            transform: rotate(45deg);
+        }
+
+        .hamburger-btn.open .icon::after {
+            top: 0;
+            transform: rotate(-45deg);
+        }
+
+        /* Mobile Menu Overlay */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 90;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .mobile-menu-overlay.active {
+            opacity: 1;
+        }
+
+        /* Mobile Menu Panel */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 340px;
+            max-width: 90vw;
+            height: 100vh;
+            height: 100dvh;
+            background: #ffffff;
+            z-index: 95;
+            pointer-events: auto;
+            box-shadow: -4px 0 30px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .mobile-menu.open {
+            right: 0;
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #eef2f8;
+        }
+
+        .mobile-menu-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.3px;
+        }
+
+        .mobile-menu-close {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+            border-radius: 10px;
+            background: transparent;
+            border: 1px solid #eef2f8;
+            color: #1e293b;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s;
+        }
+
+        .mobile-menu-close:hover {
+            background: #f8fafc;
+        }
+
+        .mobile-menu .input-group {
+            margin-bottom: 16px;
+        }
+
+        .mobile-menu .equation-preview {
+            margin-bottom: 16px;
+        }
+
+        .mobile-menu .equation-preview span {
+            font-size: 1.2rem;
+        }
+
+        .mobile-menu .drag-hint {
+            margin-bottom: 12px;
+        }
+
+        .mobile-menu .reset-btn {
+            margin-top: 4px;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 780px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .control-panel {
+                display: none;
+            }
+
+            .hamburger-btn {
+                display: flex;
+            }
+
+            .mobile-menu-overlay {
+                display: block;
+            }
+
+            .mobile-menu {
+                display: block;
+            }
+
+            .lab-header h1 {
+                font-size: 1.3rem;
+            }
+
+            .lab-header p {
+                font-size: 0.75rem;
+            }
+
+            .lab-header {
+                padding: 1rem 1.2rem;
+            }
+
+            .equation-preview span {
+                font-size: 1.2rem;
+            }
+
+            .canvas-area {
+                padding: 0.6rem;
+            }
+
+            footer {
+                font-size: 0.65rem;
+                padding: 0.7rem;
+            }
+
+            .balance-toast {
+                font-size: 0.8rem;
+                padding: 8px 20px;
+                bottom: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .lab-card {
+                border-radius: 1.5rem;
+                max-height: calc(100vh - 16px);
+                max-height: calc(100dvh - 16px);
+            }
+
+            .lab-header h1 {
+                font-size: 1.1rem;
+            }
+
+            .lab-header p {
+                font-size: 0.7rem;
+                margin-top: 0.2rem;
+            }
+
+            .lab-header {
+                padding: 0.8rem 1rem;
+            }
+
+            .dashboard {
+                padding: 0.8rem;
+                gap: 0.8rem;
+            }
+
+            .equation-preview {
+                padding: 0.6rem;
+                margin-bottom: 0.6rem;
+            }
+
+            .equation-preview span {
+                font-size: 1rem;
+            }
+
+            .canvas-area {
+                padding: 0.4rem;
+                border-radius: 1rem;
+            }
+
+            .drag-hint {
+                font-size: 0.6rem;
+                padding: 4px 8px;
+            }
+
+            .mobile-menu {
+                width: 100%;
+                max-width: 100vw;
+                padding: 16px;
+            }
+
+            .mobile-menu .equation-preview span {
+                font-size: 1rem;
+            }
+
+            .balance-toast {
+                font-size: 0.7rem;
+                padding: 6px 16px;
+                bottom: 12px;
+            }
+
+            footer {
+                font-size: 0.6rem;
+                padding: 0.5rem;
+            }
+        }
+
+        /* Tablet landscape optimization */
+        @media (min-width: 781px) and (max-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 1fr 260px;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .control-panel {
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .equation-preview span {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Accessibility focus styles */
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid #f59e0b;
+            outline-offset: 2px;
         }
     </style>
 </head>
@@ -295,14 +673,16 @@
             <div class="equation-preview">
                 <span id="eqDisplay">2x + 4 = 12</span>
             </div>
-            <canvas id="balanceCanvas" width="600" height="400" style="width:100%; height:auto;"></canvas>
+            <div class="canvas-wrapper">
+                <canvas id="balanceCanvas" width="600" height="400"></canvas>
+            </div>
             <div class="drag-hint">
                 ✨ Touch or drag horizontally on the scale → adjust x value
             </div>
         </div>
 
-        <!-- controls (no sliders, clean white) -->
-        <div class="control-panel">
+        <!-- controls (desktop) -->
+        <div class="control-panel" id="desktopControls">
             <div class="input-group">
                 <div class="input-label">
                     <span>📐 Equation (ax + b = c)</span>
@@ -341,6 +721,60 @@
     <footer>⚡ Touch/Drag the balance beam to find x that makes both sides equal</footer>
 </div>
 
+<!-- Hamburger Menu Button -->
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
+    <span class="icon"></span>
+</button>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+<!-- Mobile Menu Panel -->
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Controls menu">
+    <div class="mobile-menu-header">
+        <div class="mobile-menu-title">⚖️ Balance Controls</div>
+        <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+    </div>
+
+    <div class="equation-preview">
+        <span id="mobileEqDisplay">2x + 4 = 12</span>
+    </div>
+
+    <div class="input-group">
+        <div class="input-label">
+            <span>📐 Equation (ax + b = c)</span>
+            <span class="value-badge" id="mobileSolutionHint">solution → ?</span>
+        </div>
+        <div class="equation-input-wrapper">
+            <input type="text" id="mobileEquationInput" placeholder="e.g., 2x + 4 = 12" value="2x + 4 = 12">
+            <button id="mobileApplyEqBtn">⟳ Set</button>
+        </div>
+        <div style="font-size:0.65rem; color:#8b9bb0; margin-top: 8px;">
+            Formats: 3x+2=11 , x-5=10 , 4x-7=9
+        </div>
+    </div>
+
+    <div class="input-group">
+        <div class="input-label">
+            <span>🎚️ Current x (guess)</span>
+            <span class="value-badge" id="mobileXValueLabel">0.0</span>
+        </div>
+        <div class="x-stepper">
+            <button id="mobileXMinusBtn" aria-label="decrease x">–</button>
+            <input type="number" id="mobileXNumberInput" step="0.1" value="0.0">
+            <button id="mobileXPlusBtn" aria-label="increase x">+</button>
+        </div>
+        <div class="drag-hint" style="margin-top: 8px;">
+            👆 Drag on canvas (left/right) to smoothly adjust x
+        </div>
+    </div>
+
+    <button id="mobileResetAllBtn" class="reset-btn">⟳ Reset to 2x + 4 = 12 & x = 0</button>
+    <div style="font-size:0.65rem; text-align:center; color:#8b9bb0; margin-top: 8px;">
+        Left side = ax + b &nbsp;&nbsp;|&nbsp;&nbsp; Right side = c
+    </div>
+</div>
+
 <div id="balanceToast" class="balance-toast">🎯 Perfect Balance! Equation solved.</div>
 
 <script>
@@ -351,7 +785,7 @@
         let c = 12;       // right side value
         let xGuess = 0;   // current variable value (user adjustable)
 
-        // DOM elements
+        // Desktop DOM elements
         const canvas = document.getElementById('balanceCanvas');
         const ctx = canvas.getContext('2d');
         const eqDisplaySpan = document.getElementById('eqDisplay');
@@ -364,21 +798,48 @@
         const xMinus = document.getElementById('xMinusBtn');
         const xPlus = document.getElementById('xPlusBtn');
         const toast = document.getElementById('balanceToast');
+        
+        // Mobile DOM elements
+        const mobileEqDisplaySpan = document.getElementById('mobileEqDisplay');
+        const mobileXValueSpan = document.getElementById('mobileXValueLabel');
+        const mobileXNumberInput = document.getElementById('mobileXNumberInput');
+        const mobileSolutionHintSpan = document.getElementById('mobileSolutionHint');
+        const mobileEquationInputField = document.getElementById('mobileEquationInput');
+        const mobileApplyEqBtn = document.getElementById('mobileApplyEqBtn');
+        const mobileResetBtn = document.getElementById('mobileResetAllBtn');
+        const mobileXMinus = document.getElementById('mobileXMinusBtn');
+        const mobileXPlus = document.getElementById('mobileXPlusBtn');
+        
+        // Mobile menu elements
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuClose = document.getElementById('mobileMenuClose');
 
         // helper to update UI and redraw
         function updateUIAndRedraw() {
             // update equation display
-            eqDisplaySpan.innerText = `${a}x + ${b} = ${c}`;
+            const eqText = `${a}x + ${b} = ${c}`;
+            eqDisplaySpan.innerText = eqText;
+            mobileEqDisplaySpan.innerText = eqText;
+            
             // update x display
             const xFormatted = xGuess.toFixed(1);
             xValueSpan.innerText = xFormatted;
             xNumberInput.value = xFormatted;
+            mobileXValueSpan.innerText = xFormatted;
+            mobileXNumberInput.value = xFormatted;
+            
             // compute solution: ax + b = c  => x = (c - b)/a
             let solution = (c - b) / a;
             if (isNaN(solution) || !isFinite(solution)) solution = 0;
-            solutionHintSpan.innerText = `x* = ${solution.toFixed(2)}`;
+            const solutionText = `x* = ${solution.toFixed(2)}`;
+            solutionHintSpan.innerText = solutionText;
+            mobileSolutionHintSpan.innerText = solutionText;
+            
             // draw canvas
             drawBalance();
+            
             // check perfect balance
             const leftVal = a * xGuess + b;
             const rightVal = c;
@@ -546,7 +1007,11 @@
                 return true;
             } else {
                 equationInputField.style.borderColor = '#f87171';
-                setTimeout(() => { equationInputField.style.borderColor = '#dce3ec'; }, 800);
+                mobileEquationInputField.style.borderColor = '#f87171';
+                setTimeout(() => { 
+                    equationInputField.style.borderColor = '#dce3ec'; 
+                    mobileEquationInputField.style.borderColor = '#dce3ec';
+                }, 800);
                 return false;
             }
         }
@@ -559,6 +1024,7 @@
             xGuess = clamped;
             if (!fromInput) {
                 xNumberInput.value = xGuess.toFixed(1);
+                mobileXNumberInput.value = xGuess.toFixed(1);
             }
             updateUIAndRedraw();
         }
@@ -614,15 +1080,33 @@
         
         // ---------- Number input sync ----------
         function bindNumberInput() {
+            // Desktop x input
             xNumberInput.addEventListener('change', (e) => {
                 let val = parseFloat(e.target.value);
                 if (!isNaN(val)) setXValue(val, true);
                 else setXValue(xGuess, true);
             });
+            
+            // Mobile x input
+            mobileXNumberInput.addEventListener('change', (e) => {
+                let val = parseFloat(e.target.value);
+                if (!isNaN(val)) setXValue(val, true);
+                else setXValue(xGuess, true);
+            });
+            
+            // Desktop buttons
             xMinus.addEventListener('click', () => {
                 setXValue(xGuess - 0.5, false);
             });
             xPlus.addEventListener('click', () => {
+                setXValue(xGuess + 0.5, false);
+            });
+            
+            // Mobile buttons
+            mobileXMinus.addEventListener('click', () => {
+                setXValue(xGuess - 0.5, false);
+            });
+            mobileXPlus.addEventListener('click', () => {
                 setXValue(xGuess + 0.5, false);
             });
         }
@@ -633,15 +1117,49 @@
             c = 12;
             xGuess = 0;
             equationInputField.value = "2x + 4 = 12";
+            mobileEquationInputField.value = "2x + 4 = 12";
             updateUIAndRedraw();
         }
         
         function applyEquationFromInput() {
-            let rawEq = equationInputField.value.trim();
+            // Use active input
+            const activeInput = document.activeElement === mobileEquationInputField ? mobileEquationInputField : equationInputField;
+            let rawEq = activeInput.value.trim();
             if (rawEq === "") rawEq = "2x+4=12";
             const success = setEquationFromString(rawEq);
             if (success) {
-                equationInputField.value = `${a}x + ${b} = ${c}`;
+                const formatted = `${a}x + ${b} = ${c}`;
+                equationInputField.value = formatted;
+                mobileEquationInputField.value = formatted;
+            }
+        }
+        
+        // Mobile menu functions
+        function openMobileMenu() {
+            mobileMenu.classList.add('open');
+            mobileMenuOverlay.classList.add('active');
+            hamburgerBtn.classList.add('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'true');
+            // Sync values
+            mobileEquationInputField.value = equationInputField.value;
+            mobileXNumberInput.value = xNumberInput.value;
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('active');
+            hamburgerBtn.classList.remove('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'false');
+            // Sync values back
+            equationInputField.value = mobileEquationInputField.value;
+            xNumberInput.value = mobileXNumberInput.value;
+        }
+
+        function toggleMobileMenu() {
+            if (mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
             }
         }
         
@@ -658,12 +1176,51 @@
             resizeCanvas();
             initCanvasDrag();
             bindNumberInput();
+            
+            // Desktop event listeners
             applyEqBtn.addEventListener('click', applyEquationFromInput);
             resetBtn.addEventListener('click', resetToDefault);
+            
+            // Mobile event listeners
+            mobileApplyEqBtn.addEventListener('click', () => {
+                applyEquationFromInput();
+                if (window.innerWidth <= 780) {
+                    closeMobileMenu();
+                }
+            });
+            mobileResetBtn.addEventListener('click', () => {
+                resetToDefault();
+                if (window.innerWidth <= 780) {
+                    closeMobileMenu();
+                }
+            });
+            
+            // Input sync
+            equationInputField.addEventListener('input', () => {
+                mobileEquationInputField.value = equationInputField.value;
+            });
+            mobileEquationInputField.addEventListener('input', () => {
+                equationInputField.value = mobileEquationInputField.value;
+            });
+            
+            // Mobile menu event listeners
+            hamburgerBtn.addEventListener('click', toggleMobileMenu);
+            mobileMenuClose.addEventListener('click', closeMobileMenu);
+            mobileMenuOverlay.addEventListener('click', closeMobileMenu);
+            
+            // Close mobile menu on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
+                    closeMobileMenu();
+                }
+            });
+            
             window.addEventListener('resize', onWindowResize);
+            
             // set default values
             a = 2; b = 4; c = 12; xGuess = 0;
             equationInputField.value = "2x + 4 = 12";
+            mobileEquationInputField.value = "2x + 4 = 12";
             updateUIAndRedraw();
         }
         
