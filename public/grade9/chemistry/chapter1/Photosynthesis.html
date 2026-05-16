@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🌿 photosynthesis · light to life</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>🌿 Photosynthesis · Light to Life</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     * {
       margin: 0;
       padding: 0;
@@ -14,194 +12,214 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    :root {
-      --bg-page: #ffffff;
-      --surface: #fafcff;
-      --border-light: #d0e2ff;
-      --text-dark: #0a1e3c;
-      --text-soft: #3a628c;
-      --accent: #10b981;
-      --co2: #ef4444;
-      --h2o: #3b82f6;
-      --o2: #94a3b8;
-      --glucose: #f59e0b;
-      --photon: #fde047;
-      --shadow-card: 0 12px 30px rgba(0, 60, 130, 0.06);
-      --radius: 20px;
-    }
-
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg-page);
-      color: var(--text-dark);
+      font-family: system-ui, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #eef5ea;
       height: 100dvh;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
 
     #canvas-container {
-      flex: 1;
-      position: relative;
-      background: radial-gradient(circle at center, #f8fafc 0%, #e8f2ff 100%);
-    }
-
-    canvas {
-      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      touch-action: none;
+      z-index: 1;
     }
 
-    .stats-panel {
+    /* UI overlays - minimal, glassmorphic */
+    .ui-layer {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
-      padding: 14px 18px;
-      border-radius: 40px;
-      border: 1px solid var(--border-light);
-      display: flex;
-      gap: 18px;
-      font-weight: 500;
-    }
-
-    .stat-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .stat-value {
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .legend {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
-      padding: 12px 20px;
-      border-radius: 40px;
-      border: 1px solid var(--border-light);
-      display: flex;
-      gap: 20px;
-    }
-
-    .legend-dot {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-    }
-
-    .info-card {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
-      padding: 20px 24px;
-      border-radius: 24px;
-      border: 1px solid var(--border-light);
-      max-width: 360px;
-    }
-
-    .info-title {
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 8px;
-      font-size: 1.1rem;
-    }
-
-    .info-text {
-      color: var(--text-soft);
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
-
-    .equation {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(8px);
-      padding: 10px 24px;
-      border-radius: 40px;
-      font-weight: 700;
-      border: 1px solid var(--border-light);
-    }
-
-    .control-dock {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn {
-      padding: 12px 20px;
-      border-radius: 40px;
-      border: 1px solid var(--border-light);
-      background: white;
-      font-weight: 600;
-      cursor: pointer;
-      color: var(--accent);
-    }
-
-    .slider-container {
-      position: absolute;
-      top: 80px;
-      right: 16px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 14px 18px;
-      border-radius: 40px;
-      border: 1px solid #fde047;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    input[type="range"] {
-      width: 140px;
-      height: 5px;
-      background: #fde047;
-      border-radius: 5px;
-    
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 18px;
-      height: 18px;
-      background: #eab308;
-      border-radius: 18px;
-      border: 2px solid white;
-      cursor: grab;
-    }
-
-    .toast-hint {
-      position: absolute;
-      top: 140px;
-      right: 16px;
-      background: #fef3c7;
-      padding: 8px 16px;
-      border-radius: 40px;
-      font-size: 0.8rem;
-      color: #92400e;
+      z-index: 20;
       pointer-events: none;
     }
 
-    @media (max-width: 700px) {
-      .stats-panel { flex-wrap: wrap; gap: 10px; }
-      .legend { flex-wrap: wrap; }
-      .info-card { left: 16px; right: 16px; max-width: none; }
-      .equation { font-size: 0.9rem; white-space: nowrap; }
+    /* legend */
+    .legend-bar {
+      top: 18px;
+      left: 18px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 8px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      border: 1px solid rgba(16,185,129,0.3);
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    /* stats panel (counters) */
+    .stats-panel {
+      top: 18px;
+      right: 18px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 8px 20px;
+      display: flex;
+      gap: 20px;
+      border: 1px solid rgba(16,185,129,0.25);
+      font-weight: 500;
+      font-size: 0.8rem;
+    }
+    .stat {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+    .stat-num {
+      font-weight: 800;
+      color: #10b981;
+      background: rgba(16,185,129,0.1);
+      padding: 0 6px;
+      border-radius: 20px;
+    }
+
+    /* light slider compact */
+    .light-card {
+      top: 85px;
+      right: 18px;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid #fde047;
+      font-weight: 500;
+      font-size: 0.8rem;
+      pointer-events: auto;
+    }
+    input[type="range"] {
+      width: 130px;
+      height: 4px;
+      background: #fde047;
+      border-radius: 4px;
+      -webkit-appearance: none;
+    }
+    input[type="range"]:focus {
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #eab308;
+      border-radius: 50%;
+      border: 2px solid white;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .light-percent {
+      font-weight: 700;
+      color: #b45309;
+      min-width: 45px;
+    }
+
+    /* info card (tap) */
+    .info-card {
+      bottom: 24px;
+      left: 24px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(16px);
+      border-radius: 28px;
+      padding: 16px 22px;
+      max-width: 320px;
+      border-left: 5px solid #10b981;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      pointer-events: none;
+    }
+    .info-card h4 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #10b981;
+      margin-bottom: 6px;
+    }
+    .info-card p {
+      font-size: 0.8rem;
+      color: #2c5a44;
+      line-height: 1.4;
+    }
+
+    /* equation footer */
+    .equation-foot {
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(12px);
+      color: white;
+      padding: 6px 18px;
+      border-radius: 60px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    /* reset button */
+    .reset-btn {
+      bottom: 24px;
+      right: 24px;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0,0,0,0.08);
+      padding: 10px 22px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: #10b981;
+      pointer-events: auto;
+      transition: 0.08s linear;
+    }
+    .reset-btn:active {
+      transform: scale(0.96);
+    }
+
+    .hint-tag {
+      bottom: 95px;
+      left: 24px;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(8px);
+      padding: 4px 12px;
+      border-radius: 30px;
+      color: white;
+      font-size: 0.65rem;
+      pointer-events: none;
+    }
+
+    @media (max-width: 720px) {
+      .legend-bar { gap: 12px; padding: 6px 16px; top: 12px; left: 12px; }
+      .stats-panel { gap: 12px; padding: 6px 16px; top: 12px; right: 12px; font-size: 0.7rem; }
+      .light-card { top: 70px; right: 12px; padding: 6px 14px; }
+      .info-card { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+      .equation-foot { font-size: 0.65rem; bottom: 16px; white-space: nowrap; }
+      .reset-btn { bottom: 16px; right: 16px; padding: 8px 18px; }
+      .hint-tag { bottom: 85px; left: 16px; }
+    }
+
+    canvas {
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
     }
   </style>
 </head>
@@ -209,38 +227,36 @@
 
 <div id="canvas-container"></div>
 
-<div class="legend">
-  <div class="legend-dot"><span style="color:var(--co2);">●</span> CO₂</div>
-  <div class="legend-dot"><span style="color:var(--h2o);">●</span> H₂O</div>
-  <div class="legend-dot"><span style="color:var(--o2);">●</span> O₂</div>
-  <div class="legend-dot"><span style="color:var(--glucose);">●</span> C₆H₁₂O₆</div>
-  <div class="legend-dot"><span style="color:var(--photon);">☀️</span> photon</div>
+<!-- UI Elements -->
+<div class="ui-layer legend-bar">
+  <div class="legend-item"><div class="color-dot" style="background:#ef4444;"></div><span>CO₂</span></div>
+  <div class="legend-item"><div class="color-dot" style="background:#3b82f6;"></div><span>H₂O</span></div>
+  <div class="legend-item"><div class="color-dot" style="background:#94a3b8;"></div><span>O₂</span></div>
+  <div class="legend-item"><div class="color-dot" style="background:#f59e0b;"></div><span>C₆H₁₂O₆</span></div>
+  <div class="legend-item"><span style="font-size:1rem;">☀️</span><span>photon</span></div>
 </div>
 
-<div class="stats-panel">
-  <div class="stat-item">CO₂ <span class="stat-value" id="co2Count">12</span></div>
-  <div class="stat-item">H₂O <span class="stat-value" id="h2oCount">12</span></div>
-  <div class="stat-item">O₂ <span class="stat-value" id="o2Count">0</span></div>
-  <div class="stat-item">Glucose <span class="stat-value" id="glucoseCount">0</span></div>
+<div class="ui-layer stats-panel">
+  <div class="stat">CO₂ <span class="stat-num" id="co2Stat">0</span></div>
+  <div class="stat">H₂O <span class="stat-num" id="h2oStat">0</span></div>
+  <div class="stat">O₂ <span class="stat-num" id="o2Stat">0</span></div>
+  <div class="stat">Glucose <span class="stat-num" id="gluStat">0</span></div>
 </div>
 
-<div class="slider-container">
-  <span style="color:#b45309;">☀️</span>
-  <input type="range" id="sunSlider" min="10" max="100" value="65">
-  <span id="sunValue" style="font-weight:600;">65%</span>
-</div>
-<div class="toast-hint">⬆️ light intensity · drives reaction</div>
-
-<div class="info-card" id="infoCard">
-  <div class="info-title" id="infoTitle">🌿 chloroplast</div>
-  <div class="info-text" id="infoText">Tap any molecule to learn its role. Sunlight powers the synthesis of glucose from CO₂ and H₂O.</div>
+<div class="ui-layer light-card">
+  <span>☀️</span>
+  <input type="range" id="lightSlider" min="5" max="100" value="70">
+  <span class="light-percent" id="lightPercent">70%</span>
 </div>
 
-<div class="equation">6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂</div>
-
-<div class="control-dock">
-  <button class="btn" id="resetBtn">↻ reset</button>
+<div class="ui-layer info-card" id="infoCard">
+  <h4 id="infoTitle">🌱 Chloroplast</h4>
+  <p id="infoText">Tap any molecule to learn its role. Sunlight drives 6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂.</p>
 </div>
+
+<div class="ui-layer equation-foot">6CO₂ + 6H₂O  →  C₆H₁₂O₆ + 6O₂</div>
+<button class="ui-layer reset-btn" id="resetSimBtn">↻ Reset</button>
+<div class="ui-layer hint-tag">✨ drag to orbit · tap molecules</div>
 
 <script type="importmap">
   {
@@ -256,14 +272,16 @@
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
+  // --- setup scene
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#f8fafc');
-  
-  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(10, 5, 16);
+  scene.background = new THREE.Color('#f2f9ec');
+  scene.fog = new THREE.FogExp2(0xf2f9ec, 0.008);
+
+  const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 40);
+  camera.position.set(7, 4.5, 14);
   camera.lookAt(0, 0, 0);
-  
+
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -273,191 +291,314 @@
   const labelRenderer = new CSS2DRenderer();
   labelRenderer.setSize(container.clientWidth, container.clientHeight);
   labelRenderer.domElement.style.position = 'absolute';
-  labelRenderer.domElement.style.top = '0';
-  labelRenderer.domElement.style.left = '0';
+  labelRenderer.domElement.style.top = '0px';
+  labelRenderer.domElement.style.left = '0px';
   labelRenderer.domElement.style.pointerEvents = 'none';
   container.appendChild(labelRenderer.domElement);
 
+  // controls
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
+  controls.dampingFactor = 0.07;
   controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.5;
+  controls.autoRotateSpeed = 0.55;
   controls.enableZoom = true;
+  controls.zoomSpeed = 1.0;
+  controls.enablePan = true;
+  controls.maxPolarAngle = Math.PI / 2.2;
 
   // lighting
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  dirLight.position.set(5, 12, 6);
-  dirLight.castShadow = true;
-  scene.add(dirLight);
-  
-  // chloroplasts
-  const chloroplasts = [];
-  for (let i = 0; i < 6; i++) {
-    const angle = (i/6) * Math.PI*2;
-    const g = new THREE.Group();
-    const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16), new THREE.MeshPhongMaterial({ color: '#10b981', transparent: true, opacity: 0.4 }));
-    g.add(sphere);
-    for (let j = 0; j < 5; j++) {
-      const t = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.05, 8, 16), new THREE.MeshStandardMaterial({ color: '#34d399' }));
-      t.position.set(Math.cos(j)*0.8, Math.sin(j)*0.6, 0);
-      t.rotation.z = j;
-      g.add(t);
-    }
-    g.position.set(Math.cos(angle)*4.5, Math.sin(angle)*3.5, 0);
-    g.userData = { type: 'chloroplast', info: 'Chloroplast · site of photosynthesis' };
-    scene.add(g);
-    chloroplasts.push(g);
-  }
+  const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+  scene.add(ambient);
+  const mainLight = new THREE.DirectionalLight(0xfff5e0, 1.1);
+  mainLight.position.set(6, 10, 5);
+  mainLight.castShadow = true;
+  scene.add(mainLight);
+  const fillLight = new THREE.PointLight(0xccffcc, 0.4);
+  fillLight.position.set(-3, 2, 4);
+  scene.add(fillLight);
+  const backGlow = new THREE.PointLight(0xffdd99, 0.35);
+  backGlow.position.set(0, 2, -5);
+  scene.add(backGlow);
 
-  // molecules
+  // decorative ground (soft)
+  const gridFloor = new THREE.GridHelper(18, 20, 0xa5d6a5, 0xc8e6c9);
+  gridFloor.position.y = -2.6;
+  gridFloor.material.transparent = true;
+  gridFloor.material.opacity = 0.2;
+  scene.add(gridFloor);
+
+  // --- Chloroplasts (floating green organelles)
+  const chloroplasts = [];
+  const chloroPositions = [
+    [-3.2, 1.2, -1.5], [3.5, 0.8, -1.2], [0, 2.1, -2], [-2.5, -1, -1.8], [2.8, -0.5, -1.4], [0.5, -1.8, -2.2]
+  ];
+  chloroPositions.forEach(pos => {
+    const group = new THREE.Group();
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.9, 24), new THREE.MeshStandardMaterial({ color: '#10b981', emissive: '#22c55e', emissiveIntensity: 0.08, transparent: true, opacity: 0.55 }));
+    group.add(core);
+    // internal thylakoid rings
+    for (let i = 0; i < 3; i++) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.05, 12, 32), new THREE.MeshStandardMaterial({ color: '#86efac' }));
+      ring.rotation.x = Math.PI / 2;
+      ring.rotation.z = i * 1.2;
+      group.add(ring);
+    }
+    group.position.set(pos[0], pos[1], pos[2]);
+    group.userData = { type: 'chloroplast', info: 'Chloroplast · photosynthesis occurs here. Captures light energy.' };
+    scene.add(group);
+    chloroplasts.push(group);
+  });
+
+  // --- Molecule Manager
   let molecules = [];
-  let co2Count = 12, h2oCount = 12, o2Count = 0, glucoseCount = 0;
   
-  function createMolecule(type) {
-    const g = new THREE.Group();
-    const info = {
-      co2: 'CO₂ · carbon source, enters through stomata',
-      h2o: 'H₂O · provides electrons, splits in light reaction',
-      o2: 'O₂ · byproduct, released to atmosphere',
-      glucose: 'C₆H₁₂O₆ · energy storage',
-      photon: 'Photon · light energy packet'
+  // molecule definitions: visual style + info
+  function buildMolecule(type, posOffset = null) {
+    const group = new THREE.Group();
+    const infoMap = {
+      co2: { title: 'CO₂ · Carbon Dioxide', desc: 'Enters through stomata. Fixed into organic molecules via Calvin cycle.' },
+      h2o: { title: 'H₂O · Water', desc: 'Split in light reaction, provides electrons and protons for ATP synthesis.' },
+      o2: { title: 'O₂ · Oxygen', desc: 'Byproduct of photosynthesis, released into atmosphere.' },
+      glucose: { title: 'Glucose · C₆H₁₂O₆', desc: 'Energy storage molecule, building block for cellulose and starch.' },
+      photon: { title: '☀️ Photon', desc: 'Light energy packet. Absorbed by chlorophyll, excites electrons.' }
     };
     
     if (type === 'co2') {
-      const c = new THREE.Mesh(new THREE.SphereGeometry(0.45), new THREE.MeshStandardMaterial({ color: '#ef4444' }));
-      const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.35), new THREE.MeshStandardMaterial({ color: '#94a3b8' }));
+      const c = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24), new THREE.MeshStandardMaterial({ color: '#ef4444', roughness: 0.2 }));
+      const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.34, 20), new THREE.MeshStandardMaterial({ color: '#94a3b8' }));
       const o2 = o1.clone();
-      o1.position.set(-0.7, 0, 0); o2.position.set(0.7, 0, 0);
-      g.add(c, o1, o2);
+      o1.position.set(-0.72, 0, 0); o2.position.set(0.72, 0, 0);
+      group.add(c, o1, o2);
     } else if (type === 'h2o') {
-      const o = new THREE.Mesh(new THREE.SphereGeometry(0.4), new THREE.MeshStandardMaterial({ color: '#3b82f6' }));
-      const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshStandardMaterial({ color: '#ffffff' }));
+      const oxygen = new THREE.Mesh(new THREE.SphereGeometry(0.44, 24), new THREE.MeshStandardMaterial({ color: '#3b82f6' }));
+      const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16), new THREE.MeshStandardMaterial({ color: '#e0f2fe' }));
       const h2 = h1.clone();
-      h1.position.set(-0.5, 0.4, 0); h2.position.set(0.5, 0.4, 0);
-      g.add(o, h1, h2);
+      h1.position.set(-0.58, 0.45, 0); h2.position.set(0.58, 0.45, 0);
+      group.add(oxygen, h1, h2);
     } else if (type === 'o2') {
-      const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.38), new THREE.MeshStandardMaterial({ color: '#94a3b8' }));
+      const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.4, 24), new THREE.MeshStandardMaterial({ color: '#94a3b8' }));
       const o2 = o1.clone();
-      o1.position.x = -0.5; o2.position.x = 0.5;
-      g.add(o1, o2);
+      o1.position.x = -0.6; o2.position.x = 0.6;
+      group.add(o1, o2);
+      const connector = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 6), new THREE.MeshStandardMaterial({ color: '#cbd5e1' }));
+      group.add(connector);
     } else if (type === 'glucose') {
-      for (let i = 0; i < 6; i++) {
-        const c = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshStandardMaterial({ color: '#f59e0b' }));
-        c.position.set(Math.cos(i)*0.8, Math.sin(i)*0.8, 0);
-        g.add(c);
-      }
+      // hexagonal ring
+      const angles = [0, 60, 120, 180, 240, 300].map(d => d * Math.PI/180);
+      angles.forEach(ang => {
+        const carbon = new THREE.Mesh(new THREE.SphereGeometry(0.32, 20), new THREE.MeshStandardMaterial({ color: '#f59e0b', emissive: '#fbbf24', emissiveIntensity: 0.05 }));
+        carbon.position.set(Math.cos(ang) * 0.85, Math.sin(ang) * 0.75, 0);
+        group.add(carbon);
+      });
     } else if (type === 'photon') {
-      const p = new THREE.Mesh(new THREE.SphereGeometry(0.25), new THREE.MeshStandardMaterial({ color: '#fde047', emissive: '#eab308', emissiveIntensity: 0.5 }));
-      g.add(p);
+      const glowMat = new THREE.MeshStandardMaterial({ color: '#fde047', emissive: '#facc15', emissiveIntensity: 0.7 });
+      const star = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16), glowMat);
+      group.add(star);
     }
     
-    g.position.x = (Math.random()-0.5)*12;
-    g.position.y = (Math.random()-0.5)*8;
-    g.position.z = (Math.random()-0.5)*4;
-    g.userData = { type, info: info[type] };
-    g.userData.vel = new THREE.Vector3((Math.random()-0.5)*0.03, (Math.random()-0.5)*0.02, 0);
-    
-    scene.add(g);
-    return g;
-  }
-
-  function init() {
-    molecules.forEach(m => scene.remove(m));
-    molecules = [];
-    for (let i = 0; i < 12; i++) molecules.push(createMolecule('co2'));
-    for (let i = 0; i < 12; i++) molecules.push(createMolecule('h2o'));
-    for (let i = 0; i < 8; i++) molecules.push(createMolecule('photon'));
-    co2Count = 12; h2oCount = 12; o2Count = 0; glucoseCount = 0;
-    updateUI();
-  }
-
-  function updateUI() {
-    document.getElementById('co2Count').textContent = molecules.filter(m => m.userData.type === 'co2').length;
-    document.getElementById('h2oCount').textContent = molecules.filter(m => m.userData.type === 'h2o').length;
-    document.getElementById('o2Count').textContent = molecules.filter(m => m.userData.type === 'o2').length;
-    document.getElementById('glucoseCount').textContent = molecules.filter(m => m.userData.type === 'glucose').length;
-  }
-
-  function react() {
-    const co2List = molecules.filter(m => m.userData.type === 'co2' && m.position.length() < 7);
-    const h2oList = molecules.filter(m => m.userData.type === 'h2o' && m.position.length() < 7);
-    const intensity = parseInt(document.getElementById('sunSlider').value) / 100;
-    
-    if (co2List.length >= 6 && h2oList.length >= 6 && Math.random() < intensity * 0.01) {
-      for (let i = 0; i < 6; i++) {
-        scene.remove(co2List[i]); scene.remove(h2oList[i]);
-        molecules = molecules.filter(m => m !== co2List[i] && m !== h2oList[i]);
-      }
-      
-      const glucose = createMolecule('glucose');
-      glucose.position.set((Math.random()-0.5)*3, (Math.random()-0.5)*3, 0);
-      molecules.push(glucose);
-      
-      for (let i = 0; i < 6; i++) {
-        const o2 = createMolecule('o2');
-        o2.position.set((Math.random()-0.5)*5, (Math.random()-0.5)*5, 0);
-        molecules.push(o2);
-      }
-      updateUI();
+    if (posOffset) {
+      group.position.copy(posOffset);
+    } else {
+      group.position.x = (Math.random() - 0.5) * 11;
+      group.position.y = (Math.random() - 0.5) * 6.5;
+      group.position.z = (Math.random() - 0.5) * 5;
     }
+    group.userData = {
+      type: type,
+      info: infoMap[type].desc,
+      title: infoMap[type].title,
+      vel: new THREE.Vector3(
+        (Math.random() - 0.5) * 0.025,
+        (Math.random() - 0.5) * 0.022,
+        (Math.random() - 0.5) * 0.018
+      )
+    };
+    group.castShadow = true;
+    scene.add(group);
+    return group;
   }
 
-  // raycasting for info
-  const raycaster = new THREE.Raycaster();
-  const mouse = new THREE.Vector2();
+  // helpers
+  function countByType() {
+    const co2 = molecules.filter(m => m.userData.type === 'co2').length;
+    const h2o = molecules.filter(m => m.userData.type === 'h2o').length;
+    const o2 = molecules.filter(m => m.userData.type === 'o2').length;
+    const glu = molecules.filter(m => m.userData.type === 'glucose').length;
+    return { co2, h2o, o2, glu };
+  }
   
-  container.addEventListener('click', (e) => {
-    const rect = container.getBoundingClientRect();
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(scene.children, true);
-    if (intersects.length) {
-      let obj = intersects[0].object;
-      while (obj && !obj.userData?.info) obj = obj.parent;
-      if (obj?.userData?.info) {
-        document.getElementById('infoTitle').textContent = obj.userData.type.toUpperCase();
-        document.getElementById('infoText').textContent = obj.userData.info;
-      }
-    }
-  });
+  function updateStatsUI() {
+    const counts = countByType();
+    document.getElementById('co2Stat').innerText = counts.co2;
+    document.getElementById('h2oStat').innerText = counts.h2o;
+    document.getElementById('o2Stat').innerText = counts.o2;
+    document.getElementById('gluStat').innerText = counts.glu;
+  }
 
-  function animate() {
-    requestAnimationFrame(animate);
+  // Reaction: consumes 6 CO₂ + 6 H₂O (near chloroplast region) produce 1 glucose + 6 O₂
+  function performPhotosynthesisStep() {
+    const intensity = parseFloat(document.getElementById('lightSlider').value) / 100;
+    // probability based on light intensity
+    if (Math.random() > intensity * 0.028) return false;
     
-    const intensity = parseInt(document.getElementById('sunSlider').value);
-    document.getElementById('sunValue').textContent = intensity + '%';
+    const co2List = molecules.filter(m => m.userData.type === 'co2' && Math.abs(m.position.x) < 5.5 && Math.abs(m.position.y) < 4);
+    const h2oList = molecules.filter(m => m.userData.type === 'h2o' && Math.abs(m.position.x) < 5.5 && Math.abs(m.position.y) < 4);
     
+    if (co2List.length >= 6 && h2oList.length >= 6) {
+      // remove 6 CO2 and 6 H2O
+      for (let i = 0; i < 6; i++) {
+        const c = co2List[i];
+        const w = h2oList[i];
+        scene.remove(c);
+        scene.remove(w);
+        molecules = molecules.filter(m => m !== c && m !== w);
+      }
+      // create glucose
+      const glucosePos = new THREE.Vector3((Math.random() - 0.5) * 3, (Math.random() - 0.5) * 2.5, 0);
+      const glucoseMol = buildMolecule('glucose', glucosePos);
+      molecules.push(glucoseMol);
+      // create 6 oxygen molecules
+      for (let i = 0; i < 6; i++) {
+        const o2Pos = new THREE.Vector3((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 5, (Math.random() - 0.5) * 3);
+        const oxygenMol = buildMolecule('o2', o2Pos);
+        molecules.push(oxygenMol);
+      }
+      updateStatsUI();
+      return true;
+    }
+    return false;
+  }
+
+  // photon generation based on light intensity
+  let lastPhotonTime = 0;
+  function generatePhotons(now, intensity) {
+    const rate = intensity * 0.12;
+    if (Math.random() < rate * 0.03) {
+      const photon = buildMolecule('photon');
+      molecules.push(photon);
+    }
+  }
+
+  // physics and boundary
+  function updatePhysics() {
     molecules.forEach(m => {
       m.position.x += m.userData.vel.x;
       m.position.y += m.userData.vel.y;
-      if (Math.abs(m.position.x) > 8) m.userData.vel.x *= -0.9;
-      if (Math.abs(m.position.y) > 6) m.userData.vel.y *= -0.9;
-      m.rotation.y += 0.01;
+      m.position.z += m.userData.vel.z;
+      // soft boundaries
+      if (Math.abs(m.position.x) > 8.2) { m.position.x = Math.sign(m.position.x) * 8.1; m.userData.vel.x *= -0.92; }
+      if (Math.abs(m.position.y) > 6) { m.position.y = Math.sign(m.position.y) * 5.9; m.userData.vel.y *= -0.92; }
+      if (Math.abs(m.position.z) > 5.5) { m.position.z = Math.sign(m.position.z) * 5.4; m.userData.vel.z *= -0.92; }
+      m.rotation.z += 0.01;
+      m.rotation.x += 0.008;
     });
-    
-    react();
-    
-    if (Math.random() < intensity / 500) {
-      molecules.push(createMolecule('photon'));
+  }
+
+  // ----- Interactive Raycaster (tap molecule)
+  const raycaster = new THREE.Raycaster();
+  const mouseVec = new THREE.Vector2();
+  const infoTitleEl = document.getElementById('infoTitle');
+  const infoTextEl = document.getElementById('infoText');
+
+  function handleTap(event) {
+    const rect = container.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    mouseVec.set(x, y);
+    raycaster.setFromCamera(mouseVec, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    if (intersects.length === 0) return;
+    let hit = intersects[0].object;
+    while (hit && !hit.userData?.type && hit !== scene) hit = hit.parent;
+    if (hit && hit.userData?.type) {
+      const data = hit.userData;
+      const nameMap = { co2: 'CO₂', h2o: 'H₂O', o2: 'O₂', glucose: 'Glucose', photon: 'Light Photon', chloroplast: 'Chloroplast' };
+      const title = nameMap[data.type] || 'Molecule';
+      infoTitleEl.innerHTML = `🌿 ${title}`;
+      infoTextEl.innerHTML = data.info || (data.type === 'photon' ? 'Energy packet drives electron transport.' : 'Essential for photosynthesis.');
+    } else if (intersects[0].object.parent?.userData?.type === 'chloroplast' || chloroplasts.some(c => c === hit.parent || c === hit)) {
+      infoTitleEl.innerHTML = '🌱 Chloroplast';
+      infoTextEl.innerHTML = 'Thylakoid membranes convert light into chemical energy (ATP + NADPH). Calvin cycle fixes CO₂.';
     }
+  }
+
+  container.addEventListener('click', handleTap);
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length) {
+      const touch = e.touches[0];
+      handleTap(touch);
+    }
+  });
+
+  // --- reset simulation
+  function resetSimulation() {
+    molecules.forEach(m => scene.remove(m));
+    molecules = [];
+    // initial counts: 14 CO₂, 14 H₂O, plus some photons
+    for (let i = 0; i < 14; i++) molecules.push(buildMolecule('co2'));
+    for (let i = 0; i < 14; i++) molecules.push(buildMolecule('h2o'));
+    for (let i = 0; i < 6; i++) molecules.push(buildMolecule('photon'));
+    updateStatsUI();
+  }
+
+  // light slider UI
+  const slider = document.getElementById('lightSlider');
+  const lightPercentSpan = document.getElementById('lightPercent');
+  slider.addEventListener('input', (e) => {
+    const val = e.target.value;
+    lightPercentSpan.innerText = val + '%';
+    // adjust background light color intensity
+    const intensityVal = val / 100;
+    mainLight.intensity = 0.8 + intensityVal * 0.7;
+  });
+  
+  document.getElementById('resetSimBtn').addEventListener('click', () => {
+    resetSimulation();
+    // small UI feedback
+    const card = document.getElementById('infoCard');
+    card.style.transform = 'scale(1.01)';
+    setTimeout(() => { card.style.transform = ''; }, 150);
+  });
+
+  // initial state
+  resetSimulation();
+
+  // animation loop
+  let lastFrame = performance.now();
+  function animate() {
+    const now = performance.now();
+    const intensityFactor = parseFloat(slider.value) / 100;
+    
+    updatePhysics();
+    // perform reaction multiple times per frame scaling with intensity
+    let reactionAttempts = Math.floor(intensityFactor * 2) + 1;
+    for (let i = 0; i < reactionAttempts; i++) {
+      performPhotosynthesisStep();
+    }
+    generatePhotons(now, intensityFactor);
+    updateStatsUI();
+    
+    // animate chloroplast rings
+    chloroplasts.forEach((ch, idx) => {
+      ch.rotation.y += 0.008;
+      ch.rotation.x = Math.sin(now * 0.002 + idx) * 0.1;
+    });
     
     controls.update();
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
+    requestAnimationFrame(animate);
   }
-
-  document.getElementById('resetBtn').addEventListener('click', init);
+  
   window.addEventListener('resize', () => {
     const w = container.clientWidth, h = container.clientHeight;
-    renderer.setSize(w, h); labelRenderer.setSize(w, h);
-    camera.aspect = w / h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    labelRenderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
   });
-
-  init();
+  
   animate();
 </script>
 </body>

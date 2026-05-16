@@ -3,83 +3,610 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>📐 heisenberg · uncertainty</title>
+  <title>heisenberg · uncertainty</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:900px;margin:0 auto}
-    @media(min-width:700px){.grid{grid-template-columns:1fr 260px}}
-    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
-    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
-    canvas{display:block;width:100%;aspect-ratio:16/10;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff;touch-action:none}
-    .slider-item{margin:16px 0}
-    .slider-head{display:flex;justify-content:space-between;font-weight:500;margin-bottom:4px}
-    input[type=range]{width:100%;height:5px;background:#d4e2fa;border-radius:10px;-webkit-appearance:none;appearance:none}
-    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:#3b82f6;border-radius:20px;border:3px solid #fff;cursor:grab}
-    .telemetry{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
-    .stat{background:#f0f6ff;border-radius:14px;padding:14px;text-align:center}
-    .stat-label{font-size:0.7rem;color:#3a628c}.stat-val{font-size:1.4rem;font-weight:700;color:#3b82f6}
-    .notes{font-size:0.85rem;color:#3a628c;line-height:1.5}.formula{font-size:1.1rem;text-align:center;margin:10px 0}
-    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f9ff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    /* main layout grid */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr 280px;
+        align-items: start;
+      }
+    }
+
+    /* canvas panel */
+    .canvas-panel {
+      background: #ffffff;
+      border-radius: 28px;
+      border: 1px solid #d9e9ff;
+      box-shadow: 0 12px 30px rgba(0, 20, 50, 0.06);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+
+    .panel-header h2 {
+      font-weight: 600;
+      font-size: 1.3rem;
+      color: #0b2b4f;
+      letter-spacing: -0.3px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #2c4b6b;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #fafdff;
+      border-radius: 20px;
+      border: 1px solid #d4e3fc;
+      touch-action: none;
+      margin-top: 6px;
+    }
+
+    /* sidebar (collapsible on mobile) */
+    .sidebar {
+      background: #ffffff;
+      border-radius: 28px;
+      border: 1px solid #d9e9ff;
+      box-shadow: 0 12px 30px rgba(0, 20, 50, 0.06);
+      padding: 0;
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px;
+      background: #ffffff;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid #e9f0fa;
+    }
+
+    .sidebar-header h3 {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #0b2b4f;
+    }
+
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      padding: 6px;
+      cursor: pointer;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2.5px;
+      background: #2c4b6b;
+      border-radius: 4px;
+      transition: 0.2s;
+    }
+
+    .sidebar-content {
+      padding: 16px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* collapse behavior */
+    .sidebar.collapsed .sidebar-content {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .hamburger {
+        display: none;
+      }
+      .sidebar.collapsed .sidebar-content {
+        display: flex; /* always visible on desktop */
+      }
+      .sidebar-header {
+        cursor: default;
+        border-bottom: 1px solid #e9f0fa;
+      }
+    }
+
+    /* slider style */
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #1e3b5c;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #dce9fc;
+      border-radius: 10px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #2563eb;
+      border-radius: 22px;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      cursor: pointer;
+    }
+
+    /* telemetry cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: #f0f6fe;
+      border-radius: 16px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: #43668c;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 650;
+      color: #1d4ed8;
+      line-height: 1.2;
+    }
+
+    .reset-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 40px;
+      background: white;
+      border: 1.5px solid #cbddec;
+      font-weight: 600;
+      color: #1e3b5c;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: 0.2s;
+      margin-top: 4px;
+    }
+
+    .reset-btn:hover {
+      background: #f0f6ff;
+      border-color: #a0c4f0;
+    }
+
+    /* accordion for principle */
+    .accordion {
+      border-top: 1px solid #e5eff9;
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+
+    .accordion-toggle {
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #0b2b4f;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      cursor: pointer;
+    }
+
+    .accordion-content {
+      font-size: 0.85rem;
+      color: #2c4b6b;
+      display: none;
+      padding-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .accordion.open .accordion-content {
+      display: block;
+    }
+
+    .formula {
+      font-size: 1.1rem;
+      text-align: center;
+      font-weight: 500;
+      margin: 8px 0;
+      color: #0b2b4f;
+    }
   </style>
 </head>
 <body>
-<div class="grid">
-  <div class="panel">
-    <h2>📐 heisenberg uncertainty</h2>
-    <canvas id="qCanvas"></canvas>
-    <div class="legend"><span style="color:#3b82f6">● electron</span><span style="color:#f59e0b">◯ measurement (Δx)</span></div>
-  </div>
-  <div>
-    <div class="panel">
-      <div class="slider-item"><div class="slider-head"><span>🎯 Δx precision</span><span id="precVal">70</span></div><input type="range" id="precSlider" min="8" max="130" value="70"></div>
-      <div class="telemetry"><div class="stat"><div class="stat-label">Δx</div><div class="stat-val" id="dxDisplay">70</div></div><div class="stat"><div class="stat-label">Δp</div><div class="stat-val" id="dpDisplay">0.0</div></div></div>
-      <button class="btn-outline" id="resetBtn" style="width:100%;padding:14px;border-radius:40px;background:#fff;border:1.5px solid #d0e2ff;font-weight:600;color:#3a628c">↻ reset</button>
+<div class="dashboard">
+  <!-- canvas section -->
+  <div class="canvas-panel">
+    <div class="panel-header">
+      <h2>📐 heisenberg</h2>
+      <div class="legend">
+        <span style="color:#2563eb;">● electron</span>
+        <span style="color:#f59e0b;">◯ Δx</span>
+      </div>
     </div>
-    <div class="panel" style="margin-top:16px">
-      <div class="notes"><strong>💡 principle</strong><br>Measuring position precisely requires high‑energy photons, which kick the electron.</div>
-      <div class="formula">Δx · Δp ≥ ℏ/2</div>
-      <div class="notes">smaller Δx → larger Δp</div>
+    <canvas id="qCanvas"></canvas>
+  </div>
+
+  <!-- interactive sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header" id="sidebarToggleBtn">
+      <h3>⚙️ controls</h3>
+      <button class="hamburger" id="hamburgerIcon">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="sidebar-content">
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>🎯 Δx precision</span>
+          <span id="precVal">70</span>
+        </div>
+        <input type="range" id="precSlider" min="8" max="130" value="70">
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Δx</div>
+          <div class="stat-value" id="dxDisplay">70</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Δp</div>
+          <div class="stat-value" id="dpDisplay">0.0</div>
+        </div>
+      </div>
+
+      <button class="reset-btn" id="resetBtn">↻ reset electron</button>
+
+      <!-- accordion for principle info -->
+      <div class="accordion" id="principleAccordion">
+        <button class="accordion-toggle" id="accordionToggle">
+          <span>💡 principle</span>
+          <span id="accordionArrow">▼</span>
+        </button>
+        <div class="accordion-content">
+          <p style="margin-bottom: 6px;">Measuring position precisely requires high‑energy photons, which kick the electron.</p>
+          <div class="formula">Δx · Δp ≥ ℏ/2</div>
+          <p>smaller Δx → larger Δp</p>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
 <script>
-(function(){
-  const canvas=document.getElementById('qCanvas'),ctx=canvas.getContext('2d');
-  let w=0,h=0,DPR=devicePixelRatio||1,e={x:0,y:0,vx:2,vy:1.5,hist:[]},mouse={x:0,y:0,active:!1};
-  const precS=document.getElementById('precSlider'),precV=document.getElementById('precVal'),dxD=document.getElementById('dxDisplay'),dpD=document.getElementById('dpDisplay');
-  
-  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=r.width*10/16;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0);e.x=w/2;e.y=h/2}
-  
-  function updateUI(){const p=parseInt(precS.value);precV.textContent=p;dxD.textContent=p}
-  
-  function draw(){
-    ctx.fillStyle='#f8fcff'; ctx.fillRect(0,0,w,h);
-    const p=parseInt(precS.value); updateUI();
-    if(mouse.active){
-      const dx=e.x-mouse.x,dy=e.y-mouse.y,dist=Math.hypot(dx,dy);
-      if(dist<p){const j=(130-p)*0.03; e.vx+=(Math.random()-0.5)*j; e.vy+=(Math.random()-0.5)*j; dpD.textContent=(j*7).toFixed(1)}else dpD.textContent='0.0';
+  (function(){
+    const canvas = document.getElementById('qCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let w = 0, h = 0;
+    const DPR = devicePixelRatio || 1;
+
+    // electron state
+    let electron = {
+      x: 0, y: 0,
+      vx: 1.8, vy: 1.2,
+      hist: []
+    };
+
+    let mouse = { x: 0, y: 0, active: false };
+
+    // UI elements
+    const precSlider = document.getElementById('precSlider');
+    const precVal = document.getElementById('precVal');
+    const dxDisplay = document.getElementById('dxDisplay');
+    const dpDisplay = document.getElementById('dpDisplay');
+
+    // sidebar collapse logic
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const hamburgerIcon = document.getElementById('hamburgerIcon');
+
+    function isMobile() {
+      return window.innerWidth < 768;
     }
-    e.x+=e.vx; e.y+=e.vy; e.vx*=0.992; e.vy*=0.992;
-    if(e.x<5||e.x>w-5)e.vx*=-0.9; if(e.y<5||e.y>h-5)e.vy*=-0.9;
-    e.x=Math.min(w-5,Math.max(5,e.x)); e.y=Math.min(h-5,Math.max(5,e.y));
-    e.hist.push({x:e.x,y:e.y}); if(e.hist.length>30)e.hist.shift();
-    ctx.beginPath(); ctx.strokeStyle='#3b82f660'; ctx.lineWidth=2; e.hist.forEach((pt,i)=>i===0?ctx.moveTo(pt.x,pt.y):ctx.lineTo(pt.x,pt.y)); ctx.stroke();
-    const grad=ctx.createRadialGradient(e.x,e.y,0,e.x,e.y,12); grad.addColorStop(0,'#60a5fa'); grad.addColorStop(0.8,'#3b82f6');
-    ctx.beginPath(); ctx.arc(e.x,e.y,8,0,2*Math.PI); ctx.fillStyle=grad; ctx.shadowColor='#3b82f6'; ctx.shadowBlur=14; ctx.fill(); ctx.shadowBlur=0;
-    if(mouse.active){ctx.beginPath(); ctx.arc(mouse.x,mouse.y,p,0,2*Math.PI); ctx.strokeStyle='#f59e0b'; ctx.lineWidth=2; ctx.setLineDash([6,6]); ctx.stroke(); ctx.setLineDash([]);
-      ctx.beginPath(); ctx.moveTo(mouse.x-12,mouse.y); ctx.lineTo(mouse.x+12,mouse.y); ctx.moveTo(mouse.x,mouse.y-12); ctx.lineTo(mouse.x,mouse.y+12); ctx.strokeStyle='#fbbf24'; ctx.lineWidth=1.5; ctx.stroke()}
-    requestAnimationFrame(draw);
-  }
-  
-  canvas.addEventListener('mousemove',e=>{const r=canvas.getBoundingClientRect(); mouse.x=(e.clientX-r.left)*(w/r.width); mouse.y=(e.clientY-r.top)*(h/r.height); mouse.active=!0});
-  canvas.addEventListener('mouseleave',()=>{mouse.active=!1; dpD.textContent='0.0'});
-  canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0],r=canvas.getBoundingClientRect(); mouse.x=(t.clientX-r.left)*(w/r.width); mouse.y=(t.clientY-r.top)*(h/r.height); mouse.active=!0});
-  canvas.addEventListener('touchend',()=>{mouse.active=!1; dpD.textContent='0.0'});
-  document.getElementById('resetBtn').onclick=()=>{e={x:w/2,y:h/2,vx:(Math.random()-0.5)*2.5,vy:(Math.random()-0.5)*2.5,hist:[]}};
-  window.onresize=resize;
-  resize(); draw();
-})();
+
+    function toggleSidebar() {
+      if (!isMobile()) return; // desktop always open
+      sidebar.classList.toggle('collapsed');
+    }
+
+    sidebarToggleBtn.addEventListener('click', (e) => {
+      // prevent accordion or other child clicks from interfering
+      if (e.target === hamburgerIcon || hamburgerIcon.contains(e.target) || e.target === sidebarToggleBtn || e.target.tagName === 'H3') {
+        toggleSidebar();
+      }
+    });
+
+    // Initialize mobile state: collapsed by default on small screens
+    function handleResponsiveState() {
+      if (isMobile()) {
+        sidebar.classList.add('collapsed');
+      } else {
+        sidebar.classList.remove('collapsed');
+      }
+    }
+    window.addEventListener('resize', handleResponsiveState);
+    handleResponsiveState();
+
+    // Accordion logic
+    const accordion = document.getElementById('principleAccordion');
+    const accordionToggle = document.getElementById('accordionToggle');
+    const accordionArrow = document.getElementById('accordionArrow');
+
+    accordionToggle.addEventListener('click', () => {
+      accordion.classList.toggle('open');
+      accordionArrow.textContent = accordion.classList.contains('open') ? '▲' : '▼';
+    });
+
+    // Canvas resize
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      const rect = container.getBoundingClientRect();
+      w = rect.width;
+      h = rect.width * 10 / 16;  // 16:10 aspect ratio
+
+      canvas.width = w * DPR;
+      canvas.height = h * DPR;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+      // reposition electron if out of bounds
+      electron.x = Math.min(w - 8, Math.max(8, electron.x || w/2));
+      electron.y = Math.min(h - 8, Math.max(8, electron.y || h/2));
+    }
+
+    function updateUI() {
+      const precision = parseInt(precSlider.value, 10);
+      precVal.textContent = precision;
+      dxDisplay.textContent = precision;
+    }
+
+    // Drawing loop
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#fafdff';
+      ctx.fillRect(0, 0, w, h);
+
+      const precision = parseInt(precSlider.value, 10);
+      updateUI();
+
+      // Interaction: if mouse active and inside measurement radius, add random kick
+      if (mouse.active) {
+        const dx = electron.x - mouse.x;
+        const dy = electron.y - mouse.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < precision) {
+          const jitter = (130 - precision) * 0.032;
+          electron.vx += (Math.random() - 0.5) * jitter;
+          electron.vy += (Math.random() - 0.5) * jitter;
+          dpDisplay.textContent = (jitter * 7.2).toFixed(1);
+        } else {
+          dpDisplay.textContent = '0.0';
+        }
+      } else {
+        dpDisplay.textContent = '0.0';
+      }
+
+      // Update electron position
+      electron.x += electron.vx;
+      electron.y += electron.vy;
+
+      // Damping
+      electron.vx *= 0.992;
+      electron.vy *= 0.992;
+
+      // Boundary collision
+      if (electron.x < 6 || electron.x > w - 6) {
+        electron.vx *= -0.85;
+        electron.x = Math.min(w - 6, Math.max(6, electron.x));
+      }
+      if (electron.y < 6 || electron.y > h - 6) {
+        electron.vy *= -0.85;
+        electron.y = Math.min(h - 6, Math.max(6, electron.y));
+      }
+
+      // History trail
+      electron.hist.push({ x: electron.x, y: electron.y });
+      if (electron.hist.length > 30) electron.hist.shift();
+
+      // Draw trail
+      if (electron.hist.length > 1) {
+        ctx.beginPath();
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 2.2;
+        ctx.globalAlpha = 0.5;
+        ctx.moveTo(electron.hist[0].x, electron.hist[0].y);
+        for (let i = 1; i < electron.hist.length; i++) {
+          ctx.lineTo(electron.hist[i].x, electron.hist[i].y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+
+      // Draw electron
+      const gradient = ctx.createRadialGradient(electron.x, electron.y, 2, electron.x, electron.y, 11);
+      gradient.addColorStop(0, '#60a5fa');
+      gradient.addColorStop(0.9, '#1d4ed8');
+      ctx.beginPath();
+      ctx.arc(electron.x, electron.y, 8, 0, 2 * Math.PI);
+      ctx.fillStyle = gradient;
+      ctx.shadowColor = '#2563eb';
+      ctx.shadowBlur = 14;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Draw measurement circle and crosshair if mouse active
+      if (mouse.active) {
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, precision, 0, 2 * Math.PI);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // crosshair
+        ctx.beginPath();
+        ctx.moveTo(mouse.x - 14, mouse.y);
+        ctx.lineTo(mouse.x + 14, mouse.y);
+        ctx.moveTo(mouse.x, mouse.y - 14);
+        ctx.lineTo(mouse.x, mouse.y + 14);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    // Mouse / touch handlers
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+
+      if (e.touches) {
+        if (e.touches.length === 0) return null;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      return {
+        x: (clientX - rect.left) * (w / rect.width),
+        y: (clientY - rect.top) * (h / rect.height)
+      };
+    }
+
+    function onMouseMove(e) {
+      const coords = getCanvasCoords(e);
+      if (coords) {
+        mouse.x = coords.x;
+        mouse.y = coords.y;
+        mouse.active = true;
+      }
+    }
+
+    function onMouseLeave() {
+      mouse.active = false;
+      dpDisplay.textContent = '0.0';
+    }
+
+    function onTouchMove(e) {
+      e.preventDefault();
+      const coords = getCanvasCoords(e);
+      if (coords) {
+        mouse.x = coords.x;
+        mouse.y = coords.y;
+        mouse.active = true;
+      }
+    }
+
+    function onTouchEnd(e) {
+      e.preventDefault();
+      mouse.active = false;
+      dpDisplay.textContent = '0.0';
+    }
+
+    canvas.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('mouseleave', onMouseLeave);
+    canvas.addEventListener('touchstart', (e) => e.preventDefault());
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd);
+    canvas.addEventListener('touchcancel', onTouchEnd);
+
+    // Reset button
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      electron = {
+        x: w / 2,
+        y: h / 2,
+        vx: (Math.random() - 0.5) * 2.8,
+        vy: (Math.random() - 0.5) * 2.8,
+        hist: []
+      };
+    });
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    draw();
+  })();
 </script>
 </body>
 </html>

@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🎯 accuracy vs precision · touch lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>⦿ bias · noise lab</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     * {
       margin: 0;
       padding: 0;
@@ -14,400 +12,679 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    :root {
-      --bg-page: #ffffff;
-      --surface: #fafcff;
-      --border-light: #d0e2ff;
-      --text-dark: #0a1e3c;
-      --text-soft: #3a628c;
-      --accent: #3b82f6;
-      --target: #ef4444;
-      --dart: #10b981;
-      --shadow-card: 0 8px 24px rgba(0,0,0,0.04);
-    }
-
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg-page);
-      color: var(--text-dark);
+      background: #f2f5fc;
+      font-family: system-ui, 'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
       min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 12px;
     }
 
-    .app-card {
+    /* main card – clean, minimal, max-width for large screens */
+    .lab-frame {
       width: 100%;
-      max-width: 700px;
-      background: var(--surface);
-      border-radius: 32px;
-      border: 1px solid var(--border-light);
-      box-shadow: var(--shadow-card);
-      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 2rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      transition: all 0.2s ease;
     }
 
-    h2 {
-      font-weight: 700;
-      font-size: 1.5rem;
-      letter-spacing: -0.02em;
-      color: var(--text-dark);
-      margin-bottom: 4px;
+    /* top bar: hamburger + title compact */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: white;
+      border-bottom: 1px solid #e9edf2;
     }
 
-    .subhead {
-      color: var(--text-soft);
-      margin-bottom: 20px;
-      font-size: 0.9rem;
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      flex-wrap: wrap;
     }
 
-    canvas {
-      display: block;
-      width: 100%;
-      aspect-ratio: 1/1;
-      background: #f8fcff;
-      border-radius: 50%;
-      border: 2px solid var(--border-light);
-      touch-action: none;
-      margin-bottom: 20px;
+    .brand h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+      color: #0a2540;
     }
 
-    .control-group {
+    .badge {
+      background: #eef3ff;
+      padding: 4px 10px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #1e6fdf;
+    }
+
+    /* hamburger button */
+    .menu-btn {
+      background: none;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 60px;
       display: flex;
       flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .menu-btn:hover { background: #f0f4fa; }
+    .menu-line {
+      width: 24px;
+      height: 2.5px;
+      background: #1e3b5c;
+      border-radius: 4px;
+      transition: 0.2s;
+    }
+
+    /* sidebar overlay (collapsible menu) */
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(2px);
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0.2s, opacity 0.2s;
+    }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(320px, 85%);
+      height: 100dvh;
+      background: white;
+      box-shadow: -8px 0 24px rgba(0,0,0,0.08);
+      padding: 1.5rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      transform: translateX(100%);
+      transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      z-index: 1001;
+      overflow-y: auto;
+    }
+    .sidebar-overlay.open {
+      visibility: visible;
+      opacity: 1;
+    }
+    .sidebar-overlay.open .sidebar {
+      transform: translateX(0);
+    }
+    .close-sidebar {
+      align-self: flex-end;
+      background: #f0f2f5;
+      border: none;
+      font-size: 1.6rem;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+    .menu-section {
+      border-bottom: 1px solid #eef2f8;
+      padding-bottom: 1rem;
+    }
+    .menu-section h4 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #5c6f87;
+      margin-bottom: 12px;
+    }
+    .info-tile {
+      background: #f8fafd;
+      padding: 12px;
+      border-radius: 18px;
+      font-size: 0.85rem;
+      color: #25415d;
+      line-height: 1.4;
+    }
+    .legend-compact {
+      display: flex;
       gap: 16px;
-      margin-bottom: 20px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .legend-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
     }
 
-    .slider-item {
+    /* main content: flexible grid */
+    .main-grid {
+      padding: 1.5rem;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 1.5rem;
     }
 
-    .slider-header {
+    /* canvas container – responsive round target */
+    .canvas-wrapper {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+    canvas {
+      background: #fafdff;
+      border-radius: 50%;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+      width: 100%;
+      height: auto;
+      max-width: 480px;
+      aspect-ratio: 1 / 1;
+      border: 2px solid #e2ebf6;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    /* controls row: sliders + compact stats card */
+    .controls-panel {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 1rem 1.2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      border: 1px solid #eef2fa;
+    }
+
+    .dual-sliders {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+    .slider-unit {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .slider-label {
       display: flex;
       justify-content: space-between;
+      font-size: 0.85rem;
       font-weight: 500;
-      font-size: 0.9rem;
     }
-
     input[type="range"] {
       width: 100%;
       height: 6px;
-      background: #d4e2fa;
+      background: #e0e8f2;
       border-radius: 10px;
     }
-
     input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
-      background: var(--accent);
-      border-radius: 22px;
-      border: 3px solid white;
-      cursor: grab;
+      width: 20px;
+      height: 20px;
+      background: #1e6fdf;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
     }
 
-    .stats-row {
+    /* minimal stats: horizontal on tablet+ */
+    .stats-mini {
       display: flex;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-top: 6px;
+      flex-wrap: wrap;
     }
-
-    .stat-badge {
+    .metric {
       flex: 1;
-      background: #f0f6ff;
-      padding: 14px;
-      border-radius: 20px;
+      background: #f6f9fe;
+      border-radius: 28px;
+      padding: 10px 0;
       text-align: center;
     }
-
-    .stat-label {
+    .metric-label {
       font-size: 0.7rem;
       text-transform: uppercase;
-      color: var(--text-soft);
+      color: #6b7c93;
     }
-
-    .stat-value {
-      font-size: 1.3rem;
+    .metric-value {
       font-weight: 700;
-      color: var(--accent);
+      font-size: 1.3rem;
+      color: #0f3b6a;
+      line-height: 1.2;
     }
-
-    .analysis-box {
-      background: #fef9e7;
-      padding: 16px 18px;
-      border-radius: 20px;
-      border-left: 4px solid #f59e0b;
-      margin-bottom: 16px;
+    .analysis-chip {
+      background: #fef7e0;
+      border-radius: 60px;
+      padding: 10px 16px;
+      font-size: 0.8rem;
       font-weight: 500;
+      text-align: center;
+      border-left: 3px solid #f5b042;
     }
 
-    .btn-group {
+    .action-row {
       display: flex;
-      gap: 10px;
+      gap: 12px;
+      margin-top: 8px;
     }
-
     .btn {
       flex: 1;
-      padding: 16px;
-      border-radius: 60px;
       border: none;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      background: var(--accent);
+      padding: 14px 0;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      background: #1e6fdf;
       color: white;
+      cursor: pointer;
+      transition: 0.1s linear;
     }
-
     .btn-outline {
-      background: white;
-      border: 1.5px solid var(--border-light);
-      color: var(--text-soft);
+      background: transparent;
+      border: 1.5px solid #cbddec;
+      color: #2c5270;
     }
+    .btn:active { transform: scale(0.97); }
 
-    .btn:active {
-      scale: 0.97;
+    /* responsive: tablet+ uses two columns */
+    @media (min-width: 700px) {
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 0.9fr;
+        align-items: start;
+      }
+      .canvas-wrapper {
+        justify-content: flex-start;
+      }
+      canvas {
+        max-width: 100%;
+      }
+      .controls-panel {
+        margin-top: 0;
+      }
+      .top-bar {
+        padding: 0.8rem 2rem;
+      }
     }
-
-    .legend {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      margin-top: 12px;
-    }
-
-    .legend-dot {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-      color: var(--text-soft);
-    }
-
     @media (max-width: 500px) {
-      .app-card { padding: 18px; }
-      .stats-row { flex-direction: column; }
+      .main-grid { padding: 1rem; }
+      .stats-mini { flex-direction: column; }
+      .metric { padding: 6px 0; }
     }
   </style>
 </head>
 <body>
+<div class="lab-frame">
+  <div class="top-bar">
+    <div class="brand">
+      <h1>⦿ bias · noise</h1>
+      <div class="badge">acc / prec</div>
+    </div>
+    <button class="menu-btn" id="hamburgerBtn" aria-label="menu">
+      <div class="menu-line"></div>
+      <div class="menu-line"></div>
+      <div class="menu-line"></div>
+    </button>
+  </div>
 
-<div class="app-card">
-  <h2>🎯 accuracy & precision</h2>
-  <div class="subhead">systematic error → accuracy · random error → precision</div>
+  <div class="main-grid">
+    <!-- canvas target zone -->
+    <div class="canvas-wrapper">
+      <canvas id="targetCanvas" width="500" height="500" style="width:100%;height:auto;max-width:480px;aspect-ratio:1/1"></canvas>
+    </div>
 
-  <canvas id="targetCanvas"></canvas>
-
-  <div class="control-group">
-    <div class="slider-item">
-      <div class="slider-header">
-        <span>📍 systematic error (bias)</span>
-        <span id="biasValue">0</span>
+    <!-- right side: interactive controls compact -->
+    <div class="controls-panel">
+      <div class="dual-sliders">
+        <div class="slider-unit">
+          <div class="slider-label">
+            <span>📍 systematic error (bias)</span>
+            <span id="biasValDisplay">0</span>
+          </div>
+          <input type="range" id="biasSlider" min="0" max="120" value="0" step="1">
+        </div>
+        <div class="slider-unit">
+          <div class="slider-label">
+            <span>🎲 random error (spread)</span>
+            <span id="spreadValDisplay">30</span>
+          </div>
+          <input type="range" id="spreadSlider" min="10" max="150" value="30" step="1">
+        </div>
       </div>
-      <input type="range" id="biasSlider" min="0" max="120" value="0" step="1">
-    </div>
-    <div class="slider-item">
-      <div class="slider-header">
-        <span>🎲 random error (spread)</span>
-        <span id="spreadValue">30</span>
+
+      <div class="stats-mini">
+        <div class="metric">
+          <div class="metric-label">accuracy</div>
+          <div class="metric-value" id="accuracyChip">high</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">precision</div>
+          <div class="metric-value" id="precisionChip">high</div>
+        </div>
       </div>
-      <input type="range" id="spreadSlider" min="10" max="150" value="30" step="1">
+      <div class="analysis-chip" id="inlineAnalysis">
+        🎯 ideal · tight grouping
+      </div>
+
+      <div class="action-row">
+        <button class="btn" id="shootAction">🎯 shoot 15</button>
+        <button class="btn-outline" id="resetSettings">↻ reset</button>
+      </div>
     </div>
   </div>
+</div>
 
-  <div class="stats-row">
-    <div class="stat-badge">
-      <div class="stat-label">accuracy</div>
-      <div class="stat-value" id="accuracyGrade">high</div>
+<!-- collapsible sidebar menu (info, legend, extended details) -->
+<div id="sidebarOverlay" class="sidebar-overlay">
+  <div class="sidebar">
+    <button class="close-sidebar" id="closeSidebarBtn">✕</button>
+    <div class="menu-section">
+      <h4>📘 concept</h4>
+      <div class="info-tile">
+        <strong>accuracy</strong> = systematic error (bias)<br>
+        <strong>precision</strong> = random error (spread)
+      </div>
     </div>
-    <div class="stat-badge">
-      <div class="stat-label">precision</div>
-      <div class="stat-value" id="precisionGrade">high</div>
+    <div class="menu-section">
+      <h4>🎯 interpretation</h4>
+      <div class="info-tile" id="dynamicSideHint">
+        <!-- will sync from main analysis -->
+        high accuracy + high precision = ideal
+      </div>
     </div>
-  </div>
-
-  <div class="analysis-box" id="analysisText">
-    🎯 High accuracy · High precision · Ideal measurements
-  </div>
-
-  <div class="btn-group">
-    <button class="btn" id="shootBtn">🎯 shoot 15 darts</button>
-    <button class="btn-outline" id="resetBtn">↻ reset</button>
-  </div>
-
-  <div class="legend">
-    <div class="legend-dot"><span style="color:var(--target);">●</span> bullseye</div>
-    <div class="legend-dot"><span style="color:var(--dart);">●</span> measurement</div>
-    <div class="legend-dot"><span style="border:2px dashed #3b82f6; width:20px;"></span> expected spread</div>
+    <div class="menu-section">
+      <h4>⚙️ controls</h4>
+      <div class="info-tile">
+        • Bias shifts cluster center<br>
+        • Spread increases dispersion<br>
+        • Each "shoot" regenerates 15 darts
+      </div>
+    </div>
+    <div class="menu-section">
+      <h4>🎨 legend</h4>
+      <div class="legend-compact">
+        <span class="legend-dot"><span style="color:#ef4444;">●</span> bullseye</span>
+        <span class="legend-dot"><span style="color:#10b981;">●</span> dart hit</span>
+        <span class="legend-dot"><span style="border:2px dashed #1e6fdf; width:18px; display:inline-block;"></span> 2σ spread</span>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
   (function(){
+    // ----- DOM elements -----
     const canvas = document.getElementById('targetCanvas');
     const ctx = canvas.getContext('2d');
+    let width = 500, height = 500;
     
-    let width = 0, height = 0;
-    const DPR = devicePixelRatio || 1;
-    
-    let darts = [];
-    const DART_COUNT = 15;
-    
+    // sliders & display
     const biasSlider = document.getElementById('biasSlider');
     const spreadSlider = document.getElementById('spreadSlider');
-    const biasValue = document.getElementById('biasValue');
-    const spreadValue = document.getElementById('spreadValue');
-    const accuracyGrade = document.getElementById('accuracyGrade');
-    const precisionGrade = document.getElementById('precisionGrade');
-    const analysisText = document.getElementById('analysisText');
+    const biasValSpan = document.getElementById('biasValDisplay');
+    const spreadValSpan = document.getElementById('spreadValDisplay');
+    const accuracySpan = document.getElementById('accuracyChip');
+    const precisionSpan = document.getElementById('precisionChip');
+    const analysisDiv = document.getElementById('inlineAnalysis');
+    const sideHintDiv = document.getElementById('dynamicSideHint');
     
-    function resizeCanvas() {
-      const rect = canvas.parentElement.getBoundingClientRect();
-      width = rect.width;
-      height = rect.width;
-      canvas.width = width * DPR;
-      canvas.height = height * DPR;
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    // buttons
+    const shootBtn = document.getElementById('shootAction');
+    const resetBtn = document.getElementById('resetSettings');
+    
+    // darts state
+    let darts = [];
+    const DART_COUNT = 15;
+    let animationId = null;
+    let centerX = width/2, centerY = height/2;
+    
+    // resize observer to keep canvas resolution crisp (also responsive)
+    function handleCanvasSize() {
+      const container = canvas.parentElement;
+      const maxSize = Math.min(container.clientWidth, 480);
+      canvas.style.width = `${maxSize}px`;
+      canvas.style.height = `${maxSize}px`;
+      const displayWidth = maxSize;
+      const displayHeight = maxSize;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = displayWidth * dpr;
+      canvas.height = displayHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      width = displayWidth;
+      height = displayHeight;
+      centerX = width/2;
+      centerY = height/2;
+      regenerateDarts(false); // keep existing slider vals but recalc positions
     }
     
-    function updateUI() {
-      const bias = parseInt(biasSlider.value);
-      const spread = parseInt(spreadSlider.value);
-      
-      biasValue.textContent = bias;
-      spreadValue.textContent = spread;
-      
-      // grade accuracy (based on bias)
-      if (bias < 25) accuracyGrade.textContent = 'high';
-      else if (bias < 60) accuracyGrade.textContent = 'medium';
-      else accuracyGrade.textContent = 'low';
-      
-      // grade precision (based on spread)
-      if (spread < 40) precisionGrade.textContent = 'high';
-      else if (spread < 80) precisionGrade.textContent = 'medium';
-      else precisionGrade.textContent = 'low';
-      
-      // combined analysis
-      const accLow = bias >= 25;
-      const precLow = spread >= 40;
-      
-      if (!accLow && !precLow) {
-        analysisText.innerHTML = '🎯 High accuracy · High precision · Ideal measurements';
-      } else if (accLow && !precLow) {
-        analysisText.innerHTML = '📐 Low accuracy · High precision · Systematic error (bias) present';
-      } else if (!accLow && precLow) {
-        analysisText.innerHTML = '🎲 High accuracy · Low precision · Random error (noise) high';
-      } else {
-        analysisText.innerHTML = '⚠️ Low accuracy · Low precision · Unreliable measurements';
-      }
-    }
-    
-    function generateDarts() {
-      const bias = parseInt(biasSlider.value);
-      const spread = parseInt(spreadSlider.value);
-      
-      darts = [];
+    // generate darts with current bias & spread
+    function regenerateDarts(keepProgress = false) {
+      const bias = parseFloat(biasSlider.value);
+      const spread = parseFloat(spreadSlider.value);
+      const newDarts = [];
       for (let i = 0; i < DART_COUNT; i++) {
-        darts.push({
-          x: width/2,
-          y: height/2,
-          targetX: width/2 + bias + (Math.random() - 0.5) * spread,
-          targetY: height/2 + (Math.random() - 0.5) * spread,
-          progress: 0
+        // bias shifts mean X target by bias amount
+        let targetX = centerX + bias + (Math.random() - 0.5) * spread;
+        let targetY = centerY + (Math.random() - 0.5) * spread;
+        newDarts.push({
+          x: centerX,
+          y: centerY,
+          targetX: targetX,
+          targetY: targetY,
+          progress: keepProgress ? (darts[i]?.progress || 0) : 0
         });
       }
-      updateUI();
+      darts = newDarts;
+      updateStatsAndAnalysis();
     }
     
-    function drawTarget() {
-      const cx = width/2;
-      const cy = height/2;
-      const rings = [
-        { r: width * 0.38, color: '#0f3460' },
-        { r: width * 0.30, color: '#16213e' },
-        { r: width * 0.22, color: '#0f3460' },
-        { r: width * 0.14, color: '#16213e' },
-        { r: width * 0.07, color: '#ef4444' },
-        { r: width * 0.03, color: '#fbbf24' }
-      ];
+    // update UI: accuracy/precision grades + analysis text
+    function updateStatsAndAnalysis() {
+      const bias = parseFloat(biasSlider.value);
+      const spread = parseFloat(spreadSlider.value);
+      biasValSpan.innerText = bias;
+      spreadValSpan.innerText = spread;
       
+      let accuracyGrade = 'high';
+      if (bias >= 60) accuracyGrade = 'low';
+      else if (bias >= 25) accuracyGrade = 'medium';
+      
+      let precisionGrade = 'high';
+      if (spread >= 80) precisionGrade = 'low';
+      else if (spread >= 40) precisionGrade = 'medium';
+      
+      accuracySpan.innerText = accuracyGrade;
+      precisionSpan.innerText = precisionGrade;
+      
+      let analysisMsg = '';
+      let shortMsg = '';
+      const accLow = (bias >= 25);
+      const precLow = (spread >= 40);
+      
+      if (!accLow && !precLow) {
+        analysisMsg = '🎯 high accuracy · high precision · ideal';
+        shortMsg = '⚡ ideal measurement';
+      } else if (accLow && !precLow) {
+        analysisMsg = '📐 low accuracy · high precision · systematic bias';
+        shortMsg = '⚠️ systematic bias (shifted)';
+      } else if (!accLow && precLow) {
+        analysisMsg = '🎲 high accuracy · low precision · random noise';
+        shortMsg = '🌀 random scatter ↑';
+      } else {
+        analysisMsg = '⚠️ low accuracy · low precision · unreliable';
+        shortMsg = '❌ unreliable + drift';
+      }
+      analysisDiv.innerHTML = shortMsg;
+      if (sideHintDiv) sideHintDiv.innerHTML = analysisMsg;
+    }
+    
+    // drawing the target and darts (with animation)
+    function drawTargetAndDarts() {
+      if (!ctx || width === 0) return;
+      ctx.clearRect(0, 0, width, height);
+      
+      // --- draw bullseye rings (compact, crisp) ---
+      const cx = centerX;
+      const cy = centerY;
+      const maxR = Math.min(width, height) * 0.42;
+      const rings = [
+        { r: maxR, color: '#eef2fa' },
+        { r: maxR * 0.78, color: '#dbe4f0' },
+        { r: maxR * 0.56, color: '#b9cef0' },
+        { r: maxR * 0.38, color: '#2c3e66' },
+        { r: maxR * 0.22, color: '#dc2626' },   // red zone
+        { r: maxR * 0.1, color: '#facc15' }     // gold bull
+      ];
       rings.forEach(ring => {
         ctx.beginPath();
         ctx.arc(cx, cy, ring.r, 0, 2 * Math.PI);
         ctx.fillStyle = ring.color;
         ctx.fill();
-        ctx.strokeStyle = '#ffffff10';
+        ctx.strokeStyle = '#ffffff40';
         ctx.lineWidth = 1;
         ctx.stroke();
       });
       
-      // expected spread circle
-      const bias = parseInt(biasSlider.value);
-      const spread = parseInt(spreadSlider.value);
-      
+      // draw expected spread circle (based on bias + spread visualization)
+      const biasVal = parseFloat(biasSlider.value);
+      const spreadVal = parseFloat(spreadSlider.value);
+      const expectedCenterX = cx + biasVal;
+      const expectedRadius = spreadVal / 2;
       ctx.beginPath();
-      ctx.arc(cx + bias, cy, spread/2, 0, 2 * Math.PI);
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([6, 6]);
+      ctx.arc(expectedCenterX, cy, Math.min(expectedRadius, width*0.45), 0, 2*Math.PI);
+      ctx.strokeStyle = '#1e6fdf';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([6, 8]);
       ctx.stroke();
       ctx.setLineDash([]);
-    }
-    
-    function draw() {
-      ctx.clearRect(0, 0, width, height);
-      drawTarget();
       
-      darts.forEach(d => {
-        if (d.progress < 1) d.progress += 0.06;
-        
+      // additional small crosshair at bull
+      ctx.beginPath();
+      ctx.moveTo(cx-8, cy);
+      ctx.lineTo(cx+8, cy);
+      ctx.moveTo(cx, cy-8);
+      ctx.lineTo(cx, cy+8);
+      ctx.strokeStyle = '#ffffffcc';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      
+      // draw darts with progressive animation
+      let allFinished = true;
+      for (let i = 0; i < darts.length; i++) {
+        const d = darts[i];
+        if (d.progress < 1) {
+          d.progress += 0.06;
+          allFinished = false;
+        }
         const ease = 1 - Math.pow(1 - d.progress, 2);
-        const currentX = d.x + (d.targetX - d.x) * ease;
-        const currentY = d.y + (d.targetY - d.y) * ease;
+        const currX = d.x + (d.targetX - d.x) * ease;
+        const currY = d.y + (d.targetY - d.y) * ease;
         
         ctx.beginPath();
-        ctx.arc(currentX, currentY, 5, 0, 2 * Math.PI);
+        ctx.arc(currX, currY, 5, 0, 2 * Math.PI);
         ctx.fillStyle = '#10b981';
+        ctx.shadowBlur = 6;
         ctx.shadowColor = '#10b98180';
-        ctx.shadowBlur = 10;
         ctx.fill();
-      });
-      ctx.shadowBlur = 0;
+        ctx.shadowBlur = 0;
+        // tiny white dot
+        ctx.beginPath();
+        ctx.arc(currX, currY, 1.8, 0, 2*Math.PI);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
       
-      requestAnimationFrame(draw);
+      if (!allFinished) {
+        requestAnimationFrame(drawTargetAndDarts);
+      } else {
+        // final frame call again but avoid double loop, keep stable
+        requestAnimationFrame(() => {});
+      }
+    }
+    
+    // entry point for animation loop (passive)
+    function startRenderLoop() {
+      function render() {
+        if (ctx && width > 0) drawTargetAndDarts();
+        requestAnimationFrame(render);
+      }
+      render();
+    }
+    
+    // slider event handlers
+    function updateFromSliders() {
+      updateStatsAndAnalysis();
+      regenerateDarts(true);
     }
     
     biasSlider.addEventListener('input', () => {
-      updateUI();
-      generateDarts();
+      updateStatsAndAnalysis();
+      regenerateDarts(true);
     });
-    
     spreadSlider.addEventListener('input', () => {
-      updateUI();
-      generateDarts();
+      updateStatsAndAnalysis();
+      regenerateDarts(true);
     });
     
-    document.getElementById('shootBtn').addEventListener('click', generateDarts);
+    shootBtn.addEventListener('click', () => {
+      regenerateDarts(false);
+    });
     
-    document.getElementById('resetBtn').addEventListener('click', () => {
+    resetBtn.addEventListener('click', () => {
       biasSlider.value = 0;
       spreadSlider.value = 30;
-      updateUI();
-      generateDarts();
+      updateStatsAndAnalysis();
+      regenerateDarts(false);
     });
     
+    // --- sidebar / hamburger interactive ---
+    const overlay = document.getElementById('sidebarOverlay');
+    const hamburger = document.getElementById('hamburgerBtn');
+    const closeBtn = document.getElementById('closeSidebarBtn');
+    
+    function openMenu() {
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeMenu() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    hamburger.addEventListener('click', openMenu);
+    if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeMenu();
+    });
+    
+    // resize adaptation
+    const resizeObserver = new ResizeObserver(() => {
+      handleCanvasSize();
+      regenerateDarts(true);
+    });
+    resizeObserver.observe(canvas.parentElement);
     window.addEventListener('resize', () => {
-      resizeCanvas();
-      generateDarts();
+      handleCanvasSize();
+      regenerateDarts(true);
     });
     
-    resizeCanvas();
-    generateDarts();
-    draw();
+    // initialize canvas size, darts, animation
+    handleCanvasSize();
+    regenerateDarts(false);
+    startRenderLoop();
   })();
 </script>
 </body>

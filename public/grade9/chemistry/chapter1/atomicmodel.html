@@ -2,593 +2,678 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>⚛️ ChemLab · Interactive Definitions</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>⚛️ ChemLab · Core</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    :root {
-      --bg-page: #f8fafc;
-      --surface: #ffffff;
-      --border-light: #d0e2ff;
-      --text-dark: #0a1e3c;
-      --text-soft: #3a628c;
-      --accent: #1a6eeb;
-      --accent-light: #e1edff;
-      --shadow-card: 0 12px 30px rgba(0, 60, 130, 0.06);
-      --radius: 24px;
     }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg-page);
-      color: var(--text-dark);
-      min-height: 100dvh;
+      font-family: system-ui, 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f5f9;
+      color: #0a2b3e;
+      min-height: 100vh;
     }
 
-    .app-grid {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      min-height: 100dvh;
+    /* MAIN GRID: responsive sidebar + content */
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
     }
 
+    /* SIDEBAR - collapsible on mobile */
     .sidebar {
-      background: var(--surface);
-      border-right: 1px solid var(--border-light);
-      padding: 28px 16px;
+      width: 280px;
+      background: white;
+      border-right: 1px solid #dce5f0;
+      padding: 1.5rem 1rem;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 2rem;
+      transition: transform 0.25s ease;
       position: sticky;
       top: 0;
-      height: 100dvh;
+      height: 100vh;
       overflow-y: auto;
+      z-index: 10;
+    }
+
+    /* mobile hidden by default, toggled via hamburger */
+    @media (max-width: 780px) {
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        transform: translateX(-100%);
+        height: 100vh;
+        width: 280px;
+        background: white;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.08);
+        z-index: 1000;
+        transition: transform 0.2s ease;
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .menu-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.3);
+        z-index: 999;
+        display: none;
+      }
+      .menu-overlay.active {
+        display: block;
+      }
     }
 
     .logo {
+      font-size: 1.6rem;
       font-weight: 800;
-      font-size: 1.5rem;
       letter-spacing: -0.02em;
-      color: var(--accent);
-      padding: 0 8px;
+      color: #1e6fdf;
+      padding: 0 0.5rem;
     }
 
-    .nav-section {
+    .nav-group {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 0.5rem;
     }
-
     .nav-label {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-soft);
-      padding: 0 8px;
-      margin-bottom: 4px;
-    }
-
-    .nav-btn {
-      background: transparent;
-      border: 1.5px solid transparent;
-      padding: 14px 16px;
-      border-radius: 16px;
-      cursor: pointer;
-      text-align: left;
       font-weight: 600;
-      color: var(--text-soft);
-      transition: 0.12s;
+      color: #5a7a9a;
+      padding-left: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+    .mode-btn {
+      background: transparent;
+      border: none;
+      padding: 0.85rem 1rem;
+      border-radius: 1rem;
+      text-align: left;
+      font-weight: 500;
       font-size: 0.95rem;
+      color: #2c4b6e;
+      cursor: pointer;
+      transition: 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
-
-    .nav-btn:hover {
-      background: #f0f6ff;
+    .mode-btn:hover {
+      background: #eef3fc;
     }
-
-    .nav-btn.active {
-      background: var(--accent);
-      border-color: var(--accent);
+    .mode-btn.active {
+      background: #1e6fdf;
       color: white;
     }
 
-    .main-content {
-      padding: 28px 32px;
+    /* MAIN CONTENT */
+    .main-area {
+      flex: 1;
+      padding: 1.25rem 1.5rem;
+      max-width: 100%;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 1.4rem;
     }
 
-    .header-card {
-      background: linear-gradient(145deg, var(--accent), #3b82f6);
-      border-radius: var(--radius);
-      padding: 32px 30px;
-      color: white;
-      box-shadow: var(--shadow-card);
+    /* top bar: hamburger + header */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: space-between;
     }
-
-    .header-card h1 {
-      font-weight: 700;
-      font-size: 2rem;
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
-    }
-
-    .header-card p {
-      opacity: 0.9;
-      font-weight: 500;
-    }
-
-    .search-bar {
-      width: 100%;
-      padding: 16px 20px;
-      border-radius: 60px;
-      border: 1.5px solid var(--border-light);
+    .hamburger {
+      display: none;
       background: white;
-      font-size: 0.95rem;
-      outline: none;
-      transition: 0.15s;
+      border: 1px solid #dce5f0;
+      border-radius: 12px;
+      padding: 0.5rem 0.9rem;
+      font-size: 1.4rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    @media (max-width: 780px) {
+      .hamburger {
+        display: inline-block;
+      }
+    }
+    .hero-badge {
+      background: linear-gradient(135deg, #1e6fdf, #3b82f6);
+      padding: 0.7rem 1.4rem;
+      border-radius: 3rem;
+      color: white;
+    }
+    .hero-badge h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    .hero-badge p {
+      font-size: 0.8rem;
+      opacity: 0.9;
     }
 
-    .search-bar:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 4px rgba(26, 110, 235, 0.1);
-    }
-
-    .canvas-wrapper {
-      background: var(--surface);
-      border-radius: var(--radius);
-      border: 1px solid var(--border-light);
-      box-shadow: var(--shadow-card);
+    /* Canvas */
+    .canvas-card {
+      background: white;
+      border-radius: 1.5rem;
+      border: 1px solid #e2edff;
       overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
       aspect-ratio: 16 / 9;
+      width: 100%;
     }
-
     canvas {
-      display: block;
       width: 100%;
       height: 100%;
+      display: block;
       touch-action: none;
       cursor: grab;
     }
-
     canvas:active {
       cursor: grabbing;
     }
 
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    .info-card {
-      background: var(--surface);
-      border-radius: 20px;
-      padding: 22px 20px;
-      border: 1px solid var(--border-light);
-      box-shadow: var(--shadow-card);
-    }
-
-    .info-card h3 {
-      font-weight: 700;
-      margin-bottom: 16px;
-      color: var(--accent);
-    }
-
-    .slider-block {
-      margin: 16px 0;
-    }
-
-    input[type="range"] {
-      width: 100%;
-      height: 6px;
-      background: #d4e2fa;
-      border-radius: 10px;
-      appearance: none;
-      -webkit-appearance: none;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 20px;
-      height: 20px;
-      background: var(--accent);
-      border-radius: 20px;
-      border: 3px solid white;
-      cursor: grab;
-    }
-
-    .log-list {
-      list-style: none;
-      font-size: 0.9rem;
-      color: var(--text-soft);
-    }
-
-    .log-list li {
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border-light);
-    }
-
-    .toast-container {
-      position: fixed;
-      top: 24px;
-      right: 24px;
-      z-index: 1000;
+    /* ACCORDION / TAB system for controls & logs */
+    .accordion-group {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 1rem;
+    }
+    .accordion-item {
+      background: white;
+      border-radius: 1.25rem;
+      border: 1px solid #e2edff;
+      overflow: hidden;
+    }
+    .accordion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.2rem;
+      font-weight: 700;
+      background: white;
+      cursor: pointer;
+      color: #1a4c7a;
+      transition: 0.1s;
+    }
+    .accordion-header:hover {
+      background: #fafcff;
+    }
+    .accordion-icon {
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s ease-out;
+      padding: 0 1.2rem;
+    }
+    .accordion-item.open .accordion-content {
+      max-height: 280px;
+      padding: 0 1.2rem 1.2rem 1.2rem;
+    }
+    .accordion-item.open .accordion-icon {
+      transform: rotate(180deg);
+    }
+
+    /* inline controls */
+    .slider-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      margin-bottom: 0.6rem;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 5px;
+      border-radius: 10px;
+      background: #d4e2fa;
+    }
+    .reset-btn {
+      background: #eef3fc;
+      border: none;
+      padding: 0.6rem;
+      border-radius: 2rem;
+      font-weight: 600;
+      width: 100%;
+      margin-top: 0.8rem;
+      cursor: pointer;
+    }
+    .log-list {
+      list-style: none;
+      font-size: 0.85rem;
+      color: #2c5a7a;
+    }
+    .log-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid #ecf3fa;
+    }
+
+    /* definition alert (compact) */
+    .def-banner {
+      background: #fef9e3;
+      border-left: 5px solid #1e6fdf;
+      padding: 0.8rem 1rem;
+      border-radius: 1rem;
+      font-size: 0.85rem;
+    }
+    .def-title {
+      font-weight: 800;
+      color: #1e6fdf;
+    }
+
+    /* toast minimal */
+    .toast-stack {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       pointer-events: none;
     }
-
     .toast {
-      background: var(--accent);
+      background: #0f172a;
       color: white;
-      padding: 14px 24px;
-      border-radius: 60px;
-      font-weight: 600;
-      box-shadow: 0 8px 20px rgba(26, 110, 235, 0.25);
-      animation: slideToast 0.3s ease;
-      pointer-events: auto;
+      padding: 8px 18px;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+      pointer-events: none;
     }
-
-    /* Definition Alert */
-    .definition-alert {
-      background: var(--surface);
-      border-left: 6px solid var(--accent);
-      padding: 16px 20px;
-      border-radius: 20px;
-      box-shadow: var(--shadow-card);
-      margin-top: 16px;
-      border: 1px solid var(--border-light);
-    }
-
-    .definition-title {
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 6px;
-    }
-
-    .definition-text {
-      color: var(--text-soft);
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
-
-    @keyframes slideToast {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    @media (max-width: 800px) {
-      .app-grid { grid-template-columns: 1fr; }
-      .sidebar { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border-light); }
-      .info-grid { grid-template-columns: 1fr; }
-      .main-content { padding: 20px 16px; }
+    @media (max-width: 640px) {
+      .main-area { padding: 1rem; }
+      .hero-badge h1 { font-size: 1.2rem; }
     }
   </style>
 </head>
 <body>
-
-<div class="toast-container" id="toastContainer"></div>
-
-<div class="app-grid">
-  <aside class="sidebar">
+<div class="app-layout">
+  <!-- overlay for mobile -->
+  <div class="menu-overlay" id="menuOverlay"></div>
+  
+  <aside class="sidebar" id="sidebar">
     <div class="logo">⚛️ ChemLab</div>
-    
-    <div class="nav-section">
-      <div class="nav-label">simulations</div>
-      <button class="nav-btn active" data-mode="atomic">🔬 atomic structure</button>
-      <button class="nav-btn" data-mode="bonding">🔗 chemical bonding</button>
-      <button class="nav-btn" data-mode="gas">☁️ gas laws</button>
+    <div class="nav-group">
+      <div class="nav-label">MODES</div>
+      <button class="mode-btn active" data-mode="atomic">🔬 Atomic</button>
+      <button class="mode-btn" data-mode="bonding">🔗 Bonding</button>
+      <button class="mode-btn" data-mode="gas">☁️ Gas Laws</button>
     </div>
   </aside>
 
-  <main class="main-content">
-    <header class="header-card">
-      <h1>Chemistry Simulation Lab</h1>
-      <p>Grade 12 · tap atoms for definitions</p>
-    </header>
-
-    <input type="text" class="search-bar" placeholder="🔍 search experiments · covalent bonds, orbitals...">
-
-    <div class="canvas-wrapper">
-      <canvas id="chemCanvas"></canvas>
+  <main class="main-area">
+    <div class="top-bar">
+      <button class="hamburger" id="hamburgerBtn">☰</button>
+      <div class="hero-badge">
+        <h1>⚛️ ChemCore</h1>
+        <p>tap atom → definition</p>
+      </div>
     </div>
 
-    <!-- Definition panel appears here dynamically -->
-    <div id="definitionPanel" class="definition-alert" style="display: none;">
-      <div class="definition-title" id="defTitle">Hydrogen</div>
-      <div class="definition-text" id="defText">The lightest element. Atomic number 1.</div>
+    <div class="canvas-card">
+      <canvas id="simCanvas" width="800" height="450" style="width:100%; height:100%;"></canvas>
     </div>
 
-    <div class="info-grid">
-      <div class="info-card">
-        <h3>🎛️ simulation controls</h3>
-        <p style="color:var(--text-soft); margin-bottom:16px;">drag atoms to interact · pinch to zoom</p>
-        <div class="slider-block">
-          <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
-            <span>energy level</span>
-            <span id="energyValue">5.0</span>
+    <!-- dynamic def panel (minimal) -->
+    <div id="defPanel" class="def-banner" style="display: none;">
+      <div class="def-title" id="defTitle">—</div>
+      <div id="defText">tap any particle</div>
+    </div>
+
+    <!-- ACCORDIONS: interactive collapse for controls & logs -->
+    <div class="accordion-group">
+      <div class="accordion-item" id="accordionControls">
+        <div class="accordion-header">
+          <span>🎛️ Simulation Controls</span>
+          <span class="accordion-icon">▼</span>
+        </div>
+        <div class="accordion-content">
+          <div class="slider-row">
+            <span>⚡ Energy Level</span>
+            <span id="energyVal">5.0</span>
           </div>
           <input type="range" id="energySlider" min="1" max="10" value="5" step="0.5">
+          <button id="resetPosBtn" class="reset-btn">↻ Reset Positions</button>
         </div>
-        <button class="nav-btn" id="resetBtn" style="width:100%; margin-top:8px;">↻ reset positions</button>
       </div>
 
-      <div class="info-card">
-        <h3>📋 observation log</h3>
-        <ul class="log-list" id="logList">
-          <li>✨ system ready · tap atoms</li>
-        </ul>
+      <div class="accordion-item" id="accordionLogs">
+        <div class="accordion-header">
+          <span>📋 Activity Log</span>
+          <span class="accordion-icon">▼</span>
+        </div>
+        <div class="accordion-content">
+          <ul class="log-list" id="logList"><li>⚡ system ready · tap atoms</li></ul>
+        </div>
       </div>
     </div>
   </main>
 </div>
+<div class="toast-stack" id="toastRoot"></div>
 
 <script>
   (function(){
-    const canvas = document.getElementById('chemCanvas');
+    // DOM elements
+    const canvas = document.getElementById('simCanvas');
     const ctx = canvas.getContext('2d');
-    const toastContainer = document.getElementById('toastContainer');
-    const logList = document.getElementById('logList');
+    const toastContainer = document.getElementById('toastRoot');
+    const logContainer = document.getElementById('logList');
     const energySlider = document.getElementById('energySlider');
-    const energyValue = document.getElementById('energyValue');
-    const definitionPanel = document.getElementById('definitionPanel');
-    const defTitle = document.getElementById('defTitle');
-    const defText = document.getElementById('defText');
+    const energySpan = document.getElementById('energyVal');
+    const defPanel = document.getElementById('defPanel');
+    const defTitleSpan = document.getElementById('defTitle');
+    const defTextSpan = document.getElementById('defText');
+    const resetBtn = document.getElementById('resetPosBtn');
+    const hamburger = document.getElementById('hamburgerBtn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('menuOverlay');
     
-    let width = 0, height = 0;
-    const DPR = devicePixelRatio || 1;
-    
+    // state
+    let width = 800, height = 450;
     let atoms = [];
+    let currentMode = 'atomic';
     let selectedAtom = null;
     let isDragging = false;
-    let currentMode = 'atomic';
-    
-    // Element definitions
-    const elementDefinitions = {
-      'H': { title: 'Hydrogen (H)', text: 'Atomic number 1. The most abundant element in the universe. Forms diatomic H₂ molecules.' },
-      'O': { title: 'Oxygen (O)', text: 'Atomic number 8. Essential for respiration. Highly electronegative, forms double bonds.' },
-      'C': { title: 'Carbon (C)', text: 'Atomic number 6. The backbone of organic chemistry. Forms four covalent bonds.' },
-      '●': { title: 'Gas Particle', text: 'Represents an ideal gas molecule. Motion increases with temperature.' }
+    let animationId = null;
+    let currentPointerId = null;
+
+    // def dictionary minimal
+    const definitions = {
+      'H': { title: 'Hydrogen', text: 'Z=1 · most abundant, diatomic H₂.' },
+      'O': { title: 'Oxygen', text: 'Z=8 · high electronegativity, forms H₂O.' },
+      'C': { title: 'Carbon', text: 'Z=6 · organic backbone, 4 covalent bonds.' },
+      '●': { title: 'Gas Particle', text: 'Ideal gas · motion increases with energy.' }
     };
-    
+
     function showToast(msg) {
-      const toast = document.createElement('div');
-      toast.className = 'toast';
-      toast.textContent = msg;
-      toastContainer.appendChild(toast);
-      setTimeout(() => toast.remove(), 2500);
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.innerText = msg;
+      toastContainer.appendChild(t);
+      setTimeout(() => t.remove(), 2000);
     }
-    
-    function addLog(msg) {
+
+    function addLogEntry(msg) {
       const li = document.createElement('li');
       li.textContent = msg;
-      logList.appendChild(li);
-      if (logList.children.length > 5) {
-        logList.removeChild(logList.children[0]);
+      logContainer.appendChild(li);
+      while(logContainer.children.length > 6) logContainer.removeChild(logContainer.firstChild);
+    }
+
+    function showDefinition(atom) {
+      const key = atom.label;
+      const def = definitions[key] || { title: `${atom.label}`, text: 'fundamental particle · drag to explore' };
+      defTitleSpan.innerText = def.title;
+      defTextSpan.innerText = def.text;
+      defPanel.style.display = 'block';
+      setTimeout(() => {
+        if(defPanel.style.display === 'block') defPanel.style.display = 'none';
+      }, 6000);
+    }
+
+    function resizeCanvasToContainer() {
+      const container = canvas.parentElement;
+      const rect = container.getBoundingClientRect();
+      const newWidth = rect.width;
+      const newHeight = rect.height;
+      if(newWidth > 0 && newHeight > 0) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        width = newWidth;
+        height = newHeight;
+        canvas.style.width = `${newWidth}px`;
+        canvas.style.height = `${newHeight}px`;
+        // reinitialize atoms based on new dimensions
+        initAtomsForCurrentMode();
       }
     }
-    
-    function showDefinition(atom) {
-      const def = elementDefinitions[atom.label] || { 
-        title: `${atom.label} Atom`, 
-        text: 'A fundamental particle in this simulation. Drag to explore interactions.' 
-      };
-      defTitle.textContent = def.title;
-      defText.textContent = def.text;
-      definitionPanel.style.display = 'block';
-      
-      // auto-hide after 8 seconds
-      setTimeout(() => {
-        if (definitionPanel.style.display === 'block') {
-          definitionPanel.style.display = 'none';
-        }
-      }, 8000);
-    }
-    
-    function resizeCanvas() {
-      const rect = canvas.parentElement.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
-      canvas.width = width * DPR;
-      canvas.height = height * DPR;
-      canvas.style.width = width + 'px';
-      canvas.style.height = height + 'px';
-      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    }
-    
+
     class Atom {
       constructor(x, y, radius, label, color) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.label = label;
-        this.color = color;
-        this.angle = Math.random() * 2 * Math.PI;
+        this.x = x; this.y = y; this.r = radius; this.label = label; this.color = color;
       }
-      
       draw() {
-        // electron cloud
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius + 16, 0, 2 * Math.PI);
+        ctx.arc(this.x, this.y, this.r + 12, 0, Math.PI*2);
         ctx.fillStyle = this.color + '15';
         ctx.fill();
-        
-        // orbit
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius + 12, 0, 2 * Math.PI);
-        ctx.strokeStyle = this.color + '30';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([3, 5]);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        // nucleus
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
         ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 14;
+        ctx.shadowBlur = 8;
         ctx.fill();
         ctx.shadowBlur = 0;
-        
-        // label
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${Math.max(12, Math.floor(this.r * 0.6))}px system-ui, "Segoe UI"`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.label, this.x, this.y);
       }
-      
-      hitTest(px, py) {
-        return Math.hypot(this.x - px, this.y - py) < this.radius + 20;
+      hit(px, py) {
+        return Math.hypot(px - this.x, py - this.y) < this.r + 18;
       }
     }
-    
-    function initAtoms() {
+
+    function initAtomsForCurrentMode() {
       atoms = [];
-      if (currentMode === 'atomic') {
-        atoms.push(new Atom(width * 0.3, height * 0.5, 22, 'H', '#3b82f6'));
-        atoms.push(new Atom(width * 0.65, height * 0.5, 30, 'O', '#1e4a7a'));
-      } else if (currentMode === 'bonding') {
-        atoms.push(new Atom(width * 0.25, height * 0.5, 22, 'H', '#3b82f6'));
-        atoms.push(new Atom(width * 0.45, height * 0.5, 30, 'O', '#1e4a7a'));
-        atoms.push(new Atom(width * 0.7, height * 0.5, 22, 'H', '#3b82f6'));
-      } else {
-        for (let i = 0; i < 18; i++) {
-          atoms.push(new Atom(60 + Math.random() * (width - 120), 60 + Math.random() * (height - 120), 10, '●', '#3b82f6'));
+      const safeW = Math.max(120, width);
+      const safeH = Math.max(120, height);
+      if(currentMode === 'atomic') {
+        atoms.push(new Atom(safeW * 0.3, safeH * 0.5, 24, 'H', '#3b82f6'));
+        atoms.push(new Atom(safeW * 0.65, safeH * 0.5, 32, 'O', '#1e4a7a'));
+      } 
+      else if(currentMode === 'bonding') {
+        atoms.push(new Atom(safeW * 0.25, safeH * 0.45, 22, 'H', '#3b82f6'));
+        atoms.push(new Atom(safeW * 0.5, safeH * 0.5, 32, 'O', '#1e4a7a'));
+        atoms.push(new Atom(safeW * 0.75, safeH * 0.55, 22, 'H', '#3b82f6'));
+      } 
+      else if(currentMode === 'gas') {
+        for(let i=0;i<22;i++) {
+          atoms.push(new Atom(40 + Math.random()*(safeW-80), 40 + Math.random()*(safeH-80), 12, '●', '#3b82f6'));
         }
       }
     }
-    
-    function setMode(mode) {
-      currentMode = mode;
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
-      });
-      definitionPanel.style.display = 'none';
-      initAtoms();
-      showToast(`switched to ${mode} simulation`);
-      addLog(`📌 mode: ${mode}`);
-    }
-    
-    function draw() {
+
+    function drawScene() {
+      if(!ctx) return;
       ctx.clearRect(0, 0, width, height);
-      
-      // subtle grid
-      ctx.strokeStyle = '#d0e2ff';
-      ctx.lineWidth = 0.5;
-      for (let i = 0; i < width; i += 35) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, height);
-        ctx.stroke();
+      // light grid
+      ctx.strokeStyle = '#d9e6f7';
+      ctx.lineWidth = 0.6;
+      for(let i=0; i<width; i+=40) {
+        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,height); ctx.stroke();
       }
-      for (let i = 0; i < height; i += 35) {
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(width, i);
-        ctx.stroke();
+      for(let i=0; i<height; i+=40) {
+        ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(width,i); ctx.stroke();
       }
       
-      atoms.forEach(atom => atom.draw());
+      // draw atoms
+      atoms.forEach(a => a.draw());
       
-      if (currentMode === 'bonding') {
-        const d = Math.hypot(atoms[1].x - atoms[0].x, atoms[1].y - atoms[0].y);
-        if (d < 120) {
-          ctx.beginPath();
-          ctx.moveTo(atoms[0].x, atoms[0].y);
-          ctx.lineTo(atoms[1].x, atoms[1].y);
-          ctx.strokeStyle = '#3b82f6';
-          ctx.lineWidth = 4;
-          ctx.stroke();
-        }
-        const d2 = Math.hypot(atoms[1].x - atoms[2].x, atoms[1].y - atoms[2].y);
-        if (d2 < 120) {
-          ctx.beginPath();
-          ctx.moveTo(atoms[1].x, atoms[1].y);
-          ctx.lineTo(atoms[2].x, atoms[2].y);
-          ctx.stroke();
-        }
+      // bonding lines if bonding mode & distance
+      if(currentMode === 'bonding' && atoms.length >= 3) {
+        const oAtom = atoms[1];
+        const h1 = atoms[0];
+        const h2 = atoms[2];
+        const dist1 = Math.hypot(oAtom.x - h1.x, oAtom.y - h1.y);
+        const dist2 = Math.hypot(oAtom.x - h2.x, oAtom.y - h2.y);
+        if(dist1 < 115) { ctx.beginPath(); ctx.moveTo(oAtom.x,oAtom.y); ctx.lineTo(h1.x,h1.y); ctx.strokeStyle = '#1e6fdf'; ctx.lineWidth=4; ctx.stroke(); }
+        if(dist2 < 115) { ctx.beginPath(); ctx.moveTo(oAtom.x,oAtom.y); ctx.lineTo(h2.x,h2.y); ctx.stroke(); }
       }
       
-      requestAnimationFrame(draw);
+      // gas law hint: slight motion based on energy (just aesthetic)
+      if(currentMode === 'gas') {
+        const energyVal = parseFloat(energySlider.value);
+        const wiggle = (energyVal - 5) * 0.15;
+        atoms.forEach(atom => {
+          if(!isDragging || selectedAtom !== atom) {
+            let move = 0.35 + Math.abs(wiggle)*0.2;
+            atom.x += (Math.random() - 0.5) * move;
+            atom.y += (Math.random() - 0.5) * move;
+            atom.x = Math.min(width - 18, Math.max(18, atom.x));
+            atom.y = Math.min(height - 18, Math.max(18, atom.y));
+          }
+        });
+      }
+      animationId = requestAnimationFrame(drawScene);
     }
-    
-    // interaction
-    canvas.addEventListener('pointerdown', (e) => {
+
+    // interaction handlers
+    function getCanvasCoords(e) {
       const rect = canvas.getBoundingClientRect();
       const scaleX = width / rect.width;
       const scaleY = height / rect.height;
-      const x = (e.clientX - rect.left) * scaleX;
-      const y = (e.clientY - rect.top) * scaleY;
-      
-      for (let atom of atoms) {
-        if (atom.hitTest(x, y)) {
-          selectedAtom = atom;
+      let clientX, clientY;
+      if(e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+      let x = (clientX - rect.left) * scaleX;
+      let y = (clientY - rect.top) * scaleY;
+      x = Math.min(width-5, Math.max(5, x));
+      y = Math.min(height-5, Math.max(5, y));
+      return { x, y };
+    }
+
+    function onPointerDown(e) {
+      e.preventDefault();
+      const { x, y } = getCanvasCoords(e);
+      for(let i=0; i<atoms.length; i++) {
+        if(atoms[i].hit(x, y)) {
+          selectedAtom = atoms[i];
           isDragging = true;
-          canvas.setPointerCapture(e.pointerId);
-          
-          // Show definition when atom is tapped
-          showDefinition(atom);
-          showToast(`selected: ${atom.label}`);
-          addLog(`🔬 ${atom.label} · ${elementDefinitions[atom.label]?.title || 'atom'}`);
+          if(e.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+          currentPointerId = e.pointerId;
+          showDefinition(selectedAtom);
+          addLogEntry(`🔍 ${selectedAtom.label} · selected`);
+          showToast(`📌 ${selectedAtom.label}`);
           break;
         }
       }
-    });
-    
-    canvas.addEventListener('pointermove', (e) => {
-      if (!isDragging || !selectedAtom) return;
+    }
+
+    function onPointerMove(e) {
+      if(!isDragging || !selectedAtom) return;
       e.preventDefault();
-      
-      const rect = canvas.getBoundingClientRect();
-      const scaleX = width / rect.width;
-      const scaleY = height / rect.height;
-      selectedAtom.x = Math.min(width - 20, Math.max(20, (e.clientX - rect.left) * scaleX));
-      selectedAtom.y = Math.min(height - 20, Math.max(20, (e.clientY - rect.top) * scaleY));
-    });
-    
-    canvas.addEventListener('pointerup', (e) => {
-      if (isDragging) {
-        addLog(`📍 atom moved`);
+      const { x, y } = getCanvasCoords(e);
+      selectedAtom.x = Math.min(width - 18, Math.max(18, x));
+      selectedAtom.y = Math.min(height - 18, Math.max(18, y));
+    }
+
+    function onPointerUp(e) {
+      if(isDragging && selectedAtom) {
+        addLogEntry(`📍 moved ${selectedAtom.label}`);
         isDragging = false;
         selectedAtom = null;
-        canvas.releasePointerCapture(e.pointerId);
+        if(e.target.releasePointerCapture) e.target.releasePointerCapture(e.pointerId);
+      } else {
+        isDragging = false;
+        selectedAtom = null;
       }
-    });
-    
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    }
+
+    canvas.addEventListener('pointerdown', onPointerDown);
+    canvas.addEventListener('pointermove', onPointerMove);
+    canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onPointerDown(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); onPointerMove(e); });
+    canvas.addEventListener('touchend', onPointerUp);
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+      initAtomsForCurrentMode();
+      defPanel.style.display = 'none';
+      showToast(`Mode: ${mode}`);
+      addLogEntry(`⚡ switched to ${mode}`);
+      // close sidebar on mobile after mode pick
+      if(window.innerWidth <= 780) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+      }
+    }
+
+    document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.addEventListener('click', () => setMode(btn.dataset.mode));
     });
-    
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      initAtoms();
-      definitionPanel.style.display = 'none';
+
+    resetBtn.addEventListener('click', () => {
+      initAtomsForCurrentMode();
+      defPanel.style.display = 'none';
       showToast('positions reset');
-      addLog('🔄 reset positions');
+      addLogEntry(`🔄 simulation reset`);
     });
-    
+
     energySlider.addEventListener('input', () => {
-      energyValue.textContent = parseFloat(energySlider.value).toFixed(1);
+      const val = parseFloat(energySlider.value).toFixed(1);
+      energySpan.innerText = val;
+      // additional effect: gas mode extra movement speed handled in draw automatically
+      if(currentMode === 'gas') addLogEntry(`⚡ energy ${val}`);
     });
-    
+
+    // Accordion toggles
+    function setupAccordion(accordionId) {
+      const el = document.getElementById(accordionId);
+      if(!el) return;
+      const header = el.querySelector('.accordion-header');
+      header.addEventListener('click', () => {
+        el.classList.toggle('open');
+      });
+    }
+    setupAccordion('accordionControls');
+    setupAccordion('accordionLogs');
+
+    // Mobile sidebar toggle
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      if(overlay) overlay.classList.remove('active');
+    }
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('active');
+    });
+    overlay.addEventListener('click', closeSidebar);
     window.addEventListener('resize', () => {
-      resizeCanvas();
-      initAtoms();
+      if(window.innerWidth > 780) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+      }
+      resizeCanvasToContainer();
     });
+
+    // initial resize & start simulation
+    function init() {
+      resizeCanvasToContainer();
+      initAtomsForCurrentMode();
+      drawScene();
+    }
     
-    resizeCanvas();
-    initAtoms();
-    draw();
+    // observe canvas container resizes (simple)
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvasToContainer();
+    });
+    if(canvas.parentElement) resizeObserver.observe(canvas.parentElement);
+    
+    init();
   })();
 </script>
 </body>

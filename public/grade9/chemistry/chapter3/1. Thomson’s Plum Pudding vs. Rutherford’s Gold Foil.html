@@ -2,100 +2,662 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🔬 gold foil · rutherford</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>rutherford · gold foil experiment</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:900px;margin:0 auto}
-    @media(min-width:700px){.grid{grid-template-columns:1fr 260px}}
-    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
-    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
-    canvas{display:block;width:100%;aspect-ratio:16/10;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff}
-    .mode-btn{display:flex;gap:8px;margin-bottom:16px}
-    .btn{flex:1;padding:12px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-weight:600;cursor:pointer;color:#3a628c}
-    .btn.active{background:#3b82f6;border-color:#3b82f6;color:#fff}
-    .slider-item{margin:16px 0}
-    .slider-head{display:flex;justify-content:space-between;font-weight:500;margin-bottom:4px}
-    input[type=range]{width:100%;height:5px;background:#d4e2fa;border-radius:10px;-webkit-appearance:none;appearance:none}
-    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:#3b82f6;border-radius:20px;border:3px solid #fff;cursor:grab}
-    .stats{background:#f0f6ff;border-radius:16px;padding:14px;margin:16px 0}
-    .stat-row{display:flex;justify-content:space-between;padding:4px 0}
-    .notes{font-size:0.85rem;color:#3a628c;line-height:1.5}
-    .notes strong{color:#0a1e3c}
-    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --surface: #fafcff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-light: #475569;
+      --accent: #3b82f6;
+      --deflect: #f59e0b;
+      --pass: #94a3b8;
+      --shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Header with hamburger */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .hamburger {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: 0.1s;
+    }
+
+    .hamburger:active {
+      transform: scale(0.95);
+    }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -300px;
+      width: 280px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 100;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 80px 20px 20px 20px;
+      box-shadow: var(--shadow);
+      overflow-y: auto;
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: 0.2s;
+      z-index: 99;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .sidebar-title {
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--accent);
+      font-size: 0.9rem;
+    }
+
+    .fact-card {
+      background: #f8fafc;
+      padding: 16px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* Main grid */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1fr 300px;
+      }
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--surface);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    /* Mode switcher */
+    .mode-switch {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 40px;
+      border: 1.5px solid var(--border);
+      background: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .mode-btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Canvas */
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #f8fcff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    /* Sliders */
+    .slider-group {
+      margin: 16px 0;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #d4e2fa;
+      border-radius: 10px;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 3px solid white;
+      cursor: pointer;
+    }
+
+    /* Stats */
+    .stats {
+      background: #f0f6ff;
+      border-radius: 16px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+    }
+
+    /* Notes */
+    .notes {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      line-height: 1.5;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 12px;
+      font-size: 0.7rem;
+      justify-content: center;
+    }
+
+    .legend-dot {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 12px;
+      margin-right: 6px;
+    }
+
+    /* Accordion */
+    .accordion {
+      margin-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .accordion-trigger {
+      width: 100%;
+      background: transparent;
+      padding: 14px 0;
+      text-align: left;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: var(--accent);
+      border: none;
+    }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: #f8fafc;
+      border-radius: 16px;
+    }
+
+    .accordion-content.open {
+      max-height: 180px;
+      padding: 16px;
+    }
+
+    @media (max-width: 550px) {
+      .panel { padding: 16px; }
+      .mode-btn { font-size: 0.85rem; padding: 10px; }
+    }
   </style>
 </head>
 <body>
-<div class="grid">
-  <div class="panel">
-    <h2>🔬 gold foil experiment</h2>
-    <canvas id="simCanvas"></canvas>
-    <div class="legend"><span style="color:#3b82f6">● nucleus</span><span style="color:#f59e0b">● deflected α</span><span style="color:#94a3b8">● passed through</span></div>
-    <div class="slider-item"><div class="slider-head"><span>⚡ speed</span><span id="speedVal">6</span></div><input type="range" id="speedSlider" min="3" max="12" value="6"></div>
-    <div class="slider-item"><div class="slider-head"><span>📐 layers</span><span id="layerVal">3</span></div><input type="range" id="layerSlider" min="1" max="5" value="3"></div>
+<div class="app">
+  <div class="header">
+    <div class="hamburger" id="hamburger">☰</div>
+    <h1>🔬 gold foil · Rutherford</h1>
   </div>
-  <div>
-    <div class="panel">
-      <div class="mode-btn"><button class="btn active" data-mode="thomson">🍮 thomson</button><button class="btn" data-mode="rutherford">🎯 rutherford</button></div>
-      <div class="stats"><div class="stat-row"><span>total α</span><span id="totalCount">0</span></div><div class="stat-row"><span>deflected (>10°)</span><span id="deflectCount" style="color:#f59e0b">0</span></div></div>
-      <div class="notes" id="theoryText"><strong>🍮 Thomson model</strong> · positive charge spread out · α particles pass straight through.</div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-title">📜 historical context</div>
+    <div class="fact-card">
+      <strong>1909 · Geiger & Marsden</strong><br>
+      Under Rutherford's direction, they fired alpha particles at gold foil.
     </div>
-    <div class="panel" style="margin-top:16px">
-      <div class="notes"><strong>💡 what I learned</strong><br>• Nucleus is tiny & dense<br>• Atoms mostly empty space<br>• Positive α bounces off positive nucleus</div>
+    <div class="fact-card">
+      <strong>key finding:</strong><br>
+      1 in 8000 particles deflected back → nucleus is tiny & dense.
+    </div>
+    <div class="fact-card">
+      <strong>atom model:</strong><br>
+      Mostly empty space with a small, positive nucleus.
+    </div>
+  </div>
+  <div class="overlay" id="overlay"></div>
+
+  <div class="main-grid">
+    <!-- Left panel: visualization -->
+    <div class="panel">
+      <h2 style="margin-bottom: 12px;">🔬 alpha scattering</h2>
+      <canvas id="simCanvas"></canvas>
+      <div class="legend">
+        <span><span class="legend-dot" style="background:#3b82f6;"></span>nucleus</span>
+        <span><span class="legend-dot" style="background:#f59e0b;"></span>deflected α</span>
+        <span><span class="legend-dot" style="background:#94a3b8;"></span>passed through</span>
+      </div>
+      
+      <div class="slider-group">
+        <div class="slider-header"><span>⚡ alpha speed</span><span id="speedVal">6</span></div>
+        <input type="range" id="speedSlider" min="3" max="12" value="6" step="0.5">
+      </div>
+      
+      <div class="slider-group">
+        <div class="slider-header"><span>📐 foil layers</span><span id="layerVal">3</span></div>
+        <input type="range" id="layerSlider" min="1" max="5" value="3">
+      </div>
+    </div>
+
+    <!-- Right panel: controls & info -->
+    <div>
+      <div class="panel">
+        <div class="mode-switch">
+          <button class="mode-btn active" data-mode="thomson">🍮 plum pudding</button>
+          <button class="mode-btn" data-mode="rutherford">🎯 nuclear model</button>
+        </div>
+        
+        <div class="stats">
+          <div class="stat-row"><span>total α particles</span><span id="totalCount">0</span></div>
+          <div class="stat-row"><span>deflected (>10°)</span><span id="deflectCount" style="color:#f59e0b; font-weight:700;">0</span></div>
+          <div class="stat-row"><span>deflection rate</span><span id="deflectRate">0%</span></div>
+        </div>
+        
+        <div class="notes" id="theoryText">
+          <strong>🍮 Thomson (plum pudding)</strong><br>
+          Positive charge spread out → alpha particles pass straight through.
+        </div>
+      </div>
+      
+      <div class="panel" style="margin-top: 16px;">
+        <div class="accordion">
+          <button class="accordion-trigger" id="accordionBtn">
+            <span>💡 why this matters</span>
+            <span id="accordionIcon">▼</span>
+          </button>
+          <div class="accordion-content" id="accordionContent">
+            <div style="font-size:0.85rem; line-height:1.5;">
+              🎯 <strong>discovery of the nucleus</strong><br>
+              • Atoms are 99.99% empty space<br>
+              • Nucleus contains mass + positive charge<br>
+              • Electrons orbit around nucleus<br>
+              • Birth of modern atomic physics
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
 <script>
-(function(){
-  const canvas=document.getElementById('simCanvas'),ctx=canvas.getContext('2d');
-  let mode='thomson',particles=[],atoms=[],stats={total:0,deflected:0},DPR=devicePixelRatio||1,w=0,h=0;
-  const speedSlider=document.getElementById('speedSlider'),layerSlider=document.getElementById('layerSlider');
-  const speedVal=document.getElementById('speedVal'),layerVal=document.getElementById('layerVal');
-  const totalSpan=document.getElementById('totalCount'),deflectSpan=document.getElementById('deflectCount'),theoryText=document.getElementById('theoryText');
+(function() {
+  const canvas = document.getElementById('simCanvas');
+  const ctx = canvas.getContext('2d');
   
-  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=r.width*10/16;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0);createAtoms()}
+  let mode = 'thomson';
+  let particles = [];
+  let atoms = [];
+  let stats = { total: 0, deflected: 0 };
+  let w = 0, h = 0;
+  const dpr = window.devicePixelRatio || 1;
   
-  function createAtoms(){
-    atoms=[]; const layers=parseInt(layerSlider.value),rows=3,startX=w*0.35,spacingX=55,spacingY=h/(rows+1);
-    for(let i=0;i<layers;i++) for(let j=1;j<=rows;j++) atoms.push({x:startX+i*spacingX,y:j*spacingY,r:32});
+  // DOM elements
+  const speedSlider = document.getElementById('speedSlider');
+  const layerSlider = document.getElementById('layerSlider');
+  const speedVal = document.getElementById('speedVal');
+  const layerVal = document.getElementById('layerVal');
+  const totalSpan = document.getElementById('totalCount');
+  const deflectSpan = document.getElementById('deflectCount');
+  const deflectRateSpan = document.getElementById('deflectRate');
+  const theoryText = document.getElementById('theoryText');
+  const modeBtns = document.querySelectorAll('.mode-btn');
+  
+  // Sidebar
+  const hamburger = document.getElementById('hamburger');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  
+  // Accordion
+  const accordionBtn = document.getElementById('accordionBtn');
+  const accordionContent = document.getElementById('accordionContent');
+  const accordionIcon = document.getElementById('accordionIcon');
+  
+  function resizeCanvas() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    w = rect.width;
+    h = w * 10 / 16;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    createAtoms();
   }
   
-  class Alpha{
-    constructor(){this.x=10; this.y=15+Math.random()*(h-30); this.speed=parseFloat(speedSlider.value); this.vx=this.speed; this.vy=0; this.history=[]; this.deflected=false; stats.total++}
-    update(){
-      this.history.push({x:this.x,y:this.y}); if(this.history.length>12)this.history.shift();
-      if(mode==='rutherford') atoms.forEach(a=>{const dx=this.x-a.x,dy=this.y-a.y,dist=Math.hypot(dx,dy);
-        if(dist<38){const force=1.2/(dist*dist); this.vx-=(dx/dist)*force*70; this.vy+=(dy/dist)*force*70; if(Math.abs(this.vy)>0.4&&!this.deflected){this.deflected=true;stats.deflected++}}});
-      this.x+=this.vx; this.y+=this.vy;
+  function createAtoms() {
+    atoms = [];
+    const layers = parseInt(layerSlider.value);
+    const rows = 4;
+    const startX = w * 0.32;
+    const spacingX = 55;
+    const spacingY = h / (rows + 1);
+    
+    for (let i = 0; i < layers; i++) {
+      for (let j = 1; j <= rows; j++) {
+        atoms.push({
+          x: startX + i * spacingX,
+          y: j * spacingY,
+          r: 32  // electron cloud radius
+        });
+      }
     }
-    draw(){
-      ctx.beginPath(); ctx.strokeStyle='#94a3b820'; this.history.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)); ctx.stroke();
-      ctx.beginPath(); ctx.arc(this.x,this.y,3,0,2*Math.PI); ctx.fillStyle=this.deflected?'#f59e0b':'#94a3b8'; ctx.fill();
+  }
+  
+  class AlphaParticle {
+    constructor() {
+      this.x = 10;
+      this.y = 15 + Math.random() * (h - 30);
+      this.speed = parseFloat(speedSlider.value);
+      this.vx = this.speed;
+      this.vy = 0;
+      this.trail = [];
+      this.deflected = false;
+      stats.total++;
+    }
+    
+    update() {
+      this.trail.push({ x: this.x, y: this.y });
+      if (this.trail.length > 15) this.trail.shift();
+      
+      if (mode === 'rutherford') {
+        for (const atom of atoms) {
+          const dx = this.x - atom.x;
+          const dy = this.y - atom.y;
+          const dist = Math.hypot(dx, dy);
+          
+          // Nuclear interaction (tiny nucleus radius ~3px)
+          if (dist < 8) {
+            const force = 2.5 / (dist * dist);
+            this.vx += (dx / dist) * force * 60;
+            this.vy += (dy / dist) * force * 60;
+            
+            if (Math.abs(this.vy) > 0.6 && !this.deflected) {
+              this.deflected = true;
+              stats.deflected++;
+            }
+          }
+          // Electron cloud scattering (minimal in Rutherford, but included for realism)
+          else if (dist < atom.r && dist > 8 && mode === 'rutherford') {
+            const force = 0.3 / (dist);
+            this.vx -= (dx / dist) * force * 2;
+            this.vy -= (dy / dist) * force * 2;
+          }
+        }
+      }
+      
+      this.x += this.vx;
+      this.y += this.vy;
+    }
+    
+    draw() {
+      // Draw trail
+      if (this.trail.length > 1) {
+        ctx.beginPath();
+        ctx.strokeStyle = this.deflected ? '#f59e0b40' : '#94a3b840';
+        ctx.lineWidth = 1.5;
+        for (let i = 0; i < this.trail.length; i++) {
+          if (i === 0) ctx.moveTo(this.trail[i].x, this.trail[i].y);
+          else ctx.lineTo(this.trail[i].x, this.trail[i].y);
+        }
+        ctx.stroke();
+      }
+      
+      // Draw particle
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 3.5, 0, 2 * Math.PI);
+      ctx.fillStyle = this.deflected ? '#f59e0b' : '#94a3b8';
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = this.deflected ? '#f59e0b80' : '#94a3b880';
+      ctx.fill();
+      ctx.shadowBlur = 0;
     }
   }
   
-  function setMode(m){
-    mode=m; stats={total:0,deflected:0}; particles=[];
-    document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
-    theoryText.innerHTML=m==='thomson'?'<strong>🍮 Thomson model</strong> · positive charge spread out · α particles pass straight through.':'<strong>🎯 Rutherford model</strong> · dense positive nucleus · rare large deflections reveal nucleus.';
+  function setMode(newMode) {
+    mode = newMode;
+    stats = { total: 0, deflected: 0 };
+    particles = [];
+    
+    modeBtns.forEach(btn => {
+      if (btn.dataset.mode === newMode) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+    
+    if (newMode === 'thomson') {
+      theoryText.innerHTML = '<strong>🍮 Thomson (plum pudding)</strong><br>Positive charge spread throughout atom → alpha particles pass straight through with minimal deflection.';
+    } else {
+      theoryText.innerHTML = '<strong>🎯 Rutherford (nuclear model)</strong><br>Dense positive nucleus → rare large deflections reveal tiny, massive core.';
+    }
   }
   
-  function draw(){
-    ctx.clearRect(0,0,w,h); ctx.fillStyle='#f8fcff'; ctx.fillRect(0,0,w,h);
-    atoms.forEach(a=>{ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,2*Math.PI);ctx.fillStyle='#3b82f608';ctx.fill();ctx.strokeStyle='#3b82f620';ctx.stroke();
-      if(mode==='rutherford'){ctx.beginPath();ctx.arc(a.x,a.y,3,0,2*Math.PI);ctx.fillStyle='#3b82f6';ctx.fill()}});
-    if(Math.random()<0.3)particles.push(new Alpha());
-    particles=particles.filter(p=>{p.update();p.draw();return p.x<w+20&&p.y>-20&&p.y<h+20});
-    totalSpan.textContent=stats.total; deflectSpan.textContent=stats.deflected;
-    requestAnimationFrame(draw);
+  function updateStats() {
+    totalSpan.textContent = stats.total;
+    deflectSpan.textContent = stats.deflected;
+    const rate = stats.total > 0 ? ((stats.deflected / stats.total) * 100).toFixed(1) : 0;
+    deflectRateSpan.textContent = rate + '%';
   }
   
-  speedSlider.oninput=()=>{speedVal.textContent=speedSlider.value};
-  layerSlider.oninput=()=>{layerVal.textContent=layerSlider.value;createAtoms()};
-  document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
-  window.onresize=resize;
-  resize(); createAtoms(); draw();
+  function drawBackground() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#f8fcff';
+    ctx.fillRect(0, 0, w, h);
+    
+    // Draw gold foil region
+    ctx.fillStyle = '#fef3c7';
+    ctx.globalAlpha = 0.3;
+    ctx.fillRect(w * 0.3, 0, w * 0.4, h);
+    ctx.globalAlpha = 1;
+    
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(w * 0.3, 0, w * 0.4, h);
+    ctx.setLineDash([]);
+    
+    // Label
+    ctx.fillStyle = '#b45309';
+    ctx.font = '10px system-ui';
+    ctx.fillText('gold foil', w * 0.45, 20);
+    
+    // Draw atoms
+    for (const atom of atoms) {
+      // Electron cloud
+      ctx.beginPath();
+      ctx.arc(atom.x, atom.y, atom.r, 0, 2 * Math.PI);
+      ctx.fillStyle = '#3b82f608';
+      ctx.fill();
+      ctx.strokeStyle = '#3b82f620';
+      ctx.stroke();
+      
+      // Nucleus (only visible in Rutherford mode)
+      if (mode === 'rutherford') {
+        ctx.beginPath();
+        ctx.arc(atom.x, atom.y, 3, 0, 2 * Math.PI);
+        ctx.fillStyle = '#3b82f6';
+        ctx.shadowBlur = 4;
+        ctx.fill();
+      }
+    }
+    ctx.shadowBlur = 0;
+    
+    // Alpha source
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 10px system-ui';
+    ctx.fillText('α source', 10, 25);
+  }
+  
+  function animate() {
+    drawBackground();
+    
+    // Spawn new alpha particles (rate ~20% per frame)
+    if (Math.random() < 0.25) {
+      particles.push(new AlphaParticle());
+    }
+    
+    // Update and draw particles
+    particles = particles.filter(p => {
+      p.update();
+      p.draw();
+      updateStats();
+      return p.x < w + 50 && p.x > -50 && p.y > -50 && p.y < h + 50;
+    });
+    
+    requestAnimationFrame(animate);
+  }
+  
+  // Event listeners
+  speedSlider.addEventListener('input', () => {
+    speedVal.textContent = speedSlider.value;
+  });
+  
+  layerSlider.addEventListener('input', () => {
+    layerVal.textContent = layerSlider.value;
+    createAtoms();
+  });
+  
+  modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      setMode(btn.dataset.mode);
+      createAtoms();
+    });
+  });
+  
+  // Sidebar toggle
+  function closeMenu() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  }
+  function openMenu() {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+  }
+  hamburger.addEventListener('click', () => {
+    if (sidebar.classList.contains('open')) closeMenu();
+    else openMenu();
+  });
+  overlay.addEventListener('click', closeMenu);
+  
+  // Accordion
+  let accordionOpen = false;
+  accordionBtn.addEventListener('click', () => {
+    accordionOpen = !accordionOpen;
+    if (accordionOpen) {
+      accordionContent.classList.add('open');
+      accordionIcon.textContent = '▲';
+    } else {
+      accordionContent.classList.remove('open');
+      accordionIcon.textContent = '▼';
+    }
+  });
+  
+  // Resize handler
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+  });
+  
+  // Initialize
+  resizeCanvas();
+  setMode('thomson');
+  animate();
 })();
 </script>
 </body>

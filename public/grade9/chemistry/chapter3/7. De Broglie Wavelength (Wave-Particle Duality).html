@@ -3,65 +3,476 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🌊 de broglie · wave particle</title>
+  <title>de broglie · wave particle</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
-    @media(min-width:700px){.grid{grid-template-columns:1fr 240px}}
-    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
-    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
-    canvas{display:block;width:100%;aspect-ratio:16/10;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff}
-    .slider-item{margin:16px 0}
-    .slider-head{display:flex;justify-content:space-between;font-weight:500;margin-bottom:4px}
-    input[type=range]{width:100%;height:5px;background:#d4e2fa;border-radius:10px;-webkit-appearance:none;appearance:none}
-    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;background:#3b82f6;border-radius:20px;border:3px solid #fff;cursor:grab}
-    .lambda-card{background:#f0f6ff;border-radius:18px;padding:18px;text-align:center;margin:16px 0}
-    .lambda-val{font-size:2rem;font-weight:700;color:#3b82f6}
-    .regime{display:inline-block;padding:6px 16px;border-radius:40px;font-weight:700;font-size:0.8rem;margin-top:8px}
-    .quantum{background:#fce7f3;color:#be185d}.classical{background:#dbeafe;color:#1e4a8b}
-    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem;color:#3a628c}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f9ff;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr 270px;
+        align-items: start;
+      }
+    }
+
+    /* canvas panel */
+    .canvas-panel {
+      background: #ffffff;
+      border-radius: 28px;
+      border: 1px solid #d9e9ff;
+      box-shadow: 0 12px 30px rgba(0, 20, 50, 0.06);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding: 0 4px;
+    }
+
+    .panel-header h2 {
+      font-weight: 600;
+      font-size: 1.3rem;
+      color: #0b2b4f;
+      letter-spacing: -0.3px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 18px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #2c4b6b;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #fafdff;
+      border-radius: 20px;
+      border: 1px solid #d4e3fc;
+      touch-action: none;
+      margin-top: 6px;
+    }
+
+    /* sidebar */
+    .sidebar {
+      background: #ffffff;
+      border-radius: 28px;
+      border: 1px solid #d9e9ff;
+      box-shadow: 0 12px 30px rgba(0, 20, 50, 0.06);
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px;
+      background: #ffffff;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid #e9f0fa;
+    }
+
+    .sidebar-header h3 {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #0b2b4f;
+    }
+
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: none;
+      border: none;
+      padding: 6px;
+      cursor: pointer;
+    }
+
+    .hamburger span {
+      display: block;
+      width: 22px;
+      height: 2.5px;
+      background: #2c4b6b;
+      border-radius: 4px;
+      transition: 0.2s;
+    }
+
+    .sidebar-content {
+      padding: 16px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .sidebar.collapsed .sidebar-content {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .hamburger {
+        display: none;
+      }
+      .sidebar.collapsed .sidebar-content {
+        display: flex;
+      }
+      .sidebar-header {
+        cursor: default;
+        border-bottom: 1px solid #e9f0fa;
+      }
+    }
+
+    /* sliders */
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #1e3b5c;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #dce9fc;
+      border-radius: 10px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #2563eb;
+      border-radius: 22px;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      cursor: pointer;
+    }
+
+    /* wavelength card */
+    .lambda-card {
+      background: #f0f6fe;
+      border-radius: 20px;
+      padding: 18px 12px;
+      text-align: center;
+    }
+
+    .lambda-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #43668c;
+    }
+
+    .lambda-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #1d4ed8;
+      line-height: 1.2;
+      margin: 6px 0 10px;
+    }
+
+    .regime-badge {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 40px;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .regime-quantum {
+      background: #fce7f3;
+      color: #be185d;
+    }
+
+    .regime-classical {
+      background: #dbeafe;
+      color: #1e4a8b;
+    }
+
+    /* accordion */
+    .accordion {
+      border-top: 1px solid #e5eff9;
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+
+    .accordion-toggle {
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #0b2b4f;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      cursor: pointer;
+    }
+
+    .accordion-content {
+      font-size: 0.85rem;
+      color: #2c4b6b;
+      display: none;
+      padding-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .accordion.open .accordion-content {
+      display: block;
+    }
   </style>
 </head>
 <body>
-<div class="grid">
-  <div class="panel">
-    <h2>🌊 de broglie duality</h2>
+<div class="dashboard">
+  <!-- canvas panel -->
+  <div class="canvas-panel">
+    <div class="panel-header">
+      <h2>🌊 de broglie</h2>
+      <div class="legend">
+        <span>～ wave</span>
+        <span style="color:#2563eb;">● particle</span>
+        <span>λ = h/mv</span>
+      </div>
+    </div>
     <canvas id="dwCanvas"></canvas>
-    <div class="legend"><span>～ wave</span><span style="color:#3b82f6">● particle</span><span>λ = h/mv</span></div>
   </div>
-  <div class="panel">
-    <div class="slider-item"><div class="slider-head"><span>⚫ mass</span><span id="massVal">10</span></div><input type="range" id="massSlider" min="1" max="60" value="10"></div>
-    <div class="slider-item"><div class="slider-head"><span>⚡ velocity</span><span id="velVal">20</span></div><input type="range" id="velSlider" min="2" max="35" value="20"></div>
-    <div class="lambda-card"><div style="font-size:0.7rem;color:#3a628c">wavelength</div><div class="lambda-val" id="lambdaDisp">19.0</div><div id="regimeBadge" class="regime quantum">quantum</div></div>
-    <div style="font-size:0.85rem;color:#3a628c;margin-top:8px">small mass → wave · large mass → particle</div>
+
+  <!-- interactive sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header" id="sidebarToggleBtn">
+      <h3>⚙️ controls</h3>
+      <button class="hamburger" id="hamburgerIcon">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="sidebar-content">
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>⚫ mass</span>
+          <span id="massVal">10.0</span>
+        </div>
+        <input type="range" id="massSlider" min="1" max="60" value="10" step="0.1">
+      </div>
+
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>⚡ velocity</span>
+          <span id="velVal">20.0</span>
+        </div>
+        <input type="range" id="velSlider" min="2" max="35" value="20" step="0.1">
+      </div>
+
+      <div class="lambda-card">
+        <div class="lambda-label">wavelength</div>
+        <div class="lambda-value" id="lambdaDisp">19.0</div>
+        <div id="regimeBadge" class="regime-badge regime-quantum">quantum</div>
+      </div>
+
+      <!-- accordion for explanation -->
+      <div class="accordion" id="infoAccordion">
+        <button class="accordion-toggle" id="accordionToggle">
+          <span>📘 principle</span>
+          <span id="accordionArrow">▼</span>
+        </button>
+        <div class="accordion-content">
+          <p>λ = h / (m·v)</p>
+          <p>Small mass → wave behavior (quantum). Large mass → particle behavior (classical).</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
 <script>
-(function(){
-  const canvas=document.getElementById('dwCanvas'),ctx=canvas.getContext('2d');
-  let w=0,h=0,DPR=devicePixelRatio||1,time=0,H=3600;
-  const massS=document.getElementById('massSlider'),velS=document.getElementById('velSlider'),massV=document.getElementById('massVal'),velV=document.getElementById('velVal'),lambdaD=document.getElementById('lambdaDisp'),badge=document.getElementById('regimeBadge');
-  
-  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=r.width*10/16;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
-  
-  function draw(){
-    ctx.fillStyle='#f8fcff'; ctx.fillRect(0,0,w,h);
-    const m=parseFloat(massS.value),v=parseFloat(velS.value); massV.textContent=m.toFixed(1); velV.textContent=v.toFixed(1);
-    const lambda=H/(m*v); lambdaD.textContent=lambda.toFixed(1);
-    if(m<14){badge.textContent='quantum';badge.className='regime quantum'}else{badge.textContent='classical';badge.className='regime classical'}
-    const amp=Math.min(55,Math.max(8,65/Math.sqrt(m))),cy=h/2,color=m<14?'#ec4899':'#3b82f6';
-    ctx.beginPath(); ctx.strokeStyle=color+'50'; ctx.lineWidth=2; ctx.setLineDash([5,5]);
-    for(let x=0;x<w;x+=4){const y=cy+Math.sin(x/lambda+time)*amp; x===0?ctx.moveTo(x,y):ctx.lineTo(x,y)} ctx.stroke(); ctx.setLineDash([]);
-    const px=(time*v*6)%w,py=cy+Math.sin(px/lambda+time)*amp;
-    ctx.beginPath(); ctx.arc(px,py,5+m*0.12,0,2*Math.PI); ctx.fillStyle='#3b82f6'; ctx.shadowColor='#3b82f6'; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0;
-    ctx.strokeStyle='#94a3b8'; ctx.lineWidth=2; ctx.stroke();
-    ctx.beginPath(); ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1; ctx.setLineDash([2,6]); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.stroke(); ctx.setLineDash([]);
-    time+=0.035; requestAnimationFrame(draw);
-  }
-  
-  massS.oninput=draw; velS.oninput=draw; window.onresize=resize; resize(); draw();
-})();
+  (function() {
+    const canvas = document.getElementById('dwCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let w = 0, h = 0;
+    const DPR = devicePixelRatio || 1;
+    const PLANCK = 3600; // scaled constant for visualization
+    let time = 0;
+
+    // UI elements
+    const massSlider = document.getElementById('massSlider');
+    const velSlider = document.getElementById('velSlider');
+    const massVal = document.getElementById('massVal');
+    const velVal = document.getElementById('velVal');
+    const lambdaDisplay = document.getElementById('lambdaDisp');
+    const regimeBadge = document.getElementById('regimeBadge');
+
+    // ---- sidebar collapse logic ----
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    const hamburgerIcon = document.getElementById('hamburgerIcon');
+
+    function isMobile() {
+      return window.innerWidth < 768;
+    }
+
+    function toggleSidebar() {
+      if (!isMobile()) return;
+      sidebar.classList.toggle('collapsed');
+    }
+
+    sidebarToggleBtn.addEventListener('click', (e) => {
+      if (e.target === hamburgerIcon || hamburgerIcon.contains(e.target) || e.target === sidebarToggleBtn || e.target.tagName === 'H3') {
+        toggleSidebar();
+      }
+    });
+
+    function handleResponsiveState() {
+      if (isMobile()) {
+        sidebar.classList.add('collapsed');
+      } else {
+        sidebar.classList.remove('collapsed');
+      }
+    }
+    window.addEventListener('resize', handleResponsiveState);
+    handleResponsiveState();
+
+    // ---- accordion ----
+    const accordion = document.getElementById('infoAccordion');
+    const accordionToggle = document.getElementById('accordionToggle');
+    const accordionArrow = document.getElementById('accordionArrow');
+
+    accordionToggle.addEventListener('click', () => {
+      accordion.classList.toggle('open');
+      accordionArrow.textContent = accordion.classList.contains('open') ? '▲' : '▼';
+    });
+
+    // ---- canvas resize ----
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      const rect = container.getBoundingClientRect();
+      w = rect.width;
+      h = rect.width * 10 / 16;
+      canvas.width = w * DPR;
+      canvas.height = h * DPR;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+
+    // ---- drawing loop ----
+    function draw() {
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#fafdff';
+      ctx.fillRect(0, 0, w, h);
+
+      const mass = parseFloat(massSlider.value);
+      const velocity = parseFloat(velSlider.value);
+      massVal.textContent = mass.toFixed(1);
+      velVal.textContent = velocity.toFixed(1);
+
+      const lambda = PLANCK / (mass * velocity);
+      lambdaDisplay.textContent = lambda.toFixed(1);
+
+      // regime detection
+      if (mass < 14) {
+        regimeBadge.textContent = 'quantum';
+        regimeBadge.className = 'regime-badge regime-quantum';
+      } else {
+        regimeBadge.textContent = 'classical';
+        regimeBadge.className = 'regime-badge regime-classical';
+      }
+
+      const amplitude = Math.min(55, Math.max(8, 65 / Math.sqrt(mass)));
+      const centerY = h / 2;
+      const waveColor = mass < 14 ? '#ec4899' : '#2563eb';
+
+      // draw wave
+      ctx.beginPath();
+      ctx.strokeStyle = waveColor + '50';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([5, 5]);
+      for (let x = 0; x < w; x += 4) {
+        const y = centerY + Math.sin(x / lambda + time) * amplitude;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // draw particle on wave
+      const particleX = (time * velocity * 6) % w;
+      const particleY = centerY + Math.sin(particleX / lambda + time) * amplitude;
+
+      ctx.beginPath();
+      ctx.arc(particleX, particleY, 5 + mass * 0.12, 0, 2 * Math.PI);
+      ctx.fillStyle = '#2563eb';
+      ctx.shadowColor = '#3b82f6';
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // equilibrium line
+      ctx.beginPath();
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([2, 6]);
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(w, centerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      time += 0.035;
+      requestAnimationFrame(draw);
+    }
+
+    // slider listeners
+    massSlider.addEventListener('input', draw);
+    velSlider.addEventListener('input', draw);
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    draw();
+  })();
 </script>
 </body>
 </html>

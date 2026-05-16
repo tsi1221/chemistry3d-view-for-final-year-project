@@ -2,133 +2,716 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>📐 SI units · 3D</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>SI units · interactive lab</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:1200px;margin:0 auto}
-    @media(min-width:800px){.grid{grid-template-columns:1.6fr 1fr}}
-    h2{font-weight:700;font-size:1.4rem;color:#0a1e3c;margin-bottom:16px}
-    .units-panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
-    .units-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px}
-    .unit-card{background:#fff;border-radius:18px;padding:16px 8px;border:2px solid #d0e2ff;cursor:pointer;text-align:center;transition:0.15s}
-    .unit-card.selected{border-color:#3b82f6;background:#eef4ff}
-    .cube{width:80px;height:80px;margin:0 auto 10px;perspective:400px}
-    .cube-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.5s}
-    .face{position:absolute;width:100%;height:100%;background:#3b82f620;border:2px solid #3b82f6;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;font-weight:700;color:#3b82f6}
-    .front{transform:translateZ(40px)} .back{transform:rotateY(180deg)translateZ(40px)}
-    .right{transform:rotateY(90deg)translateZ(40px)} .left{transform:rotateY(-90deg)translateZ(40px)}
-    .top{transform:rotateX(90deg)translateZ(40px)} .bottom{transform:rotateX(-90deg)translateZ(40px)}
-    .unit-symbol{font-size:1.4rem;font-weight:700;color:#3b82f6}
-    .unit-name{font-weight:600;margin-top:4px}
-    .speaker{position:absolute;top:6px;right:6px;font-size:1.1rem;cursor:pointer;color:#3a628c}
-    .control-panel{display:flex;flex-direction:column;gap:16px}
-    .info-card{background:#f0f6ff;border-radius:20px;padding:18px;border-left:4px solid #3b82f6}
-    .drag-area{background:#fff;border-radius:20px;padding:16px;border:1px dashed #3b82f6}
-    .drag-symbols{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;justify-content:center}
-    .drag-item{background:#3b82f6;color:#fff;font-size:1.4rem;font-weight:700;padding:10px 18px;border-radius:14px;cursor:grab;user-select:none;box-shadow:0 4px 0 #1e4a8b}
-    .drag-item:active{cursor:grabbing;opacity:0.8;transform:translateY(2px);box-shadow:0 2px 0 #1e4a8b}
-    .drag-item.matched{opacity:0.4;pointer-events:none;background:#10b981;box-shadow:0 4px 0 #0b6e4f}
-    .btn{background:#3b82f6;color:#fff;border:none;padding:14px;border-radius:40px;font-weight:700;font-size:0.9rem;cursor:pointer;width:100%}
-    .btn-outline{background:#fff;border:1.5px solid #d0e2ff;color:#3a628c}
-    .btn:active{scale:0.97}
-    .feedback{background:#fef9e7;padding:12px;border-radius:16px;font-weight:500;border-left:4px solid #f59e0b}
-    .flex-row{display:flex;gap:8px;flex-wrap:wrap}
-    .flex-row .btn{flex:1}
-    .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.8rem;color:#3a628c}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --surface: #fafcff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-light: #475569;
+      --accent: #3b82f6;
+      --accent-light: #eef4ff;
+      --success: #10b981;
+      --error: #ef4444;
+      --shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Collapsible sidebar (hamburger) */
+    .hamburger {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.5rem;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      transition: all 0.2s;
+    }
+
+    .hamburger:active {
+      transform: scale(0.95);
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: -320px;
+      width: 280px;
+      height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 99;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 80px 20px 20px 20px;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+
+    .sidebar.open {
+      left: 0;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: 0.2s;
+      z-index: 98;
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .sidebar-title {
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--accent);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+    }
+
+    .sidebar-item {
+      padding: 12px;
+      margin-bottom: 8px;
+      background: var(--bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    /* Main grid - responsive */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .main-grid {
+        grid-template-columns: 1.6fr 1fr;
+        gap: 24px;
+      }
+      body {
+        padding: 24px;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    /* Units grid */
+    .units-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 14px;
+    }
+
+    .unit-card {
+      background: white;
+      border-radius: 18px;
+      padding: 14px 8px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      position: relative;
+    }
+
+    .unit-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    /* 3D cube */
+    .cube {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 10px;
+      perspective: 400px;
+    }
+
+    .cube-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.4s;
+    }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(59,130,246,0.12);
+      border: 2px solid var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .front { transform: translateZ(35px); }
+    .back { transform: rotateY(180deg) translateZ(35px); }
+    .right { transform: rotateY(90deg) translateZ(35px); }
+    .left { transform: rotateY(-90deg) translateZ(35px); }
+    .top { transform: rotateX(90deg) translateZ(35px); }
+    .bottom { transform: rotateX(-90deg) translateZ(35px); }
+
+    .unit-symbol {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .unit-name {
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    .speaker {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    /* Info panel */
+    .info-box {
+      background: #f0f6ff;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border-left: 3px solid var(--accent);
+    }
+
+    /* Drag zone */
+    .drag-zone {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 16px;
+      margin: 16px 0;
+      border: 1px dashed var(--accent);
+    }
+
+    .drag-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 12px 0;
+      justify-content: center;
+    }
+
+    .drag-item {
+      background: var(--accent);
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 40px;
+      cursor: grab;
+      user-select: none;
+      transition: 0.1s;
+    }
+
+    .drag-item:active {
+      cursor: grabbing;
+      transform: scale(0.97);
+    }
+
+    .drag-item.matched {
+      opacity: 0.4;
+      background: var(--success);
+      cursor: default;
+      pointer-events: none;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: 0.1s;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-outline {
+      background: white;
+      border: 1.5px solid var(--border);
+      color: var(--text-light);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+      flex: 1;
+    }
+
+    /* Accordion */
+    .accordion {
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .accordion-btn {
+      width: 100%;
+      background: transparent;
+      padding: 14px;
+      text-align: left;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      color: var(--accent);
+    }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: #f8fafc;
+      border-radius: 16px;
+      margin: 0 0 12px 0;
+    }
+
+    .accordion-content.open {
+      max-height: 180px;
+      padding: 16px;
+    }
+
+    .feedback {
+      background: #fef9e7;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 550px) {
+      .card { padding: 16px; }
+      .units-grid { grid-template-columns: repeat(2, 1fr); }
+      .cube { width: 55px; height: 55px; }
+      .face { font-size: 1rem; }
+    }
   </style>
 </head>
 <body>
-<div class="grid">
-  <div class="units-panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2 style="margin:0">⚡ seven base units</h2>
-      <button class="btn" style="width:auto;padding:10px 18px" id="rotateAll">↻ rotate all</button>
+
+<div class="hamburger" id="hamburger">☰</div>
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-title">📚 quick reference</div>
+  <div class="sidebar-item" id="sidebarLength">📏 meter (m) · length</div>
+  <div class="sidebar-item" id="sidebarMass">⚖️ kilogram (kg) · mass</div>
+  <div class="sidebar-item" id="sidebarTime">⏱️ second (s) · time</div>
+  <div class="sidebar-item" id="sidebarCurrent">⚡ ampere (A) · current</div>
+  <div class="sidebar-item" id="sidebarTemp">🌡️ kelvin (K) · temp</div>
+  <div class="sidebar-item" id="sidebarAmount">🧪 mole (mol) · amount</div>
+  <div class="sidebar-item" id="sidebarLight">💡 candela (cd) · light</div>
+</div>
+<div class="overlay" id="overlay"></div>
+
+<div class="app">
+  <div class="main-grid">
+    <!-- LEFT: Units -->
+    <div class="card">
+      <div class="card-header">
+        <h2>⚡ SI base units</h2>
+        <button class="btn-outline" id="rotateAllBtn" style="padding:8px 16px;">↻ spin all</button>
+      </div>
+      <div class="units-grid" id="unitsGrid"></div>
     </div>
-    <div class="units-grid" id="unitsGrid"></div>
-  </div>
-  <div class="control-panel">
-    <div class="info-card">
-      <div style="font-weight:700;color:#3b82f6;margin-bottom:8px">📖 unit info</div>
-      <div id="unitDetail">👆 tap a cube</div>
-    </div>
-    <div class="drag-area">
-      <div style="font-weight:600;margin-bottom:8px">🧩 drag symbol → cube</div>
-      <div class="drag-symbols" id="dragContainer"></div>
-      <button class="btn-outline" id="resetDrag">↻ reset game</button>
-    </div>
-    <div class="flex-row">
-      <button class="btn" id="speakBtn">🔊 pronounce</button>
-      <button class="btn" id="factBtn">💡 fact</button>
-    </div>
-    <div class="feedback" id="feedbackMsg">✨ ready</div>
-    <div class="legend">
-      <span>● tap cube · drag symbol</span>
+
+    <!-- RIGHT: Interactive controls -->
+    <div class="card">
+      <div class="info-box" id="unitInfoBox">
+        <div style="font-weight:700; color:var(--accent); margin-bottom:6px;">📖 selected unit</div>
+        <div id="unitDetail">tap any cube</div>
+      </div>
+
+      <div class="drag-zone">
+        <div style="font-weight:600; margin-bottom:10px;">🎯 match symbol → cube</div>
+        <div class="drag-items" id="dragContainer"></div>
+        <button class="btn-outline" id="resetGameBtn" style="width:100%; margin-top:8px;">↻ reset matching</button>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn" id="speakBtn">🔊 pronounce</button>
+        <button class="btn" id="randomFactBtn">💡 random fact</button>
+      </div>
+
+      <div class="accordion">
+        <div class="accordion-btn" id="accordionBtn">
+          <span>📐 why SI?</span>
+          <span id="accordionIcon">▼</span>
+        </div>
+        <div class="accordion-content" id="accordionContent">
+          <div style="font-size:0.85rem; line-height:1.5;">
+            🌍 <strong>universal language of measurement</strong><br>
+            • 7 base units define all others<br>
+            • based on constants of nature (since 2019)<br>
+            • used worldwide in science & engineering
+          </div>
+        </div>
+      </div>
+
+      <div class="feedback" id="feedbackMsg">
+        ✨ ready — drag symbols or tap cubes
+      </div>
     </div>
   </div>
 </div>
+
 <script>
-(function(){
-  const units=[
-    {id:'meter',name:'Meter',sym:'m',q:'Length',ex:'door ~2 m',fact:'1/10M of equator-pole',pron:'mee-ter'},
-    {id:'kilogram',name:'Kilogram',sym:'kg',q:'Mass',ex:'flour ~1 kg',fact:'prototype until 2019',pron:'kil-uh-gram'},
-    {id:'second',name:'Second',sym:'s',q:'Time',ex:'heartbeat ~1 s',fact:'cesium-133',pron:'sek-und'},
-    {id:'ampere',name:'Ampere',sym:'A',q:'Current',ex:'charger ~1 A',fact:'Ampère',pron:'am-peer'},
-    {id:'kelvin',name:'Kelvin',sym:'K',q:'Temp',ex:'ice 273 K',fact:'absolute zero',pron:'kel-vin'},
-    {id:'mole',name:'Mole',sym:'mol',q:'Amount',ex:'12g C = 1 mol',fact:'6.022×10²³',pron:'mohl'},
-    {id:'candela',name:'Candela',sym:'cd',q:'Light',ex:'candle ~1 cd',fact:'latin candle',pron:'kan-del-uh'}
+(function() {
+  const units = [
+    {id:'meter', name:'Meter', sym:'m', quantity:'Length', example:'door ~2 m', fact:'defined by speed of light', pron:'mee-ter'},
+    {id:'kilogram', name:'Kilogram', sym:'kg', quantity:'Mass', example:'laptop ~2 kg', fact:'Planck constant based', pron:'kil-uh-gram'},
+    {id:'second', name:'Second', sym:'s', quantity:'Time', example:'heartbeat ~1 s', fact:'cesium-133 atoms', pron:'sek-und'},
+    {id:'ampere', name:'Ampere', sym:'A', quantity:'Current', example:'LED ~0.02 A', fact:'elementary charge', pron:'am-peer'},
+    {id:'kelvin', name:'Kelvin', sym:'K', quantity:'Temp', example:'water freezes 273 K', fact:'Boltzmann constant', pron:'kel-vin'},
+    {id:'mole', name:'Mole', sym:'mol', quantity:'Amount', example:'12g carbon = 1 mol', fact:'Avogadro\'s number', pron:'mohl'},
+    {id:'candela', name:'Candela', sym:'cd', quantity:'Light', example:'candle ~1 cd', fact:'monochromatic light', pron:'kan-del-uh'}
   ];
-  let selected='meter';
-  const grid=document.getElementById('unitsGrid'),detail=document.getElementById('unitDetail');
-  const dragC=document.getElementById('dragContainer'),feedback=document.getElementById('feedbackMsg');
-  
-  function showInfo(u){detail.innerHTML=`<strong style="color:#3b82f6">${u.name} (${u.sym})</strong><br>📏 ${u.q}<br>🌍 ${u.ex}<br>💡 ${u.fact}`}
-  function speak(u){if(window.speechSynthesis){const ut=new SpeechSynthesisUtterance(u.name);ut.rate=0.9;window.speechSynthesis.cancel();window.speechSynthesis.speak(ut);feedback.textContent=`🔊 ${u.name} (${u.pron})`}}
-  
-  function build(){
-    grid.innerHTML='';
-    units.forEach((u,i)=>{
-      const c=document.createElement('div');c.className='unit-card'+(i===0?' selected':'');
-      c.dataset.id=u.id;
-      c.innerHTML=`<div class="cube"><div class="cube-inner" id="cube-${u.id}">
-        <div class="face front">${u.sym}</div><div class="face back">${u.sym}</div><div class="face right">${u.sym}</div>
-        <div class="face left">${u.sym}</div><div class="face top">${u.sym}</div><div class="face bottom">SI</div>
-      </div></div><div class="unit-symbol">${u.sym}</div><div class="unit-name">${u.name}</div>
-      <span class="speaker" data-id="${u.id}">🔊</span>`;
-      c.addEventListener('click',e=>{if(e.target.classList.contains('speaker'))return;
-        document.querySelectorAll('.unit-card').forEach(x=>x.classList.remove('selected'));c.classList.add('selected');
-        selected=u.id;showInfo(u);feedback.textContent=`🔍 ${u.name}`});
-      c.querySelector('.speaker').addEventListener('click',e=>{e.stopPropagation();speak(u)});
-      grid.appendChild(c);
+
+  let selectedId = 'meter';
+  const unitsGrid = document.getElementById('unitsGrid');
+  const unitDetailDiv = document.getElementById('unitDetail');
+  const dragContainer = document.getElementById('dragContainer');
+  const feedback = document.getElementById('feedbackMsg');
+  const rotateAllBtn = document.getElementById('rotateAllBtn');
+  const resetGameBtn = document.getElementById('resetGameBtn');
+  const speakBtn = document.getElementById('speakBtn');
+  const randomFactBtn = document.getElementById('randomFactBtn');
+
+  // Sidebar elements
+  const hamburger = document.getElementById('hamburger');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
+  const accordionBtn = document.getElementById('accordionBtn');
+  const accordionContent = document.getElementById('accordionContent');
+  const accordionIcon = document.getElementById('accordionIcon');
+
+  // Helper: update info display
+  function updateInfo(unit) {
+    unitDetailDiv.innerHTML = `<strong style="color:#3b82f6">${unit.name} (${unit.sym})</strong><br>
+                                📏 ${unit.quantity}<br>
+                                🌍 ${unit.example}<br>
+                                🔬 ${unit.fact}`;
+  }
+
+  // Speech
+  function speakUnit(unit) {
+    if (window.speechSynthesis) {
+      const utterance = new SpeechSynthesisUtterance(unit.name);
+      utterance.rate = 0.9;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+      feedback.innerHTML = `🔊 ${unit.name} (${unit.pron})`;
+    }
+  }
+
+  // Rotate cube
+  function rotateCube(id) {
+    const cube = document.getElementById(`cube-${id}`);
+    if (cube) {
+      const rx = (Math.random() * 360);
+      const ry = (Math.random() * 360);
+      cube.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+    }
+  }
+
+  function rotateAll() {
+    units.forEach(u => rotateCube(u.id));
+    feedback.innerHTML = '🔄 all cubes rotated';
+  }
+
+  // Build units grid
+  function buildUnits() {
+    unitsGrid.innerHTML = '';
+    units.forEach((u, idx) => {
+      const card = document.createElement('div');
+      card.className = `unit-card ${u.id === selectedId ? 'selected' : ''}`;
+      card.dataset.id = u.id;
+      card.innerHTML = `
+        <div class="cube">
+          <div class="cube-inner" id="cube-${u.id}">
+            <div class="face front">${u.sym}</div>
+            <div class="face back">${u.sym}</div>
+            <div class="face right">${u.sym}</div>
+            <div class="face left">${u.sym}</div>
+            <div class="face top">${u.sym}</div>
+            <div class="face bottom">SI</div>
+          </div>
+        </div>
+        <div class="unit-symbol">${u.sym}</div>
+        <div class="unit-name">${u.name}</div>
+        <span class="speaker" data-id="${u.id}">🔊</span>
+      `;
+      
+      // Select unit on click (except speaker)
+      card.addEventListener('click', (e) => {
+        if (e.target.classList.contains('speaker')) return;
+        document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedId = u.id;
+        updateInfo(u);
+        feedback.innerHTML = `🔍 ${u.name} selected`;
+      });
+      
+      // Speaker click
+      card.querySelector('.speaker').addEventListener('click', (e) => {
+        e.stopPropagation();
+        speakUnit(u);
+      });
+      
+      unitsGrid.appendChild(card);
     });
-    showInfo(units[0]);
+    updateInfo(units.find(u => u.id === selectedId));
+  }
+
+  // Build draggable symbols
+  function buildDragItems() {
+    dragContainer.innerHTML = '';
+    units.forEach(u => {
+      const dragEl = document.createElement('div');
+      dragEl.className = 'drag-item';
+      dragEl.textContent = u.sym;
+      dragEl.dataset.id = u.id;
+      dragEl.draggable = true;
+      dragEl.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', u.id);
+      };
+      dragContainer.appendChild(dragEl);
+    });
+  }
+
+  // Setup drop zones on unit cards
+  function setupDropZones() {
+    document.querySelectorAll('.unit-card').forEach(card => {
+      card.addEventListener('dragover', (e) => e.preventDefault());
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const draggedId = e.dataTransfer.getData('text/plain');
+        const targetId = card.dataset.id;
+        const dragItem = [...dragContainer.children].find(el => el.dataset.id === draggedId);
+        
+        if (draggedId === targetId && dragItem && !dragItem.classList.contains('matched')) {
+          dragItem.classList.add('matched');
+          dragItem.draggable = false;
+          feedback.innerHTML = `✅ correct! ${draggedId} matched`;
+          card.style.boxShadow = '0 0 0 2px #10b981';
+          setTimeout(() => card.style.boxShadow = '', 400);
+        } else if (draggedId !== targetId) {
+          feedback.innerHTML = `❌ ${draggedId} ≠ ${targetId}. try again!`;
+          card.style.boxShadow = '0 0 0 2px #ef4444';
+          setTimeout(() => card.style.boxShadow = '', 400);
+        } else if (dragItem && dragItem.classList.contains('matched')) {
+          feedback.innerHTML = `⚠️ "${draggedId}" already matched`;
+        }
+      });
+    });
+  }
+
+  // Reset matching game
+  function resetGame() {
+    [...dragContainer.children].forEach(el => {
+      el.classList.remove('matched');
+      el.draggable = true;
+    });
+    feedback.innerHTML = '🔄 game reset — drag symbols again';
+  }
+
+  // Random fact
+  function randomFact() {
+    const randomUnit = units[Math.floor(Math.random() * units.length)];
+    feedback.innerHTML = `💡 ${randomUnit.name}: ${randomUnit.fact}`;
+  }
+
+  // Sidebar toggle
+  function closeMenu() {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
   }
   
-  function buildDrag(){
-    dragC.innerHTML='';
-    units.forEach(u=>{const s=document.createElement('span');s.className='drag-item';s.textContent=u.sym;
-      s.dataset.id=u.id;s.draggable=true;s.ondragstart=e=>{e.dataTransfer.setData('text/plain',u.id)};dragC.appendChild(s)});
+  function openMenu() {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
   }
   
-  function setupDrop(){
-    document.querySelectorAll('.unit-card').forEach(c=>{c.addEventListener('dragover',e=>e.preventDefault());
-      c.addEventListener('drop',e=>{e.preventDefault();const id=e.dataTransfer.getData('text/plain');
-        const target=c.dataset.id;const el=[...dragC.children].find(x=>x.dataset.id===id);
-        if(id===target){if(el&&!el.classList.contains('matched')){el.classList.add('matched');el.draggable=false}
-          feedback.textContent=`✅ ${target} matched`;c.style.boxShadow='0 0 16px #10b981';setTimeout(()=>c.style.boxShadow='',500)}
-        else{feedback.textContent=`❌ ${id} ≠ ${target}`;c.style.boxShadow='0 0 16px #ef4444';setTimeout(()=>c.style.boxShadow='',400)}})});
-  }
+  hamburger.addEventListener('click', () => {
+    if (sidebar.classList.contains('open')) closeMenu();
+    else openMenu();
+  });
+  overlay.addEventListener('click', closeMenu);
   
-  function rotateCube(id){const c=document.getElementById(`cube-${id}`);if(c){c.style.transform=`rotateX(${Math.random()*360}deg) rotateY(${Math.random()*360}deg)`}}
-  function rotateAll(){units.forEach(u=>rotateCube(u.id));feedback.textContent='🔄 rotated'}
-  
-  document.getElementById('rotateAll').addEventListener('click',rotateAll);
-  document.getElementById('resetDrag').addEventListener('click',()=>{[...dragC.children].forEach(e=>{e.classList.remove('matched');e.draggable=true});feedback.textContent='🔄 game reset'});
-  document.getElementById('speakBtn').addEventListener('click',()=>{const u=units.find(x=>x.id===selected);if(u)speak(u)});
-  document.getElementById('factBtn').addEventListener('click',()=>{const u=units[Math.floor(Math.random()*units.length)];feedback.textContent=`💡 ${u.name}: ${u.fact}`});
-  
-  build();buildDrag();setupDrop();
+  // Sidebar click handlers (select unit from sidebar)
+  document.getElementById('sidebarLength')?.addEventListener('click', () => {
+    selectedId = 'meter';
+    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = [...document.querySelectorAll('.unit-card')].find(c => c.dataset.id === 'meter');
+    if (targetCard) targetCard.classList.add('selected');
+    updateInfo(units.find(u => u.id === 'meter'));
+    feedback.innerHTML = '📏 meter selected';
+    closeMenu();
+  });
+  document.getElementById('sidebarMass')?.addEventListener('click', () => {
+    selectedId = 'kilogram';
+    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = [...document.querySelectorAll('.unit-card')].find(c => c.dataset.id === 'kilogram');
+    if (targetCard) targetCard.classList.add('selected');
+    updateInfo(units.find(u => u.id === 'kilogram'));
+    feedback.innerHTML = '⚖️ kilogram selected';
+    closeMenu();
+  });
+  document.getElementById('sidebarTime')?.addEventListener('click', () => {
+    selectedId = 'second';
+    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = [...document.querySelectorAll('.unit-card')].find(c => c.dataset.id === 'second');
+    if (targetCard) targetCard.classList.add('selected');
+    updateInfo(units.find(u => u.id === 'second'));
+    feedback.innerHTML = '⏱️ second selected';
+    closeMenu();
+  });
+  document.getElementById('sidebarCurrent')?.addEventListener('click', () => {
+    selectedId = 'ampere';
+    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = [...document.querySelectorAll('.unit-card')].find(c => c.dataset.id === 'ampere');
+    if (targetCard) targetCard.classList.add('selected');
+    updateInfo(units.find(u => u.id === 'ampere'));
+    feedback.innerHTML = '⚡ ampere selected';
+    closeMenu();
+  });
+  document.getElementById('sidebarTemp')?.addEventListener('click', () => {
+    selectedId = 'kelvin';
+    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = [...document.querySelectorAll('.unit-card')].find(c => c.dataset.id === 'kelvin');
+    if (targetCard) targetCard.classList.add('selected');
+    updateInfo(units.find(u => u.id === 'kelvin'));
+    feedback.innerHTML = '🌡️ kelvin selected';
+    closeMenu();
+  });
+  document.getElementById('sidebarAmount')?.addEventListener('click', () => {
+    selectedId = 'mole';
+    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = [...document.querySelectorAll('.unit-card')].find(c => c.dataset.id === 'mole');
+    if (targetCard) targetCard.classList.add('selected');
+    updateInfo(units.find(u => u.id === 'mole'));
+    feedback.innerHTML = '🧪 mole selected';
+    closeMenu();
+  });
+  document.getElementById('sidebarLight')?.addEventListener('click', () => {
+    selectedId = 'candela';
+    document.querySelectorAll('.unit-card').forEach(c => c.classList.remove('selected'));
+    const targetCard = [...document.querySelectorAll('.unit-card')].find(c => c.dataset.id === 'candela');
+    if (targetCard) targetCard.classList.add('selected');
+    updateInfo(units.find(u => u.id === 'candela'));
+    feedback.innerHTML = '💡 candela selected';
+    closeMenu();
+  });
+
+  // Accordion toggle
+  let accordionOpen = false;
+  accordionBtn.addEventListener('click', () => {
+    accordionOpen = !accordionOpen;
+    if (accordionOpen) {
+      accordionContent.classList.add('open');
+      accordionIcon.textContent = '▲';
+    } else {
+      accordionContent.classList.remove('open');
+      accordionIcon.textContent = '▼';
+    }
+  });
+
+  // Event listeners
+  rotateAllBtn.addEventListener('click', rotateAll);
+  resetGameBtn.addEventListener('click', resetGame);
+  speakBtn.addEventListener('click', () => {
+    const unit = units.find(u => u.id === selectedId);
+    if (unit) speakUnit(unit);
+  });
+  randomFactBtn.addEventListener('click', randomFact);
+
+  // Initialize
+  buildUnits();
+  buildDragItems();
+  setupDropZones();
 })();
 </script>
 </body>

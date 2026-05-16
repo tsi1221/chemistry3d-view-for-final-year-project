@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🧪 reaction lab · H₂ + O₂ → H₂O</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>⚛️ reaction · H₂ + O₂ → H₂O</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     * {
       margin: 0;
       padding: 0;
@@ -14,125 +12,158 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    :root {
-      --bg-page: #ffffff;
-      --surface: #fafcff;
-      --border-light: #d0e2ff;
-      --text-dark: #0a1e3c;
-      --accent: #3b82f6;
-      --hydrogen: #ef4444;
-      --oxygen: #10b981;
-      --water: #3b82f6;
-      --shadow-card: 0 8px 24px rgba(0,0,0,0.04);
-    }
-
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg-page);
-      color: var(--text-dark);
+      font-family: system-ui, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #eef3fc;
       height: 100dvh;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
 
     #canvas-container {
-      flex: 1;
-      position: relative;
-      background: radial-gradient(circle at center, #f8fafc 0%, #e8f2ff 100%);
-    }
-
-    canvas {
-      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      touch-action: none;
+      z-index: 1;
     }
 
-    .stats-mini {
+    /* Floating UI - compact and interactive */
+    .ui-panel {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(8px);
-      padding: 10px 18px;
-      border-radius: 40px;
-      border: 1px solid var(--border-light);
-      display: flex;
-      gap: 16px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    .stat-item {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .stat-value {
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .legend {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(8px);
-      padding: 10px 18px;
-      border-radius: 40px;
-      border: 1px solid var(--border-light);
-      display: flex;
-      gap: 16px;
-    }
-
-    .legend-dot {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
-    }
-
-    .equation {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255, 255, 255, 0.9);
-      backdrop-filter: blur(8px);
-      padding: 10px 24px;
-      border-radius: 40px;
-      font-weight: 700;
-      font-size: 1.2rem;
-      border: 1px solid var(--border-light);
-    }
-
-    .hint {
-      position: absolute;
-      bottom: 80px;
-      left: 20px;
-      background: rgba(255,255,255,0.9);
-      padding: 6px 16px;
-      border-radius: 40px;
-      font-size: 0.8rem;
-      color: var(--text-dark);
+      z-index: 20;
       pointer-events: none;
     }
 
-    .btn-reset {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      background: white;
-      border: 1px solid var(--border-light);
-      padding: 12px 20px;
-      border-radius: 40px;
+    /* Legend (minimal) */
+    .legend-dock {
+      top: 18px;
+      left: 18px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 8px 18px;
+      display: flex;
+      gap: 20px;
+      border: 1px solid rgba(59,130,246,0.25);
+      font-size: 0.75rem;
+      font-weight: 500;
+      pointer-events: none;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .dot.red { background: #ef4444; box-shadow: 0 0 4px #ef4444; }
+    .dot.green { background: #10b981; }
+    .dot.blue { background: #3b82f6; }
+
+    /* Stats card (counter) */
+    .stats-card {
+      top: 18px;
+      right: 18px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 8px 20px;
+      display: flex;
+      gap: 24px;
+      border: 1px solid rgba(59,130,246,0.25);
+      font-size: 0.8rem;
       font-weight: 600;
+      pointer-events: none;
+    }
+    .stat {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+    .stat-label {
+      color: #2c4b6e;
+      font-weight: 500;
+    }
+    .stat-number {
+      font-weight: 800;
+      color: #1e6fdf;
+      background: rgba(30,111,223,0.1);
+      padding: 0 6px;
+      border-radius: 20px;
+    }
+
+    /* Equation badge (centered bottom) */
+    .equation-badge {
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(12px);
+      color: white;
+      padding: 6px 20px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+      pointer-events: none;
+      font-family: monospace;
+    }
+    @media (max-width: 540px) {
+      .equation-badge { font-size: 0.7rem; bottom: 75px; white-space: nowrap; }
+      .stats-card { gap: 12px; padding: 6px 14px; }
+      .legend-dock { gap: 12px; padding: 6px 14px; }
+    }
+
+    /* Interactive buttons */
+    .action-bar {
+      bottom: 22px;
+      right: 22px;
+      pointer-events: auto;
+      z-index: 25;
+    }
+    .reset-btn {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(59,130,246,0.4);
+      padding: 10px 22px;
+      border-radius: 60px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: #1e6fdf;
       cursor: pointer;
-      color: var(--accent);
-      box-shadow: var(--shadow-card);
+      transition: 0.1s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      font-family: inherit;
+    }
+    .reset-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* small hint */
+    .hint-tip {
+      bottom: 90px;
+      left: 18px;
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(8px);
+      padding: 5px 14px;
+      border-radius: 40px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #2c4b6e;
+      pointer-events: none;
+    }
+
+    canvas {
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
     }
   </style>
 </head>
@@ -140,21 +171,26 @@
 
 <div id="canvas-container"></div>
 
-<div class="legend">
-  <div class="legend-dot"><span style="color:var(--hydrogen);">●</span> H₂</div>
-  <div class="legend-dot"><span style="color:var(--oxygen);">●</span> O₂</div>
-  <div class="legend-dot"><span style="color:var(--water);">●</span> H₂O</div>
+<!-- UI Overlay -->
+<div class="ui-panel legend-dock">
+  <div class="legend-item"><span class="dot red"></span> <span>H₂</span></div>
+  <div class="legend-item"><span class="dot green"></span> <span>O₂</span></div>
+  <div class="legend-item"><span class="dot blue"></span> <span>H₂O</span></div>
 </div>
 
-<div class="stats-mini">
-  <div class="stat-item">H₂ <span class="stat-value" id="h2Count">12</span></div>
-  <div class="stat-item">O₂ <span class="stat-value" id="o2Count">6</span></div>
-  <div class="stat-item">H₂O <span class="stat-value" id="h2oCount">0</span></div>
+<div class="ui-panel stats-card">
+  <div class="stat"><span class="stat-label">H₂</span> <span class="stat-number" id="h2Count">0</span></div>
+  <div class="stat"><span class="stat-label">O₂</span> <span class="stat-number" id="o2Count">0</span></div>
+  <div class="stat"><span class="stat-label">H₂O</span> <span class="stat-number" id="h2oCount">0</span></div>
 </div>
 
-<div class="equation">2H₂ + O₂ → 2H₂O</div>
-<div class="hint">👆 drag to rotate · particles react on collision</div>
-<button class="btn-reset" id="resetBtn">↻ reset</button>
+<div class="ui-panel equation-badge">2H₂ + O₂ → 2H₂O</div>
+
+<div class="ui-panel hint-tip">👆 drag to rotate · particles react on collision</div>
+
+<div class="ui-panel action-bar">
+  <button class="reset-btn" id="resetReactionBtn">↻ Reset</button>
+</div>
 
 <script type="importmap">
   {
@@ -169,158 +205,350 @@
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+  // --- setup scene
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#f8fafc');
-  
-  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(8, 5, 14);
+  scene.background = new THREE.Color('#f1f5f9');
+  scene.fog = new THREE.FogExp2(0xf1f5f9, 0.006);
+
+  const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 50);
+  camera.position.set(6, 4.5, 12);
   camera.lookAt(0, 0, 0);
-  
+
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
   container.appendChild(renderer.domElement);
 
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.8;
-  controls.enableZoom = true;
+  // controls (orbit + auto-rotate subtle)
+  const orbitControls = new OrbitControls(camera, renderer.domElement);
+  orbitControls.enableDamping = true;
+  orbitControls.dampingFactor = 0.06;
+  orbitControls.autoRotate = true;
+  orbitControls.autoRotateSpeed = 0.6;
+  orbitControls.enableZoom = true;
+  orbitControls.enablePan = true;
+  orbitControls.zoomSpeed = 1.0;
+  orbitControls.panSpeed = 0.8;
 
   // lighting
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-  dirLight.position.set(5, 10, 8);
-  scene.add(dirLight);
-  scene.add(new THREE.PointLight(0xcce0ff, 0.4));
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(ambientLight);
+  const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  mainLight.position.set(5, 8, 6);
+  mainLight.castShadow = true;
+  scene.add(mainLight);
+  const fillLight = new THREE.PointLight(0xcadcff, 0.45);
+  fillLight.position.set(-3, 2, 4);
+  scene.add(fillLight);
+  const backRim = new THREE.PointLight(0xffaa77, 0.25);
+  backRim.position.set(0, 1, -5);
+  scene.add(backRim);
 
-  // particles
-  let molecules = [];
-  const bounds = { x: 5, y: 3.5, z: 3 };
+  // decorative grid floor (faint)
+  const gridFloor = new THREE.GridHelper(14, 20, 0x88aaff, 0xb8d0ff);
+  gridFloor.position.y = -2.5;
+  gridFloor.material.transparent = true;
+  gridFloor.material.opacity = 0.2;
+  scene.add(gridFloor);
   
-  function createMolecule(type) {
+  // bounding box helper (invisible but visual guide)
+  const boundingBoxHelper = new THREE.Box3(new THREE.Vector3(-5, -3, -3.5), new THREE.Vector3(5, 3.2, 3.5));
+  const wireframeBox = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(10, 6.2, 7)),
+    new THREE.LineBasicMaterial({ color: '#99b8e9', transparent: true, opacity: 0.2 })
+  );
+  wireframeBox.position.set(0, -0.1, 0);
+  scene.add(wireframeBox);
+
+  // --- molecular simulation data
+  let molecules = [];
+  // simulation bounds (collision box)
+  const bounds = { x: 4.8, y: 3.0, z: 3.2 };
+  
+  // ---- Helper to create molecule group (H2, O2, H2O)
+  function createMolecule(type, customPos = null) {
     const group = new THREE.Group();
-    const color = type === 'H2' ? '#ef4444' : (type === 'O2' ? '#10b981' : '#3b82f6');
+    let colorMain = '#3b82f6';
+    if (type === 'H2') colorMain = '#ef4444';
+    else if (type === 'O2') colorMain = '#10b981';
+    else colorMain = '#3b82f6';
+    
+    const matMain = new THREE.MeshStandardMaterial({ color: colorMain, roughness: 0.25, metalness: 0.1, emissive: type === 'H2' ? '#330000' : '#001133', emissiveIntensity: 0.1 });
+    const matHydrogen = new THREE.MeshStandardMaterial({ color: '#ef4444', roughness: 0.3 });
     
     if (type === 'H2') {
-      const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12), new THREE.MeshStandardMaterial({ color }));
-      const h2 = h1.clone();
-      h1.position.x = -0.4;
-      h2.position.x = 0.4;
-      group.add(h1, h2);
-    } else if (type === 'O2') {
-      const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.35, 12), new THREE.MeshStandardMaterial({ color }));
-      const o2 = o1.clone();
-      o1.position.x = -0.45;
-      o2.position.x = 0.45;
+      const s1 = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16), matMain);
+      const s2 = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16), matMain);
+      s1.position.set(-0.48, 0, 0);
+      s2.position.set(0.48, 0, 0);
+      group.add(s1, s2);
+      // add connector cylinder
+      const connector = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.96, 4), new THREE.MeshStandardMaterial({ color: '#cc8866' }));
+      connector.position.set(0, 0, 0);
+      group.add(connector);
+    } 
+    else if (type === 'O2') {
+      const o1 = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20), matMain);
+      const o2 = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20), matMain);
+      o1.position.set(-0.55, 0, 0);
+      o2.position.set(0.55, 0, 0);
       group.add(o1, o2);
-    } else {
-      const o = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12), new THREE.MeshStandardMaterial({ color }));
-      const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8), new THREE.MeshStandardMaterial({ color: '#ef4444' }));
-      const h2 = h1.clone();
-      h1.position.set(-0.5, 0.3, 0);
-      h2.position.set(0.5, 0.3, 0);
-      group.add(o, h1, h2);
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.1, 6), new THREE.MeshStandardMaterial({ color: '#88aacc' }));
+      bar.position.set(0, 0, 0);
+      group.add(bar);
+    } 
+    else { // H2O (bent shape)
+      const oxygen = new THREE.Mesh(new THREE.SphereGeometry(0.38, 20), new THREE.MeshStandardMaterial({ color: '#3b82f6', roughness: 0.2 }));
+      oxygen.position.set(0, 0, 0);
+      const h1 = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12), matHydrogen);
+      const h2 = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12), matHydrogen);
+      h1.position.set(-0.58, 0.36, 0);
+      h2.position.set(0.58, 0.36, 0);
+      group.add(oxygen, h1, h2);
+      // add bond lines (decorative)
+      const lineMat = new THREE.LineBasicMaterial({ color: '#aaddff' });
+      const points1 = [new THREE.Vector3(-0.58, 0.36, 0), new THREE.Vector3(0, 0, 0)];
+      const points2 = [new THREE.Vector3(0.58, 0.36, 0), new THREE.Vector3(0, 0, 0)];
+      const geo1 = new THREE.BufferGeometry().setFromPoints(points1);
+      const geo2 = new THREE.BufferGeometry().setFromPoints(points2);
+      const line1 = new THREE.Line(geo1, lineMat);
+      const line2 = new THREE.Line(geo2, lineMat);
+      group.add(line1, line2);
     }
     
-    group.position.x = (Math.random() - 0.5) * bounds.x * 1.8;
-    group.position.y = (Math.random() - 0.5) * bounds.y * 1.8;
-    group.position.z = (Math.random() - 0.5) * bounds.z * 1.5;
+    // position
+    if (customPos) {
+      group.position.copy(customPos);
+    } else {
+      group.position.x = (Math.random() - 0.5) * bounds.x * 1.6;
+      group.position.y = (Math.random() - 0.5) * bounds.y * 1.5;
+      group.position.z = (Math.random() - 0.5) * bounds.z * 1.6;
+    }
     
+    // initial velocity (random)
     group.userData = {
-      type,
+      type: type,
       vel: new THREE.Vector3(
-        (Math.random() - 0.5) * 0.04,
-        (Math.random() - 0.5) * 0.04,
-        (Math.random() - 0.5) * 0.03
+        (Math.random() - 0.5) * 0.045,
+        (Math.random() - 0.5) * 0.045,
+        (Math.random() - 0.5) * 0.04
       )
     };
     
+    group.castShadow = true;
+    group.receiveShadow = false;
     scene.add(group);
     return group;
   }
 
-  function init() {
+  // initialize simulation
+  let animationActive = true;
+  
+  function initSimulation() {
+    // remove existing
     molecules.forEach(m => scene.remove(m));
     molecules = [];
+    // start with 12 H2, 6 O2
     for (let i = 0; i < 12; i++) molecules.push(createMolecule('H2'));
     for (let i = 0; i < 6; i++) molecules.push(createMolecule('O2'));
-    updateUI();
+    updateCounters();
   }
-
-  function updateUI() {
-    const h2 = molecules.filter(m => m.userData.type === 'H2').length;
-    const o2 = molecules.filter(m => m.userData.type === 'O2').length;
-    const h2o = molecules.filter(m => m.userData.type === 'H2O').length;
-    document.getElementById('h2Count').textContent = h2;
-    document.getElementById('o2Count').textContent = o2;
-    document.getElementById('h2oCount').textContent = h2o;
+  
+  function updateCounters() {
+    const h2Count = molecules.filter(m => m.userData.type === 'H2').length;
+    const o2Count = molecules.filter(m => m.userData.type === 'O2').length;
+    const h2oCount = molecules.filter(m => m.userData.type === 'H2O').length;
+    document.getElementById('h2Count').innerText = h2Count;
+    document.getElementById('o2Count').innerText = o2Count;
+    document.getElementById('h2oCount').innerText = h2oCount;
   }
-
-  function react(m1, m2) {
-    if (m1.userData.type === 'H2' && m2.userData.type === 'O2' || m1.userData.type === 'O2' && m2.userData.type === 'H2') {
-      const pos = m1.position.clone().add(m2.position).multiplyScalar(0.5);
-      scene.remove(m1); scene.remove(m2);
-      molecules = molecules.filter(m => m !== m1 && m !== m2);
+  
+  // Reaction logic: H2 + O2 -> 2 H2O (consumes one H2 + one O2, creates two water molecules)
+  function tryReact(molA, molB) {
+    const typeA = molA.userData.type;
+    const typeB = molB.userData.type;
+    // only react if exactly one H2 and one O2
+    if ((typeA === 'H2' && typeB === 'O2') || (typeA === 'O2' && typeB === 'H2')) {
+      // get midpoint position for new water molecules
+      const pos = new THREE.Vector3().addVectors(molA.position, molB.position).multiplyScalar(0.5);
       
-      for (let i = 0; i < 2; i++) {
-        const water = createMolecule('H2O');
-        water.position.copy(pos).add(new THREE.Vector3((i-0.5)*1.2, 0, 0));
-        molecules.push(water);
-      }
-      updateUI();
+      // remove the reactants
+      scene.remove(molA);
+      scene.remove(molB);
+      molecules = molecules.filter(m => m !== molA && m !== molB);
+      
+      // create two water molecules with slight offset to avoid overlap
+      const water1 = createMolecule('H2O', pos.clone().add(new THREE.Vector3(-0.7, 0.2, 0)));
+      const water2 = createMolecule('H2O', pos.clone().add(new THREE.Vector3(0.7, -0.2, 0)));
+      
+      // assign random velocities to water molecules (more diffusive)
+      water1.userData.vel = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.05,
+        (Math.random() - 0.5) * 0.05,
+        (Math.random() - 0.5) * 0.04
+      );
+      water2.userData.vel = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.05,
+        (Math.random() - 0.5) * 0.05,
+        (Math.random() - 0.5) * 0.04
+      );
+      
+      molecules.push(water1, water2);
+      updateCounters();
       return true;
     }
     return false;
   }
-
-  function animate() {
-    requestAnimationFrame(animate);
-    
-    molecules.forEach(m => {
-      m.position.x += m.userData.vel.x;
-      m.position.y += m.userData.vel.y;
-      m.position.z += m.userData.vel.z;
+  
+  // physics + collision handling
+  function updatePhysics() {
+    // update positions, bounds collision, and bounce
+    for (let mol of molecules) {
+      mol.position.x += mol.userData.vel.x;
+      mol.position.y += mol.userData.vel.y;
+      mol.position.z += mol.userData.vel.z;
       
-      if (Math.abs(m.position.x) > bounds.x) { m.position.x = Math.sign(m.position.x)*bounds.x; m.userData.vel.x *= -0.9; }
-      if (Math.abs(m.position.y) > bounds.y) { m.position.y = Math.sign(m.position.y)*bounds.y; m.userData.vel.y *= -0.9; }
-      if (Math.abs(m.position.z) > bounds.z) { m.position.z = Math.sign(m.position.z)*bounds.z; m.userData.vel.z *= -0.9; }
+      // boundary reflection with damping
+      if (Math.abs(mol.position.x) > bounds.x) {
+        mol.position.x = Math.sign(mol.position.x) * bounds.x;
+        mol.userData.vel.x *= -0.92;
+      }
+      if (Math.abs(mol.position.y) > bounds.y) {
+        mol.position.y = Math.sign(mol.position.y) * bounds.y;
+        mol.userData.vel.y *= -0.92;
+      }
+      if (Math.abs(mol.position.z) > bounds.z) {
+        mol.position.z = Math.sign(mol.position.z) * bounds.z;
+        mol.userData.vel.z *= -0.92;
+      }
       
-      m.rotation.y += 0.01;
-    });
+      // slight rotation for aesthetics
+      mol.rotation.x += 0.01;
+      mol.rotation.z += 0.008;
+      mol.rotation.y += 0.012;
+    }
     
-    // collisions
+    // pairwise collision detection (molecule-molecule)
     for (let i = 0; i < molecules.length; i++) {
-      for (let j = i+1; j < molecules.length; j++) {
-        const a = molecules[i], b = molecules[j];
-        if (a.position.distanceTo(b.position) < 1.2) {
+      for (let j = i + 1; j < molecules.length; j++) {
+        const a = molecules[i];
+        const b = molecules[j];
+        const dist = a.position.distanceTo(b.position);
+        const reactDist = 1.35;
+        
+        if (dist < reactDist) {
+          // attempt chemical reaction first (only if both not water)
           if (a.userData.type !== 'H2O' && b.userData.type !== 'H2O') {
-            if (react(a, b)) break;
+            const reacted = tryReact(a, b);
+            if (reacted) {
+              // break out of loops after reaction to avoid stale references
+              return; // restart collision detection next frame
+            }
           }
-          // bounce
-          const v = a.userData.vel; a.userData.vel = b.userData.vel; b.userData.vel = v;
+          
+          // elastic collision response (momentum exchange) if they are not being removed
+          if (molecules.includes(a) && molecules.includes(b)) {
+            const delta = new THREE.Vector3().subVectors(a.position, b.position).normalize();
+            const velA = a.userData.vel.clone();
+            const velB = b.userData.vel.clone();
+            const speedAlong = velA.clone().sub(velB).dot(delta);
+            if (speedAlong < 0) {
+              const m1 = 1, m2 = 1; // equal mass approximation
+              const imp = (2 * speedAlong) / (m1 + m2);
+              a.userData.vel.sub(delta.clone().multiplyScalar(imp * m2));
+              b.userData.vel.add(delta.clone().multiplyScalar(imp * m1));
+              // separate slightly
+              const overlap = reactDist - dist;
+              const correction = delta.clone().multiplyScalar(overlap * 0.5);
+              a.position.add(correction);
+              b.position.sub(correction);
+            }
+          }
         }
       }
     }
-    
-    controls.update();
-    renderer.render(scene, camera);
   }
-
-  document.getElementById('resetBtn').addEventListener('click', init);
   
-  window.addEventListener('resize', () => {
+  // UI controls and reset with fancy flash
+  const resetBtn = document.getElementById('resetReactionBtn');
+  resetBtn.addEventListener('click', () => {
+    initSimulation();
+    // small haptic-like effect (visual)
+    const statsCard = document.querySelector('.stats-card');
+    if (statsCard) {
+      statsCard.style.transform = 'scale(1.02)';
+      setTimeout(() => { if(statsCard) statsCard.style.transform = ''; }, 120);
+    }
+  });
+  
+  // auto-rotate toggle: stop auto-rotate on user drag for better UX
+  let userInteracted = false;
+  orbitControls.autoRotate = true;
+  orbitControls.addEventListener('start', () => {
+    userInteracted = true;
+    orbitControls.autoRotate = false;
+  });
+  // optional: re-enable after idle? keeping off after interaction is fine
+  
+  // animation loop
+  let lastTimestamp = performance.now();
+  function animate() {
+    const now = performance.now();
+    const delta = Math.min(0.033, (now - lastTimestamp) / 1000);
+    lastTimestamp = now;
+    
+    if (animationActive) {
+      updatePhysics();
+    }
+    
+    // update orbit controls if autoRotate enabled
+    orbitControls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+  
+  // resize handler
+  window.addEventListener('resize', onWindowResize);
+  function onWindowResize() {
     const w = container.clientWidth;
     const h = container.clientHeight;
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-  });
-
-  init();
+  }
+  
+  // initial
+  initSimulation();
   animate();
+  
+  // small periodic random velocity boost to keep reaction probability realistic
+  setInterval(() => {
+    if (molecules.length > 0 && animationActive) {
+      // lightly stir every 5 seconds if many particles left
+      for (let mol of molecules) {
+        if (Math.random() < 0.35) {
+          mol.userData.vel.x += (Math.random() - 0.5) * 0.012;
+          mol.userData.vel.y += (Math.random() - 0.5) * 0.012;
+          mol.userData.vel.z += (Math.random() - 0.5) * 0.012;
+          // limit speed
+          ['x','y','z'].forEach(axis => {
+            if (Math.abs(mol.userData.vel[axis]) > 0.12) mol.userData.vel[axis] *= 0.95;
+          });
+        }
+      }
+    }
+  }, 4200);
+  
+  // small drift correction: ensure molecules never go out of visual range
+  setInterval(() => {
+    molecules.forEach(m => {
+      m.position.x = Math.min(bounds.x - 0.1, Math.max(-bounds.x + 0.1, m.position.x));
+      m.position.y = Math.min(bounds.y - 0.1, Math.max(-bounds.y + 0.1, m.position.y));
+      m.position.z = Math.min(bounds.z - 0.1, Math.max(-bounds.z + 0.1, m.position.z));
+    });
+  }, 3000);
 </script>
 </body>
 </html>

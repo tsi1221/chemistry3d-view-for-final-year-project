@@ -2,84 +2,585 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>⚛️ orbital config · 4f</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>⚛️ orbital · 4f configurator</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
-    @media(min-width:700px){.grid{grid-template-columns:1fr 220px}}
-    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:16px}
-    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
-    .stack{display:flex;flex-direction:column-reverse;gap:6px}
-    .subshell{display:flex;align-items:center;padding:4px 0}
-    .label{width:42px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#3b82f6}
-    .boxes{display:flex;gap:4px;flex-wrap:wrap}
-    .box{width:34px;height:34px;border:2px solid #d0e2ff;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-    .box:active{background:#eef4ff}
-    .arrow{font-size:18px;font-weight:700}.up{color:#10b981}.down{color:#ef4444;margin-left:-4px}
-    .stat-card{background:#f0f6ff;border-radius:16px;padding:16px;margin-top:12px}
-    .electron-count{font-size:2rem;font-weight:700;color:#3b82f6}
-    .config{font-family:'JetBrains Mono',monospace;font-size:0.85rem;background:#fff;padding:10px;border-radius:12px;margin:10px 0}
-    .status{padding:8px 12px;border-radius:20px;font-weight:600;font-size:0.8rem;text-align:center}
-    .noble{background:#d1fae5;color:#065f46}.reactive{background:#fef3c7;color:#92400e}
-    .btn{width:100%;padding:12px;border-radius:40px;border:1.5px solid #d0e2ff;background:#fff;font-weight:600;color:#3a628c;cursor:pointer;margin-top:8px}
-    .btn-primary{background:#3b82f6;border-color:#3b82f6;color:#fff}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, monospace;
+      background: #f1f5fe;
+      min-height: 100dvh;
+      padding: 16px;
+    }
+
+    /* main container */
+    .app {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    /* responsive grid: orbitals area + sidebar */
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    @media (min-width: 780px) {
+      .dashboard {
+        grid-template-columns: 1fr 280px;
+      }
+    }
+
+    /* orbital canvas panel */
+    .orbital-panel {
+      background: #ffffff;
+      border-radius: 2rem;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.02);
+      padding: 20px;
+    }
+
+    .orbital-panel h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #0c2e4e;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* orbitals grid — clean, minimal */
+    .orbitals-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding: 4px 4px 8px 4px;
+    }
+
+    .subshell-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border-bottom: 1px solid #ecf3fa;
+      padding: 8px 0;
+    }
+
+    .subshell-label {
+      width: 48px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      color: #3b82f6;
+      letter-spacing: -0.3px;
+    }
+
+    .orbital-boxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      flex: 1;
+    }
+
+    .orbital {
+      width: 48px;
+      height: 48px;
+      border: 2px solid #cde0f0;
+      background: #ffffff;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.1s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+
+    .orbital:active {
+      background: #eef4ff;
+      transform: scale(0.96);
+    }
+
+    .arrow {
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .arrow-up { color: #10b981; }
+    .arrow-down { color: #ef4444; margin-left: -6px; }
+
+    /* legend minimal */
+    .legend-mini {
+      display: flex;
+      gap: 24px;
+      margin-top: 18px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #4a7092;
+      justify-content: center;
+    }
+
+    /* collapsible SIDEBAR (mobile hamburger) */
+    .info-sidebar {
+      background: #ffffff;
+      border-radius: 2rem;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.04);
+      overflow: hidden;
+      transition: all 0.25s ease;
+    }
+
+    @media (max-width: 779px) {
+      .info-sidebar.collapsed {
+        max-height: 76px;
+      }
+      .info-sidebar:not(.collapsed) {
+        max-height: 520px;
+      }
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 20px;
+      background: #ffffff;
+      border-bottom: 1px solid #edf2f9;
+      cursor: pointer;
+    }
+
+    .sidebar-header h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #0c2e4e;
+    }
+
+    .chevron {
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+      color: #3b82f6;
+    }
+
+    .info-sidebar.collapsed .chevron {
+      transform: rotate(180deg);
+    }
+
+    .sidebar-content {
+      padding: 20px;
+    }
+
+    /* stats card */
+    .stats-card {
+      background: #f6faff;
+      border-radius: 24px;
+      padding: 18px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .electron-badge {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: #3b82f6;
+      font-family: monospace;
+    }
+
+    .config-code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #ffffff;
+      padding: 10px;
+      border-radius: 18px;
+      font-size: 0.7rem;
+      margin: 12px 0;
+      word-break: break-word;
+      border: 1px solid #e2edf7;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.7rem;
+      margin-top: 8px;
+    }
+
+    .noble {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .reactive {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    /* buttons group */
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 18px 0 8px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 60px;
+      border: 1.5px solid #d4e2fa;
+      background: white;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #2c6288;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      border-color: #3b82f6;
+      color: white;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .logo {
+      font-weight: 700;
+      font-size: 1.2rem;
+      background: linear-gradient(135deg, #1f4870, #2c6288);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .menu-btn {
+      background: #eef3fc;
+      border: none;
+      border-radius: 40px;
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #1f4870;
+      cursor: pointer;
+    }
+
+    @media (min-width: 780px) {
+      .menu-btn {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
-<div class="grid">
-  <div class="panel">
-    <h2>⚛️ electron configuration</h2>
-    <div class="stack" id="orbitalStack"></div>
-    <div style="display:flex;gap:12px;margin-top:12px;font-size:0.75rem;color:#3a628c"><span>↑ spin up</span><span>↓ spin down</span></div>
+<div class="app">
+  <div class="top-bar">
+    <div class="logo">⚛️ 4f · orbital builder</div>
+    <button class="menu-btn" id="hamburgerBtn">☰ config</button>
   </div>
-  <div>
-    <div class="panel">
-      <div class="stat-card"><div style="font-size:0.7rem;color:#3a628c">electrons</div><div class="electron-count" id="eCount">0</div>
-      <div style="font-size:0.7rem;color:#3a628c;margin-top:8px">configuration</div><div class="config" id="configDisplay">—</div>
-      <div id="statusDisplay" class="status reactive">reactive</div></div>
-      <button class="btn" id="clearBtn">🗑️ clear</button>
-      <button class="btn btn-primary" id="feBtn">Fe (26)</button>
-      <button class="btn" id="krBtn">Kr (36)</button>
+
+  <div class="dashboard">
+    <!-- MAIN ORBITALS VIEW (interactive) -->
+    <div class="orbital-panel">
+      <h2>🔬 electron orbitals</h2>
+      <div class="orbitals-container" id="orbitalsContainer"></div>
+      <div class="legend-mini">
+        <span>↑ spin up</span>
+        <span>↓ spin down</span>
+        <span>👆 tap orbital</span>
+      </div>
+    </div>
+
+    <!-- RIGHT SIDEBAR (collapsible on mobile) -->
+    <div class="info-sidebar collapsed" id="controlSidebar">
+      <div class="sidebar-header" id="sidebarHeader">
+        <h3>⚛️ config & controls</h3>
+        <span class="chevron" id="chevIcon">▼</span>
+      </div>
+      <div class="sidebar-content">
+        <div class="stats-card">
+          <div style="font-size:0.7rem; letter-spacing:1px;">TOTAL ELECTRONS</div>
+          <div class="electron-badge" id="electronCount">0</div>
+          <div class="config-code" id="configText">—</div>
+          <div>
+            <span class="status-pill reactive" id="statusBadge">reactive</span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="btn" id="clearBtn">🗑️ clear all</button>
+          <button class="btn btn-primary" id="fePreset">Fe (26)</button>
+          <button class="btn" id="krPreset">Kr (36)</button>
+          <button class="btn" id="laPreset">La (57) · 4f start</button>
+        </div>
+        <div style="font-size:0.65rem; text-align:center; color:#8aaec0; margin-top:12px;">
+          Hund's rule · each orbital gets one ↑ before pairing
+        </div>
+      </div>
     </div>
   </div>
 </div>
+
 <script>
-(function(){
-  const subs=[{id:'1s',sz:1},{id:'2s',sz:1},{id:'2p',sz:3},{id:'3s',sz:1},{id:'3p',sz:3},{id:'4s',sz:1},{id:'3d',sz:5},{id:'4p',sz:3},{id:'5s',sz:1},{id:'4d',sz:5},{id:'4f',sz:11}];
-  let state={}; subs.forEach(s=>state[s.id]=Array(s.sz).fill(0));
-  const noble=new Set([2,10,18,36,54,86,118]);
-  const stack=document.getElementById('orbitalStack'),eCount=document.getElementById('eCount'),configD=document.getElementById('configDisplay'),statusD=document.getElementById('statusDisplay');
-  
-  function render(){
-    stack.innerHTML=''; subs.forEach(s=>{const r=document.createElement('div');r.className='subshell';
-      const l=document.createElement('div');l.className='label';l.textContent=s.id;
-      const b=document.createElement('div');b.className='boxes';b.id=`b-${s.id}`; r.appendChild(l);r.appendChild(b);stack.appendChild(r);
-      for(let i=0;i<s.sz;i++){const box=document.createElement('div');box.className='box';box.onclick=()=>click(s.id,i);b.appendChild(box)}}); update()
-  }
-  
-  function click(id,i){
-    const a=state[id],v=a[i]; if(v===0)a[i]=1; else if(v===1){if(a.some(x=>x===0)){alert('Hund: fill each orbital once first');return}a[i]=2}else a[i]=0; update()
-  }
-  
-  function update(){
-    let total=0,parts=[]; subs.forEach(s=>{const a=state[s.id];let cnt=0; const boxes=document.getElementById(`b-${s.id}`).children;
-      a.forEach((v,i)=>{const b=boxes[i]; b.innerHTML=''; if(v>=1){const u=document.createElement('span');u.className='arrow up';u.textContent='↑';b.appendChild(u)} if(v===2){const d=document.createElement('span');d.className='arrow down';d.textContent='↓';b.appendChild(d)} cnt+=v});
-      total+=cnt; if(cnt)parts.push(`${s.id}${cnt}`)});
-    eCount.textContent=total; configD.textContent=parts.join(' · ')||'—';
-    statusD.textContent=noble.has(total)?'✨ noble':'⚡ reactive'; statusD.className=noble.has(total)?'status noble':'status reactive';
-  }
-  
-  function clear(){Object.keys(state).forEach(k=>state[k].fill(0)); update()}
-  function aufbau(n){clear(); const order=['1s','2s','2p','3s','3p','4s','3d','4p','5s','4d']; let rem=n;
-    for(let id of order){const a=state[id]; if(!a)continue; for(let i=0;i<a.length&&rem>0;i++){if(rem>=2){if(a[i]===0){a[i]=1;rem--} if(a[i]===1){a[i]=2;rem--}}else if(rem===1){if(a[i]===0){a[i]=1;rem--}}}} update()}
-  
-  document.getElementById('clearBtn').onclick=clear;
-  document.getElementById('feBtn').onclick=()=>aufbau(26);
-  document.getElementById('krBtn').onclick=()=>aufbau(36);
-  render();
-})();
+  (function() {
+    // --- Updated subshell list (up to 4f region, minimal but precise)
+    const subshells = [
+      { id: '1s', size: 1 },
+      { id: '2s', size: 1 },
+      { id: '2p', size: 3 },
+      { id: '3s', size: 1 },
+      { id: '3p', size: 3 },
+      { id: '4s', size: 1 },
+      { id: '3d', size: 5 },
+      { id: '4p', size: 3 },
+      { id: '5s', size: 1 },
+      { id: '4d', size: 5 },
+      { id: '4f', size: 7 }      // 4f has 7 orbitals (max 14 e⁻)
+    ];
+
+    // state: each orbital value: 0 empty, 1 half (↑), 2 full (↑↓)
+    let orbitalState = {};
+    subshells.forEach(sh => {
+      orbitalState[sh.id] = new Array(sh.size).fill(0);
+    });
+
+    // noble gas sets (magic numbers)
+    const nobleSet = new Set([2, 10, 18, 36, 54, 86, 118]);
+
+    // DOM elements
+    const container = document.getElementById('orbitalsContainer');
+    const electronCountSpan = document.getElementById('electronCount');
+    const configTextSpan = document.getElementById('configText');
+    const statusBadge = document.getElementById('statusBadge');
+
+    const clearBtn = document.getElementById('clearBtn');
+    const feBtn = document.getElementById('fePreset');
+    const krBtn = document.getElementById('krPreset');
+    const laBtn = document.getElementById('laPreset');
+    const sidebar = document.getElementById('controlSidebar');
+    const sidebarHeader = document.getElementById('sidebarHeader');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+
+    // --- Helper: count total electrons
+    function getTotalElectrons() {
+      let total = 0;
+      subshells.forEach(sh => {
+        const arr = orbitalState[sh.id];
+        total += arr.reduce((sum, val) => sum + val, 0);
+      });
+      return total;
+    }
+
+    // --- Build configuration string (compact)
+    function getConfigString() {
+      const parts = [];
+      subshells.forEach(sh => {
+        const arr = orbitalState[sh.id];
+        const count = arr.reduce((s, v) => s + v, 0);
+        if (count > 0) parts.push(`${sh.id}${count}`);
+      });
+      return parts.join(' · ') || 'empty';
+    }
+
+    // --- Check if we can add an electron respecting Hund's rule
+    function canAddToOrbital(subId, idx) {
+      const orbitals = orbitalState[subId];
+      const currentVal = orbitals[idx];
+      if (currentVal === 0) return true;    // empty -> can add up
+      if (currentVal === 1) {
+        // we can add down only if no other orbital in same subshell is empty (Hund)
+        const hasEmpty = orbitals.some(v => v === 0);
+        if (hasEmpty) return false;   // another orbital still empty — prefer half-fill first
+        return true;                  // all half-filled, then allow pairing
+      }
+      return false; // already full (2)
+    }
+
+    // --- Toggle orbital click: 0 -> 1 -> 2 -> 0, respecting Hund
+    function toggleOrbital(subId, idx) {
+      const orbitals = orbitalState[subId];
+      const current = orbitals[idx];
+      if (current === 0) {
+        // add ↑
+        orbitals[idx] = 1;
+      } 
+      else if (current === 1) {
+        // try to add ↓ only if Hund satisfied (no empty orbitals left in this subshell)
+        const hasEmpty = orbitals.some(v => v === 0);
+        if (!hasEmpty) {
+          orbitals[idx] = 2;
+        } else {
+          // alert silently? we show no alert, but just ignore (keep UI responsive)
+          return false;
+        }
+      } 
+      else if (current === 2) {
+        orbitals[idx] = 0;   // remove electron
+      }
+      return true;
+    }
+
+    // --- Render UI completely (orbitals, stats)
+    function renderOrbitals() {
+      container.innerHTML = '';
+      subshells.forEach(sh => {
+        const row = document.createElement('div');
+        row.className = 'subshell-row';
+        
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'subshell-label';
+        labelDiv.textContent = sh.id;
+        
+        const boxesDiv = document.createElement('div');
+        boxesDiv.className = 'orbital-boxes';
+        
+        const orbitalsArr = orbitalState[sh.id];
+        for (let i = 0; i < orbitalsArr.length; i++) {
+          const val = orbitalsArr[i];
+          const orbDiv = document.createElement('div');
+          orbDiv.className = 'orbital';
+          
+          if (val > 0) {
+            const upSpan = document.createElement('span');
+            upSpan.className = 'arrow arrow-up';
+            upSpan.textContent = '↑';
+            orbDiv.appendChild(upSpan);
+            if (val === 2) {
+              const downSpan = document.createElement('span');
+              downSpan.className = 'arrow arrow-down';
+              downSpan.textContent = '↓';
+              orbDiv.appendChild(downSpan);
+            }
+          }
+          // click event
+          orbDiv.addEventListener('click', (function(sub, index) {
+            return function() {
+              const success = toggleOrbital(sub, index);
+              if (success !== false) {
+                updateAllStatsAndRender();
+              } else {
+                // optional subtle hint but no disruptive alert (clean)
+                orbDiv.style.transform = 'scale(0.95)';
+                setTimeout(() => { orbDiv.style.transform = ''; }, 120);
+              }
+            };
+          })(sh.id, i));
+          
+          boxesDiv.appendChild(orbDiv);
+        }
+        
+        row.appendChild(labelDiv);
+        row.appendChild(boxesDiv);
+        container.appendChild(row);
+      });
+    }
+    
+    function updateStats() {
+      const total = getTotalElectrons();
+      electronCountSpan.textContent = total;
+      configTextSpan.textContent = getConfigString();
+      const isNoble = nobleSet.has(total);
+      statusBadge.textContent = isNoble ? '✨ noble gas' : '⚡ reactive';
+      statusBadge.className = `status-pill ${isNoble ? 'noble' : 'reactive'}`;
+    }
+    
+    function updateAllStatsAndRender() {
+      renderOrbitals();
+      updateStats();
+    }
+    
+    // --- Aufbau / preset loader (respects Hund and Pauli)
+    function loadElectronConfiguration(targetElectrons) {
+      // reset state fully
+      subshells.forEach(sh => {
+        orbitalState[sh.id] = new Array(sh.size).fill(0);
+      });
+      
+      if (targetElectrons === 0) {
+        updateAllStatsAndRender();
+        return;
+      }
+      
+      const fillingOrder = ['1s','2s','2p','3s','3p','4s','3d','4p','5s','4d','4f'];
+      let remaining = targetElectrons;
+      
+      for (let subId of fillingOrder) {
+        const subData = subshells.find(s => s.id === subId);
+        if (!subData) continue;
+        const orbitals = orbitalState[subId];
+        const orbCount = orbitals.length;
+        
+        // step 1: fill each orbital with one electron (Hund)
+        for (let i = 0; i < orbCount && remaining > 0; i++) {
+          if (orbitals[i] === 0) {
+            orbitals[i] = 1;
+            remaining--;
+          }
+        }
+        // step 2: pair electrons if still remaining
+        for (let i = 0; i < orbCount && remaining > 0; i++) {
+          if (orbitals[i] === 1) {
+            orbitals[i] = 2;
+            remaining--;
+          }
+        }
+        if (remaining === 0) break;
+      }
+      updateAllStatsAndRender();
+    }
+    
+    // --- clear everything
+    function clearAll() {
+      loadElectronConfiguration(0);
+    }
+    
+    // --- preset handlers
+    function setFe() { loadElectronConfiguration(26); }
+    function setKr() { loadElectronConfiguration(36); }
+    function setLa() { loadElectronConfiguration(57); }  // start of 4f elements
+    
+    // --- Sidebar collapse (mobile + hamburger)
+    function toggleSidebar() {
+      if (window.innerWidth < 780) {
+        sidebar.classList.toggle('collapsed');
+      } else {
+        sidebar.classList.remove('collapsed');
+      }
+    }
+    
+    // --- Event binding
+    clearBtn.addEventListener('click', clearAll);
+    feBtn.addEventListener('click', setFe);
+    krBtn.addEventListener('click', setKr);
+    laBtn.addEventListener('click', setLa);
+    
+    sidebarHeader.addEventListener('click', toggleSidebar);
+    if (hamburgerBtn) hamburgerBtn.addEventListener('click', toggleSidebar);
+    
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 780) sidebar.classList.remove('collapsed');
+      else sidebar.classList.add('collapsed');
+    });
+    
+    // initial render (empty config)
+    loadElectronConfiguration(0);
+  })();
 </script>
 </body>
 </html>

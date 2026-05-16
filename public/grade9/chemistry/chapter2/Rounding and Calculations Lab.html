@@ -2,165 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🔢 precision rounding · touch lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>rounding · precision viz</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
     }
 
     :root {
-      --bg-page: #ffffff;
+      --bg: #ffffff;
       --surface: #fafcff;
-      --border-light: #d0e2ff;
-      --text-dark: #0a1e3c;
-      --text-soft: #3a628c;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text-light: #475569;
       --accent: #3b82f6;
       --marker: #f59e0b;
       --success: #10b981;
-      --shadow-card: 0 8px 24px rgba(0,0,0,0.04);
+      --shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg-page);
-      color: var(--text-dark);
-      min-height: 100dvh;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 16px;
     }
 
-    .app-card {
+    .card {
       width: 100%;
-      max-width: 700px;
+      max-width: 720px;
       background: var(--surface);
-      border-radius: 32px;
-      border: 1px solid var(--border-light);
-      box-shadow: var(--shadow-card);
-      padding: 24px;
+      border-radius: 28px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+      overflow: hidden;
     }
 
-    h2 {
-      font-weight: 700;
-      font-size: 1.5rem;
-      letter-spacing: -0.02em;
-      color: var(--text-dark);
-      margin-bottom: 4px;
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
     }
 
-    .subhead {
-      color: var(--text-soft);
-      margin-bottom: 20px;
+    .tab {
+      flex: 1;
+      padding: 16px 12px;
+      text-align: center;
+      font-weight: 600;
       font-size: 0.9rem;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--text-light);
+      transition: all 0.2s;
+      border: none;
     }
 
-    .input-area {
+    .tab.active {
+      color: var(--accent);
+      border-bottom: 2px solid var(--accent);
+      background: white;
+    }
+
+    /* Tab content */
+    .tab-content {
+      display: none;
+      padding: 24px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Input group */
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .flex-row {
       display: flex;
-      flex-direction: column;
       gap: 12px;
-      margin-bottom: 24px;
+      flex-wrap: wrap;
     }
 
-    .number-input {
+    .input-wrapper {
+      flex: 2;
       display: flex;
-      align-items: center;
-      background: #f0f6ff;
+      background: #f8fafc;
+      border: 1.5px solid var(--border);
       border-radius: 60px;
       padding: 4px 4px 4px 20px;
-      border: 1.5px solid var(--border-light);
     }
 
-    .number-input input {
+    .input-wrapper input {
       flex: 1;
       background: transparent;
       border: none;
-      font-size: 1.2rem;
-      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-family: 'SF Mono', 'JetBrains Mono', monospace;
       padding: 12px 0;
       outline: none;
-      color: var(--text-dark);
     }
 
-    .number-input button {
+    button {
       background: var(--accent);
       color: white;
       border: none;
-      padding: 14px 24px;
+      padding: 12px 24px;
       border-radius: 60px;
       font-weight: 600;
-      font-size: 1rem;
       cursor: pointer;
+      transition: transform 0.1s;
     }
 
-    .precision-selector {
+    button:active {
+      transform: scale(0.97);
+    }
+
+    /* Precision controls */
+    .precision-box {
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    .precision-header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      padding: 8px 4px;
-    }
-
-    .precision-label {
-      font-weight: 500;
-      color: var(--text-soft);
-    }
-
-    .precision-control {
-      display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 12px;
     }
 
-    .precision-btn {
+    .precision-buttons {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .prec-btn {
       width: 44px;
       height: 44px;
       border-radius: 30px;
-      border: 1.5px solid var(--border-light);
+      border: 1.5px solid var(--border);
       background: white;
       font-size: 22px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       color: var(--accent);
     }
 
-    .precision-btn:active {
-      background: var(--accent);
-      color: white;
-    }
-
-    .precision-value {
+    .prec-value {
       font-weight: 700;
-      font-size: 1.1rem;
+      font-size: 1rem;
       min-width: 70px;
       text-align: center;
-      color: var(--accent);
+    }
+
+    /* Number line visualization */
+    .viz-container {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 20px 16px;
+      margin: 20px 0;
+      border: 1px solid var(--border);
     }
 
     .number-line {
       position: relative;
-      height: 120px;
-      background: #f8fcff;
-      border-radius: 20px;
-      margin: 20px 0;
+      height: 100px;
       display: flex;
       align-items: center;
-      padding: 0 40px;
-      border: 1px solid var(--border-light);
+      padding: 0 20px;
     }
 
     .line-track {
       width: 100%;
       height: 4px;
-      background: #d0e2ff;
+      background: #cbd5e1;
       border-radius: 4px;
       position: relative;
     }
@@ -170,215 +205,364 @@
       top: -28px;
       transform: translateX(-50%);
       font-weight: 600;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       color: var(--accent);
       white-space: nowrap;
     }
 
-    .midpoint {
+    .mid-marker {
       position: absolute;
       top: 18px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 0.7rem;
-      color: var(--text-soft);
+      font-size: 0.65rem;
+      color: var(--text-light);
     }
 
-    #marker {
+    #markerDot {
       position: absolute;
       top: -14px;
       width: 32px;
       height: 32px;
       background: var(--marker);
       border-radius: 50%;
-      box-shadow: 0 4px 16px var(--marker);
+      box-shadow: 0 2px 12px rgba(245,158,11,0.4);
       border: 3px solid white;
-      transition: left 0.4s ease;
-      z-index: 10;
+      transition: left 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1);
       transform: translateX(-50%);
+      cursor: pointer;
     }
 
-    .result-panel {
-      background: #f0f6ff;
-      border-radius: 24px;
+    /* Result panel */
+    .result {
+      background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+      border-radius: 20px;
       padding: 20px;
       text-align: center;
       margin: 16px 0;
+      border: 1px solid var(--border);
     }
 
-    .rounded-value {
-      font-size: 2.5rem;
+    .rounded-big {
+      font-size: 2.2rem;
       font-weight: 700;
-      font-family: 'JetBrains Mono', monospace;
+      font-family: monospace;
       color: var(--success);
       margin: 8px 0;
     }
 
-    .explanation {
-      color: var(--text-soft);
-      font-size: 0.9rem;
+    .explain {
+      color: var(--text-light);
+      font-size: 0.85rem;
       line-height: 1.5;
     }
 
-    .insight-btn {
+    /* Accordion for insight */
+    .accordion {
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .accordion-trigger {
       width: 100%;
-      padding: 14px;
-      border-radius: 40px;
-      border: 1.5px solid var(--border-light);
-      background: white;
-      font-weight: 600;
-      cursor: pointer;
+      background: transparent;
       color: var(--accent);
+      padding: 16px;
+      text-align: left;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 0;
     }
 
-    .insight-btn:active {
-      background: #f0f6ff;
+    .accordion-trigger span:first-child {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
-    @media (max-width: 500px) {
-      .number-input { flex-direction: column; padding: 12px; gap: 8px; }
-      .number-input input { text-align: center; }
-      .number-input button { width: 100%; }
+    .accordion-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: #f8fafc;
+      border-radius: 16px;
+      margin: 0 16px 16px 16px;
+    }
+
+    .accordion-body.open {
+      max-height: 200px;
+      padding: 16px;
+    }
+
+    .insight-text {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 550px) {
+      .tab-content { padding: 20px; }
+      .flex-row { flex-direction: column; }
+      .input-wrapper { padding: 4px 16px; }
+      button { width: 100%; }
+      .precision-header { flex-direction: column; align-items: stretch; }
+      .precision-buttons { justify-content: center; }
+      .rounded-big { font-size: 1.6rem; }
     }
   </style>
 </head>
 <body>
 
-<div class="app-card">
-  <h2>🔢 precision rounding</h2>
-  <div class="subhead">zoom in · see the rounding decision</div>
+<div class="card">
+  <div class="tabs">
+    <button class="tab active" data-tab="main">🎯 rounder</button>
+    <button class="tab" data-tab="practice">📝 quick test</button>
+  </div>
 
-  <div class="input-area">
-    <div class="number-input">
-      <input type="text" id="numberInput" value="3.1415926535" inputmode="decimal">
-      <button id="analyzeBtn">analyze</button>
+  <!-- MAIN TAB -->
+  <div class="tab-content active" id="mainTab">
+    <div class="input-group">
+      <div class="flex-row">
+        <div class="input-wrapper">
+          <input type="text" id="numberInput" value="3.1415926535" inputmode="decimal">
+        </div>
+        <button id="analyzeBtn">round</button>
+      </div>
     </div>
 
-    <div class="precision-selector">
-      <span class="precision-label">decimal places</span>
-      <div class="precision-control">
-        <div class="precision-btn" id="precDown">−</div>
-        <span class="precision-value" id="precDisplay">2 places</span>
-        <div class="precision-btn" id="precUp">+</div>
+    <div class="precision-box">
+      <div class="precision-header">
+        <span style="font-weight:500;">decimal places</span>
+        <div class="precision-buttons">
+          <button class="prec-btn" id="precMinus">−</button>
+          <span class="prec-value" id="precDisplay">2</span>
+          <button class="prec-btn" id="precPlus">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="viz-container">
+      <div class="number-line">
+        <div class="line-track">
+          <span class="endpoint" id="leftEnd" style="left:0%;">0.00</span>
+          <span class="endpoint" id="rightEnd" style="left:100%;">1.00</span>
+          <span class="mid-marker">▼ midpoint (5)</span>
+          <div id="markerDot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result">
+      <div style="font-size:0.7rem; text-transform:uppercase; letter-spacing:1px;">rounded</div>
+      <div class="rounded-big" id="roundedVal">3.14</div>
+      <div class="explain" id="explainText">—</div>
+    </div>
+
+    <div class="accordion">
+      <button class="accordion-trigger" id="insightBtn">
+        <span>💡 rounding rule</span>
+        <span>▼</span>
+      </button>
+      <div class="accordion-body" id="insightBody">
+        <div class="insight-text">
+          🔍 <strong>how it works:</strong> look at the digit after your target place.<br>
+          • ≥5 → round up<br>
+          • ≤4 → round down<br>
+          📍 the marker shows your number's exact position between two possible rounded values.
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="number-line">
-    <div class="line-track">
-      <span class="endpoint" id="leftEndpoint" style="left:0;">0.00</span>
-      <span class="endpoint" id="rightEndpoint" style="left:100%;">1.00</span>
-      <span class="midpoint">⚫ midpoint (5)</span>
-      <div id="marker"></div>
+  <!-- PRACTICE TAB (mini quiz) -->
+  <div class="tab-content" id="practiceTab">
+    <div style="margin-bottom: 20px;">
+      <p style="font-weight:500; margin-bottom:12px;">round to 2 decimals:</p>
+      <div style="background:#f8fafc; border-radius:16px; padding:20px; text-align:center;">
+        <div style="font-size:1.8rem; font-family:monospace; margin-bottom:16px;" id="quizNumber">4.5678</div>
+        <input type="text" id="quizAnswer" placeholder="type rounded number" style="width:100%; padding:12px; border:1.5px solid var(--border); border-radius:60px; margin-bottom:12px; font-family:monospace;">
+        <div class="flex-row" style="gap:8px;">
+          <button id="checkQuiz" style="flex:1;">check ✓</button>
+          <button id="newQuiz" style="flex:1; background:#94a3b8;">new ↻</button>
+        </div>
+        <div id="quizFeedback" style="margin-top:16px; font-size:0.85rem; color:var(--text-light);"></div>
+      </div>
+    </div>
+    <div class="accordion-body open" style="max-height:100px; padding:12px; margin-top:12px;">
+      <div class="insight-text">💡 tip: 2 decimal places = hundredths. check the thousandths digit!</div>
     </div>
   </div>
-
-  <div class="result-panel">
-    <div style="font-size:0.7rem; text-transform:uppercase; color:var(--text-soft);">rounded value</div>
-    <div class="rounded-value" id="roundedDisplay">3.14</div>
-    <div class="explanation" id="explanationText">
-      Looking at the thousandths place (1) → round down
-    </div>
-  </div>
-
-  <button class="insight-btn" id="insightBtn">💡 learning insight</button>
 </div>
 
 <script>
-  (function(){
+  (function() {
+    // DOM elements
     const numberInput = document.getElementById('numberInput');
-    const precDisplay = document.getElementById('precDisplay');
-    const leftEndpoint = document.getElementById('leftEndpoint');
-    const rightEndpoint = document.getElementById('rightEndpoint');
-    const marker = document.getElementById('marker');
-    const roundedDisplay = document.getElementById('roundedDisplay');
-    const explanationText = document.getElementById('explanationText');
-    
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const precMinus = document.getElementById('precMinus');
+    const precPlus = document.getElementById('precPlus');
+    const precDisplaySpan = document.getElementById('precDisplay');
+    const leftEnd = document.getElementById('leftEnd');
+    const rightEnd = document.getElementById('rightEnd');
+    const markerDot = document.getElementById('markerDot');
+    const roundedValDiv = document.getElementById('roundedVal');
+    const explainText = document.getElementById('explainText');
+    const insightBtn = document.getElementById('insightBtn');
+    const insightBody = document.getElementById('insightBody');
+
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab');
+    const contents = {
+      main: document.getElementById('mainTab'),
+      practice: document.getElementById('practiceTab')
+    };
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.tab;
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        Object.values(contents).forEach(c => c.classList.remove('active'));
+        if (target === 'main') contents.main.classList.add('active');
+        else contents.practice.classList.add('active');
+      });
+    });
+
     let currentPrecision = 2;
-    const maxPrecision = 8;
-    
-    const placeNames = ['whole', 'tenths', 'hundredths', 'thousandths', 'ten-thousandths', 'hundred-thousandths', 'millionths', 'ten-millionths', 'hundred-millionths'];
-    
-    function updatePrecisionDisplay() {
-      precDisplay.textContent = `${currentPrecision} ${currentPrecision === 1 ? 'place' : 'places'}`;
+    const maxPrecision = 7;
+
+    function updatePrecDisplay() {
+      precDisplaySpan.textContent = currentPrecision;
     }
-    
+
+    function getPlaceName(prec) {
+      const names = ['whole', 'tenths', 'hundredths', 'thousandths', 'ten-thousandths', 'hundred-thousandths', 'millionths'];
+      return names[prec] || `${prec}th place`;
+    }
+
     function analyze() {
-      const inputStr = numberInput.value.trim();
-      const val = parseFloat(inputStr);
-      
+      const raw = numberInput.value.trim();
+      const val = parseFloat(raw);
       if (isNaN(val)) {
-        roundedDisplay.textContent = '—';
-        explanationText.textContent = 'Please enter a valid number';
+        roundedValDiv.textContent = '?';
+        explainText.innerHTML = 'enter a valid number';
+        markerDot.style.left = '50%';
+        leftEnd.textContent = '—';
+        rightEnd.textContent = '—';
         return;
       }
-      
-      // calculate rounded value
+
       const rounded = val.toFixed(currentPrecision);
-      roundedDisplay.textContent = rounded;
-      
-      // calculate boundaries for zoomed view
+      roundedValDiv.textContent = rounded;
+
       const factor = Math.pow(10, currentPrecision);
-      const floor = Math.floor(val * factor) / factor;
-      const ceil = floor + 1 / factor;
+      const floorVal = Math.floor(val * factor) / factor;
+      const ceilVal = floorVal + (1 / factor);
       
-      leftEndpoint.textContent = floor.toFixed(currentPrecision);
-      rightEndpoint.textContent = ceil.toFixed(currentPrecision);
+      leftEnd.textContent = floorVal.toFixed(currentPrecision);
+      rightEnd.textContent = ceilVal.toFixed(currentPrecision);
       
-      // marker position
-      const range = ceil - floor;
-      let percent = range > 0 ? ((val - floor) / range) * 100 : 50;
-      percent = Math.max(-2, Math.min(102, percent));
-      marker.style.left = percent + '%';
-      
-      // explanation
-      const parts = inputStr.split('.');
+      const range = ceilVal - floorVal;
+      let percent = range > 0 ? ((val - floorVal) / range) * 100 : 50;
+      percent = Math.max(0, Math.min(100, percent));
+      markerDot.style.left = percent + '%';
+
+      // Build explanation
+      const strVal = val.toString();
+      const parts = strVal.split('.');
       let msg = '';
       
-      if (parts.length < 2 || parts[1].length <= currentPrecision) {
-        msg = `The number already has ≤ ${currentPrecision} decimal places. No rounding needed.`;
+      if (parts.length === 1 || (parts[1] && parts[1].length <= currentPrecision)) {
+        msg = `✅ already has ≤ ${currentPrecision} decimal places. no change.`;
       } else {
-        const criticalDigit = parts[1][currentPrecision];
-        const criticalNum = parseInt(criticalDigit);
-        const direction = criticalNum >= 5 ? 'up' : 'down';
-        const placeName = placeNames[currentPrecision] || `${currentPrecision}th`;
-        
-        msg = `Looking at the ${placeName} place: <strong>${criticalDigit}</strong> → round ${direction}.`;
+        const decimals = parts[1] || '';
+        if (decimals.length > currentPrecision) {
+          const criticalDigit = decimals[currentPrecision];
+          const digitNum = parseInt(criticalDigit);
+          const direction = digitNum >= 5 ? 'up ⬆' : 'down ⬇';
+          const place = getPlaceName(currentPrecision);
+          msg = `🔍 look at ${place}: <strong>${criticalDigit}</strong> → round ${direction}. result: ${rounded}`;
+        } else {
+          msg = `rounded to ${currentPrecision} decimals → ${rounded}`;
+        }
       }
-      
-      explanationText.innerHTML = msg;
+      explainText.innerHTML = msg;
     }
-    
-    document.getElementById('precUp').addEventListener('click', () => {
+
+    // Precision controls
+    precPlus.addEventListener('click', () => {
       if (currentPrecision < maxPrecision) {
         currentPrecision++;
-        updatePrecisionDisplay();
+        updatePrecDisplay();
         analyze();
       }
     });
-    
-    document.getElementById('precDown').addEventListener('click', () => {
+    precMinus.addEventListener('click', () => {
       if (currentPrecision > 0) {
         currentPrecision--;
-        updatePrecisionDisplay();
+        updatePrecDisplay();
         analyze();
       }
     });
-    
-    document.getElementById('analyzeBtn').addEventListener('click', analyze);
-    numberInput.addEventListener('change', analyze);
-    
-    document.getElementById('insightBtn').addEventListener('click', () => {
-      alert('📐 ROUNDING INSIGHT\n\n' +
-            '• As you increase decimal places, you are "zooming in" on a smaller slice of the number line.\n\n' +
-            '• The marker shows exactly where your number falls between two possible rounded values.\n\n' +
-            '• Standard rounding: ≥ 5 rounds up, < 5 rounds down.\n\n' +
-            '• This is the same logic used in calculators, spreadsheets, and scientific measurements.');
+    analyzeBtn.addEventListener('click', analyze);
+    numberInput.addEventListener('input', analyze);
+
+    // Accordion insight
+    let insightOpen = false;
+    insightBtn.addEventListener('click', (e) => {
+      insightOpen = !insightOpen;
+      if (insightOpen) {
+        insightBody.classList.add('open');
+        insightBtn.querySelector('span:last-child').textContent = '▲';
+      } else {
+        insightBody.classList.remove('open');
+        insightBtn.querySelector('span:last-child').textContent = '▼';
+      }
     });
-    
+
+    // Practice tab logic
+    const quizNumberSpan = document.getElementById('quizNumber');
+    const quizAnswer = document.getElementById('quizAnswer');
+    const checkQuizBtn = document.getElementById('checkQuiz');
+    const newQuizBtn = document.getElementById('newQuiz');
+    const quizFeedback = document.getElementById('quizFeedback');
+
+    let currentQuizNum = 4.5678;
+
+    function generateQuizNumber() {
+      const rand = (Math.random() * 18 + 1.2).toFixed(5);
+      currentQuizNum = parseFloat(rand);
+      quizNumberSpan.textContent = currentQuizNum;
+      quizAnswer.value = '';
+      quizFeedback.innerHTML = '';
+    }
+
+    function checkQuiz() {
+      const userAnswer = parseFloat(quizAnswer.value.trim());
+      if (isNaN(userAnswer)) {
+        quizFeedback.innerHTML = '❌ enter a number';
+        return;
+      }
+      const correct = currentQuizNum.toFixed(2);
+      const userFixed = userAnswer.toFixed(2);
+      if (userFixed === correct) {
+        quizFeedback.innerHTML = '✓ correct! great rounding.';
+        quizFeedback.style.color = '#10b981';
+      } else {
+        quizFeedback.innerHTML = `✗ not yet. correct: ${correct}`;
+        quizFeedback.style.color = '#ef4444';
+      }
+    }
+
+    checkQuizBtn.addEventListener('click', checkQuiz);
+    newQuizBtn.addEventListener('click', generateQuizNumber);
+
     // initial
-    updatePrecisionDisplay();
+    updatePrecDisplay();
     analyze();
+    generateQuizNumber();
   })();
 </script>
 </body>

@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🧊 states of matter · solid liquid gas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>🧊 States of Matter · Solid Liquid Gas</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
     * {
       margin: 0;
       padding: 0;
@@ -14,147 +12,158 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    :root {
-      --bg-page: #ffffff;
-      --surface: #fafcff;
-      --border-light: #d0e2ff;
-      --text-dark: #0a1e3c;
-      --accent: #3b82f6;
-      --solid: #4a6fa5;
-      --liquid: #166088;
-      --gas: #17a2b8;
-      --shadow-card: 0 12px 30px rgba(0,0,0,0.04);
-    }
-
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg-page);
-      color: var(--text-dark);
+      font-family: system-ui, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4fa;
       height: 100dvh;
-      display: flex;
-      flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
 
     #canvas-container {
-      flex: 1;
-      position: relative;
-      background: radial-gradient(circle at center, #f8fafc 0%, #e8f2ff 100%);
-    }
-
-    canvas {
-      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      touch-action: none;
+      z-index: 1;
     }
 
-    .state-badge {
+    /* UI overlays - glassmorphic, minimal */
+    .ui-layer {
       position: absolute;
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    /* state badge (center top) */
+    .state-badge {
       top: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(8px);
-      padding: 12px 32px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
       border-radius: 60px;
-      font-weight: 700;
+      padding: 10px 28px;
+      font-weight: 800;
       font-size: 1.2rem;
-      border: 1px solid var(--border-light);
-      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(59,130,246,0.3);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.03);
+      white-space: nowrap;
+      letter-spacing: -0.2px;
     }
 
-    .legend {
-      position: absolute;
+    /* legend left */
+    .legend-panel {
       top: 20px;
       left: 20px;
-      background: rgba(255,255,255,0.95);
-      padding: 12px 20px;
-      border-radius: 40px;
-      border: 1px solid var(--border-light);
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-radius: 60px;
+      padding: 8px 20px;
       display: flex;
       gap: 20px;
+      border: 1px solid rgba(0,0,0,0.08);
     }
-
-    .legend-dot {
+    .legend-item {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 0.8rem;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .color-badge {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
     }
 
-    .control-bar {
-      position: absolute;
+    /* temperature control bar (bottom center) */
+    .temp-controls {
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(255,255,255,0.95);
-      backdrop-filter: blur(12px);
-      padding: 16px 28px;
-      border-radius: 60px;
-      border: 1px solid var(--border-light);
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(20px);
+      border-radius: 80px;
+      padding: 12px 28px;
       display: flex;
       gap: 20px;
       align-items: center;
-      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(0,0,0,0.06);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.06);
+      pointer-events: auto;
     }
-
     .temp-slider {
-      width: 240px;
-      height: 6px;
-      background: linear-gradient(90deg, var(--solid), var(--liquid), var(--gas));
+      width: 260px;
+      height: 5px;
+      background: linear-gradient(90deg, #4a6fa5, #166088, #17a2b8);
       border-radius: 10px;
       -webkit-appearance: none;
-      appearance: none;
     }
-
     .temp-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       background: white;
-      border-radius: 22px;
-      border: 3px solid var(--accent);
-      cursor: grab;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 50%;
+      border: 2px solid #3b82f6;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
     }
-
     .temp-value {
       font-weight: 700;
-      min-width: 50px;
+      min-width: 55px;
       text-align: center;
-      color: var(--accent);
+      color: #1e6fdf;
+      font-size: 0.9rem;
     }
-
-    .btn-group {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn {
-      padding: 10px 18px;
-      border-radius: 40px;
-      border: 1px solid var(--border-light);
-      background: white;
+    .action-btn {
+      background: rgba(240,245,255,0.9);
+      border: none;
+      padding: 8px 18px;
+      border-radius: 60px;
       font-weight: 600;
-      cursor: pointer;
-      color: var(--accent);
-    }
-
-    .hint {
-      position: absolute;
-      bottom: 90px;
-      left: 20px;
-      background: rgba(255,255,255,0.9);
-      padding: 8px 16px;
-      border-radius: 40px;
       font-size: 0.8rem;
-      color: var(--text-dark);
+      cursor: pointer;
+      color: #1e6fdf;
+      transition: 0.08s linear;
+    }
+    .action-btn:active {
+      transform: scale(0.96);
+    }
+    .reset-btn {
+      background: white;
+      border: 1px solid #cbd5e1;
     }
 
-    @media (max-width: 700px) {
-      .control-bar { flex-wrap: wrap; width: 90%; }
-      .temp-slider { width: 100%; }
+    .hint-tip {
+      bottom: 100px;
+      left: 20px;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      padding: 4px 14px;
+      border-radius: 40px;
+      color: white;
+      font-size: 0.7rem;
+      pointer-events: none;
+    }
+
+    @media (max-width: 780px) {
+      .temp-controls { gap: 12px; padding: 10px 20px; width: 92%; flex-wrap: wrap; justify-content: center; }
+      .temp-slider { width: 100%; order: 1; }
+      .temp-value { order: 2; }
+      .action-btn { padding: 6px 14px; }
+      .legend-panel { gap: 12px; padding: 6px 16px; top: 12px; left: 12px; }
+      .state-badge { font-size: 1rem; padding: 6px 20px; top: 12px; }
+      .hint-tip { bottom: 90px; left: 16px; }
+    }
+
+    canvas {
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
     }
   </style>
 </head>
@@ -162,25 +171,24 @@
 
 <div id="canvas-container"></div>
 
-<div class="state-badge" id="stateLabel">🧊 SOLID</div>
+<!-- UI -->
+<div class="ui-layer state-badge" id="stateLabel">🧊 SOLID</div>
 
-<div class="legend">
-  <div class="legend-dot"><span style="color:var(--solid);">●</span> solid</div>
-  <div class="legend-dot"><span style="color:var(--liquid);">●</span> liquid</div>
-  <div class="legend-dot"><span style="color:var(--gas);">●</span> gas</div>
+<div class="ui-layer legend-panel">
+  <div class="legend-item"><div class="color-badge" style="background:#4a6fa5;"></div><span>Solid</span></div>
+  <div class="legend-item"><div class="color-badge" style="background:#166088;"></div><span>Liquid</span></div>
+  <div class="legend-item"><div class="color-badge" style="background:#17a2b8;"></div><span>Gas</span></div>
 </div>
 
-<div class="control-bar">
-  <button class="btn" id="coolBtn">❄️ cool</button>
-  <input type="range" class="temp-slider" id="tempSlider" min="0" max="100" value="20">
-  <span class="temp-value" id="tempValue">20%</span>
-  <button class="btn" id="heatBtn">🔥 heat</button>
-  <div class="btn-group">
-    <button class="btn" id="resetViewBtn">↻</button>
-  </div>
+<div class="ui-layer temp-controls">
+  <button class="action-btn" id="coolBtn">❄️ Cool</button>
+  <input type="range" class="temp-slider" id="tempSlider" min="0" max="100" value="25">
+  <span class="temp-value" id="tempPercent">25%</span>
+  <button class="action-btn" id="heatBtn">🔥 Heat</button>
+  <button class="action-btn reset-btn" id="resetViewBtn">↻ View</button>
 </div>
 
-<div class="hint">👆 drag to rotate · slide to change state</div>
+<div class="ui-layer hint-tip">👆 Drag to rotate · slide temperature</div>
 
 <script type="importmap">
   {
@@ -195,14 +203,16 @@
   import * as THREE from 'three';
   import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+  // --- setup
   const container = document.getElementById('canvas-container');
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#f8fafc');
-  
-  const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-  camera.position.set(0, 6, 16);
+  scene.background = new THREE.Color('#f4f8fe');
+  scene.fog = new THREE.FogExp2(0xf4f8fe, 0.006);
+
+  const camera = new THREE.PerspectiveCamera(44, container.clientWidth / container.clientHeight, 0.1, 40);
+  camera.position.set(0, 3.5, 14.5);
   camera.lookAt(0, 0, 0);
-  
+
   const renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -211,161 +221,293 @@
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
+  controls.dampingFactor = 0.07;
   controls.autoRotate = true;
-  controls.autoRotateSpeed = 0.8;
+  controls.autoRotateSpeed = 0.65;
   controls.enableZoom = true;
-  controls.enablePan = false;
+  controls.enablePan = true;
+  controls.zoomSpeed = 1.0;
+  controls.maxPolarAngle = Math.PI / 2.2;
 
-  // lighting
-  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-  const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-  dirLight.position.set(5, 10, 6);
-  dirLight.castShadow = true;
-  scene.add(dirLight);
-  scene.add(new THREE.PointLight(0xcce0ff, 0.4));
-
-  // containers
-  const glassMat = new THREE.MeshPhongMaterial({ color: '#cbd5e1', transparent: true, opacity: 0.12, side: THREE.DoubleSide });
+  // lighting (clean)
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambient);
+  const mainLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  mainLight.position.set(5, 8, 6);
+  mainLight.castShadow = true;
+  scene.add(mainLight);
+  const fillLight = new THREE.PointLight(0xcce4ff, 0.45);
+  fillLight.position.set(-3, 2, 4);
+  scene.add(fillLight);
+  const rim = new THREE.PointLight(0xffccaa, 0.3);
+  rim.position.set(2, 3, -5);
+  scene.add(rim);
   
-  function createContainer(x, color) {
-    const g = new THREE.Group();
-    const box = new THREE.Mesh(new THREE.BoxGeometry(3.5, 3.5, 3.5), glassMat);
-    box.castShadow = true; box.receiveShadow = true;
-    g.add(box);
-    const edges = new THREE.EdgesGeometry(box.geometry);
-    const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color }));
-    g.add(line);
-    g.position.set(x, 0, 0);
-    return g;
+  // decorative floor grid
+  const gridFloor = new THREE.GridHelper(18, 20, 0xbbd4ff, 0xd4e4ff);
+  gridFloor.position.y = -2.8;
+  gridFloor.material.transparent = true;
+  gridFloor.material.opacity = 0.2;
+  scene.add(gridFloor);
+
+  // --- Create three container boxes (glass-like)
+  function createContainer(xPos, colorHex, labelName) {
+    const group = new THREE.Group();
+    const boxW = 3.4, boxH = 3.4, boxD = 3.4;
+    const glassMat = new THREE.MeshPhongMaterial({ color: '#cbd5e1', transparent: true, opacity: 0.08, side: THREE.DoubleSide });
+    const boxMesh = new THREE.Mesh(new THREE.BoxGeometry(boxW, boxH, boxD), glassMat);
+    boxMesh.castShadow = true;
+    group.add(boxMesh);
+    
+    // edges
+    const edgesGeo = new THREE.EdgesGeometry(boxMesh.geometry);
+    const edgesMat = new THREE.LineBasicMaterial({ color: colorHex });
+    const wireframe = new THREE.LineSegments(edgesGeo, edgesMat);
+    group.add(wireframe);
+    
+    group.position.set(xPos, 0, 0);
+    scene.add(group);
+    return { group, bounds: { minX: -boxW/2, maxX: boxW/2, minY: -boxH/2, maxY: boxH/2, minZ: -boxD/2, maxZ: boxD/2 } };
   }
 
-  const solidCont = createContainer(-4.5, '#4a6fa5');
-  const liquidCont = createContainer(0, '#166088');
-  const gasCont = createContainer(4.5, '#17a2b8');
-  scene.add(solidCont, liquidCont, gasCont);
+  const solidBox = createContainer(-4.6, '#4a6fa5');
+  const liquidBox = createContainer(0, '#166088');
+  const gasBox = createContainer(4.6, '#17a2b8');
 
-  // particles
-  const particles = { solid: [], liquid: [], gas: [] };
-  
-  function createParticle(color, size) {
-    return new THREE.Mesh(new THREE.SphereGeometry(size, 10), new THREE.MeshStandardMaterial({ color, roughness: 0.3 }));
-  }
-
-  // solid lattice
-  for (let x = -1; x <= 1; x+=0.8) {
-    for (let y = -1; y <= 1; y+=0.8) {
-      for (let z = -1; z <= 1; z+=0.8) {
-        const p = createParticle('#4a6fa5', 0.22);
-        p.position.set(x, y, z);
-        p.userData = { base: p.position.clone(), vib: Math.random()*10 };
-        solidCont.add(p);
-        particles.solid.push(p);
+  // --- Particles management
+  // Solid: lattice arrangement with vibration
+  const solidParticles = [];
+  const latticePositions = [];
+  const step = 0.85;
+  for (let x = -1.2; x <= 1.2; x += step) {
+    for (let y = -1.2; y <= 1.2; y += step) {
+      for (let z = -1.2; z <= 1.2; z += step) {
+        const pos = new THREE.Vector3(x, y, z);
+        latticePositions.push(pos.clone());
       }
     }
   }
+  latticePositions.forEach(pos => {
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.22, 20), new THREE.MeshStandardMaterial({ color: '#4a6fa5', roughness: 0.25, metalness: 0.1 }));
+    sphere.position.copy(pos);
+    sphere.userData = { basePos: pos.clone(), offsetSeed: Math.random() * Math.PI * 2 };
+    solidBox.group.add(sphere);
+    solidParticles.push(sphere);
+  });
 
-  // liquid
-  for (let i = 0; i < 60; i++) {
-    const p = createParticle('#166088', 0.2);
-    p.position.set((Math.random()-0.5)*2.8, (Math.random()-0.5)*2.8, (Math.random()-0.5)*2.8);
-    p.userData = { vel: new THREE.Vector3((Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02, (Math.random()-0.5)*0.02) };
-    liquidCont.add(p);
-    particles.liquid.push(p);
+  // Liquid: free moving but confined
+  const liquidParticles = [];
+  const LIQ_COUNT = 65;
+  for (let i = 0; i < LIQ_COUNT; i++) {
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.21, 20), new THREE.MeshStandardMaterial({ color: '#166088', roughness: 0.2 }));
+    sphere.position.set(
+      (Math.random() - 0.5) * 2.8,
+      (Math.random() - 0.5) * 2.8,
+      (Math.random() - 0.5) * 2.8
+    );
+    sphere.userData = {
+      vel: new THREE.Vector3(
+        (Math.random() - 0.5) * 0.022,
+        (Math.random() - 0.5) * 0.022,
+        (Math.random() - 0.5) * 0.022
+      )
+    };
+    liquidBox.group.add(sphere);
+    liquidParticles.push(sphere);
   }
 
-  // gas
-  for (let i = 0; i < 50; i++) {
-    const p = createParticle('#17a2b8', 0.18);
-    p.position.set((Math.random()-0.5)*3, (Math.random()-0.5)*3, (Math.random()-0.5)*3);
-    p.userData = { vel: new THREE.Vector3((Math.random()-0.5)*0.08, (Math.random()-0.5)*0.08, (Math.random()-0.5)*0.08) };
-    gasCont.add(p);
-    particles.gas.push(p);
+  // Gas: fast moving with high randomness
+  const gasParticles = [];
+  const GAS_COUNT = 58;
+  for (let i = 0; i < GAS_COUNT; i++) {
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.19, 20), new THREE.MeshStandardMaterial({ color: '#17a2b8', roughness: 0.2, emissive: '#0e6b7a', emissiveIntensity: 0.08 }));
+    sphere.position.set(
+      (Math.random() - 0.5) * 3.0,
+      (Math.random() - 0.5) * 3.0,
+      (Math.random() - 0.5) * 3.0
+    );
+    sphere.userData = {
+      vel: new THREE.Vector3(
+        (Math.random() - 0.5) * 0.078,
+        (Math.random() - 0.5) * 0.078,
+        (Math.random() - 0.5) * 0.078
+      )
+    };
+    gasBox.group.add(sphere);
+    gasParticles.push(sphere);
   }
 
-  // state control
+  // Helper: confine particles to box bounds
+  function enforceBounds(part, bounds) {
+    const margin = 0.22;
+    if (part.position.x > bounds.maxX - margin) { part.position.x = bounds.maxX - margin; part.userData.vel.x *= -0.92; }
+    if (part.position.x < bounds.minX + margin) { part.position.x = bounds.minX + margin; part.userData.vel.x *= -0.92; }
+    if (part.position.y > bounds.maxY - margin) { part.position.y = bounds.maxY - margin; part.userData.vel.y *= -0.92; }
+    if (part.position.y < bounds.minY + margin) { part.position.y = bounds.minY + margin; part.userData.vel.y *= -0.92; }
+    if (part.position.z > bounds.maxZ - margin) { part.position.z = bounds.maxZ - margin; part.userData.vel.z *= -0.92; }
+    if (part.position.z < bounds.minZ + margin) { part.position.z = bounds.minZ + margin; part.userData.vel.z *= -0.92; }
+  }
+
+  // --- Temperature control and state behavior
   const slider = document.getElementById('tempSlider');
-  const tempVal = document.getElementById('tempValue');
-  const stateLabel = document.getElementById('stateLabel');
+  const tempSpan = document.getElementById('tempPercent');
+  const stateLabelDiv = document.getElementById('stateLabel');
   
-  function updateState() {
-    const val = parseInt(slider.value);
-    tempVal.textContent = val + '%';
-    let state = 'SOLID';
-    if (val > 65) state = 'GAS';
-    else if (val > 35) state = 'LIQUID';
-    stateLabel.textContent = state === 'SOLID' ? '🧊 SOLID' : (state === 'LIQUID' ? '💧 LIQUID' : '💨 GAS');
+  let currentTemp = 25; // 0-100
+
+  function updateTemperatureUI() {
+    currentTemp = parseInt(slider.value);
+    tempSpan.innerText = currentTemp + '%';
+    let stateName = 'SOLID';
+    if (currentTemp > 68) stateName = 'GAS';
+    else if (currentTemp > 34) stateName = 'LIQUID';
     
-    // visual feedback
-    solidCont.children[1].material.color.set(val < 40 ? '#4a6fa5' : '#94a3b8');
-    liquidCont.children[1].material.color.set(val > 35 && val < 70 ? '#166088' : '#94a3b8');
-    gasCont.children[1].material.color.set(val > 65 ? '#17a2b8' : '#94a3b8');
+    if (stateName === 'SOLID') stateLabelDiv.innerHTML = '🧊 SOLID';
+    else if (stateName === 'LIQUID') stateLabelDiv.innerHTML = '💧 LIQUID';
+    else stateLabelDiv.innerHTML = '💨 GAS';
+    
+    // update container outline brightness based on state relevance
+    const intensity = currentTemp / 100;
+    // just visual feedback: slight emissive on edges are fine
+    const solidWire = solidBox.group.children.find(c => c.isLineSegments);
+    const liquidWire = liquidBox.group.children.find(c => c.isLineSegments);
+    const gasWire = gasBox.group.children.find(c => c.isLineSegments);
+    if (solidWire) solidWire.material.color.setHex(currentTemp < 45 ? 0x4a6fa5 : 0x94a3b8);
+    if (liquidWire) liquidWire.material.color.setHex(currentTemp > 30 && currentTemp < 72 ? 0x166088 : 0x94a3b8);
+    if (gasWire) gasWire.material.color.setHex(currentTemp > 65 ? 0x17a2b8 : 0x94a3b8);
   }
-  
-  slider.addEventListener('input', updateState);
+
+  slider.addEventListener('input', updateTemperatureUI);
   document.getElementById('heatBtn').addEventListener('click', () => {
-    slider.value = Math.min(100, parseInt(slider.value) + 20);
-    updateState();
+    slider.value = Math.min(100, parseInt(slider.value) + 15);
+    updateTemperatureUI();
   });
   document.getElementById('coolBtn').addEventListener('click', () => {
-    slider.value = Math.max(0, parseInt(slider.value) - 20);
-    updateState();
+    slider.value = Math.max(0, parseInt(slider.value) - 15);
+    updateTemperatureUI();
   });
   document.getElementById('resetViewBtn').addEventListener('click', () => {
-    camera.position.set(0, 6, 16);
+    camera.position.set(0, 3.5, 14.5);
     controls.target.set(0, 0, 0);
+    controls.update();
   });
 
-  let time = 0;
-  function animate() {
-    requestAnimationFrame(animate);
-    time += 0.01;
-    
-    const temp = parseInt(slider.value) / 100;
-    
-    // solid vibration
-    particles.solid.forEach(p => {
-      p.position.x = p.userData.base.x + Math.sin(time*3 + p.userData.vib) * 0.04 * temp;
-      p.position.y = p.userData.base.y + Math.cos(time*2.5 + p.userData.vib) * 0.04 * temp;
-      p.position.z = p.userData.base.z + Math.sin(time*4 + p.userData.vib) * 0.04 * temp;
+  // auto-rotate toggle on user drag
+  let userInteracted = false;
+  controls.autoRotate = true;
+  controls.addEventListener('start', () => {
+    userInteracted = true;
+    controls.autoRotate = false;
+  });
+
+  // --- animation state based on temperature factor
+  let timeAcc = 0;
+
+  function animateStates() {
+    const tempFactor = currentTemp / 100;  // 0..1
+    // Solid: vibration amplitude
+    solidParticles.forEach(p => {
+      const base = p.userData.basePos;
+      const seed = p.userData.offsetSeed;
+      const vibAmp = 0.045 * tempFactor;
+      p.position.x = base.x + Math.sin(timeAcc * 4.2 + seed) * vibAmp;
+      p.position.y = base.y + Math.cos(timeAcc * 3.7 + seed * 1.2) * vibAmp;
+      p.position.z = base.z + Math.sin(timeAcc * 5.1 + seed * 0.8) * vibAmp;
     });
     
-    // liquid flow
-    particles.liquid.forEach(p => {
-      p.position.x += p.userData.vel.x * (0.5 + temp);
-      p.position.y += p.userData.vel.y * (0.5 + temp);
-      p.position.z += p.userData.vel.z * (0.5 + temp);
-      if (Math.abs(p.position.x) > 1.6) p.userData.vel.x *= -0.9;
-      if (Math.abs(p.position.y) > 1.6) p.userData.vel.y *= -0.9;
-      if (Math.abs(p.position.z) > 1.6) p.userData.vel.z *= -0.9;
+    // Liquid: flow speed increases with temperature
+    const liquidSpeed = 0.55 + tempFactor * 1.4;
+    liquidParticles.forEach(p => {
+      p.position.x += p.userData.vel.x * liquidSpeed;
+      p.position.y += p.userData.vel.y * liquidSpeed;
+      p.position.z += p.userData.vel.z * liquidSpeed;
+      enforceBounds(p, liquidBox.bounds);
+      // random diffusion
+      if (Math.random() < 0.02 * tempFactor) {
+        p.userData.vel.x += (Math.random() - 0.5) * 0.007;
+        p.userData.vel.y += (Math.random() - 0.5) * 0.007;
+        p.userData.vel.z += (Math.random() - 0.5) * 0.007;
+        // limit max speed
+        ['x','y','z'].forEach(axis => {
+          if (Math.abs(p.userData.vel[axis]) > 0.058) p.userData.vel[axis] *= 0.96;
+        });
+      }
     });
     
-    // gas motion
-    particles.gas.forEach(p => {
-      p.position.x += p.userData.vel.x * temp * 1.5;
-      p.position.y += p.userData.vel.y * temp * 1.5;
-      p.position.z += p.userData.vel.z * temp * 1.5;
-      if (Math.abs(p.position.x) > 1.8) p.userData.vel.x *= -0.95;
-      if (Math.abs(p.position.y) > 1.8) p.userData.vel.y *= -0.95;
-      if (Math.abs(p.position.z) > 1.8) p.userData.vel.z *= -0.95;
-      p.userData.vel.x += (Math.random()-0.5)*0.005;
-      p.userData.vel.y += (Math.random()-0.5)*0.005;
-      p.userData.vel.z += (Math.random()-0.5)*0.005;
+    // Gas: high temperature -> faster, more chaotic
+    const gasSpeed = 0.8 + tempFactor * 2.2;
+    gasParticles.forEach(p => {
+      p.position.x += p.userData.vel.x * gasSpeed;
+      p.position.y += p.userData.vel.y * gasSpeed;
+      p.position.z += p.userData.vel.z * gasSpeed;
+      enforceBounds(p, gasBox.bounds);
+      // high random acceleration based on temp
+      if (Math.random() < 0.04 * (tempFactor + 0.5)) {
+        p.userData.vel.x += (Math.random() - 0.5) * 0.018;
+        p.userData.vel.y += (Math.random() - 0.5) * 0.018;
+        p.userData.vel.z += (Math.random() - 0.5) * 0.018;
+        // speed cap
+        const maxSpeed = 0.19;
+        if (Math.abs(p.userData.vel.x) > maxSpeed) p.userData.vel.x *= 0.94;
+        if (Math.abs(p.userData.vel.y) > maxSpeed) p.userData.vel.y *= 0.94;
+        if (Math.abs(p.userData.vel.z) > maxSpeed) p.userData.vel.z *= 0.94;
+      }
+      // extra jitter for gas look
+      if (tempFactor > 0.6) {
+        p.userData.vel.x += (Math.random() - 0.5) * 0.009;
+        p.userData.vel.y += (Math.random() - 0.5) * 0.009;
+        p.userData.vel.z += (Math.random() - 0.5) * 0.009;
+      }
     });
+  }
+
+  // small floating particles (ambience)
+  const ambientParticles = [];
+  for (let i = 0; i < 160; i++) {
+    const small = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6), new THREE.MeshStandardMaterial({ color: '#94b8e8', emissive: '#3366aa', emissiveIntensity: 0.1 }));
+    small.position.set((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 10);
+    small.userData = { vel: new THREE.Vector3((Math.random() - 0.5)*0.008, (Math.random() - 0.5)*0.008, (Math.random() - 0.5)*0.008) };
+    scene.add(small);
+    ambientParticles.push(small);
+  }
+  
+  function animateAmbient() {
+    ambientParticles.forEach(p => {
+      p.position.x += p.userData.vel.x;
+      p.position.y += p.userData.vel.y;
+      p.position.z += p.userData.vel.z;
+      if (Math.abs(p.position.x) > 9) p.userData.vel.x *= -0.95;
+      if (Math.abs(p.position.y) > 6) p.userData.vel.y *= -0.95;
+      if (Math.abs(p.position.z) > 7) p.userData.vel.z *= -0.95;
+    });
+  }
+
+  // --- animation loop
+  let lastTimestamp = performance.now();
+  function renderLoop() {
+    const now = performance.now();
+    const delta = Math.min(0.033, (now - lastTimestamp) / 1000);
+    lastTimestamp = now;
+    timeAcc += delta;
     
+    animateStates();
+    animateAmbient();
+    
+    // slight rotation for boxes' inner elements? just orbit controls update
     controls.update();
     renderer.render(scene, camera);
+    requestAnimationFrame(renderLoop);
   }
-  animate();
-
+  
   window.addEventListener('resize', () => {
     const w = container.clientWidth, h = container.clientHeight;
     renderer.setSize(w, h);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   });
-
-  updateState();
+  
+  updateTemperatureUI();
+  renderLoop();
 </script>
 </body>
 </html>
