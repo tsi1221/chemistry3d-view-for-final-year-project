@@ -25,6 +25,10 @@
             overflow: hidden;
             touch-action: pan-y;
             color: #1a1e2b;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
         }
         
         /* Header */
@@ -36,12 +40,16 @@
             align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
+            gap: 12px;
+            position: relative;
+            z-index: 20;
         }
         
         .app-title {
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
         
         .app-title h1 {
@@ -49,6 +57,7 @@
             font-weight: 600;
             letter-spacing: -0.02em;
             color: #1a1e2b;
+            white-space: nowrap;
         }
         
         .app-title .badge {
@@ -60,6 +69,7 @@
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            white-space: nowrap;
         }
         
         /* Stats Bar */
@@ -72,6 +82,7 @@
             justify-content: center;
             gap: 40px;
             flex-shrink: 0;
+            flex-wrap: wrap;
         }
         
         .stat-box {
@@ -88,6 +99,7 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
+            flex-shrink: 0;
         }
         
         .stat-content {
@@ -101,6 +113,7 @@
             color: #7c879c;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
         }
         
         .stat-value {
@@ -109,11 +122,11 @@
             font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
         }
         
-        #dist-val {
+        #dist-val, #mobile-dist-val {
             color: #e67e22;
         }
         
-        #disp-val {
+        #disp-val, #mobile-disp-val {
             color: #3b82f6;
         }
         
@@ -128,6 +141,9 @@
             justify-content: center;
             padding: 20px;
             touch-action: none;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         .canvas-card {
@@ -139,12 +155,15 @@
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
             border: 1px solid #eef2f6;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         .canvas-wrapper {
             position: relative;
             width: 100%;
             aspect-ratio: 2 / 1;
+            min-height: 200px;
         }
         
         #vectorCanvas {
@@ -167,6 +186,7 @@
             padding: 16px 24px;
             background: #ffffff;
             border-top: 1px solid #eef2f6;
+            flex-wrap: wrap;
         }
         
         .control-btn {
@@ -181,6 +201,9 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+            white-space: nowrap;
         }
         
         .control-btn.primary {
@@ -190,6 +213,10 @@
         
         .control-btn.primary:hover {
             background: #059669;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.97);
         }
         
         .control-btn.secondary {
@@ -218,12 +245,16 @@
             font-size: 0.85rem;
             color: #5b687c;
             border: 1px solid #eef2f6;
+            max-width: 100%;
+            word-break: break-word;
         }
         
         .hint-text span {
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         .color-dot {
@@ -232,10 +263,197 @@
             height: 10px;
             border-radius: 50%;
             margin: 0 4px;
+            flex-shrink: 0;
         }
         
-        /* Mobile Optimizations */
-        @media (max-width: 600px) {
+        /* Hamburger Menu Button */
+        .hamburger-btn {
+            display: none;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #eef2f6;
+            color: #1a1e2b;
+            font-size: 1.5rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            flex-shrink: 0;
+            z-index: 101;
+            position: relative;
+        }
+        
+        .hamburger-btn .icon {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #1a1e2b;
+            position: relative;
+            transition: all 0.3s;
+            border-radius: 1px;
+        }
+        
+        .hamburger-btn .icon::before,
+        .hamburger-btn .icon::after {
+            content: '';
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: #1a1e2b;
+            position: absolute;
+            left: 0;
+            transition: all 0.3s;
+            border-radius: 1px;
+        }
+        
+        .hamburger-btn .icon::before {
+            top: -6px;
+        }
+        
+        .hamburger-btn .icon::after {
+            top: 6px;
+        }
+        
+        .hamburger-btn.open .icon {
+            background: transparent;
+        }
+        
+        .hamburger-btn.open .icon::before {
+            top: 0;
+            transform: rotate(45deg);
+        }
+        
+        .hamburger-btn.open .icon::after {
+            top: 0;
+            transform: rotate(-45deg);
+        }
+        
+        /* Mobile Menu Overlay */
+        .mobile-menu-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.2);
+            z-index: 98;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .mobile-menu-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* Mobile Menu Panel */
+        .mobile-menu {
+            display: block;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 340px;
+            max-width: 90vw;
+            height: 100vh;
+            height: 100dvh;
+            background: #ffffff;
+            z-index: 99;
+            pointer-events: auto;
+            box-shadow: -4px 0 30px rgba(0, 0, 0, 0.08);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .mobile-menu.open {
+            right: 0;
+        }
+        
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #eef2f6;
+        }
+        
+        .mobile-menu-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a1e2b;
+            letter-spacing: -0.02em;
+        }
+        
+        .mobile-menu-close {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+            border-radius: 10px;
+            background: transparent;
+            border: 1px solid #eef2f6;
+            color: #1a1e2b;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        
+        .mobile-menu-close:hover {
+            background: #f5f7fa;
+        }
+        
+        .mobile-menu-section {
+            margin-bottom: 20px;
+        }
+        
+        .mobile-menu-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #7c879c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        
+        .mobile-menu .stat-box {
+            margin-bottom: 12px;
+        }
+        
+        .mobile-menu .stat-value {
+            font-size: 1.5rem;
+        }
+        
+        .mobile-menu .control-btn {
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            padding: 14px 20px;
+        }
+        
+        .mobile-menu .hint-text {
+            display: block;
+            text-align: center;
+            font-size: 0.75rem;
+            padding: 10px 16px;
+        }
+        
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
             .app-header {
                 padding: 12px 16px;
             }
@@ -245,34 +463,107 @@
             }
             
             .stats-bar {
-                padding: 12px 16px;
-                gap: 20px;
+                display: none;
             }
             
-            .stat-box {
-                gap: 8px;
+            .controls-bar {
+                display: none;
             }
             
-            .stat-icon {
-                width: 32px;
-                height: 32px;
-                font-size: 1rem;
+            .hint-wrapper {
+                display: none;
             }
             
-            .stat-value {
-                font-size: 1.4rem;
+            .hamburger-btn {
+                display: flex;
+            }
+            
+            .mobile-menu-overlay {
+                display: block;
             }
             
             .simulation-container {
                 padding: 12px;
             }
             
-            .controls-bar {
+            .canvas-card {
+                border-radius: 18px;
+            }
+            
+            .canvas-wrapper {
+                aspect-ratio: 1.5 / 1;
+                min-height: 180px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .mobile-menu {
+                right: -100% !important;
+            }
+            .mobile-menu-overlay {
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+            .hamburger-btn {
+                display: none !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .app-header {
+                padding: 10px 12px;
+            }
+            
+            .app-title h1 {
+                font-size: 1rem;
+            }
+            
+            .app-title .badge {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+            
+            .simulation-container {
+                padding: 8px;
+            }
+            
+            .canvas-card {
+                border-radius: 14px;
+            }
+            
+            .canvas-wrapper {
+                aspect-ratio: 1.3 / 1;
+                min-height: 160px;
+            }
+            
+            .mobile-menu {
+                width: 100%;
+                max-width: 100vw;
+                padding: 16px;
+            }
+            
+            .mobile-menu .stat-value {
+                font-size: 1.3rem;
+            }
+            
+            .mobile-menu .control-btn {
+                font-size: 0.8rem;
                 padding: 12px 16px;
+            }
+        }
+        
+        /* Tablet landscape optimization */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .stats-bar {
+                gap: 24px;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
             }
             
             .control-btn {
-                padding: 10px 18px;
+                padding: 10px 20px;
                 font-size: 0.85rem;
             }
         }
@@ -294,9 +585,13 @@
             <h1>📐 Distance vs Displacement</h1>
             <span class="badge">Vector Lab</span>
         </div>
+        <!-- Hamburger Menu Button -->
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false">
+            <span class="icon"></span>
+        </button>
     </header>
 
-    <div class="stats-bar">
+    <div class="stats-bar" id="desktopStats">
         <div class="stat-box">
             <div class="stat-icon" style="background: #fff3e0;">
                 <span style="color: #e67e22;">🧵</span>
@@ -317,14 +612,66 @@
         </div>
     </div>
 
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+
+    <!-- Mobile Menu Panel -->
+    <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Lab controls and stats">
+        <div class="mobile-menu-header">
+            <div class="mobile-menu-title">📐 Vector Lab</div>
+            <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">✕</button>
+        </div>
+
+        <div class="mobile-menu-section">
+            <div class="mobile-menu-label">Measurements</div>
+            <div class="stat-box">
+                <div class="stat-icon" style="background: #fff3e0;">
+                    <span style="color: #e67e22;">🧵</span>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Distance (Scalar)</span>
+                    <span class="stat-value" id="mobile-dist-val">0</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-icon" style="background: #dbeafe;">
+                    <span style="color: #3b82f6;">➡️</span>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Displacement (Vector)</span>
+                    <span class="stat-value" id="mobile-disp-val">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-menu-section">
+            <div class="mobile-menu-label">Actions</div>
+            <button class="control-btn primary" id="mobileStraightenBtn">
+                <span>📏</span> Straighten & Compare
+            </button>
+            <button class="control-btn secondary" id="mobileClearBtn">
+                <span>🗑️</span> Clear Path
+            </button>
+        </div>
+
+        <div class="mobile-menu-section">
+            <div class="hint-text">
+                <span>
+                    <span class="color-dot" style="background: #e67e22;"></span> Draw winding path
+                    <span class="color-dot" style="background: #3b82f6; margin-left: 16px;"></span> Direct displacement
+                </span>
+            </div>
+        </div>
+    </div>
+
     <div class="simulation-container">
         <div class="canvas-card">
             <div class="canvas-wrapper">
                 <canvas id="vectorCanvas" width="1000" height="500"></canvas>
             </div>
             
-            <!-- Controls -->
-            <div class="controls-bar">
+            <!-- Controls (Desktop) -->
+            <div class="controls-bar" id="desktopControls">
                 <button class="control-btn primary" id="straightenBtn">
                     <span>📏</span> Straighten & Compare
                 </button>
@@ -333,8 +680,8 @@
                 </button>
             </div>
             
-            <!-- Hint -->
-            <div class="hint-wrapper">
+            <!-- Hint (Desktop) -->
+            <div class="hint-wrapper" id="desktopHint">
                 <div class="hint-text">
                     <span>
                         <span class="color-dot" style="background: #e67e22;"></span> Draw winding path
@@ -348,8 +695,20 @@
     <script>
         const canvas = document.getElementById('vectorCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // Desktop elements
         const distLabel = document.getElementById('dist-val');
         const dispLabel = document.getElementById('disp-val');
+        
+        // Mobile elements
+        const mobileDistLabel = document.getElementById('mobile-dist-val');
+        const mobileDispLabel = document.getElementById('mobile-disp-val');
+        
+        // Mobile menu elements
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        const mobileMenuClose = document.getElementById('mobileMenuClose');
         
         // Canvas internal dimensions
         const width = 1000;
@@ -372,13 +731,21 @@
             path = [];
             isStraightened = false;
             straightenedAnim = 0;
-            distLabel.innerText = "0";
-            dispLabel.innerText = "0";
+            updateLabels(0, 0);
         }
 
         function straightenThread() {
             if (path.length < 2) return;
             isStraightened = true;
+        }
+        
+        function updateLabels(distance, displacement) {
+            const distStr = Math.round(distance).toString();
+            const dispStr = Math.round(displacement).toString();
+            if (distLabel) distLabel.innerText = distStr;
+            if (dispLabel) dispLabel.innerText = dispStr;
+            if (mobileDistLabel) mobileDistLabel.innerText = distStr;
+            if (mobileDispLabel) mobileDispLabel.innerText = dispStr;
         }
 
         // Unified Pointer Events
@@ -412,7 +779,9 @@
             const coords = getCanvasCoords(e);
             path.push({x: coords.x, y: coords.y});
             
-            canvas.setPointerCapture(e.pointerId);
+            if (canvas.setPointerCapture) {
+                canvas.setPointerCapture(e.pointerId);
+            }
         }
 
         function handlePointerMove(e) {
@@ -427,7 +796,9 @@
         function handlePointerUp(e) {
             e.preventDefault();
             isDrawing = false;
-            canvas.releasePointerCapture(e.pointerId);
+            if (canvas.releasePointerCapture) {
+                canvas.releasePointerCapture(e.pointerId);
+            }
         }
 
         function calculateStats() {
@@ -442,8 +813,7 @@
             const end = path[path.length - 1];
             const displacement = Math.hypot(end.x - start.x, end.y - start.y);
             
-            distLabel.innerText = Math.round(distance);
-            dispLabel.innerText = Math.round(displacement);
+            updateLabels(distance, displacement);
         }
 
         function draw() {
@@ -600,7 +970,7 @@
                 ctx.fillStyle = "#3b82f6";
                 ctx.font = "600 13px Inter, sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText(dispLabel.innerText + " m", midX, midY - 15);
+                ctx.fillText((dispLabel ? dispLabel.innerText : "0") + " m", midX, midY - 15);
                 ctx.textAlign = "left";
             } else {
                 // Empty canvas hint
@@ -617,6 +987,29 @@
             requestAnimationFrame(draw);
         }
 
+        // Mobile menu functions
+        function openMobileMenu() {
+            mobileMenu.classList.add('open');
+            mobileMenuOverlay.classList.add('active');
+            hamburgerBtn.classList.add('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeMobileMenu() {
+            mobileMenu.classList.remove('open');
+            mobileMenuOverlay.classList.remove('active');
+            hamburgerBtn.classList.remove('open');
+            hamburgerBtn.setAttribute('aria-expanded', 'false');
+        }
+
+        function toggleMobileMenu() {
+            if (mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
+        }
+
         // Event listeners
         canvas.addEventListener('pointerdown', handlePointerDown);
         canvas.addEventListener('pointermove', handlePointerMove);
@@ -624,12 +1017,80 @@
         canvas.addEventListener('pointercancel', handlePointerUp);
         canvas.addEventListener('contextmenu', (e) => e.preventDefault());
         
-        document.getElementById('straightenBtn').addEventListener('click', straightenThread);
-        document.getElementById('clearBtn').addEventListener('click', clearLab);
+        // Desktop buttons
+        const straightenBtn = document.getElementById('straightenBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        if (straightenBtn) {
+            straightenBtn.addEventListener('click', straightenThread);
+            straightenBtn.addEventListener('touchstart', (e) => { e.preventDefault(); straightenThread(); }, { passive: false });
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', clearLab);
+            clearBtn.addEventListener('touchstart', (e) => { e.preventDefault(); clearLab(); }, { passive: false });
+        }
         
-        // Touch events for buttons
-        document.getElementById('straightenBtn').addEventListener('touchstart', (e) => { e.preventDefault(); straightenThread(); }, { passive: false });
-        document.getElementById('clearBtn').addEventListener('touchstart', (e) => { e.preventDefault(); clearLab(); }, { passive: false });
+        // Mobile buttons
+        const mobileStraightenBtn = document.getElementById('mobileStraightenBtn');
+        const mobileClearBtn = document.getElementById('mobileClearBtn');
+        if (mobileStraightenBtn) {
+            mobileStraightenBtn.addEventListener('click', () => {
+                straightenThread();
+                if (window.innerWidth <= 768) {
+                    closeMobileMenu();
+                }
+            });
+            mobileStraightenBtn.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                straightenThread(); 
+                if (window.innerWidth <= 768) closeMobileMenu();
+            }, { passive: false });
+        }
+        if (mobileClearBtn) {
+            mobileClearBtn.addEventListener('click', () => {
+                clearLab();
+                if (window.innerWidth <= 768) {
+                    closeMobileMenu();
+                }
+            });
+            mobileClearBtn.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                clearLab(); 
+                if (window.innerWidth <= 768) closeMobileMenu();
+            }, { passive: false });
+        }
+        
+        // Mobile menu event listeners
+        if (hamburgerBtn) {
+            hamburgerBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMobileMenu();
+            });
+            hamburgerBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMobileMenu();
+            });
+        }
+        if (mobileMenuClose) {
+            mobileMenuClose.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeMobileMenu();
+            });
+        }
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.addEventListener('click', (e) => {
+                e.preventDefault();
+                closeMobileMenu();
+            });
+        }
+        
+        // Close mobile menu on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('open')) {
+                closeMobileMenu();
+            }
+        });
         
         draw();
     </script>

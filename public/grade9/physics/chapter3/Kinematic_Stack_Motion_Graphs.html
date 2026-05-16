@@ -17,60 +17,74 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #fafbfc;
+            margin: 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            margin: 0;
         }
         
         .lab-container {
             background: #ffffff;
-            padding: 28px;
-            border-radius: 28px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.05);
             width: 100%;
             max-width: 1200px;
+            margin: 0 auto;
             border: 1px solid #eef2f6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
         }
         
         /* Header */
         .lab-header {
+            padding: 12px 20px;
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 24px;
+            gap: 12px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
         }
         
         .lab-header h2 {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 700;
             letter-spacing: -0.02em;
             color: #1a1e2b;
+            white-space: nowrap;
         }
         
         .lab-header .badge {
             background: #eef2f6;
             color: #5b687c;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 20px;
             text-transform: uppercase;
+            white-space: nowrap;
         }
         
         /* Car Track */
         .car-track {
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-            height: 70px;
-            border-radius: 16px;
+            height: 55px;
+            border-radius: 0;
             position: relative;
-            margin-bottom: 28px;
-            border-bottom: 4px solid #3b82f6;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.1);
+            border-bottom: 3px solid #3b82f6;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
+            flex-shrink: 0;
         }
         
         .track-line {
@@ -79,156 +93,237 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: repeating-linear-gradient(90deg, #fbbf24 0px, #fbbf24 20px, transparent 20px, transparent 40px);
+            background: repeating-linear-gradient(90deg, #fbbf24 0px, #fbbf24 15px, transparent 15px, transparent 30px);
             transform: translateY(-50%);
             opacity: 0.6;
         }
         
         .track-markers {
             position: absolute;
-            bottom: 8px;
+            bottom: 6px;
             left: 0;
             right: 0;
             display: flex;
             justify-content: space-between;
-            padding: 0 10px;
+            padding: 0 8px;
             color: #64748b;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
         }
         
         #car {
-            width: 44px;
-            height: 24px;
+            width: 36px;
+            height: 20px;
             background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             position: absolute;
-            bottom: 12px;
-            border-radius: 8px;
+            bottom: 10px;
+            border-radius: 6px;
             border: 2px solid #93c5fd;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 0 0 2px rgba(255,255,255,0.1);
+            box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4), 0 0 0 2px rgba(255,255,255,0.1);
             transition: left 0.05s ease;
+            z-index: 2;
         }
         
         #car::before {
             content: '';
             position: absolute;
-            top: -4px;
-            left: 8px;
-            width: 12px;
-            height: 6px;
+            top: -3px;
+            left: 6px;
+            width: 10px;
+            height: 5px;
             background: #93c5fd;
-            border-radius: 4px 4px 0 0;
+            border-radius: 3px 3px 0 0;
         }
         
         #car::after {
             content: '';
             position: absolute;
-            bottom: -3px;
-            left: 6px;
-            width: 8px;
-            height: 6px;
+            bottom: -2px;
+            left: 5px;
+            width: 6px;
+            height: 5px;
             background: #1e293b;
-            border-radius: 3px;
-            box-shadow: 24px 0 0 #1e293b;
+            border-radius: 2px;
+            box-shadow: 18px 0 0 #1e293b;
+        }
+        
+        /* Scrollable Content Area */
+        .scrollable-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
         }
         
         /* Graph Row */
         .graph-row {
             display: flex;
-            gap: 18px;
-            justify-content: space-between;
+            gap: 12px;
             width: 100%;
+            flex-shrink: 0;
         }
         
         .graph-box {
             flex: 1;
+            min-width: 0;
             text-align: center;
             background: #fafbfc;
-            border-radius: 20px;
-            padding: 16px 12px 12px 12px;
+            border-radius: 16px;
+            padding: 10px 8px 8px 8px;
             border: 1px solid #eef2f6;
             transition: box-shadow 0.2s ease;
-        }
-        
-        .graph-box:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
         }
         
         .graph-header {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 6px;
+            margin-bottom: 6px;
+            flex-shrink: 0;
         }
         
         .graph-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 11px;
+            flex-shrink: 0;
         }
         
         .label-box {
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        
+        .canvas-wrapper {
+            flex: 1;
+            min-height: 0;
+            position: relative;
         }
         
         canvas {
             background: #ffffff;
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid #eef2f6;
             width: 100%;
-            height: 220px;
+            height: 100%;
             display: block;
         }
         
         /* Current Value Display */
         .current-value {
-            margin-top: 10px;
+            margin-top: 6px;
             font-family: 'SF Mono', 'Menlo', 'Monaco', 'Cascadia Code', 'Consolas', monospace;
-            font-size: 1rem;
+            font-size: 0.85rem;
             font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        /* History Slider */
+        .history-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+        
+        .history-slider-container label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #7c879c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        
+        .history-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            min-width: 60px;
+        }
+        
+        .history-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        
+        .history-slider::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        
+        .slider-time {
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #5b687c;
+            min-width: 40px;
+            text-align: center;
         }
         
         /* Controls */
         .controls {
             display: flex;
-            gap: 16px;
+            gap: 10px;
             justify-content: center;
-            margin-top: 28px;
-            flex-wrap: wrap;
+            flex-shrink: 0;
         }
         
         button {
-            padding: 14px 32px;
+            padding: 12px 20px;
             border: none;
             border-radius: 50px;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.85rem;
             cursor: pointer;
             color: white;
             transition: all 0.2s ease;
             touch-action: manipulation;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+            white-space: nowrap;
+            flex: 1;
+            justify-content: center;
         }
         
         button:active {
-            transform: translateY(0);
+            transform: scale(0.97);
         }
         
         .btn-gas {
@@ -241,35 +336,256 @@
         
         .btn-reset {
             background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            flex: 0.5;
         }
         
         /* Hint */
         .hint-text {
             text-align: center;
-            margin-top: 16px;
             color: #7c879c;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
+            flex-shrink: 0;
         }
         
-        /* Mobile */
-        @media (max-width: 700px) {
-            body { padding: 12px; }
-            .lab-container { padding: 16px; }
-            .graph-row { flex-direction: column; gap: 12px; }
-            canvas { height: 180px; }
-            button { padding: 12px 20px; font-size: 0.9rem; }
-            .lab-header h2 { font-size: 1.2rem; }
+        /* Bottom Bar with values */
+        .bottom-values {
+            display: none;
+            padding: 10px 16px;
+            background: #ffffff;
+            border-top: 1px solid #eef2f6;
+            gap: 12px;
+            justify-content: space-around;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        
+        .bottom-values .mini-value {
+            text-align: center;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .bottom-values .mini-value .val-label {
+            font-size: 0.6rem;
+            font-weight: 500;
+            color: #7c879c;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+        }
+        
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .lab-header {
+                padding: 10px 14px;
+            }
+            
+            .lab-header h2 {
+                font-size: 1rem;
+            }
+            
+            .car-track {
+                height: 45px;
+            }
+            
+            #car {
+                width: 30px;
+                height: 16px;
+                bottom: 8px;
+            }
+            
+            .scrollable-content {
+                padding: 8px 10px;
+                gap: 8px;
+            }
+            
+            .graph-row {
+                flex-direction: column;
+                gap: 8px;
+                flex: 1;
+                min-height: 0;
+            }
+            
+            .graph-box {
+                flex: 1;
+                min-height: 120px;
+                padding: 8px 6px 6px 6px;
+                border-radius: 12px;
+            }
+            
+            canvas {
+                height: 100%;
+                min-height: 80px;
+            }
+            
+            .current-value {
+                display: none;
+            }
+            
+            .bottom-values {
+                display: flex;
+            }
+            
+            .controls {
+                gap: 8px;
+            }
+            
+            button {
+                padding: 10px 14px;
+                font-size: 0.8rem;
+                min-height: 42px;
+            }
+            
+            .hint-text {
+                font-size: 0.65rem;
+            }
+            
+            .history-slider-container {
+                gap: 6px;
+            }
+            
+            .history-slider-container label {
+                font-size: 0.6rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .lab-header {
+                padding: 8px 10px;
+            }
+            
+            .lab-header h2 {
+                font-size: 0.9rem;
+            }
+            
+            .car-track {
+                height: 38px;
+            }
+            
+            #car {
+                width: 26px;
+                height: 14px;
+                bottom: 6px;
+            }
+            
+            .scrollable-content {
+                padding: 6px 8px;
+                gap: 6px;
+            }
+            
+            .graph-box {
+                min-height: 100px;
+                padding: 6px 4px 4px 4px;
+                border-radius: 10px;
+            }
+            
+            .graph-icon {
+                width: 18px;
+                height: 18px;
+                font-size: 9px;
+            }
+            
+            .label-box {
+                font-size: 0.65rem;
+            }
+            
+            button {
+                padding: 8px 10px;
+                font-size: 0.7rem;
+                min-height: 38px;
+                gap: 4px;
+            }
+            
+            .btn-reset {
+                flex: 0.4;
+            }
+            
+            .hint-text {
+                font-size: 0.6rem;
+            }
+            
+            .bottom-values .mini-value {
+                font-size: 0.75rem;
+            }
+            
+            .history-slider::-webkit-slider-thumb {
+                width: 24px;
+                height: 24px;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .lab-container {
+                border-radius: 24px;
+                height: auto;
+                max-height: 95vh;
+                max-height: 95dvh;
+                margin: auto;
+            }
+            
+            .car-track {
+                border-radius: 0;
+                height: 65px;
+                margin: 0 20px;
+                border-radius: 12px;
+            }
+            
+            .scrollable-content {
+                padding: 16px 20px;
+                gap: 16px;
+            }
+            
+            .graph-row {
+                gap: 16px;
+            }
+            
+            .graph-box {
+                padding: 14px 10px 10px 10px;
+                border-radius: 18px;
+            }
+            
+            canvas {
+                height: 200px;
+            }
+            
+            .current-value {
+                font-size: 0.95rem;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+            canvas {
+                height: 160px;
+            }
+            
+            button {
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Prevent pull-to-refresh */
+        html, body {
+            overscroll-behavior: none;
+        }
+        
+        button:focus-visible {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
         }
     </style>
 </head>
 <body>
 
 <div class="lab-container">
+    <!-- Header -->
     <div class="lab-header">
         <h2>📊 Horizontal Kinematic Stack</h2>
         <span class="badge">x · v · a</span>
     </div>
 
+    <!-- Car Track -->
     <div class="car-track">
         <div class="track-line"></div>
         <div id="car"></div>
@@ -279,47 +595,82 @@
         </div>
     </div>
 
-    <div class="graph-row">
-        <div class="graph-box">
-            <div class="graph-header">
-                <div class="graph-icon" style="background: #f3e8ff; color: #8b5cf6;">x</div>
-                <div class="label-box" style="color: #8b5cf6;">Position</div>
+    <!-- Scrollable Content -->
+    <div class="scrollable-content">
+        <!-- Graph Row -->
+        <div class="graph-row">
+            <div class="graph-box">
+                <div class="graph-header">
+                    <div class="graph-icon" style="background: #f3e8ff; color: #8b5cf6;">x</div>
+                    <div class="label-box" style="color: #8b5cf6;">Position</div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasX"></canvas>
+                </div>
+                <div class="current-value" id="xValue" style="color: #8b5cf6;">0.0 m</div>
             </div>
-            <canvas id="canvasX"></canvas>
-            <div class="current-value" id="xValue" style="color: #8b5cf6;">0.0 m</div>
+            <div class="graph-box">
+                <div class="graph-header">
+                    <div class="graph-icon" style="background: #ecfdf5; color: #10b981;">v</div>
+                    <div class="label-box" style="color: #10b981;">Velocity</div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasV"></canvas>
+                </div>
+                <div class="current-value" id="vValue" style="color: #10b981;">0.0 m/s</div>
+            </div>
+            <div class="graph-box">
+                <div class="graph-header">
+                    <div class="graph-icon" style="background: #eff6ff; color: #3b82f6;">a</div>
+                    <div class="label-box" style="color: #3b82f6;">Acceleration</div>
+                </div>
+                <div class="canvas-wrapper">
+                    <canvas id="canvasA"></canvas>
+                </div>
+                <div class="current-value" id="aValue" style="color: #3b82f6;">0.0 m/s²</div>
+            </div>
         </div>
-        <div class="graph-box">
-            <div class="graph-header">
-                <div class="graph-icon" style="background: #ecfdf5; color: #10b981;">v</div>
-                <div class="label-box" style="color: #10b981;">Velocity</div>
-            </div>
-            <canvas id="canvasV"></canvas>
-            <div class="current-value" id="vValue" style="color: #10b981;">0.0 m/s</div>
+
+        <!-- History Slider -->
+        <div class="history-slider-container">
+            <label>⏱ History</label>
+            <input type="range" class="history-slider" id="historySlider" min="0" max="100" value="100" aria-label="Navigate through history">
+            <span class="slider-time" id="sliderTime">now</span>
         </div>
-        <div class="graph-box">
-            <div class="graph-header">
-                <div class="graph-icon" style="background: #eff6ff; color: #3b82f6;">a</div>
-                <div class="label-box" style="color: #3b82f6;">Acceleration</div>
-            </div>
-            <canvas id="canvasA"></canvas>
-            <div class="current-value" id="aValue" style="color: #3b82f6;">0.0 m/s²</div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn-gas" id="gasBtn">
+                <span>🚀</span> GAS
+            </button>
+            <button class="btn-brake" id="brakeBtn">
+                <span>🛑</span> BRAKE
+            </button>
+            <button class="btn-reset" id="resetBtn">
+                <span>↻</span>
+            </button>
+        </div>
+        
+        <!-- Hint -->
+        <div class="hint-text">
+            <span>💡 Hold GAS or BRAKE · Slide to review history</span>
         </div>
     </div>
 
-    <div class="controls">
-        <button class="btn-gas" id="gasBtn">
-            <span>🚀</span> APPLY GAS
-        </button>
-        <button class="btn-brake" id="brakeBtn">
-            <span>🛑</span> APPLY BRAKE
-        </button>
-        <button class="btn-reset" id="resetBtn">
-            <span>↻</span> RESET LAB
-        </button>
-    </div>
-    
-    <div class="hint-text">
-        <span>💡 Hold GAS or BRAKE to accelerate · Graphs update in real-time</span>
+    <!-- Bottom Values Bar (Mobile) -->
+    <div class="bottom-values" id="bottomValues">
+        <div class="mini-value" style="color: #8b5cf6;">
+            <span class="val-label">Position</span>
+            <span id="bottom-xValue">0.0 m</span>
+        </div>
+        <div class="mini-value" style="color: #10b981;">
+            <span class="val-label">Velocity</span>
+            <span id="bottom-vValue">0.0 m/s</span>
+        </div>
+        <div class="mini-value" style="color: #3b82f6;">
+            <span class="val-label">Accel</span>
+            <span id="bottom-aValue">0.0 m/s²</span>
+        </div>
     </div>
 </div>
 
@@ -336,35 +687,72 @@
         a: canvases.a.getContext('2d')
     };
 
+    const historySlider = document.getElementById('historySlider');
+    const sliderTime = document.getElementById('sliderTime');
+
     let state = { x: 50, v: 0, a: 0 };
     let history = []; 
     const maxHistory = 200;
+    let historyViewIndex = -1; // -1 means live view
+    let isLiveView = true;
 
     function applyAccel(val) { 
         state.a = val; 
+        // If user was viewing history, switch back to live
+        if (!isLiveView) {
+            isLiveView = true;
+            historySlider.value = 100;
+            sliderTime.textContent = 'now';
+        }
     }
 
     function resetSim() {
         state = { x: 50, v: 0, a: 0 };
         history = [];
+        historyViewIndex = -1;
+        isLiveView = true;
+        historySlider.value = 100;
+        sliderTime.textContent = 'now';
         updateValueDisplays();
     }
 
-    function updateValueDisplays() {
-        document.getElementById('xValue').innerHTML = state.x.toFixed(1) + ' <span style="font-size:0.8rem;font-weight:400;">m</span>';
-        document.getElementById('vValue').innerHTML = state.v.toFixed(1) + ' <span style="font-size:0.8rem;font-weight:400;">m/s</span>';
-        document.getElementById('aValue').innerHTML = state.a.toFixed(2) + ' <span style="font-size:0.8rem;font-weight:400;">m/s²</span>';
+    function getDisplayState() {
+        if (isLiveView || history.length === 0) {
+            return state;
+        }
+        const idx = Math.min(historyViewIndex, history.length - 1);
+        return history[idx];
     }
 
-    function drawSingleGraph(key, color, dataKey, scale, unit) {
+    function updateValueDisplays() {
+        const displayState = getDisplayState();
+        const xStr = displayState.x.toFixed(1) + ' m';
+        const vStr = displayState.v.toFixed(1) + ' m/s';
+        const aStr = displayState.a.toFixed(2) + ' m/s²';
+        
+        document.getElementById('xValue').textContent = xStr;
+        document.getElementById('vValue').textContent = vStr;
+        document.getElementById('aValue').textContent = aStr;
+        
+        document.getElementById('bottom-xValue').textContent = xStr;
+        document.getElementById('bottom-vValue').textContent = vStr;
+        document.getElementById('bottom-aValue').textContent = aStr;
+        
+        // Update car position from display state
+        const carX = Math.max(0, Math.min(1050, displayState.x));
+        carEl.style.left = (carX / 1050 * 95) + "%";
+    }
+
+    function drawSingleGraph(key, color, dataKey, scale) {
         const ctx = ctxs[key];
         const c = canvases[key];
         const w = c.width;
         const h = c.height;
         
-        // Shift the graph area DOWN by 15px (axis stays at h/2)
-        const graphOffsetY = 18;
-        const zeroY = h/2;
+        if (w === 0 || h === 0) return;
+        
+        const graphOffsetY = 16;
+        const zeroY = h / 2;
 
         ctx.clearRect(0, 0, w, h);
         
@@ -384,9 +772,9 @@
             ctx.stroke();
         }
         
-        // Zero Line (Axis - preserved at h/2)
+        // Zero Line
         ctx.strokeStyle = "#cbd5e1"; 
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 2;
         ctx.beginPath(); 
         ctx.moveTo(0, zeroY); 
         ctx.lineTo(w, zeroY); 
@@ -394,12 +782,18 @@
         
         // Axis label
         ctx.fillStyle = "#94a3b8";
-        ctx.font = "9px Inter, sans-serif";
+        ctx.font = "8px Inter, sans-serif";
         ctx.textAlign = "right";
-        ctx.fillText("0", 15, zeroY - 4);
+        ctx.fillText("0", 12, zeroY - 3);
         
-        // Fill area under curve
         if (history.length > 1) {
+            // Determine how much history to show
+            let displayLength = history.length;
+            if (!isLiveView && historyViewIndex >= 0) {
+                displayLength = historyViewIndex + 1;
+            }
+            
+            // Fill area under curve
             ctx.fillStyle = color + '10';
             ctx.beginPath();
             const firstX = 0;
@@ -407,83 +801,101 @@
             ctx.moveTo(firstX, zeroY);
             ctx.lineTo(firstX, firstY);
             
-            for(let i = 1; i < history.length; i++) {
+            for (let i = 1; i < displayLength; i++) {
                 const xPos = (i / maxHistory) * w;
                 const val = history[i][dataKey];
                 const yPos = zeroY - (val * scale) + graphOffsetY;
                 ctx.lineTo(xPos, yPos);
             }
             
-            const lastX = ((history.length - 1) / maxHistory) * w;
+            const lastX = ((displayLength - 1) / maxHistory) * w;
             ctx.lineTo(lastX, zeroY);
             ctx.closePath();
             ctx.fill();
-        }
 
-        // Data Plot (Shifted down by graphOffsetY)
-        ctx.strokeStyle = color; 
-        ctx.lineWidth = 3.5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.shadowColor = color + '60';
-        ctx.shadowBlur = 8;
-        
-        ctx.beginPath();
-        for(let i = 0; i < history.length; i++) {
-            const xPos = (i / maxHistory) * w;
-            const val = history[i][dataKey];
-            const yPos = zeroY - (val * scale) + graphOffsetY;
-            if(i === 0) ctx.moveTo(xPos, yPos);
-            else ctx.lineTo(xPos, yPos);
-        }
-        ctx.stroke();
-        
-        // Current point highlight
-        if (history.length > 0) {
-            const lastIdx = history.length - 1;
+            // Data Plot
+            ctx.strokeStyle = color; 
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.shadowColor = color + '60';
+            ctx.shadowBlur = 6;
+            
+            ctx.beginPath();
+            for (let i = 0; i < displayLength; i++) {
+                const xPos = (i / maxHistory) * w;
+                const val = history[i][dataKey];
+                const yPos = zeroY - (val * scale) + graphOffsetY;
+                if (i === 0) ctx.moveTo(xPos, yPos);
+                else ctx.lineTo(xPos, yPos);
+            }
+            ctx.stroke();
+            
+            // Current point highlight
+            const lastIdx = displayLength - 1;
             const xPos = (lastIdx / maxHistory) * w;
             const val = history[lastIdx][dataKey];
             const yPos = zeroY - (val * scale) + graphOffsetY;
             
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = 10;
             ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(xPos, yPos, 5, 0, Math.PI * 2);
+            ctx.arc(xPos, yPos, 4.5, 0, Math.PI * 2);
             ctx.fill();
             
             ctx.fillStyle = 'white';
             ctx.shadowBlur = 0;
             ctx.beginPath();
-            ctx.arc(xPos, yPos, 2.5, 0, Math.PI * 2);
+            ctx.arc(xPos, yPos, 2, 0, Math.PI * 2);
             ctx.fill();
+            
+            // If not live, draw a vertical line at current view position
+            if (!isLiveView && historyViewIndex >= 0) {
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.shadowBlur = 0;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(xPos, 0);
+                ctx.lineTo(xPos, h);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
         }
         
         ctx.shadowBlur = 0;
         
         // Time axis label
         ctx.fillStyle = "#94a3b8";
-        ctx.font = "9px Inter, sans-serif";
+        ctx.font = "8px Inter, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("time →", w - 25, h - 8);
+        ctx.fillText("time →", w - 20, h - 6);
     }
 
     function loop() {
-        // Physics
-        state.v += state.a;
-        state.x += state.v;
-        state.v *= 0.97;
+        // Physics - only update if in live view
+        if (isLiveView) {
+            state.v += state.a;
+            state.x += state.v;
+            state.v *= 0.97;
 
-        if(state.x < 0) { state.x = 0; state.v = 0; }
-        if(state.x > 1050) { state.x = 1050; state.v = 0; }
+            if (state.x < 0) { state.x = 0; state.v = 0; }
+            if (state.x > 1050) { state.x = 1050; state.v = 0; }
 
-        carEl.style.left = (state.x / 1050 * 95) + "%";
+            carEl.style.left = (state.x / 1050 * 95) + "%";
 
-        history.push({...state});
-        if(history.length > maxHistory) history.shift();
-
-        drawSingleGraph('x', '#8b5cf6', 'x', 0.12, 'm');
-        drawSingleGraph('v', '#10b981', 'v', 5, 'm/s');
-        drawSingleGraph('a', '#3b82f6', 'a', 180, 'm/s²');
+            history.push({...state});
+            if (history.length > maxHistory) history.shift();
+            
+            // Update slider max and keep at end
+            historySlider.max = history.length - 1;
+            historySlider.value = history.length - 1;
+        }
+        
+        // Draw graphs
+        drawSingleGraph('x', '#8b5cf6', 'x', 0.12);
+        drawSingleGraph('v', '#10b981', 'v', 5);
+        drawSingleGraph('a', '#3b82f6', 'a', 180);
         
         updateValueDisplays();
 
@@ -492,15 +904,60 @@
 
     // Initialize canvas sizes
     function resizeCanvases() {
-        Object.values(canvases).forEach(c => {
+        Object.entries(canvases).forEach(([key, c]) => {
             const container = c.parentElement;
-            c.width = container.clientWidth - 24;
-            c.height = 220;
+            const rect = container.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                c.width = rect.width;
+                c.height = rect.height;
+            }
         });
     }
     
     window.addEventListener('resize', resizeCanvases);
-    resizeCanvases();
+    
+    // Use ResizeObserver for more reliable canvas sizing
+    if (window.ResizeObserver) {
+        const observer = new ResizeObserver(() => {
+            resizeCanvases();
+        });
+        Object.values(canvases).forEach(c => {
+            const container = c.parentElement;
+            if (container) observer.observe(container);
+        });
+    } else {
+        setTimeout(resizeCanvases, 100);
+    }
+
+    // History Slider
+    historySlider.addEventListener('input', () => {
+        const val = parseInt(historySlider.value);
+        if (history.length === 0) return;
+        
+        if (val >= history.length - 1) {
+            // At the end - live view
+            isLiveView = true;
+            historyViewIndex = -1;
+            sliderTime.textContent = 'now';
+        } else {
+            // Viewing history
+            isLiveView = false;
+            historyViewIndex = val;
+            const timeAgo = history.length - 1 - val;
+            sliderTime.textContent = '-' + timeAgo;
+        }
+        updateValueDisplays();
+    });
+
+    // Reset slider when clicking back to live
+    historySlider.addEventListener('change', () => {
+        if (parseInt(historySlider.value) >= history.length - 1) {
+            isLiveView = true;
+            historyViewIndex = -1;
+            historySlider.value = history.length - 1;
+            sliderTime.textContent = 'now';
+        }
+    });
 
     // Event listeners with touch support
     const gasBtn = document.getElementById('gasBtn');
@@ -512,23 +969,32 @@
     function handleBrakeStart(e) { e.preventDefault(); applyAccel(-0.25); }
     function handleBrakeEnd(e) { e.preventDefault(); applyAccel(0); }
     
-    gasBtn.addEventListener('mousedown', handleGasStart);
-    gasBtn.addEventListener('mouseup', handleGasEnd);
-    gasBtn.addEventListener('mouseleave', handleGasEnd);
-    gasBtn.addEventListener('touchstart', handleGasStart, { passive: false });
-    gasBtn.addEventListener('touchend', handleGasEnd);
-    gasBtn.addEventListener('touchcancel', handleGasEnd);
+    if (gasBtn) {
+        gasBtn.addEventListener('mousedown', handleGasStart);
+        gasBtn.addEventListener('mouseup', handleGasEnd);
+        gasBtn.addEventListener('mouseleave', handleGasEnd);
+        gasBtn.addEventListener('touchstart', handleGasStart, { passive: false });
+        gasBtn.addEventListener('touchend', handleGasEnd);
+        gasBtn.addEventListener('touchcancel', handleGasEnd);
+    }
     
-    brakeBtn.addEventListener('mousedown', handleBrakeStart);
-    brakeBtn.addEventListener('mouseup', handleBrakeEnd);
-    brakeBtn.addEventListener('mouseleave', handleBrakeEnd);
-    brakeBtn.addEventListener('touchstart', handleBrakeStart, { passive: false });
-    brakeBtn.addEventListener('touchend', handleBrakeEnd);
-    brakeBtn.addEventListener('touchcancel', handleBrakeEnd);
+    if (brakeBtn) {
+        brakeBtn.addEventListener('mousedown', handleBrakeStart);
+        brakeBtn.addEventListener('mouseup', handleBrakeEnd);
+        brakeBtn.addEventListener('mouseleave', handleBrakeEnd);
+        brakeBtn.addEventListener('touchstart', handleBrakeStart, { passive: false });
+        brakeBtn.addEventListener('touchend', handleBrakeEnd);
+        brakeBtn.addEventListener('touchcancel', handleBrakeEnd);
+    }
     
-    resetBtn.addEventListener('click', resetSim);
-    resetBtn.addEventListener('touchstart', (e) => { e.preventDefault(); resetSim(); }, { passive: false });
+    if (resetBtn) {
+        resetBtn.addEventListener('click', resetSim);
+        resetBtn.addEventListener('touchstart', (e) => { e.preventDefault(); resetSim(); }, { passive: false });
+    }
 
+    // Initialize
+    setTimeout(resizeCanvases, 50);
+    setTimeout(resizeCanvases, 200);
     loop();
 </script>
 </body>

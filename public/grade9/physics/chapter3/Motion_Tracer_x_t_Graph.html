@@ -25,46 +25,55 @@
             overflow: hidden;
             touch-action: pan-y;
             color: #1a1e2b;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
         }
         
         /* Header */
         .app-header {
-            padding: 16px 24px;
+            padding: 10px 16px;
             background: #ffffff;
             border-bottom: 1px solid #eef2f6;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         
         .app-title {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
         
         .app-title h1 {
-            font-size: 1.4rem;
+            font-size: 1.1rem;
             font-weight: 600;
             letter-spacing: -0.02em;
             color: #1a1e2b;
+            white-space: nowrap;
         }
         
         .app-title .badge {
             background: #eef2f6;
             color: #5b687c;
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             font-weight: 600;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 20px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            white-space: nowrap;
         }
         
         /* Tabs */
         .tabs-container {
-            padding: 12px 24px 0 24px;
+            padding: 8px 16px 0 16px;
             background: #ffffff;
             border-bottom: 1px solid #eef2f6;
             flex-shrink: 0;
@@ -72,20 +81,31 @@
         
         .tab-bar {
             display: flex;
-            gap: 8px;
+            gap: 6px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 2px;
+        }
+        
+        .tab-bar::-webkit-scrollbar {
+            display: none;
         }
         
         .tab-btn {
-            padding: 10px 20px;
+            padding: 8px 14px;
             border: none;
             background: transparent;
             color: #7c879c;
             cursor: pointer;
             font-weight: 500;
-            font-size: 0.95rem;
+            font-size: 0.8rem;
             transition: all 0.2s ease;
             touch-action: manipulation;
             border-radius: 40px;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 38px;
+            flex-shrink: 0;
         }
         
         .tab-btn:hover {
@@ -107,8 +127,10 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 10px;
             touch-action: none;
+            min-height: 0;
+            overflow: hidden;
         }
         
         .canvas-card {
@@ -116,16 +138,21 @@
             width: 100%;
             max-width: 1050px;
             background: #ffffff;
-            border-radius: 24px;
+            border-radius: 20px;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
             border: 1px solid #eef2f6;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: 100%;
         }
         
         .canvas-wrapper {
             position: relative;
             width: 100%;
-            aspect-ratio: 15 / 8;
+            flex: 1;
+            min-height: 0;
         }
         
         #motionCanvas {
@@ -142,26 +169,41 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 16px;
-            padding: 16px 24px;
+            gap: 10px;
+            padding: 10px 16px;
             background: #ffffff;
             border-top: 1px solid #eef2f6;
+            flex-shrink: 0;
+            flex-wrap: wrap;
         }
         
         .control-btn {
-            padding: 12px 28px;
+            padding: 10px 20px;
             border-radius: 40px;
             border: none;
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.2s ease;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            min-height: 44px;
+            white-space: nowrap;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.97);
         }
         
         .control-btn.primary {
             background: #10b981;
             color: white;
+            flex: 1.5;
         }
         
         .control-btn.primary:hover {
@@ -172,6 +214,7 @@
             background: #f5f7fa;
             color: #5b687c;
             border: 1px solid #eef2f6;
+            flex: 0.8;
         }
         
         .control-btn.secondary:hover {
@@ -180,51 +223,203 @@
         
         /* Hint */
         .hint-wrapper {
-            padding: 12px 24px 16px 24px;
+            padding: 8px 16px 10px 16px;
             text-align: center;
             background: #ffffff;
             border-top: 1px solid #eef2f6;
+            flex-shrink: 0;
         }
         
         .hint-text {
             display: inline-block;
-            padding: 8px 20px;
+            padding: 6px 16px;
             background: #f5f7fa;
             border-radius: 40px;
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             color: #5b687c;
             border: 1px solid #eef2f6;
+            max-width: 100%;
+            word-break: break-word;
         }
         
-        /* Mobile Optimizations */
-        @media (max-width: 600px) {
+        /* Stats overlay for mobile */
+        .mobile-stats {
+            display: none;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 8px 12px;
+            border: 1px solid #eef2f6;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            z-index: 5;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 0.7rem;
+            font-weight: 600;
+            pointer-events: none;
+        }
+        
+        .mobile-stats .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 3px;
+        }
+        
+        .mobile-stats .stat-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .mobile-stats .stat-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
             .app-header {
-                padding: 12px 16px;
+                padding: 8px 12px;
             }
             
             .app-title h1 {
-                font-size: 1.1rem;
+                font-size: 1rem;
             }
             
             .tabs-container {
-                padding: 8px 16px 0 16px;
+                padding: 6px 12px 0 12px;
             }
             
             .tab-btn {
-                padding: 8px 14px;
-                font-size: 0.85rem;
+                padding: 6px 12px;
+                font-size: 0.75rem;
+                min-height: 34px;
             }
             
             .simulation-container {
-                padding: 12px;
+                padding: 6px;
+            }
+            
+            .canvas-card {
+                border-radius: 14px;
             }
             
             .controls-bar {
-                padding: 12px 16px;
+                padding: 8px 12px;
+                gap: 8px;
             }
             
             .control-btn {
-                padding: 10px 20px;
+                padding: 8px 14px;
+                font-size: 0.8rem;
+                min-height: 40px;
+            }
+            
+            .hint-wrapper {
+                padding: 6px 12px 8px 12px;
+            }
+            
+            .hint-text {
+                font-size: 0.65rem;
+                padding: 5px 12px;
+            }
+            
+            .mobile-stats {
+                display: block;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .app-header {
+                padding: 6px 10px;
+            }
+            
+            .app-title h1 {
+                font-size: 0.9rem;
+            }
+            
+            .app-title .badge {
+                font-size: 0.6rem;
+                padding: 2px 6px;
+            }
+            
+            .tabs-container {
+                padding: 4px 8px 0 8px;
+            }
+            
+            .tab-btn {
+                padding: 5px 10px;
+                font-size: 0.7rem;
+                min-height: 30px;
+            }
+            
+            .simulation-container {
+                padding: 4px;
+            }
+            
+            .canvas-card {
+                border-radius: 10px;
+            }
+            
+            .controls-bar {
+                padding: 6px 8px;
+                gap: 6px;
+            }
+            
+            .control-btn {
+                padding: 7px 10px;
+                font-size: 0.7rem;
+                min-height: 36px;
+            }
+            
+            .hint-wrapper {
+                padding: 4px 8px 6px 8px;
+            }
+            
+            .hint-text {
+                font-size: 0.6rem;
+                padding: 4px 10px;
+            }
+            
+            .mobile-stats {
+                top: 4px;
+                right: 4px;
+                padding: 6px 8px;
+                font-size: 0.6rem;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .canvas-card {
+                border-radius: 24px;
+                max-height: 85vh;
+                max-height: 85dvh;
+            }
+            
+            .control-btn {
+                flex: 0 1 auto;
+                min-width: 140px;
+            }
+            
+            .control-btn.primary {
+                flex: 0 1 auto;
+                min-width: 180px;
+            }
+            
+            .mobile-stats {
+                display: none;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .app-title h1 {
+                font-size: 1.2rem;
+            }
+            
+            .tab-btn {
+                padding: 8px 16px;
                 font-size: 0.85rem;
             }
         }
@@ -244,7 +439,7 @@
     <header class="app-header">
         <div class="app-title">
             <h1>📈 Position-Time Tracer</h1>
-            <span class="badge">Standard View</span>
+            <span class="badge" id="modeBadge">Standard View</span>
         </div>
     </header>
 
@@ -258,12 +453,27 @@
     <div class="simulation-container">
         <div class="canvas-card">
             <div class="canvas-wrapper">
-                <canvas id="motionCanvas" width="1050" height="560"></canvas>
+                <canvas id="motionCanvas"></canvas>
+                <!-- Mobile stats overlay -->
+                <div class="mobile-stats" id="mobileStats">
+                    <div class="stat-row">
+                        <span class="stat-dot" style="background: #3b82f6;"></span>
+                        <span id="mobilePos">Pos: 0 m</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-dot" style="background: #10b981;"></span>
+                        <span id="mobileVel">Vel: 0 m/s</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-dot" style="background: #ef4444;"></span>
+                        <span id="mobileTime">Time: 0</span>
+                    </div>
+                </div>
             </div>
             
             <!-- Controls -->
             <div class="controls-bar">
-                <button id="start-btn" class="control-btn primary">▶ Start Simulation</button>
+                <button id="start-btn" class="control-btn primary">▶ Start</button>
                 <button id="reset-btn" class="control-btn secondary">↻ Reset</button>
             </div>
             
@@ -285,12 +495,36 @@
         const height = 560;
         
         function resizeCanvas() {
+            const wrapper = canvas.parentElement;
+            const rect = wrapper.getBoundingClientRect();
+            const aspectRatio = width / height;
+            
+            let newWidth, newHeight;
+            if (rect.width / rect.height > aspectRatio) {
+                newHeight = rect.height;
+                newWidth = newHeight * aspectRatio;
+            } else {
+                newWidth = rect.width;
+                newHeight = newWidth / aspectRatio;
+            }
+            
             canvas.width = width;
             canvas.height = height;
+            canvas.style.width = newWidth + 'px';
+            canvas.style.height = newHeight + 'px';
+            canvas.style.position = 'absolute';
+            canvas.style.top = '50%';
+            canvas.style.left = '50%';
+            canvas.style.transform = 'translate(-50%, -50%)';
         }
         
         window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        
+        // Use ResizeObserver for more reliable sizing
+        if (window.ResizeObserver) {
+            const observer = new ResizeObserver(() => resizeCanvas());
+            observer.observe(canvas.parentElement);
+        }
         
         let mode = 'const';
         let isRunning = false;
@@ -317,10 +551,18 @@
         let riderA = 0; 
         let tracePoints = [];
 
+        function updateMobileStats() {
+            const pos = Math.round((riderX - startX) / trackWidth * 700);
+            document.getElementById('mobilePos').textContent = 'Pos: ' + pos + ' m';
+            document.getElementById('mobileVel').textContent = 'Vel: ' + riderV.toFixed(1) + ' m/s';
+            document.getElementById('mobileTime').textContent = 'Time: ' + time;
+        }
+
         function setMode(m) {
             mode = m;
             document.getElementById('btn-const').classList.toggle('active', m === 'const');
             document.getElementById('btn-accel').classList.toggle('active', m === 'accel');
+            document.getElementById('modeBadge').textContent = m === 'const' ? 'Constant V' : 'Braking';
             
             const hint = document.getElementById('hintMessage');
             if (m === 'const') {
@@ -342,7 +584,7 @@
                     riderV = 9;
                     riderA = -0.06;
                 }
-                document.getElementById('start-btn').innerHTML = '⏸ Running...';
+                document.getElementById('start-btn').innerHTML = '⏸ Running';
             }
         }
 
@@ -353,7 +595,8 @@
             riderV = 0;
             riderA = 0;
             tracePoints = [];
-            document.getElementById('start-btn').innerHTML = '▶ Start Simulation';
+            document.getElementById('start-btn').innerHTML = '▶ Start';
+            updateMobileStats();
         }
 
         function draw() {
@@ -543,9 +786,11 @@
                 const traceY = graphBaselineY - (time * scaleT);
                 tracePoints.push({ x: riderX, y: traceY });
                 
+                updateMobileStats();
+                
                 if (riderX >= endX || (riderV === 0 && mode === 'accel') || traceY <= graphStartY) {
                     isRunning = false;
-                    document.getElementById('start-btn').innerHTML = '▶ Start Simulation';
+                    document.getElementById('start-btn').innerHTML = '▶ Start';
                 }
             }
 
@@ -633,6 +878,7 @@
             return this;
         };
         
+        resizeCanvas();
         resetSim();
         draw();
     </script>
