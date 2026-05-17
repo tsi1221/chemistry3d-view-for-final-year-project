@@ -70,7 +70,7 @@ const grade9Lessons: Omit<Item, 'grade'>[] = [
 { name: "Empty Set Visualizer", link: "/grade9/maths/chapter1/Empty_Finite_Infinite_Set_Visualizer.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
 { name: "Equal/Equivalent/Universal/Subset Visualizer", link: "/grade9/maths/chapter1/Equal_Equivalent_Universal_Subset_Proper-Subset_Visualizer.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
 { name: "Set Description Studio", link: "/grade9/maths/chapter1/Set_Theory_Studio_Verbal_Listing_Set_Builder.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
-{ name: "Set Sorting Machine", link: "/grade9/maths/chapter1/Set_Theory_The_Sorting_Machine.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
+{ name: "Set Sorting Machine", link: "/grade9/maths/chapter1/Set Theory_Studio_Verbal_Listing_Set_Builder.html", chapter: "Chapter 1: Sets", subject: "Mathematics" },
 { name: "Rationalize Denominator Lab", link: "/grade9/maths/chapter2/8.rationalize_denominator_lab.html", chapter: "Chapter 2: Number System", subject: "Mathematics" },
 { name: "Repeating Decimal Spiral Lab", link: "/grade9/maths/chapter2/9.repeating_decimal_spiral_lab.html", chapter: "Chapter 2: Number System", subject: "Mathematics" },
 { name: "Absolute Value Distance", link: "/grade9/maths/chapter2/Absolute_Value_Distance.html", chapter: "Chapter 2: Number System", subject: "Mathematics" },
