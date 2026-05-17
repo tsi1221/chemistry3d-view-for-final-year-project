@@ -3,72 +3,598 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>⚛️ octet rule · valence</title>
+  <title>⚛️ octet rule · valence shells</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px;max-width:800px;margin:0 auto}
-    @media(min-width:700px){.grid{grid-template-columns:1fr 220px}}
-    h2{font-weight:700;font-size:1.3rem;color:#0a1e3c;margin-bottom:12px}
-    .panel{background:#fafcff;border-radius:24px;border:1px solid #d0e2ff;padding:20px;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
-    canvas{display:block;width:100%;aspect-ratio:1/1;background:#f8fcff;border-radius:16px;border:1px solid #d0e2ff}
-    .btn{flex:1;padding:16px;border-radius:40px;border:none;font-weight:700;font-size:1.2rem;cursor:pointer}
-    .btn-add{background:#3b82f6;color:#fff}.btn-remove{background:#ef4444;color:#fff}
-    .btn-group{display:flex;gap:8px;margin:16px 0}
-    .status{padding:12px;border-radius:40px;text-align:center;font-weight:700;margin:8px 0}
-    .stable{background:#d1fae5;color:#065f46}.reactive{background:#fef3c7;color:#92400e}
-    .config{font-size:1.3rem;font-weight:700;color:#3b82f6;text-align:center;margin:8px 0}
-    .element{font-size:0.9rem;color:#3a628c;text-align:center}
-    .legend{display:flex;gap:16px;margin-top:12px;font-size:0.8rem}
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Inter', -apple-system, 'Segoe UI', sans-serif;
+      background: linear-gradient(145deg, #f0f7ff 0%, #e9f0fa 100%);
+      min-height: 100dvh;
+      padding: 20px;
+    }
+
+    /* main container - responsive grid */
+    .sim-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #1e40af, #3b82f6);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      letter-spacing: -0.3px;
+    }
+
+    .hero p {
+      color: #2c5282;
+      font-size: 0.9rem;
+      margin-top: 6px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    @media (min-width: 720px) {
+      .grid {
+        grid-template-columns: 1fr 280px;
+      }
+    }
+
+    /* card styling with glassmorphism */
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(2px);
+      border-radius: 36px;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      padding: 24px;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .canvas-wrapper {
+      background: radial-gradient(circle at 30% 20%, #ffffff, #f5faff);
+      border-radius: 28px;
+      padding: 8px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #ffffff;
+      border-radius: 24px;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+    }
+
+    /* legend chips */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 18px;
+      margin-top: 18px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 14px;
+      display: inline-block;
+    }
+
+    /* control panel */
+    .btn-group {
+      display: flex;
+      gap: 14px;
+      margin: 20px 0 16px;
+    }
+    .btn {
+      flex: 1;
+      padding: 16px 12px;
+      border-radius: 60px;
+      border: none;
+      font-weight: 700;
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #eef3ff;
+      color: #1e3a8a;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    .btn-add {
+      background: linear-gradient(105deg, #3b82f6, #2563eb);
+      color: white;
+      box-shadow: 0 6px 14px rgba(59, 130, 246, 0.3);
+    }
+    .btn-add:active { transform: scale(0.96); background: #2563eb; }
+    .btn-remove {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .btn-remove:active { transform: scale(0.96); background: #fecaca; }
+    .btn:hover { filter: brightness(0.97); }
+
+    /* status indicators */
+    .status-card {
+      background: #ffffffdd;
+      backdrop-filter: blur(4px);
+      border-radius: 32px;
+      padding: 4px 0;
+    }
+    .status {
+      padding: 14px 12px;
+      border-radius: 60px;
+      text-align: center;
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 10px 0;
+      transition: all 0.2s;
+    }
+    .stable {
+      background: linear-gradient(105deg, #d1fae5, #a7f3d0);
+      color: #065f46;
+      border-left: 4px solid #10b981;
+    }
+    .reactive {
+      background: #fef9e3;
+      color: #b45309;
+      border-left: 4px solid #f59e0b;
+    }
+    .config {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #1e40af;
+      text-align: center;
+      letter-spacing: 2px;
+      margin: 12px 0 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .element {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #3b82f6;
+      text-align: center;
+      background: #eef2ff;
+      display: inline-block;
+      width: auto;
+      margin: 6px auto 0;
+      padding: 6px 14px;
+      border-radius: 40px;
+    }
+    .element-wrapper {
+      text-align: center;
+    }
+
+    /* accordion (interactive to reduce text) */
+    .info-accordion {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 28px;
+      overflow: hidden;
+      border: 1px solid #d9e8ff;
+    }
+    .accordion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #1e3a8a;
+      background: #f8fbff;
+      transition: 0.2s;
+    }
+    .accordion-header:hover {
+      background: #eef4ff;
+    }
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      padding: 0 20px;
+      background: #ffffffcc;
+    }
+    .info-accordion.open .accordion-content {
+      max-height: 200px;
+      padding: 0 20px 18px 20px;
+    }
+    .octet-tip {
+      font-size: 0.8rem;
+      color: #2c5282;
+      line-height: 1.5;
+      padding: 8px 0;
+    }
+    .shortcut-hint {
+      font-size: 0.7rem;
+      color: #6c8db0;
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 12px; }
+      .btn { padding: 12px; font-size: 1rem; }
+      .config { font-size: 1.3rem; }
+      .hero h1 { font-size: 1.4rem; }
+    }
   </style>
 </head>
 <body>
-<div class="grid">
-  <div class="panel">
-    <h2>⚛️ octet simulator</h2>
-    <canvas id="atomCanvas"></canvas>
-    <div class="legend"><span style="color:#ef4444">● nucleus</span><span style="color:#3b82f6">● electron</span><span style="color:#10b981">● stable octet</span></div>
+<div class="sim-container">
+  <div class="hero">
+    <h1>⚛️ octet rule · valence shell</h1>
+    <p>atoms gain, lose, or share electrons to achieve 8 valence electrons (noble gas stability)</p>
   </div>
-  <div>
-    <div class="panel">
-      <div class="btn-group"><button class="btn btn-remove" id="removeBtn">−</button><button class="btn btn-add" id="addBtn">+</button></div>
-      <div id="statusDisp" class="status reactive">⚡ reactive</div>
-      <div class="config" id="configDisp">2, 8, 1</div>
-      <div class="element" id="elementDisp">sodium atom</div>
-      <div style="font-size:0.85rem;color:#3a628c;margin-top:16px">goal: 8 valence e⁻ for stability</div>
+
+  <div class="grid">
+    <!-- LEFT PANEL: 3D-like atom canvas -->
+    <div class="card canvas-wrapper">
+      <canvas id="atomCanvas" aria-label="Interactive atom model with orbiting electrons"></canvas>
+      <div class="legend">
+        <span><i class="legend-dot" style="background:#ef4444;"></i> nucleus</span>
+        <span><i class="legend-dot" style="background:#3b82f6;"></i> core e⁻</span>
+        <span><i class="legend-dot" style="background:#10b981;"></i> valence (octet)</span>
+        <span><i class="legend-dot" style="background:#f59e0b;"></i> valence (<8)</span>
+      </div>
+      <div class="shortcut-hint">
+        💡 tip: click <kbd>+</kbd> / <kbd>-</kbd> or use keyboard [A] add / [R] remove
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: controls & dynamic info -->
+    <div class="card">
+      <div class="btn-group">
+        <button class="btn btn-remove" id="removeBtn" aria-label="Remove electron">− <span style="font-size:0.9rem;">remove</span></button>
+        <button class="btn btn-add" id="addBtn" aria-label="Add electron">+ <span style="font-size:0.9rem;">add</span></button>
+      </div>
+      
+      <div class="status-card">
+        <div id="statusDisp" class="status reactive">⚡ reactive · incomplete octet</div>
+        <div class="config" id="configDisp">2, 8, 1</div>
+        <div class="element-wrapper"><span class="element" id="elementDisp">sodium atom</span></div>
+      </div>
+
+      <!-- Accordion: hidden secondary text (explanation) -->
+      <div class="info-accordion" id="octetAccordion">
+        <div class="accordion-header" id="accordionHeader">
+          <span>📖 why 8? · octet rule explained</span>
+          <span id="accordionIcon">▼</span>
+        </div>
+        <div class="accordion-content">
+          <div class="octet-tip">
+            <strong>✨ The octet rule:</strong> atoms are most stable when their outermost (valence) shell holds 8 electrons (like noble gases).<br>
+            ➜ <strong>Metals</strong> lose electrons → positive ions.<br>
+            ➜ <strong>Nonmetals</strong> gain electrons → negative ions.<br>
+            Our simulator: adjust valence electrons to reach 8 → stable configuration.
+          </div>
+        </div>
+      </div>
+      <div class="shortcut-hint" style="margin-top: 14px;">
+        🧪 current valence: <span id="valenceLiveBadge" style="font-weight:800;">1</span> / 8
+      </div>
     </div>
   </div>
 </div>
+
 <script>
-(function(){
-  const canvas=document.getElementById('atomCanvas'),ctx=canvas.getContext('2d');
-  let w=0,h=0,DPR=devicePixelRatio||1,core=[2,8],valence=1,time=0;
-  const statusD=document.getElementById('statusDisp'),configD=document.getElementById('configDisp'),elementD=document.getElementById('elementDisp');
+(function() {
+  // ----- ELECTRON SHELL MODEL (core + valence)
+  // Core represents full inner shells: for simplicity, we manage [2,8] type core levels (like Na: 2,8,1)
+  // The model: coreLevels = array of completed shell counts (each core shell full)
+  // valence = electrons in outer shell (0..8)
+  let coreLevels = [2, 8];   // 1st shell:2, 2nd shell:8 => corresponds to sodium's inner core
+  let valence = 1;           // sodium: 1 valence
   
-  function resize(){const r=canvas.parentElement.getBoundingClientRect();w=r.width;h=w;canvas.width=w*DPR;canvas.height=h*DPR;canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+  // DOM elements
+  const canvas = document.getElementById('atomCanvas');
+  const ctx = canvas.getContext('2d');
+  const addBtn = document.getElementById('addBtn');
+  const removeBtn = document.getElementById('removeBtn');
+  const statusDiv = document.getElementById('statusDisp');
+  const configDiv = document.getElementById('configDisp');
+  const elementSpan = document.getElementById('elementDisp');
+  const valenceBadge = document.getElementById('valenceLiveBadge');
   
-  function updateUI(){
-    const cfg=[...core,valence].join(', '); configD.textContent=cfg;
-    const stable=valence===8||(valence===2&&core.length===0); statusD.textContent=stable?'✨ stable · octet':'⚡ reactive'; statusD.className=stable?'status stable':'status reactive';
-    let name=''; if(core.length===2&&valence===1)name='sodium atom'; else if(core.length===2&&valence===0)name='sodium ion (Na⁺)'; else if(core.length===1&&valence===7)name='fluorine atom'; else if(core.length===1&&valence===8)name='fluoride ion (F⁻)'; else if(valence===8)name='noble gas'; else name='atom/ion'; elementD.textContent=name;
+  let animationTime = 0;
+  let width = 0, height = 0;
+  let devicePixel = window.devicePixelRatio || 1;
+  
+  // --- Helper: update UI (stable status, element name, config string)
+  function updateAtomMetadata() {
+    // build configuration display
+    const configArr = [...coreLevels, valence];
+    configDiv.textContent = configArr.join(', ');
+    if (valenceBadge) valenceBadge.innerText = valence;
+    
+    const isStable = (valence === 8) || (coreLevels.length === 0 && valence === 2); // He case or full octet
+    if (isStable) {
+      statusDiv.innerHTML = '✨ stable · octet achieved ✨';
+      statusDiv.className = 'status stable';
+    } else {
+      statusDiv.innerHTML = '⚡ reactive · needs electrons to reach 8';
+      statusDiv.className = 'status reactive';
+    }
+    
+    // smart element / ion name generator
+    let name = '';
+    const totalElectrons = coreLevels.reduce((a,b)=>a+b,0) + valence;
+    if (coreLevels.length === 2 && coreLevels[0] === 2 && coreLevels[1] === 8) {
+      if (valence === 1) name = 'sodium atom (Na)';
+      else if (valence === 0) name = 'sodium ion (Na⁺)';
+      else if (valence === 8) name = 'neon core (Ne) · stable';
+      else name = 'sodium variant';
+    } 
+    else if (coreLevels.length === 1 && coreLevels[0] === 2) {
+      if (valence === 7) name = 'fluorine atom (F)';
+      else if (valence === 8) name = 'fluoride ion (F⁻) · octet';
+      else name = 'lithium / beryllium family';
+    }
+    else if (coreLevels.length === 2 && coreLevels[0] === 2 && coreLevels[1] === 8 && valence === 8) {
+      name = 'argon-like noble gas configuration';
+    }
+    else if (coreLevels.length === 0 && valence === 2) name = 'helium (stable duet)';
+    else if (valence === 8) name = 'noble gas configuration';
+    else if (valence > 8) name = 'excited state';
+    else name = 'custom atom / ion';
+    
+    // extra flavor
+    if (isStable && valence === 8) name = '✨ noble gas stability ✨';
+    elementSpan.textContent = name;
   }
   
-  function change(d){
-    valence+=d; if(valence<0){if(core.length){valence=core.pop()-1}else valence=0} if(valence>8){core.push(8); valence=1} updateUI();
+  // --- change valence electron count, handling core transitions (full shell pop/push)
+  function modifyValence(delta) {
+    let newValence = valence + delta;
+    // case: removing electron when valence is 0 -> take from previous core shell
+    if (newValence < 0) {
+      if (coreLevels.length === 0) {
+        newValence = 0; // cannot go below 0 electrons total
+      } else {
+        // pop last full core shell, convert into valence electrons: core shell had 8 (or 2 for first)
+        const lastCore = coreLevels.pop();
+        // lastCore is either 2 (for 1s) or 8 (for 2p etc)
+        newValence = lastCore - 1; // remove one electron from that shell
+        if (newValence < 0) newValence = 0;
+        valence = newValence;
+        // re-normalize: after pop, ensure valence is within 0..8
+        if (valence > 8) { valence = 8; }
+        updateAtomMetadata();
+        return;
+      }
+    }
+    
+    // adding: if newValence > 8, push core shell
+    if (newValence > 8) {
+      // push a full core shell (8 electrons) and set valence to 1 (excess)
+      coreLevels.push(8);
+      valence = 1;
+      updateAtomMetadata();
+      return;
+    }
+    
+    // normal case
+    valence = newValence;
+    if (valence < 0) valence = 0;
+    if (valence > 8) valence = 8;
+    updateAtomMetadata();
   }
   
-  function draw(){
-    ctx.clearRect(0,0,w,h); const cx=w/2,cy=h/2; time+=0.012;
-    ctx.beginPath(); ctx.arc(cx,cy,16,0,2*Math.PI); ctx.fillStyle='#ef4444'; ctx.shadowColor='#ef444480'; ctx.shadowBlur=14; ctx.fill(); ctx.shadowBlur=0;
-    const shells=[...core,valence]; shells.forEach((cnt,i)=>{const rad=42+i*36,isVal=i===shells.length-1;
-      ctx.beginPath(); ctx.arc(cx,cy,rad,0,2*Math.PI); ctx.strokeStyle=isVal?'#8b5cf640':'#cbd5e140'; ctx.lineWidth=isVal?2:1; ctx.setLineDash(isVal?[]:[3,5]); ctx.stroke(); ctx.setLineDash([]);
-      for(let j=0;j<cnt;j++){const a=(j/Math.max(cnt,1))*2*Math.PI+time*(1/(i+1)),ex=cx+Math.cos(a)*rad,ey=cy+Math.sin(a)*rad;
-        ctx.beginPath(); ctx.arc(ex,ey,4,0,2*Math.PI); ctx.fillStyle=isVal&&cnt===8?'#10b981':'#3b82f6'; ctx.shadowColor=isVal&&cnt===8?'#10b981':'#3b82f6'; ctx.shadowBlur=8; ctx.fill()} ctx.shadowBlur=0});
-    requestAnimationFrame(draw);
+  // Additional safety: after any operation, total electrons shouldn't be negative
+  function validateTotal() {
+    let total = coreLevels.reduce((s,v)=>s+v,0) + valence;
+    if (total < 0) {
+      coreLevels = [2,8];
+      valence = 1;
+    }
+    if (coreLevels.length === 0 && valence === 0) valence = 1; // at least hydrogen-like
+    updateAtomMetadata();
   }
   
-  document.getElementById('addBtn').onclick=()=>change(1); document.getElementById('removeBtn').onclick=()=>change(-1);
-  window.onresize=resize; resize(); updateUI(); draw();
+  // --- DRAWING: advanced electron shells with rotation & animation
+  function resizeCanvas() {
+    const container = canvas.parentElement;
+    const rect = container.getBoundingClientRect();
+    width = rect.width - 16;
+    if (width < 120) width = 120;
+    height = width;
+    canvas.width = width * devicePixel;
+    canvas.height = height * devicePixel;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(devicePixel, 0, 0, devicePixel, 0, 0);
+  }
+  
+  function drawAtom() {
+    if (!ctx || width === 0) return;
+    ctx.clearRect(0, 0, width, height);
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const maxRadius = Math.min(width, height) * 0.38;
+    
+    // nucleus glow
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#ef4444';
+    ctx.shadowColor = '#ef4444aa';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // nucleus highlight
+    ctx.beginPath();
+    ctx.arc(centerX-2, centerY-2, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#ffb3b3';
+    ctx.fill();
+    
+    // build list of shells: for each core level + valence level as last shell
+    const shellPopulations = [...coreLevels, valence];
+    const shellCount = shellPopulations.length;
+    const startRadius = 28;
+    const step = 26;
+    
+    animationTime += 0.018;
+    
+    for (let i = 0; i < shellCount; i++) {
+      const electronsInShell = shellPopulations[i];
+      if (electronsInShell === 0) continue;
+      const radius = startRadius + i * step;
+      if (radius > maxRadius + 5) continue;
+      const isValenceShell = (i === shellCount - 1);
+      const isStableValence = (isValenceShell && valence === 8);
+      
+      // draw orbit circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      if (isValenceShell) {
+        ctx.strokeStyle = '#8b5cf680';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 6]);
+      } else {
+        ctx.strokeStyle = '#cbd5e1aa';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([2, 5]);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // distribute electrons with dynamic rotation
+      const count = electronsInShell;
+      for (let j = 0; j < count; j++) {
+        const angleOffset = (j / Math.max(1, count)) * Math.PI * 2;
+        const speedFactor = (shellCount - i) * 0.6;
+        const angle = angleOffset + animationTime * (1.2 - i * 0.2);
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, 4.6, 0, Math.PI * 2);
+        // color by valence and stability
+        if (isValenceShell && valence === 8) {
+          ctx.fillStyle = '#10b981';
+          ctx.shadowColor = '#10b981aa';
+        } else if (isValenceShell) {
+          ctx.fillStyle = '#f59e0b';
+          ctx.shadowColor = '#f59e0b80';
+        } else {
+          ctx.fillStyle = '#3b82f6';
+          ctx.shadowColor = '#3b82f680';
+        }
+        ctx.shadowBlur = 7;
+        ctx.fill();
+        // little highlight
+        ctx.beginPath();
+        ctx.arc(x-1, y-1, 1.5, 0, Math.PI*2);
+        ctx.fillStyle = '#ffffffcc';
+        ctx.fill();
+      }
+    }
+    ctx.shadowBlur = 0;
+    
+    // draw center nucleus text (hint)
+    ctx.font = `bold ${Math.floor(12)}px system-ui`;
+    ctx.fillStyle = "#fff4e0";
+    ctx.shadowBlur = 0;
+    ctx.fillText("⚛️", centerX-7, centerY+5);
+    
+    // additional valence indicator
+    if (valence !== 8 && valence !== 0 && shellCount>0) {
+      ctx.font = `500 ${Math.floor(11)}px system-ui`;
+      ctx.fillStyle = "#f59e0b";
+      ctx.shadowBlur = 0;
+      ctx.fillText(`${valence} e⁻ valence`, centerX-24, centerY - 20);
+    } else if (valence === 8) {
+      ctx.fillStyle = "#10b981";
+      ctx.font = `bold ${Math.floor(11)}px system-ui`;
+      ctx.fillText("✓ octet", centerX-18, centerY - 22);
+    }
+    requestAnimationFrame(drawAtom);
+  }
+  
+  // --- Event handlers + keyboard shortcuts
+  function addElectron() {
+    modifyValence(1);
+    validateTotal();
+  }
+  
+  function removeElectron() {
+    modifyValence(-1);
+    validateTotal();
+  }
+  
+  addBtn.addEventListener('click', addElectron);
+  removeBtn.addEventListener('click', removeElectron);
+  
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '+' || e.key === '=' || e.key === 'a' || e.key === 'A') {
+      e.preventDefault();
+      addElectron();
+    } else if (e.key === '-' || e.key === '_' || e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      removeElectron();
+    }
+  });
+  
+  // resize observer
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+  });
+  
+  // --- accordion toggle for secondary text
+  const accordion = document.getElementById('octetAccordion');
+  const accordionHeader = document.getElementById('accordionHeader');
+  const accordionIcon = document.getElementById('accordionIcon');
+  if (accordionHeader) {
+    accordionHeader.addEventListener('click', () => {
+      accordion.classList.toggle('open');
+      accordionIcon.innerText = accordion.classList.contains('open') ? '▲' : '▼';
+    });
+  }
+  
+  // initial sync and start drawing
+  function init() {
+    resizeCanvas();
+    updateAtomMetadata();
+    drawAtom();
+  }
+  
+  // handle canvas touch/click? optional attraction
+  canvas.addEventListener('click', (e) => {
+    // subtle: add electron on canvas click (delight)
+    addElectron();
+  });
+  
+  init();
 })();
 </script>
 </body>

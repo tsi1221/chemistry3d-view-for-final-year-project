@@ -1,59 +1,587 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>🔋 PEM fuel cell</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:system-ui,sans-serif;background:#fff;min-height:100dvh;padding:12px}
-    #canvas-container{width:100%;height:100dvh;position:relative;background:#f8fafc}
-    .panel{position:absolute;bottom:20px;left:20px;right:20px;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:30px;padding:16px 20px;border:1px solid #d0e2ff;max-width:360px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,0.04)}
-    .status{display:inline-block;padding:4px 14px;border-radius:20px;font-size:0.7rem;font-weight:700;background:#e2e8f0;color:#3a628c}
-    .status.active{background:#d1fae5;color:#065f46}
-    .eq{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#3b82f6;margin:10px 0}
-    .btn{width:100%;padding:14px;border-radius:40px;border:none;font-weight:700;font-size:1rem;cursor:pointer;background:#3b82f6;color:#fff}
-    .legend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.8rem;color:#3a628c}
-    .hint{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.9);padding:6px 14px;border-radius:40px;font-size:0.8rem;color:#3a628c}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>3D Corrosion Micro-Cell · Electrochemical Rust Formation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: #eef2f6;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Modern UI Overlay - fully responsive */
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            pointer-events: none;
+            z-index: 20;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .glass-card {
+            pointer-events: auto;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(16px);
+            border-radius: 28px;
+            padding: 16px 20px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            transition: all 0.2s ease;
+        }
+
+        .title-card h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #7c2d12;
+            letter-spacing: -0.3px;
+        }
+        .title-card p {
+            font-size: 0.7rem;
+            color: #475569;
+            margin-top: 6px;
+            max-width: 280px;
+        }
+
+        .legend {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        .dot.orange { background: #ea580c; box-shadow: 0 0 4px #ea580c; }
+        .dot.blue { background: #38bdf8; }
+        .dot.brown { background: #92400e; }
+        .dot.green { background: #10b981; }
+
+        /* Button and slider area */
+        .action-card {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 40px;
+            padding: 12px 20px;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            background: linear-gradient(105deg, #ea580c, #c2410c);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
+        }
+        button:active { transform: scale(0.96); }
+        .rate-control {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 60px;
+        }
+        .rate-control label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #fef3c7;
+        }
+        input[type="range"] {
+            width: 140px;
+            height: 4px;
+            background: #fbbf24;
+            border-radius: 10px;
+          
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            width: 16px;
+            height: 16px;
+            background: #fbbf24;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+        }
+
+        /* Mobile responsive adjustments + collapsible notes */
+        .menu-toggle {
+            display: none;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            border: none;
+            border-radius: 60px;
+            padding: 8px 18px;
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+            gap: 6px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+        .theory-sidebar {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 280px;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(24px);
+            z-index: 100;
+            transition: 0.3s ease-out;
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border-left: 1px solid #ea580c;
+            pointer-events: auto;
+            overflow-y: auto;
+        }
+        .theory-sidebar.open { right: 0; }
+        .close-sidebar {
+            background: none;
+            border: none;
+            color: #ea580c;
+            font-size: 1.6rem;
+            cursor: pointer;
+            align-self: flex-end;
+        }
+        .theory-section {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 16px;
+        }
+        .theory-section h4 {
+            color: #f97316;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .theory-section p, .theory-section li {
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+        .overlay-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.2s;
+            pointer-events: auto;
+        }
+        .overlay-bg.active { opacity: 1; visibility: visible; }
+
+        @media (max-width: 750px) {
+            .ui-overlay { padding: 12px; }
+            .title-card h2 { font-size: 1rem; }
+            .action-card { padding: 8px 16px; gap: 10px; }
+            .menu-toggle { display: flex; }
+            .rate-control label { font-size: 0.65rem; }
+        }
+        @media (max-width: 550px) {
+            .action-card { flex-direction: column; align-items: stretch; }
+            button { width: 100%; }
+        }
+
+        .instruction {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            padding: 4px 16px;
+            border-radius: 60px;
+            font-size: 0.6rem;
+            color: #f1f5f9;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 20;
+        }
+    </style>
 </head>
 <body>
-<div id="canvas-container"></div>
-<div class="hint">🖱️ drag to rotate</div>
-<div class="panel">
-  <div style="display:flex;justify-content:space-between;align-items:center"><span>🔋 PEM cell</span><span class="status" id="statusBadge">standby</span></div>
-  <div class="eq">H₂ → 2H⁺ + 2e⁻ · O₂ + 4H⁺ + 4e⁻ → 2H₂O</div>
-  <button class="btn" id="powerBtn">▶ start reaction</button>
-  <div class="legend"><span style="color:#7dd3fc">● H⁺</span><span style="color:#fbbf24">● e⁻</span><span style="color:#fff">● H₂O</span></div>
+
+<div class="ui-overlay">
+    <div class="glass-card title-card">
+        <h2>🔬 Corrosion Micro-Cell · Electrochemical Rusting</h2>
+        <p>Oxygen reduction at edges drives iron oxidation in pit → Fe₂O₃·nH₂O</p>
+        <div class="legend">
+            <div class="legend-item"><span class="dot orange"></span><b>Anode (Pit):</b> Fe → Fe²⁺ + 2e⁻</div>
+            <div class="legend-item"><span class="dot blue"></span><b>Cathode (Edge):</b> O₂ + 2H₂O + 4e⁻ → 4OH⁻</div>
+            <div class="legend-item"><span class="dot brown"></span><b>Rust (Fe₂O₃·xH₂O)</b> growing particles</div>
+            <div class="legend-item"><span class="dot green"></span><b>Electron flow</b> through metal</div>
+        </div>
+    </div>
+    
+    <div class="action-card">
+        <button id="rustToggleBtn">▶ Start Oxidation</button>
+        <div class="rate-control">
+            <label>⚡ Corrosion Rate</label>
+            <input type="range" id="rateSlider" min="0" max="100" value="45">
+        </div>
+        <button id="resetRustBtn">⟳ Reset Rust</button>
+        <button id="theoryMenuBtn" class="menu-toggle">📘 Theory</button>
+    </div>
 </div>
-<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.128.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.128.0/examples/jsm/"}}</script>
+<div class="instruction">🖱️ Drag to rotate | Scroll zoom | Start Oxidation → rust particles emerge from pit</div>
+
+<!-- Sidebar for hidden detailed chemistry (reduces on-screen text) -->
+<div class="theory-sidebar" id="theorySidebar">
+    <button class="close-sidebar" id="closeTheoryBtn">✕</button>
+    <div class="theory-section">
+        <h4>🧪 Electrochemical Mechanism</h4>
+        <p>Corrosion requires an electrolyte (water droplet) and oxygen. The iron pit acts as anode (oxidation), while the oxygen-rich edge acts as cathode. Electrons flow through the metal.</p>
+    </div>
+    <div class="theory-section">
+        <h4>⚡ Half-Reactions</h4>
+        <p><strong>Anode:</strong> Fe → Fe²⁺ + 2e⁻<br>
+        <strong>Cathode:</strong> O₂ + 2H₂O + 4e⁻ → 4OH⁻<br>
+        Fe²⁺ + OH⁻ → Fe(OH)₂ → Fe₂O₃·H₂O (rust)</p>
+    </div>
+    <div class="theory-section">
+        <h4>🔬 Visual cues</h4>
+        <p>Brown particles = hydrated iron(III) oxide. Higher rate = faster rust particle generation. Reset clears rust layer.</p>
+    </div>
+</div>
+<div class="overlay-bg" id="overlayBg"></div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.132.2/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.132.2/examples/jsm/"
+        }
+    }
+</script>
+
 <script type="module">
-import*as THREE from'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
-const container=document.getElementById('canvas-container'),scene=new THREE.Scene();scene.background=new THREE.Color('#f8fafc');
-const camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);camera.position.set(10,5,16);camera.lookAt(0,0,0);
-const renderer=new THREE.WebGLRenderer({antialias:!0});renderer.setSize(container.clientWidth,container.clientHeight);renderer.shadowMap.enabled=!0;container.appendChild(renderer.domElement);
-new OrbitControls(camera,renderer.domElement).enableDamping=!0;
-scene.add(new THREE.AmbientLight(0xffffff,0.7));const dl=new THREE.DirectionalLight(0xffffff,1);dl.position.set(5,10,6);scene.add(dl);
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-const layer=new THREE.BoxGeometry(1,7,5.5);
-const anode=new THREE.Mesh(layer,new THREE.MeshStandardMaterial({color:'#64748b'}));anode.position.x=-3.2;scene.add(anode);
-const pem=new THREE.Mesh(layer,new THREE.MeshPhongMaterial({color:'#3b82f6',transparent:!0,opacity:0.35}));pem.position.x=0;scene.add(pem);
-const cathode=new THREE.Mesh(layer,new THREE.MeshStandardMaterial({color:'#64748b'}));cathode.position.x=3.2;scene.add(cathode);
-const wireCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(-3.2,4,0),new THREE.Vector3(-3.2,6,0),new THREE.Vector3(0,7,0),new THREE.Vector3(3.2,6,0),new THREE.Vector3(3.2,4,0)]);
-const wire=new THREE.Mesh(new THREE.TubeGeometry(wireCurve,64,0.08,6),new THREE.MeshStandardMaterial({color:'#475569'}));scene.add(wire);
-
-let running=!1;const protons=[],electrons=[],waters=[];
-const btn=document.getElementById('powerBtn'),badge=document.getElementById('statusBadge');
-btn.onclick=()=>{running=!running; btn.textContent=running?'⏸ stop':'▶ start'; badge.textContent=running?'⚡ producing':'standby'; badge.className=running?'status active':'status'};
-
-function animate(){requestAnimationFrame(animate);
-  if(running){if(Math.random()<0.1){const p=new THREE.Mesh(new THREE.SphereGeometry(0.12,6),new THREE.MeshStandardMaterial({color:'#7dd3fc'}));p.position.set(-3.2,(Math.random()-0.5)*5,(Math.random()-0.5)*3.5);scene.add(p);protons.push(p)}
-    if(Math.random()<0.08){const e=new THREE.Mesh(new THREE.SphereGeometry(0.09,5),new THREE.MeshStandardMaterial({color:'#fbbf24',emissive:'#fbbf24'}));e.position.copy(wireCurve.getPoint(0));scene.add(e);electrons.push({m:e,t:0})}
-    protons.forEach((p,i)=>{p.position.x+=0.07; if(p.position.x>=2.8){const w=new THREE.Mesh(new THREE.SphereGeometry(0.22,6),new THREE.MeshPhongMaterial({color:'#fff',transparent:!0,opacity:0.5}));w.position.set(3.5,p.position.y,p.position.z);scene.add(w);waters.push(w);scene.remove(p);protons.splice(i,1)}});
-    electrons.forEach((e,i)=>{e.t+=0.008; if(e.t<1)e.m.position.copy(wireCurve.getPoint(e.t)); else{scene.remove(e.m);electrons.splice(i,1)}});
-    waters.forEach((w,i)=>{w.position.x+=0.02; w.position.y+=0.01; w.material.opacity-=0.005; if(w.material.opacity<=0){scene.remove(w);waters.splice(i,1)}})}
-  renderer.render(scene,camera)}animate();
-window.addEventListener('resize',()=>{const w=container.clientWidth,h=container.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()});
+    // --- setup scene ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf1f5f9);
+    scene.fog = new THREE.FogExp2(0xf1f5f9, 0.008);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+    
+    // CSS2DRenderer for extra labels
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    document.body.appendChild(labelRenderer.domElement);
+    
+    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 8, 17);
+    camera.lookAt(0, 0, 0);
+    
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.rotateSpeed = 1.2;
+    controls.zoomSpeed = 1.0;
+    controls.enablePan = true;
+    controls.target.set(0, 0.8, 0);
+    
+    // --- Lighting ---
+    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambient);
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    mainLight.position.set(5, 10, 4);
+    mainLight.castShadow = true;
+    scene.add(mainLight);
+    const fillLight = new THREE.PointLight(0xcbd5e1, 0.5);
+    fillLight.position.set(0, 2, 4);
+    scene.add(fillLight);
+    const backLight = new THREE.PointLight(0xf97316, 0.3);
+    backLight.position.set(-2, 1, -6);
+    scene.add(backLight);
+    
+    // --- The Iron Bar with pit geometry ---
+    const ironGeo = new THREE.BoxGeometry(14, 1.8, 7);
+    const ironMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.65, roughness: 0.4 });
+    const ironBar = new THREE.Mesh(ironGeo, ironMat);
+    ironBar.position.y = -1.2;
+    ironBar.castShadow = true;
+    ironBar.receiveShadow = false;
+    scene.add(ironBar);
+    
+    // Pit (damage site)
+    const pitGeo = new THREE.SphereGeometry(1.6, 48, 48);
+    const pitMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1f, roughness: 0.7, emissive: 0x331a00 });
+    const pit = new THREE.Mesh(pitGeo, pitMat);
+    pit.position.set(0, -0.2, 0);
+    pit.scale.set(1.2, 0.55, 1.2);
+    scene.add(pit);
+    
+    // --- Water droplet (translucent hemisphere) ---
+    const dropletGeo = new THREE.SphereGeometry(4.2, 64, 64, 0, Math.PI * 2, 0, Math.PI / 2.2);
+    const dropletMat = new THREE.MeshPhysicalMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.38, metalness: 0.1, roughness: 0.2 });
+    const droplet = new THREE.Mesh(dropletGeo, dropletMat);
+    droplet.position.y = -0.4;
+    droplet.castShadow = false;
+    scene.add(droplet);
+    
+    // --- Decorative O₂ molecules at edges (cathode region) ---
+    const o2Group = new THREE.Group();
+    const oxygenMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.2 });
+    for (let i = 0; i < 28; i++) {
+        const mol = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), oxygenMat);
+        const angle = Math.random() * Math.PI * 2;
+        const rad = 5.5;
+        mol.position.set(Math.cos(angle) * rad, 0.2 + Math.random() * 1.2, Math.sin(angle) * rad);
+        o2Group.add(mol);
+    }
+    scene.add(o2Group);
+    
+    // Animate O₂ molecules slowly
+    function animateO2(time) {
+        o2Group.children.forEach((child, idx) => {
+            child.position.y += Math.sin(time * 1.2 + idx) * 0.003;
+        });
+    }
+    
+    // --- Rust particles system (dynamic) ---
+    const rustGroup = new THREE.Group();
+    scene.add(rustGroup);
+    let rustParticles = [];
+    let isOxidizing = false;
+    let corrosionRate = 0.45; // 0..1
+    
+    // Particle creation with varying size/shape
+    function addRustParticle() {
+        const size = 0.12 + Math.random() * 0.2;
+        const geometry = new THREE.SphereGeometry(size, 10, 10);
+        const material = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.85, emissive: 0x4a1c00, emissiveIntensity: 0.1 });
+        const particle = new THREE.Mesh(geometry, material);
+        // position within pit area (x: -2..2, z: -2..2, y: -0.2 to 0.8)
+        const angle = Math.random() * Math.PI * 2;
+        const rad = Math.random() * 2.2;
+        particle.position.x = Math.cos(angle) * rad;
+        particle.position.z = Math.sin(angle) * rad;
+        particle.position.y = -0.1 + Math.random() * 1.2;
+        particle.userData = {
+            life: 1.0,
+            driftY: 0.002 + Math.random() * 0.008,
+            rotSpeed: (Math.random() - 0.5) * 0.03
+        };
+        rustGroup.add(particle);
+        rustParticles.push(particle);
+    }
+    
+    function resetRust() {
+        rustParticles.forEach(p => rustGroup.remove(p));
+        rustParticles = [];
+        // reset pit color to dark grey/rusty base
+        pit.material.color.setHex(0x4a2c1a);
+    }
+    
+    // Update rust based on rate
+    function updateRustGrowth() {
+        if (!isOxidizing) return;
+        const spawnProb = corrosionRate * 0.055;
+        if (Math.random() < spawnProb) {
+            addRustParticle();
+        }
+        // pit darkening effect
+        const targetColor = new THREE.Color(0x6b2e0a);
+        pit.material.color.lerp(targetColor, 0.008);
+        // slowly animate existing particles
+        rustParticles.forEach(p => {
+            p.position.y += p.userData.driftY;
+            p.rotation.x += p.userData.rotSpeed;
+            p.rotation.z += p.userData.rotSpeed;
+            if (p.position.y > 1.4) {
+                p.userData.driftY = -0.003;
+            }
+            if (p.position.y < -0.3) p.userData.driftY = Math.abs(p.userData.driftY);
+        });
+        // limit particle count
+        if (rustParticles.length > 380) {
+            const oldest = rustParticles.shift();
+            rustGroup.remove(oldest);
+        }
+    }
+    
+    // --- Add electron flow particles (decorative along metal surface) ---
+    const electronFlow = [];
+    const eMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 0.7 });
+    for (let i = 0; i < 32; i++) {
+        const ePart = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), eMat);
+        ePart.userData = { offset: Math.random() * Math.PI * 2, speed: 0.8 + Math.random() * 0.6 };
+        scene.add(ePart);
+        electronFlow.push(ePart);
+    }
+    
+    function updateElectronFlow(time) {
+        electronFlow.forEach((e, idx) => {
+            const t = (time * 1.5 + idx) % 1;
+            const xPos = -5 + t * 10;
+            e.position.set(xPos, -0.55, (Math.sin(idx + time) * 0.8));
+        });
+    }
+    
+    // --- CSS2D labels for clarity ---
+    function addLabel(text, x, y, z, color = '#1e293b') {
+        const div = document.createElement('div');
+        div.textContent = text;
+        div.style.backgroundColor = 'rgba(255,245,230,0.85)';
+        div.style.padding = '2px 12px';
+        div.style.borderRadius = '30px';
+        div.style.fontSize = '11px';
+        div.style.fontWeight = 'bold';
+        div.style.color = color;
+        div.style.backdropFilter = 'blur(4px)';
+        div.style.fontFamily = 'monospace';
+        const label = new CSS2DObject(div);
+        label.position.set(x, y, z);
+        scene.add(label);
+    }
+    addLabel('⚡ Anode (Fe oxidation)', 0, 1.1, 2.2, '#ea580c');
+    addLabel('O₂ + H₂O → OH⁻', 4.5, 1.2, 3.5, '#0284c7');
+    addLabel('Electron flow', 2, -0.9, 2.8, '#10b981');
+    
+    // --- UI Event Binding ---
+    const toggleBtn = document.getElementById('rustToggleBtn');
+    const resetBtn = document.getElementById('resetRustBtn');
+    const rateSlider = document.getElementById('rateSlider');
+    
+    toggleBtn.addEventListener('click', () => {
+        isOxidizing = !isOxidizing;
+        toggleBtn.innerHTML = isOxidizing ? '⏸ Stop Oxidation' : '▶ Start Oxidation';
+        if (isOxidizing) {
+            toggleBtn.style.background = 'linear-gradient(105deg, #b91c1c, #7f1d1d)';
+        } else {
+            toggleBtn.style.background = 'linear-gradient(105deg, #ea580c, #c2410c)';
+        }
+    });
+    
+    resetBtn.addEventListener('click', () => {
+        resetRust();
+        pit.material.color.setHex(0x4a2c1a);
+    });
+    
+    rateSlider.addEventListener('input', (e) => {
+        corrosionRate = parseInt(e.target.value, 10) / 100;
+    });
+    
+    // --- Theory sidebar (reduces on-screen text clutter) ---
+    const theoryBtn = document.getElementById('theoryMenuBtn');
+    const theorySidebar = document.getElementById('theorySidebar');
+    const overlayBg = document.getElementById('overlayBg');
+    const closeTheory = document.getElementById('closeTheoryBtn');
+    function openTheory() { theorySidebar.classList.add('open'); overlayBg.classList.add('active'); }
+    function closeTheoryFn() { theorySidebar.classList.remove('open'); overlayBg.classList.remove('active'); }
+    theoryBtn.addEventListener('click', openTheory);
+    closeTheory.addEventListener('click', closeTheoryFn);
+    overlayBg.addEventListener('click', closeTheoryFn);
+    
+    // --- Animate rust color based on rate ---
+    let timeAcc = 0;
+    
+    // Additional decorative floating particles (atmosphere)
+    const ambientParticles = [];
+    for (let i = 0; i < 150; i++) {
+        const part = new THREE.Mesh(new THREE.SphereGeometry(0.05, 4, 4), new THREE.MeshStandardMaterial({ color: 0x9ca3af, emissive: 0xcbd5e1, emissiveIntensity: 0.1 }));
+        part.position.set((Math.random() - 0.5) * 18, (Math.random() - 0.5) * 10, (Math.random() - 0.5) * 12);
+        scene.add(part);
+        ambientParticles.push(part);
+    }
+    
+    function animateAmbient() {
+        ambientParticles.forEach(p => {
+            p.position.x += 0.0006;
+            p.position.z += 0.0004;
+            if (p.position.x > 10) p.position.x = -10;
+            if (p.position.z > 8) p.position.z = -8;
+        });
+    }
+    
+    // --- Main render loop ---
+    let lastTime = 0;
+    function animate(time) {
+        requestAnimationFrame(animate);
+        const now = performance.now() / 1000;
+        const dt = Math.min(0.033, now - (lastTime || now));
+        lastTime = now;
+        
+        timeAcc += 0.02;
+        updateRustGrowth();
+        animateO2(timeAcc);
+        updateElectronFlow(timeAcc);
+        animateAmbient();
+        
+        // slight droplet shimmer
+        droplet.material.opacity = 0.38 + Math.sin(timeAcc * 2) * 0.03;
+        
+        controls.update();
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
+    }
+    
+    animate();
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // small console tip
+    console.log('Corrosion Micro-Cell | Start oxidation to see rust particles grow from pit | Rate controls speed');
 </script>
 </body>
 </html>

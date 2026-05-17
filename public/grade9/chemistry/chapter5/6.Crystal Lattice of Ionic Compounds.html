@@ -2,156 +2,589 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Crystal Lattice</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>3D Crystal Lattice · NaCl Ionic Structure</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
         :root {
-            --bg: #020617;
-            --panel: #0f172a;
-            --na: #4ade80; /* Sodium Cation */
-            --cl: #fbbf24; /* Chloride Anion */
-            --text: #f1f5f9;
+            --bg-deep: #020617;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --na-color: #4ade80;
+            --cl-color: #fbbf24;
+            --na-glow: rgba(74, 222, 128, 0.5);
+            --cl-glow: rgba(251, 191, 36, 0.5);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-subtle: rgba(255, 255, 255, 0.1);
+            --card-radius: 24px;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-main);
             margin: 0;
-            display: flex;
             height: 100vh;
             overflow: hidden;
+            touch-action: none;
         }
 
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Modern Sidebar - collapsible on mobile */
         .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
+            width: 300px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-subtle);
+            padding: 24px 20px;
             display: flex;
             flex-direction: column;
             gap: 20px;
-            z-index: 10;
+            z-index: 20;
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            overflow-y: auto;
         }
 
-        .viewport { flex-grow: 1; position: relative; perspective: 1000px; background: #000; cursor: move; }
-        
+        /* Viewport 3D area */
+        .viewport {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at 30% 40%, #0a0f1e, #000000);
+            overflow: hidden;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .viewport:active {
+            cursor: grabbing;
+        }
+
         #scene {
             position: absolute;
             width: 100%;
             height: 100%;
             transform-style: preserve-3d;
-            transform: rotateX(-20deg) rotateY(20deg);
+            transition: transform 0.05s linear;
         }
 
+        /* Ion styling */
         .ion {
             position: absolute;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 10px;
-            color: rgba(0,0,0,0.5);
-            transition: transform 0.1s;
+            font-weight: 700;
+            font-size: 14px;
+            color: #0f172a;
+            backface-visibility: visible;
+            transition: box-shadow 0.2s ease;
+            cursor: pointer;
+            will-change: transform;
         }
 
-        .na { background: var(--na); box-shadow: 0 0 15px var(--na); }
-        .cl { background: var(--cl); box-shadow: 0 0 15px var(--cl); }
+        .ion.na {
+            background: radial-gradient(circle at 35% 35%, #6ee7b7, var(--na-color));
+            box-shadow: 0 0 12px var(--na-glow);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .ion.cl {
+            background: radial-gradient(circle at 35% 35%, #fde68a, var(--cl-color));
+            box-shadow: 0 0 12px var(--cl-glow);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
 
-        .card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; font-size: 0.85rem; }
-        
-        input[type=range] { width: 100%; accent-color: var(--primary); }
+        /* Card components */
+        .title-section h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fbbf24, #4ade80);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .title-section p {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--card-radius);
+            padding: 16px 18px;
+            border: 1px solid var(--border-subtle);
+            backdrop-filter: blur(4px);
+        }
+
+        .card h3 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--cl-color);
+            margin-bottom: 12px;
+        }
+
+        /* Range slider */
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--cl-color);
+            background: #1e293b;
+            height: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Legend */
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .legend-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 18px;
+        }
+        .legend-dot.na { background: var(--na-color); box-shadow: 0 0 6px var(--na-glow); }
+        .legend-dot.cl { background: var(--cl-color); box-shadow: 0 0 6px var(--cl-glow); }
+        .legend-text {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .legend-text small {
+            color: var(--text-muted);
+            font-size: 0.65rem;
+        }
+
+        /* Control buttons */
+        .control-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .ctrl-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid var(--border-subtle);
+            padding: 8px;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .ctrl-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        .ctrl-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* Accordion (hidden text) */
+        .info-accordion {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--cl-color);
+            background: rgba(0,0,0,0.2);
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding: 0 16px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .info-accordion.open .accordion-content {
+            max-height: 150px;
+            padding: 0 16px 14px 16px;
+        }
+
+        /* Mobile responsiveness: hide sidebar behind button */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--cl-color);
+            color: #0f172a;
+            border: none;
+            border-radius: 60px;
+            padding: 12px 18px;
+            font-weight: bold;
+            z-index: 30;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        @media (max-width: 720px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                transform: translateX(-100%);
+                width: 85%;
+                max-width: 280px;
+                z-index: 40;
+                background: rgba(2, 6, 23, 0.98);
+                backdrop-filter: blur(20px);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .menu-toggle {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .viewport {
+                width: 100%;
+            }
+        }
+
+        /* helper */
+        .stats-badge {
+            background: #00000055;
+            border-radius: 40px;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            text-align: center;
+        }
+        footer {
+            font-size: 0.6rem;
+            text-align: center;
+            margin-top: 12px;
+            color: #475569;
+        }
     </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2 style="color:var(--cl); margin:0;">Crystal Lattice</h2>
-    
-    <div class="card">
-        <label>Lattice Density (Grid Size)</label>
-        <div style="display:flex; justify-content: space-between; margin-top:5px;">
-            <span>Small</span>
-            <span>Large</span>
+<div class="app-container">
+    <div class="sidebar" id="sidebar">
+        <div class="title-section">
+            <h1>⚛️ NaCl Crystal Lattice</h1>
+            <p>face-centered cubic · ionic bonding</p>
         </div>
-        <input type="range" id="density" min="2" max="4" value="3" oninput="initLattice()">
+
+        <div class="card">
+            <div class="slider-label">
+                <span>🔘 Lattice Density</span>
+                <span id="sizeValue">3x3x3</span>
+            </div>
+            <input type="range" id="density" min="2" max="5" value="3" step="1">
+            <div class="control-group" style="margin-top: 12px;">
+                <button class="ctrl-btn" id="resetViewBtn">⟳ Reset View</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>⚛️ Ion Legend</h3>
+            <div class="legend-item">
+                <div class="legend-dot na"></div>
+                <div class="legend-text">Na⁺ <small>(Sodium cation)</small></div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot cl"></div>
+                <div class="legend-text">Cl⁻ <small>(Chloride anion)</small></div>
+            </div>
+            <div class="stats-badge" id="ionCountDisplay">ions: 27</div>
+        </div>
+
+        <!-- Accordion: hidden physics explanation -->
+        <div class="info-accordion" id="accordion">
+            <div class="accordion-header" id="accordionHeader">
+                <span>📐 Why alternate pattern?</span>
+                <span id="accordionIcon">▼</span>
+            </div>
+            <div class="accordion-content">
+                <strong>Rock salt structure:</strong> Na⁺ and Cl⁻ alternate in all three dimensions. Each Na⁺ is surrounded by 6 Cl⁻ (octahedral coordination). This maximizes electrostatic attraction and minimizes repulsion — the key to ionic crystal stability.
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: auto;">
+            <div style="font-size:0.7rem; color:#5b6e8c;">
+                🖱️ Drag to rotate • Touch + drag on mobile<br>
+                💡 Ions arranged in checkerboard order
+            </div>
+        </div>
+        <footer>⚡ electrostatic lattice | NaCl unit cell</footer>
     </div>
 
-    <div class="card">
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-            <div style="width:15px; height:15px; background:var(--na); border-radius:50%;"></div>
-            <span>Na+ (Sodium Cation)</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-            <div style="width:15px; height:15px; background:var(--cl); border-radius:50%;"></div>
-            <span>Cl- (Chloride Anion)</span>
-        </div>
-    </div>
-
-    <div class="card" style="color: #94a3b8; line-height: 1.4;">
-        <b>The Unit Cell:</b> Notice how no two ions of the same charge touch. This maximizes attraction and minimizes repulsion.
+    <div class="viewport" id="viewport">
+        <div id="scene"></div>
     </div>
 </div>
 
-<div class="viewport" id="viewport">
-    <div id="scene"></div>
-</div>
+<button class="menu-toggle" id="menuToggleBtn">☰ Lattice controls</button>
 
 <script>
+    // DOM elements
     const scene = document.getElementById('scene');
     const viewport = document.getElementById('viewport');
-    let rotX = -20;
-    let rotY = 20;
+    const densitySlider = document.getElementById('density');
+    const sizeValueSpan = document.getElementById('sizeValue');
+    const ionCountSpan = document.getElementById('ionCountDisplay');
+    const resetViewBtn = document.getElementById('resetViewBtn');
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menuToggleBtn');
 
+    // 3D rotation state
+    let rotX = -25;      // default tilt
+    let rotY = 28;
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+    
+    // Configuration
+    let currentSize = 3;      // 2,3,4,5
+    let ions = [];            // store references for optional animations
+    
+    // Helper: re-generate lattice
     function initLattice() {
         scene.innerHTML = '';
-        const size = parseInt(document.getElementById('density').value);
-        const spacing = 80;
+        const size = parseInt(densitySlider.value);
+        currentSize = size;
+        sizeValueSpan.innerText = `${size}x${size}x${size}`;
+        
+        // dynamic spacing based on size: keep within view but consistent
+        const baseSpacing = 72;
+        const spacing = baseSpacing;
         const offset = ((size - 1) * spacing) / 2;
-
+        
+        let totalIons = 0;
+        
         for (let z = 0; z < size; z++) {
             for (let y = 0; y < size; y++) {
                 for (let x = 0; x < size; x++) {
-                    const ion = document.createElement('div');
-                    // Checkers pattern logic: if sum of indices is even/odd
+                    // checkerboard pattern: (x+y+z) even -> Na+, odd -> Cl-
                     const isNa = (x + y + z) % 2 === 0;
+                    const ionDiv = document.createElement('div');
+                    ionDiv.className = `ion ${isNa ? 'na' : 'cl'}`;
                     
-                    ion.className = `ion ${isNa ? 'na' : 'cl'}`;
-                    const radius = isNa ? 20 : 30; // Cl- is physically larger than Na+
-                    ion.style.width = radius + 'px';
-                    ion.style.height = radius + 'px';
+                    // Radii: Cl- is slightly larger
+                    const radius = isNa ? 18 : 22;
+                    ionDiv.style.width = radius + 'px';
+                    ionDiv.style.height = radius + 'px';
+                    ionDiv.style.lineHeight = radius + 'px';
+                    ionDiv.style.fontSize = (radius * 0.55) + 'px';
+                    ionDiv.innerText = isNa ? '+' : '−';
                     
+                    // position in 3D space
                     const posX = x * spacing - offset;
                     const posY = y * spacing - offset;
                     const posZ = z * spacing - offset;
-
-                    ion.style.transform = `translate3d(${posX + 400}px, ${posY + 300}px, ${posZ}px)`;
-                    ion.innerText = isNa ? '+' : '-';
-                    scene.appendChild(ion);
+                    
+                    // center offset: scene center is (viewport.width/2, viewport.height/2)
+                    // we will later set absolute position, but transform3d works relative to scene origin
+                    // scene container uses absolute positioning, we set left/top? No: we use transform translate3d
+                    ionDiv.style.transform = `translate3d(${posX}px, ${posY}px, ${posZ}px)`;
+                    ionDiv.style.left = '50%';
+                    ionDiv.style.top = '50%';
+                    ionDiv.style.position = 'absolute';
+                    ionDiv.style.marginLeft = `-${radius/2}px`;
+                    ionDiv.style.marginTop = `-${radius/2}px`;
+                    
+                    scene.appendChild(ionDiv);
+                    totalIons++;
                 }
             }
         }
+        
+        ionCountSpan.innerText = `ions: ${totalIons}`;
+        
+        // re-apply current rotation
+        updateSceneTransform();
     }
-
-    // Interaction logic
-    let isDragging = false;
-    let lastX, lastY;
-
-    viewport.onmousedown = (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; };
-    window.onmouseup = () => isDragging = false;
-    window.onmousemove = (e) => {
-        if (!isDragging) return;
-        const deltaX = e.clientX - lastX;
-        const deltaY = e.clientY - lastY;
-        rotY += deltaX * 0.5;
-        rotX -= deltaY * 0.5;
+    
+    function updateSceneTransform() {
         scene.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-        lastX = e.clientX;
-        lastY = e.clientY;
-    };
-
+    }
+    
+    // Reset to default angle
+    function resetView() {
+        rotX = -25;
+        rotY = 28;
+        updateSceneTransform();
+    }
+    
+    // --- DRAG HANDLING (mouse + touch)
+    function startDrag(clientX, clientY) {
+        isDragging = true;
+        lastX = clientX;
+        lastY = clientY;
+        viewport.style.cursor = 'grabbing';
+    }
+    
+    function onDragMove(clientX, clientY) {
+        if (!isDragging) return;
+        const deltaX = clientX - lastX;
+        const deltaY = clientY - lastY;
+        rotY += deltaX * 0.6;
+        rotX -= deltaY * 0.6;
+        // clamp vertical rotation to avoid flipping weirdness
+        rotX = Math.min(50, Math.max(-70, rotX));
+        updateSceneTransform();
+        lastX = clientX;
+        lastY = clientY;
+    }
+    
+    function endDrag() {
+        isDragging = false;
+        viewport.style.cursor = 'grab';
+    }
+    
+    // Mouse events
+    viewport.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startDrag(e.clientX, e.clientY);
+    });
+    window.addEventListener('mousemove', (e) => {
+        if (isDragging) onDragMove(e.clientX, e.clientY);
+    });
+    window.addEventListener('mouseup', endDrag);
+    
+    // Touch events for mobile
+    viewport.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        startDrag(touch.clientX, touch.clientY);
+    });
+    window.addEventListener('touchmove', (e) => {
+        if (isDragging && e.touches.length) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            onDragMove(touch.clientX, touch.clientY);
+        }
+    });
+    window.addEventListener('touchend', endDrag);
+    
+    // Slider event
+    densitySlider.addEventListener('input', () => {
+        initLattice();
+    });
+    
+    resetViewBtn.addEventListener('click', () => {
+        resetView();
+    });
+    
+    // --- Accordion toggle (interactive text hiding)
+    const accordion = document.getElementById('accordion');
+    const accordionHeader = document.getElementById('accordionHeader');
+    const accordionIcon = document.getElementById('accordionIcon');
+    if (accordionHeader) {
+        accordionHeader.addEventListener('click', () => {
+            accordion.classList.toggle('open');
+            accordionIcon.innerText = accordion.classList.contains('open') ? '▲' : '▼';
+        });
+    }
+    
+    // Mobile menu toggle
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        // close sidebar when clicking on overlay area (optional tap on viewport)
+        viewport.addEventListener('click', (e) => {
+            if (window.innerWidth <= 720 && sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            }
+        });
+    }
+    
+    // resize observer to maybe re-center but not necessary: lattice is centered via absolute.
+    // Add a subtle effect: ensure initial scene center is correct - already uses translate3d relative to scene center.
+    // Additional: reset scene sizing if needed (optional)
+    function centerScene() {
+        // nothing special, but we guarantee the scene container dimensions.
+        const rect = viewport.getBoundingClientRect();
+        // ions are positioned using percentages relative to parent (left/top 50%)
+        // no extra needed.
+    }
+    window.addEventListener('resize', () => {
+        centerScene();
+    });
+    
+    // initial generation and style for cursor
+    viewport.style.cursor = 'grab';
     initLattice();
+    centerScene();
+    
+    // Add small hint: ion tooltips on hover (educational)
+    function addTooltipBehavior() {
+        // dynamic: add title to each ion after generation
+        const observer = new MutationObserver(() => {
+            document.querySelectorAll('.ion').forEach(ion => {
+                if (!ion.getAttribute('data-tip')) {
+                    const isNa = ion.classList.contains('na');
+                    ion.setAttribute('data-tip', isNa ? 'Sodium cation Na⁺' : 'Chloride anion Cl⁻');
+                    ion.setAttribute('title', isNa ? 'Na⁺ : loses 1 electron' : 'Cl⁻ : gains 1 electron');
+                }
+            });
+        });
+        observer.observe(scene, { childList: true, subtree: true });
+    }
+    addTooltipBehavior();
+    
+    // Keyboard shortcuts: arrow keys fine rotation
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') {
+            rotY += 8;
+            updateSceneTransform();
+        } else if (e.key === 'ArrowRight') {
+            rotY -= 8;
+            updateSceneTransform();
+        } else if (e.key === 'ArrowUp') {
+            rotX -= 8;
+            rotX = Math.min(50, Math.max(-70, rotX));
+            updateSceneTransform();
+        } else if (e.key === 'ArrowDown') {
+            rotX += 8;
+            rotX = Math.min(50, Math.max(-70, rotX));
+            updateSceneTransform();
+        } else if (e.key === 'r' || e.key === 'R') {
+            resetView();
+        }
+    });
+    
+    // additional 3D depth hint: add slight auto-rotation? Not needed, but clean.
+    // Style: Add floating shadow
+    console.log('Crystal lattice ready — alternating NaCl structure');
 </script>
 </body>
 </html>

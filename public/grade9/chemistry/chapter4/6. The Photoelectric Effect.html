@@ -1,160 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photoelectric Effect Lab</title>
-    <style>
-        :root {
-            --bg: #030712;
-            --panel: #111827;
-            --text: #f9fafb;
-            --metal: #64748b;
-        }
-
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .viewport { flex-grow: 1; position: relative; background: #000; }
-        canvas { width: 100%; height: 100%; }
-
-        .card {
-            background: rgba(255,255,255,0.05);
-            padding: 15px;
-            border-radius: 12px;
-        }
-
-        label { display: block; font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; }
-        input[type=range] { width: 100%; margin-bottom: 15px; cursor: pointer; }
-
-        .stats { font-family: monospace; font-size: 0.9rem; color: #fbbf24; }
-        .alert { color: #f87171; font-size: 0.8rem; font-weight: bold; margin-top: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>⚡ photoelectric lab</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #ffffff;
+      color: #1e293b;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      width: 100%;
+    }
+    .viewport {
+      flex: 1 1 auto;
+      background: #f8fafc;
+      position: relative;
+      min-height: 0;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .controls {
+      background: #ffffff;
+      border-top: 1px solid #e2e8f0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 45vh;
+      overflow-y: auto;
+      transition: max-height 0.2s ease;
+    }
+    .controls.collapsed {
+      max-height: 56px;
+      overflow-y: hidden;
+    }
+    .toggle-btn {
+      align-self: center;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .card {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 12px;
+      flex: 1 1 160px;
+      border: 1px solid #e2e8f0;
+    }
+    label {
+      display: block;
+      font-size: 0.7rem;
+      color: #64748b;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    input[type=range] {
+      width: 100%;
+      margin-bottom: 10px;
+      cursor: pointer;
+      accent-color: #0284c7;
+    }
+    .stats {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #b45309;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .alert {
+      color: #dc2626;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 6px;
+      display: none;
+    }
+    .alert.show {
+      display: block;
+    }
+    .rule-text {
+      font-size: 0.7rem;
+      color: #475569;
+      line-height: 1.4;
+      background: #f1f5f9;
+      border-radius: 10px;
+      padding: 8px;
+    }
+    @media (min-width: 768px) {
+      .app {
+        flex-direction: row;
+      }
+      .viewport {
+        flex: 1 1 70%;
+      }
+      .controls {
+        width: 300px;
+        flex: 0 0 300px;
+        border-top: none;
+        border-left: 1px solid #e2e8f0;
+        max-height: 100vh;
+        overflow-y: auto;
+        padding: 20px;
+        gap: 16px;
+      }
+      .controls.collapsed {
+        max-height: 100vh;
+      }
+      .toggle-btn {
+        display: none;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2 style="margin:0; font-size: 1.2rem; color: #38bdf8;">Photoelectric Lab</h2>
-    
-    <div class="card">
-        <label>Light Frequency (Color)</label>
-        <input type="range" id="freq" min="300" max="800" value="400">
-        
-        <label>Light Intensity (Brightness)</label>
-        <input type="range" id="intensity" min="0" max="10" value="5">
-    </div>
-
-    <div class="card stats">
-        Photon Energy: <span id="eDisplay">0</span> eV<br>
-        Metal Work Function: 4.0 eV
-        <div id="statusAlert" class="alert">Low Energy: No Electrons</div>
-    </div>
-
-    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
-        <b>The Rule:</b> Intensity (brightness) only increases the <i>number</i> of electrons. Only Frequency (color) increases their <i>speed</i>.
-    </div>
-</div>
-
-<div class="viewport">
+<div class="app">
+  <div class="viewport">
     <canvas id="photoCanvas"></canvas>
+  </div>
+
+  <div class="controls" id="controlPanel">
+    <button class="toggle-btn" id="toggleControls">▲ hide controls</button>
+    <div class="row">
+      <div class="card">
+        <label>⚡ frequency (color)</label>
+        <input type="range" id="freq" min="300" max="800" value="400">
+      </div>
+      <div class="card">
+        <label>💡 intensity</label>
+        <input type="range" id="intensity" min="0" max="10" value="5">
+      </div>
+    </div>
+    <div class="card stats">
+      <span>photon energy <span id="eDisplay">0</span> eV</span>
+      <span>work function 4.0 eV</span>
+      <div id="statusAlert" class="alert show">⚠️ low energy · no electrons</div>
+    </div>
+    <div class="rule-text">
+      <b>⚡ rule:</b> intensity → more electrons.<br> frequency → faster electrons.
+    </div>
+  </div>
 </div>
 
 <script>
+  (function() {
     const canvas = document.getElementById('photoCanvas');
     const ctx = canvas.getContext('2d');
     let photons = [];
     let electrons = [];
     const workFunction = 4.0;
+    let animationId;
 
     function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
     }
     window.addEventListener('resize', resize);
     resize();
 
     function nmToRGB(wavelength) {
-        if (wavelength < 440) return "#8b5cf6"; // Violet
-        if (wavelength < 490) return "#3b82f6"; // Blue
-        if (wavelength < 580) return "#22c55e"; // Green
-        if (wavelength < 645) return "#eab308"; // Yellow
-        return "#ef4444"; // Red
+      if (wavelength < 440) return "#8b5cf6";
+      if (wavelength < 490) return "#3b82f6";
+      if (wavelength < 580) return "#22c55e";
+      if (wavelength < 645) return "#eab308";
+      return "#ef4444";
     }
+
+    const controlPanel = document.getElementById('controlPanel');
+    const toggleBtn = document.getElementById('toggleControls');
+    let collapsed = false;
+    toggleBtn.addEventListener('click', () => {
+      collapsed = !collapsed;
+      if (collapsed) {
+        controlPanel.classList.add('collapsed');
+        toggleBtn.textContent = '▼ show controls';
+      } else {
+        controlPanel.classList.remove('collapsed');
+        toggleBtn.textContent = '▲ hide controls';
+      }
+    });
 
     function update() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(248, 250, 252, 0.3)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const wavelength = 1100 - document.getElementById('freq').value; // Inverted for UI
-        const intensity = document.getElementById('intensity').value;
-        const photonEnergy = (1240 / wavelength).toFixed(2);
-        
-        document.getElementById('eDisplay').innerText = photonEnergy;
-        const canEmit = photonEnergy > workFunction;
-        document.getElementById('statusAlert').style.display = canEmit ? 'none' : 'block';
+      const wavelength = 1100 - document.getElementById('freq').value;
+      const intensity = parseInt(document.getElementById('intensity').value, 10);
+      const photonEnergy = (1240 / wavelength).toFixed(2);
+      
+      document.getElementById('eDisplay').innerText = photonEnergy;
+      const canEmit = photonEnergy > workFunction;
+      const alertEl = document.getElementById('statusAlert');
+      if (canEmit) {
+        alertEl.classList.remove('show');
+      } else {
+        alertEl.classList.add('show');
+      }
 
-        // Draw Metal Plate
-        ctx.fillStyle = "#475569";
-        ctx.fillRect(canvas.width/2 - 50, 100, 100, canvas.height - 200);
+      // metal plate
+      ctx.fillStyle = "#94a3b8";
+      const plateX = canvas.width / 2 - 40;
+      ctx.fillRect(plateX, 80, 80, canvas.height - 160);
 
-        // Spawn Photons
-        if (intensity > 0 && Math.random() < intensity/10) {
-            photons.push({ x: 0, y: 150 + Math.random() * (canvas.height - 300), color: nmToRGB(wavelength) });
+      if (intensity > 0 && Math.random() < intensity / 10) {
+        photons.push({
+          x: 0,
+          y: 120 + Math.random() * (canvas.height - 240),
+          color: nmToRGB(wavelength)
+        });
+      }
+
+      for (let i = photons.length - 1; i >= 0; i--) {
+        const p = photons[i];
+        p.x += 8;
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let j = 0; j < 16; j++) {
+          ctx.lineTo(p.x - j, p.y + Math.sin((p.x - j) / 5) * 4);
         }
+        ctx.stroke();
 
-        // Process Photons
-        photons.forEach((p, i) => {
-            p.x += 10;
-            ctx.strokeStyle = p.color;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            for(let j=0; j<20; j++) ctx.lineTo(p.x - j, p.y + Math.sin((p.x-j)/5)*5);
-            ctx.stroke();
+        if (p.x > plateX) {
+          if (canEmit) {
+            const speed = (photonEnergy - workFunction) * 2.2;
+            electrons.push({
+              x: p.x,
+              y: p.y,
+              vx: speed,
+              vy: (Math.random() - 0.5) * 2.5
+            });
+          }
+          photons.splice(i, 1);
+        }
+      }
 
-            // Hit Metal?
-            if (p.x > canvas.width/2 - 50) {
-                if (canEmit) {
-                    electrons.push({ 
-                        x: p.x, y: p.y, 
-                        vx: (photonEnergy - workFunction) * 2, 
-                        vy: (Math.random() - 0.5) * 2 
-                    });
-                }
-                photons.splice(i, 1);
-            }
-        });
+      for (let i = electrons.length - 1; i >= 0; i--) {
+        const e = electrons[i];
+        e.x += e.vx;
+        e.y += e.vy;
+        ctx.fillStyle = "#f59e0b";
+        ctx.shadowColor = "#f59e0b";
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(e.x, e.y, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        if (e.x > canvas.width + 10 || e.y < 0 || e.y > canvas.height) {
+          electrons.splice(i, 1);
+        }
+      }
 
-        // Process Electrons
-        electrons.forEach((e, i) => {
-            e.x += e.vx;
-            e.y += e.vy;
-            ctx.fillStyle = "#fbbf24";
-            ctx.beginPath();
-            ctx.arc(e.x, e.y, 3, 0, Math.PI*2);
-            ctx.fill();
-            if (e.x > canvas.width) electrons.splice(i, 1);
-        });
-
-        requestAnimationFrame(update);
+      animationId = requestAnimationFrame(update);
     }
+
     update();
+
+    window.addEventListener('beforeunload', () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+  })();
 </script>
 </body>
 </html>

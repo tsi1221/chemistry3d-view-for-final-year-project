@@ -1,161 +1,564 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRT Deflection Lab</title>
-    <style>
-        :root {
-            --bg: #0f172a;
-            --panel: #1e293b;
-            --beam: #4ade80; /* Electron Green */
-            --electric: #f87171;
-            --magnetic: #38bdf8;
-            --text: #f1f5f9;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>⚡ CRT · Velocity Selector</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-        }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #0a0f1c;
+      min-height: 100dvh;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
 
-        .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-        }
+    /* main layout: canvas + collapsible sidebar */
+    .app {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
 
-        .viewport { flex-grow: 1; position: relative; background: #000; overflow: hidden; }
-        canvas { width: 100%; height: 100%; }
+    /* canvas area - takes remaining space */
+    .canvas-container {
+      flex: 1;
+      position: relative;
+      background: #000000;
+      overflow: hidden;
+    }
 
-        .card {
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
 
-        h1 { font-size: 1.2rem; color: var(--beam); margin: 0; }
-        label { display: block; font-size: 0.7rem; color: #94a3b8; margin: 15px 0 5px; text-transform: uppercase; letter-spacing: 1px;}
-        
-        input[type=range] { width: 100%; accent-color: var(--beam); cursor: pointer; }
+    /* collapsible sidebar */
+    .sidebar {
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 320px;
+      background: #111827;
+      backdrop-filter: blur(0);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      transform: translateX(0);
+      transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+    }
 
-        .equation {
-            font-family: 'Times New Roman', serif;
-            font-size: 1.2rem;
-            text-align: center;
-            padding: 10px;
-            color: var(--text);
-        }
-    </style>
+    .sidebar.collapsed {
+      transform: translateX(100%);
+    }
+
+    /* hamburger button */
+    .menu-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 101;
+      background: #1e293b;
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      border-radius: 40px;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #4ade80;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: monospace;
+    }
+
+    .menu-toggle:hover {
+      background: #2d3a4e;
+      border-color: #4ade80;
+    }
+
+    /* sidebar content */
+    .sidebar-header {
+      padding: 28px 24px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sidebar-header h1 {
+      font-size: 1.3rem;
+      color: #4ade80;
+      letter-spacing: -0.3px;
+      font-weight: 600;
+    }
+
+    .sidebar-header p {
+      font-size: 0.7rem;
+      color: #94a3b8;
+      margin-top: 6px;
+    }
+
+    .card {
+      background: rgba(30, 41, 59, 0.6);
+      margin: 16px 20px;
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(4px);
+    }
+
+    .slider-group {
+      margin: 16px 0;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+
+    .slider-label span:first-child {
+      font-weight: 600;
+    }
+
+    .slider-label span:last-child {
+      color: #4ade80;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 10px;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="range"]:focus {
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      background: #4ade80;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 8px #4ade80;
+      border: 2px solid #ffffff;
+    }
+
+    .equation {
+      font-family: 'Times New Roman', 'Georgia', serif;
+      font-size: 1rem;
+      text-align: center;
+      padding: 12px 0;
+      color: #e2e8f0;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 14px;
+      margin: 10px 0;
+    }
+
+    .goal-text {
+      font-size: 0.7rem;
+      line-height: 1.5;
+      color: #94a3b8;
+      margin: 12px 0;
+    }
+
+    .btn-reset {
+      width: calc(100% - 40px);
+      margin: 8px 20px 20px;
+      background: #2d3a4e;
+      border: none;
+      border-radius: 40px;
+      padding: 12px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: 0.1s;
+      font-size: 0.8rem;
+    }
+
+    .btn-reset:active {
+      transform: scale(0.97);
+    }
+
+    .status-badge {
+      background: #0f172a;
+      border-radius: 40px;
+      padding: 8px 16px;
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+
+    .straight {
+      color: #4ade80;
+      text-shadow: 0 0 6px #4ade80;
+    }
+
+    .deflected {
+      color: #f97316;
+    }
+
+    @media (max-width: 640px) {
+      .sidebar {
+        width: 280px;
+      }
+      .card {
+        margin: 12px 16px;
+        padding: 14px;
+      }
+      .btn-reset {
+        width: calc(100% - 32px);
+        margin: 8px 16px 16px;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h1>CRT Deflection</h1>
-    
-    <div class="card">
-        <label>Electric Field (E)</label>
-        <input type="range" id="eField" min="-100" max="100" value="0">
-        <label>Magnetic Field (B)</label>
-        <input type="range" id="bField" min="-100" max="100" value="0">
-    </div>
-
-    <div class="card">
-        <div class="equation">
-            $F_{net} = qE + q(v \times B)$
-        </div>
-    </div>
-
-    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
-        <b>Goal:</b> Can you adjust both sliders so the beam stays perfectly straight? This is called <b>Velocity Selection</b>.
-    </div>
-    
-    <button onclick="resetFields()" style="background:#334155; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer;">Reset Fields</button>
-</div>
-
-<div class="viewport">
+<div class="app">
+  <div class="canvas-container">
     <canvas id="crtCanvas"></canvas>
+  </div>
+  
+  <button class="menu-toggle" id="hamburgerBtn">☰ controls</button>
+  
+  <div class="sidebar collapsed" id="sidebar">
+    <div class="sidebar-header">
+      <h1>⚡ CRT · velocity selector</h1>
+      <p>e/m deflection · Lorentz force</p>
+    </div>
+    
+    <div class="card">
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>⚡ electric field (E)</span>
+          <span id="eValue">0</span>
+        </div>
+        <input type="range" id="eField" min="-120" max="120" value="0" step="2">
+      </div>
+      
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>🧲 magnetic field (B)</span>
+          <span id="bValue">0</span>
+        </div>
+        <input type="range" id="bField" min="-120" max="120" value="0" step="2">
+      </div>
+      
+      <div class="equation">
+        F<sub>net</sub> = qE + q(v × B)
+      </div>
+      
+      <div class="goal-text">
+        🎯 <strong>velocity selection</strong> · adjust E & B so beam stays perfectly straight (F<sub>net</sub> = 0)
+      </div>
+      
+      <div class="status-badge" id="beamStatus">
+        ⚡ deflected
+      </div>
+    </div>
+    
+    <button class="btn-reset" id="resetBtn">⟳ reset fields</button>
+  </div>
 </div>
 
 <script>
+  (function(){
     const canvas = document.getElementById('crtCanvas');
     const ctx = canvas.getContext('2d');
+    let width = 0, height = 0;
     let particles = [];
-
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+    let animationId;
+    
+    // DOM elements
+    const eSlider = document.getElementById('eField');
+    const bSlider = document.getElementById('bField');
+    const eValueSpan = document.getElementById('eValue');
+    const bValueSpan = document.getElementById('bValue');
+    const resetBtn = document.getElementById('resetBtn');
+    const beamStatusSpan = document.getElementById('beamStatus');
+    const sidebar = document.getElementById('sidebar');
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    
+    // physics parameters
+    let electronSpeed = 6.2;      // base horizontal speed (pixels per frame)
+    let targetStraight = false;
+    
+    function resizeCanvas() {
+      const container = canvas.parentElement;
+      width = container.clientWidth;
+      height = container.clientHeight;
+      canvas.width = width;
+      canvas.height = height;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
     }
-    window.addEventListener('resize', resize);
-    resize();
-
-    function createParticle() {
-        return {
-            x: 50,
-            y: canvas.height / 2,
-            vx: 8,
-            vy: 0,
-            history: []
-        };
+    
+    // particle class (electron beam)
+    class Electron {
+      constructor() {
+        this.x = 55;
+        this.y = height / 2;
+        this.vx = electronSpeed;
+        this.vy = 0;
+        this.history = [];
+        this.active = true;
+      }
+      
+      update(E, B) {
+        // store trail
+        this.history.push({ x: this.x, y: this.y });
+        if (this.history.length > 45) this.history.shift();
+        
+        // deflection zone: from x=160 to width-140
+        const inFieldZone = (this.x > 150 && this.x < width - 100);
+        
+        if (inFieldZone) {
+          // Lorentz force: F = q(E + v×B). For electron q = -e (negative)
+          // Force in y-direction: Fy = -e*E + e*vx*B (since v×B points z? Actually cross product v×B gives vertical)
+          // Simplified: acceleration = ( -E + vx * B ) * gain
+          const Eval = E / 35.0;      // scale for visible deflection
+          const Bval = B / 38.0;
+          const forceFactor = 0.42;
+          const acceleration = (-Eval + (this.vx * Bval)) * forceFactor;
+          this.vy += acceleration;
+        }
+        
+        // update position
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // boundary check (off screen)
+        if (this.x > width + 30 || this.y < -50 || this.y > height + 50) {
+          this.active = false;
+        }
+        
+        // slight drag to avoid infinite stray, but minimal
+        this.vy *= 0.998;
+      }
+      
+      draw() {
+        // draw trail with fading effect
+        if (this.history.length > 1) {
+          ctx.beginPath();
+          ctx.strokeStyle = '#4ade80';
+          ctx.lineWidth = 2.2;
+          ctx.lineCap = 'round';
+          ctx.shadowBlur = 6;
+          ctx.shadowColor = '#4ade80';
+          for (let i = 0; i < this.history.length; i++) {
+            if (i === 0) ctx.moveTo(this.history[i].x, this.history[i].y);
+            else ctx.lineTo(this.history[i].x, this.history[i].y);
+          }
+          ctx.stroke();
+        }
+        // draw electron core
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3.8, 0, Math.PI * 2);
+        ctx.fillStyle = '#4ade80';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = '#4ade80';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
     }
-
+    
+    // helper: evaluate if beam is straight (average deflection near zero)
+    function evaluateBeamStatus(E, B, particlesList) {
+      if (particlesList.length === 0) return 'unknown';
+      // compute average vertical offset for recent particles
+      let sumY = 0;
+      let count = 0;
+      for (let p of particlesList) {
+        if (p.history.length > 2) {
+          const lastY = p.y;
+          const centerY = height / 2;
+          sumY += Math.abs(lastY - centerY);
+          count++;
+        }
+      }
+      if (count === 0) return '⚡ deflected';
+      const avgDeflection = sumY / count;
+      if (avgDeflection < 12) {
+        return '✓ straight beam · velocity selection';
+      } else if (avgDeflection < 35) {
+        return '~ slight deflection';
+      } else {
+        return '⚡ strong deflection';
+      }
+    }
+    
+    // drawing background (CRT elements)
+    function drawBackground() {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+      
+      // deflection plates (visual)
+      const plateStartX = 150;
+      const plateEndX = width - 100;
+      const plateWidth = plateEndX - plateStartX;
+      const topPlateY = height/2 - 55;
+      const bottomPlateY = height/2 + 42;
+      
+      // semi-transparent plates
+      ctx.fillStyle = 'rgba(248, 113, 113, 0.25)';
+      ctx.fillRect(plateStartX, topPlateY, plateWidth, 6);
+      ctx.fillStyle = 'rgba(248, 113, 113, 0.25)';
+      ctx.fillRect(plateStartX, bottomPlateY, plateWidth, 6);
+      
+      ctx.strokeStyle = '#ef4444aa';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(plateStartX, topPlateY, plateWidth, 6);
+      ctx.strokeRect(plateStartX, bottomPlateY, plateWidth, 6);
+      
+      // electron gun indicator
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.rect(25, height/2 - 14, 28, 28);
+      ctx.fill();
+      ctx.fillStyle = '#a0aec0';
+      ctx.font = 'bold 9px monospace';
+      ctx.fillText('e⁻ gun', 28, height/2 + 4);
+      
+      // screen glow (right side)
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(width - 28, height/2 - 50, 8, 100);
+      
+      // central axis (dotted)
+      ctx.beginPath();
+      ctx.strokeStyle = '#4ade8040';
+      ctx.setLineDash([6, 8]);
+      ctx.moveTo(40, height/2);
+      ctx.lineTo(width - 30, height/2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // field direction hints
+      const Eval = parseFloat(eSlider.value);
+      const Bval = parseFloat(bSlider.value);
+      if (Math.abs(Eval) > 15) {
+        ctx.fillStyle = '#f87188cc';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(Eval > 0 ? '↑ E-field ↑' : '↓ E-field ↓', plateStartX + 20, topPlateY - 8);
+      }
+      if (Math.abs(Bval) > 15) {
+        ctx.fillStyle = '#38bdf8cc';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText(Bval > 0 ? '⊗ B (into page)' : '⊙ B (out of page)', plateStartX + 20, bottomPlateY + 22);
+      }
+    }
+    
+    // main animation & particle management
+    let frame = 0;
+    function animate() {
+      if (!ctx) return;
+      const E = parseFloat(eSlider.value);
+      const B = parseFloat(bSlider.value);
+      
+      // update display values
+      eValueSpan.textContent = E;
+      bValueSpan.textContent = B;
+      
+      drawBackground();
+      
+      // spawn electrons periodically (keep ~ 15-25 particles max)
+      if (frame % 22 === 0 && particles.length < 28) {
+        particles.push(new Electron());
+      }
+      
+      // update all particles
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update(E, B);
+        particles[i].draw();
+      }
+      // remove inactive
+      particles = particles.filter(p => p.active === true);
+      
+      // update beam status
+      const statusMsg = evaluateBeamStatus(E, B, particles);
+      beamStatusSpan.innerHTML = statusMsg;
+      if (statusMsg.includes('straight')) {
+        beamStatusSpan.style.color = '#4ade80';
+        beamStatusSpan.style.textShadow = '0 0 4px #4ade80';
+      } else {
+        beamStatusSpan.style.color = '#f97316';
+        beamStatusSpan.style.textShadow = 'none';
+      }
+      
+      frame++;
+      animationId = requestAnimationFrame(animate);
+    }
+    
+    // reset fields to zero
     function resetFields() {
-        document.getElementById('eField').value = 0;
-        document.getElementById('bField').value = 0;
+      eSlider.value = 0;
+      bSlider.value = 0;
+      eValueSpan.textContent = '0';
+      bValueSpan.textContent = '0';
+      // optional: clear particles for cleaner view
+      particles = [];
     }
-
-    function update() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const E = parseFloat(document.getElementById('eField').value) / 500;
-        const B = parseFloat(document.getElementById('bField').value) / 500;
-
-        // Visualizing the plates
-        ctx.fillStyle = "rgba(255,255,255,0.05)";
-        ctx.fillRect(200, 50, canvas.width - 400, 20); // Top plate
-        ctx.fillRect(200, canvas.height - 70, canvas.width - 400, 20); // Bottom plate
-
-        // Spawn electrons
-        if (particles.length < 100) particles.push(createParticle());
-
-        particles.forEach((p, i) => {
-            // Net Force: Electric + Magnetic
-            // Since electrons are negative, they move opposite to E field
-            const force = (-E) + (p.vx * B);
-            p.vy += force;
-            p.x += p.vx;
-            p.y += p.vy;
-
-            // Draw Beam
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#4ade80";
-            ctx.fillStyle = "#4ade80";
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            if (p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
-                particles.splice(i, 1);
-            }
-        });
-
-        requestAnimationFrame(update);
+    
+    // sidebar toggle (mobile / desktop)
+    function toggleSidebar() {
+      sidebar.classList.toggle('collapsed');
     }
-
-    update();
+    
+    // event binding
+    function init() {
+      resizeCanvas();
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        particles = [];  // reset beams on resize to avoid glitches
+      });
+      
+      resetBtn.addEventListener('click', () => {
+        resetFields();
+        particles = [];
+      });
+      
+      hamburgerBtn.addEventListener('click', toggleSidebar);
+      // optional: click outside on canvas could close on mobile? but keep intuitive
+      
+      // start animation
+      animate();
+    }
+    
+    // handle canvas resize observer
+    const resizeObserver = new ResizeObserver(() => {
+      resizeCanvas();
+      particles = [];
+    });
+    resizeObserver.observe(canvas.parentElement);
+    
+    init();
+  })();
 </script>
 </body>
 </html>

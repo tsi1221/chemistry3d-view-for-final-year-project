@@ -2,224 +2,619 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hund's Rule Interactive Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hund's Rule · Quantum Sandbox</title>
 <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 :root {
-    --bg: #0f172a;
-    --panel: #1e293b;
-    --primary: #38bdf8;
+    --bg-deep: #0a0f1e;
+    --bg-surface: #111827;
+    --panel-glass: rgba(30, 41, 59, 0.8);
+    --primary-cyan: #22d3ee;
+    --primary-glow: rgba(34, 211, 238, 0.2);
     --spin-up: #4ade80;
-    --spin-down: #f87171;
-    --text: #f1f5f9;
-    --hint-bg: rgba(56, 189, 248, 0.1);
+    --spin-down: #f97316;
+    --text-main: #f8fafc;
+    --text-soft: #cbd5e1;
+    --border-dim: #334155;
+    --card-radius: 28px;
+    --transition-default: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
 }
 
 body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
+    font-family: 'Inter', system-ui, 'Segoe UI', -apple-system, sans-serif;
+    background: radial-gradient(circle at 10% 20%, #0b1120, #020617);
+    color: var(--text-main);
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 30px 15px;
-    margin: 0;
+    justify-content: center;
+    padding: 2rem 1.5rem;
 }
 
-h1 {
-    margin-bottom: 5px;
+/* main container */
+.lab-container {
+    max-width: 780px;
+    width: 100%;
+    margin: 0 auto;
 }
 
-p.sub-title {
-    color: #94a3b8;
-    margin-bottom: 20px;
+/* header with glassmorphism */
+.lab-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.lab-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    letter-spacing: -0.3px;
+}
+
+.subhead {
+    color: var(--text-soft);
     font-size: 0.9rem;
+    margin-top: 0.5rem;
+    border-bottom: 1px dashed var(--border-dim);
+    display: inline-block;
+    padding-bottom: 6px;
+}
+
+/* orbital card (main visual) */
+.orbital-card {
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(4px);
+    border-radius: var(--card-radius);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    padding: 1.5rem;
+    box-shadow: 0 25px 40px -12px rgba(0,0,0,0.6);
+    transition: var(--transition-default);
 }
 
 .orbital-map {
     display: flex;
-    flex-direction: column-reverse; /* Aufbau order */
-    gap: 20px;
-    background: var(--panel);
-    padding: 25px;
-    border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
-    max-width: 600px;
-    width: 100%;
+    flex-direction: column-reverse;   /* Aufbau order: 1s at bottom visually */
+    gap: 1.8rem;
 }
 
 .subshell {
     display: flex;
     align-items: center;
-    gap: 25px;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: rgba(0,0,0,0.25);
+    padding: 0.8rem 1rem;
+    border-radius: 40px;
+    transition: all 0.2s;
 }
 
 .label {
-    width: 50px;
-    font-weight: 900;
-    color: var(--primary);
-    font-size: 1.1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 1.25rem;
+    background: #0f172a;
+    padding: 0.25rem 0.9rem;
+    border-radius: 60px;
+    color: var(--primary-cyan);
+    letter-spacing: 1px;
+    border: 1px solid rgba(34, 211, 238, 0.3);
 }
 
 .boxes {
     display: flex;
-    gap: 10px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
-.box {
-    width: 60px;
-    height: 60px;
-    border: 3px solid #475569;
+/* orbital box style */
+.orbital-box {
+    width: 70px;
+    height: 70px;
     background: #020617;
+    border: 2px solid #334155;
+    border-radius: 18px;
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
-    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: var(--transition-default);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-.box.active { border-color: var(--primary); }
+.orbital-box:hover {
+    border-color: var(--primary-cyan);
+    background: #0f172a;
+    transform: scale(1.02);
+}
 
-.arrow {
-    font-size: 40px;
-    font-weight: bold;
+.orbital-box.filled {
+    border-color: var(--primary-cyan);
+    box-shadow: 0 0 8px var(--primary-glow);
+}
+
+/* spin arrows */
+.spin-arrow {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
     position: absolute;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
-.up { color: var(--spin-up); transform: translateX(-10px); }
-.down { color: var(--spin-down); transform: translateX(10px); }
+.spin-up {
+    color: var(--spin-up);
+    filter: drop-shadow(0 0 3px #4ade8050);
+}
 
+.spin-down {
+    color: var(--spin-down);
+    filter: drop-shadow(0 0 3px #f9731650);
+}
+
+/* control panel */
 .controls {
-    margin-top: 25px;
     display: flex;
-    gap: 15px;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
 }
 
-button {
-    padding: 12px 25px;
-    border-radius: 10px;
+.btn {
+    padding: 0.85rem 1.8rem;
+    border-radius: 60px;
     border: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.3px;
     cursor: pointer;
-    font-weight: bold;
-    background: var(--primary);
-    color: #000;
-    transition: transform 0.1s;
+    transition: transform 0.1s ease, background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #1e293b;
+    color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-button:active { transform: scale(0.95); }
-button.reset { background: #475569; color: white; }
+.btn-primary {
+    background: linear-gradient(105deg, #0ea5e9, #6366f1);
+    color: white;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
 
-.lesson-box {
-    max-width: 600px;
-    margin-top: 20px;
-    padding: 18px;
-    background: var(--hint-bg);
-    border-left: 4px solid var(--primary);
-    border-radius: 8px;
+.btn-primary:hover {
+    background: linear-gradient(105deg, #0284c7, #4f46e5);
+    transform: scale(0.97);
+}
+
+.btn-reset {
+    background: #334155;
+    border: 1px solid #475569;
+}
+
+.btn-reset:hover {
+    background: #475569;
+    transform: scale(0.97);
+}
+
+/* dynamic lesson panel - interactive accordion style */
+.info-panel {
+    margin-top: 1.8rem;
+    border-radius: 28px;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    overflow: hidden;
+    transition: var(--transition-default);
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    background: rgba(0,0,0,0.3);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primary-cyan);
+}
+
+.info-header span:first-child {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    padding: 0 1.5rem;
+}
+
+.info-panel.open .info-content {
+    max-height: 220px;
+    padding: 1.2rem 1.5rem 1.5rem 1.5rem;
+}
+
+.rule-message {
+    background: rgba(34, 211, 238, 0.08);
+    border-left: 3px solid var(--primary-cyan);
+    padding: 1rem;
+    border-radius: 20px;
     font-size: 0.9rem;
     line-height: 1.5;
+    color: var(--text-soft);
 }
 
-.lesson-box b { color: var(--primary); }
+.rule-message strong {
+    color: var(--primary-cyan);
+}
+
+/* electron count badge */
+.electron-counter {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    gap: 12px;
+    align-items: center;
+}
+
+.badge {
+    background: #020617;
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    border: 1px solid var(--border-dim);
+}
+
+/* responsive: mobile */
+@media (max-width: 580px) {
+    body {
+        padding: 1rem;
+    }
+    .orbital-box {
+        width: 55px;
+        height: 55px;
+    }
+    .spin-arrow {
+        font-size: 2.3rem;
+    }
+    .label {
+        font-size: 1rem;
+        padding: 0.15rem 0.7rem;
+    }
+    .subshell {
+        gap: 0.5rem;
+    }
+    .btn {
+        padding: 0.6rem 1.3rem;
+    }
+    .info-panel.open .info-content {
+        max-height: 280px;
+    }
+}
+
+/* animation for new electron */
+@keyframes gentlePulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    100% { transform: scale(1.05); opacity: 1; }
+}
+
+.electron-added {
+    animation: gentlePulse 0.2s ease-out;
+}
 </style>
 </head>
 <body>
 
-<h1>Hund's Rule Interactive Lab</h1>
-<p class="sub-title">Learn how electrons fill subshells in atoms using Aufbau, Pauli, and Hund's principles.</p>
+<div class="lab-container">
+    <div class="lab-header">
+        <h1>⚛️ Hund's Rule · Quantum Lab</h1>
+        <div class="subhead">Aufbau · Pauli · Hund's Rule — interactive orbital filling</div>
+    </div>
 
-<div class="orbital-map">
-    <div class="subshell" id="ss-2p">
-        <div class="label">2p</div>
-        <div class="boxes">
-            <div class="box"></div>
-            <div class="box"></div>
-            <div class="box"></div>
+    <div class="orbital-card">
+        <div class="electron-counter">
+            <span class="badge" id="electronCountDisplay">⚡ Electrons: 0</span>
+            <span class="badge" style="color:#38bdf8;">📐 max 10 e⁻</span>
+        </div>
+        <div class="orbital-map" id="orbitalMap">
+            <!-- 2p subshell (three orbitals) -->
+            <div class="subshell" data-sub="2p">
+                <div class="label">2pₓ  pᵧ  p₂</div>
+                <div class="boxes" id="container-2p">
+                    <div class="orbital-box" data-subshell="2p" data-orbital="0"></div>
+                    <div class="orbital-box" data-subshell="2p" data-orbital="1"></div>
+                    <div class="orbital-box" data-subshell="2p" data-orbital="2"></div>
+                </div>
+            </div>
+            <!-- 2s subshell -->
+            <div class="subshell" data-sub="2s">
+                <div class="label">2s</div>
+                <div class="boxes" id="container-2s">
+                    <div class="orbital-box" data-subshell="2s" data-orbital="0"></div>
+                </div>
+            </div>
+            <!-- 1s subshell -->
+            <div class="subshell" data-sub="1s">
+                <div class="label">1s</div>
+                <div class="boxes" id="container-1s">
+                    <div class="orbital-box" data-subshell="1s" data-orbital="0"></div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="subshell" id="ss-2s">
-        <div class="label">2s</div>
-        <div class="boxes">
-            <div class="box"></div>
+
+    <div class="controls">
+        <button class="btn btn-primary" id="addElectronBtn">➕ Add Electron</button>
+        <button class="btn btn-reset" id="resetBtn">⟳ Reset Atom</button>
+    </div>
+
+    <!-- collapsible lesson panel with interactive principle description -->
+    <div class="info-panel" id="infoPanel">
+        <div class="info-header" id="infoHeader">
+            <span>📘 Quantum rules & current step</span>
+            <span id="toggleIcon">▼</span>
+        </div>
+        <div class="info-content">
+            <div class="rule-message" id="dynamicMessage">
+                <strong>Aufbau Principle</strong><br>
+                Electrons occupy lowest energy orbitals first. Click "Add Electron" to fill 1s → 2s → 2p following Hund's Rule.
+            </div>
         </div>
     </div>
-    <div class="subshell" id="ss-1s">
-        <div class="label">1s</div>
-        <div class="boxes">
-            <div class="box"></div>
-        </div>
-    </div>
-</div>
-
-<div class="controls">
-    <button onclick="addElectron()">Add Electron</button>
-    <button class="reset" onclick="reset()">Reset Atom</button>
-</div>
-
-<div class="lesson-box" id="msg">
-    <b>Aufbau Principle:</b> Electrons start at 1s (lowest energy). Click "Add Electron" to begin.
 </div>
 
 <script>
-let totalE = 0;
+    // ---------- CORE FILLING ORDER (strict Aufbau + Hund + Pauli) ----------
+    // Each entry: { subshellId, orbitalIndex, spin }
+    // Filling: 1s (↑ then ↓) → 2s (↑ then ↓) → 2p orbitals (↑ in each px,py,pz first → then ↓)
+    const FILLING_SEQUENCE = [
+        { subshell: "1s", orbIdx: 0, spin: "up" },      // 1s↑
+        { subshell: "1s", orbIdx: 0, spin: "down" },    // 1s↓
+        { subshell: "2s", orbIdx: 0, spin: "up" },      // 2s↑
+        { subshell: "2s", orbIdx: 0, spin: "down" },    // 2s↓
+        { subshell: "2p", orbIdx: 0, spin: "up" },      // 2pₓ↑ (Hund: first electron)
+        { subshell: "2p", orbIdx: 1, spin: "up" },      // 2pᵧ↑
+        { subshell: "2p", orbIdx: 2, spin: "up" },      // 2p₂↑  (half-filled, all parallel)
+        { subshell: "2p", orbIdx: 0, spin: "down" },    // 2pₓ↓
+        { subshell: "2p", orbIdx: 1, spin: "down" },    // 2pᵧ↓
+        { subshell: "2p", orbIdx: 2, spin: "down" }     // 2p₂↓  complete neon config
+    ];
 
-// Electron filling order: 1s → 2s → 2p (up first for Hund's rule) → 2p down
-const order = [
-    {id:'ss-1s', box:0, spin:'up'},
-    {id:'ss-1s', box:0, spin:'down'},
-    {id:'ss-2s', box:0, spin:'up'},
-    {id:'ss-2s', box:0, spin:'down'},
-    {id:'ss-2p', box:0, spin:'up'},
-    {id:'ss-2p', box:1, spin:'up'},
-    {id:'ss-2p', box:2, spin:'up'},
-    {id:'ss-2p', box:0, spin:'down'},
-    {id:'ss-2p', box:1, spin:'down'},
-    {id:'ss-2p', box:2, spin:'down'}
-];
+    // Detailed educational messages for each step (0-indexed)
+    const STEP_MESSAGES = [
+        "📘 <strong>Aufbau Principle:</strong> 1s orbital gets the first electron (lowest energy). Spin ↑ ( Hund's rule not yet active).",
+        "📘 <strong>Pauli Exclusion:</strong> 1s now holds two electrons with opposite spins. Spins are paired.",
+        "📘 <strong>Aufbau:</strong> 1s is full. Next lowest energy is 2s. Adding electron with spin ↑.",
+        "📘 <strong>Pauli in 2s:</strong> 2s orbital now filled with ↑↓. Electrons are paired.",
+        "🎯 <strong>Hund's Rule — first electron in 2p:</strong> One electron enters 2pₓ (spin ↑) to maximize total spin.",
+        "🎯 <strong>Hund's Rule — second electron in 2p:</strong> Now 2pᵧ gets one electron (spin ↑) — all unpaired electrons have parallel spins.",
+        "🎯 <strong>Hund's Rule — third electron in 2p:</strong> 2p₂ gets ↑. Each 2p orbital has ONE electron → maximum multiplicity (half-filled stability).",
+        "⚛️ <strong>Pairing begins:</strong> Now we add ↓ to 2pₓ. Electrons pair up, obeying Pauli.",
+        "⚛️ <strong>Continuing pairing:</strong> Adding ↓ to 2pᵧ. All orbitals getting second electrons.",
+        "✨ <strong>Neon configuration (full octet):</strong> 2p completely filled, all rules satisfied. Atom is stable."
+    ];
 
-// Step-by-step lessons explaining each principle
-const lessons = [
-    "<b>1s Subshell:</b> Electrons enter the lowest energy level first (Aufbau Principle).",
-    "<b>Pauli Exclusion:</b> 1s now has 1 electron, spin up. Next must be spin down.",
-    "<b>1s Full:</b> Both electrons present, opposite spins. Pauli Exclusion Principle satisfied.",
-    "<b>2s Subshell:</b> Moving to next higher energy orbital.",
-    "<b>2s Full:</b> Spin up then spin down, obeying Pauli Exclusion.",
-    "<b>2p Subshell:</b> Hund's Rule applies: place one electron per orbital first, all spin up.",
-    "<b>2p Half-Filled:</b> Each orbital has one spin-up electron, electrons repel minimally.",
-    "<b>2p Pairing:</b> Now begin adding spin-down electrons to each orbital.",
-    "<b>2p Full:</b> All orbitals filled, 2p stable now.",
-    "<b>Neon Configuration:</b> Atom is stable, all orbitals obey Aufbau, Pauli, and Hund's rules."
-];
+    let currentElectronCount = 0;      // number of placed electrons (0 to 10)
+    let stateMap = new Map();           // key: "subshell|orbIdx" → stored spins array ( "up", "down" or both)
+    
+    // Helper: generate unique key for orbital
+    function orbitalKey(subshell, orbIdx) {
+        return `${subshell}|${orbIdx}`;
+    }
 
-function addElectron(){
-    if(totalE >= order.length) return;
+    // Initialize data structure
+    function initState() {
+        stateMap.clear();
+        // predefine keys for 1s(0), 2s(0), 2p(0,1,2)
+        stateMap.set(orbitalKey("1s", 0), []);
+        stateMap.set(orbitalKey("2s", 0), []);
+        stateMap.set(orbitalKey("2p", 0), []);
+        stateMap.set(orbitalKey("2p", 1), []);
+        stateMap.set(orbitalKey("2p", 2), []);
+    }
+    initState();
 
-    const step = order[totalE];
-    const subshell = document.getElementById(step.id);
-    const box = subshell.querySelectorAll('.box')[step.box];
+    // DOM elements
+    const boxes = {
+        "1s": document.querySelectorAll('#container-1s .orbital-box'),
+        "2s": document.querySelectorAll('#container-2s .orbital-box'),
+        "2p": document.querySelectorAll('#container-2p .orbital-box')
+    };
+    const addBtn = document.getElementById('addElectronBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const dynamicMsgDiv = document.getElementById('dynamicMessage');
+    const electronCountSpan = document.getElementById('electronCountDisplay');
+    const infoPanel = document.getElementById('infoPanel');
+    const infoHeader = document.getElementById('infoHeader');
+    const toggleIcon = document.getElementById('toggleIcon');
 
-    const arrow = document.createElement('span');
-    arrow.className = `arrow ${step.spin}`;
-    arrow.innerHTML = step.spin === 'up' ? '↑' : '↓';
-    box.appendChild(arrow);
-    box.classList.add('active');
+    // Render all orbitals from current stateMap
+    function renderOrbitals() {
+        // clear all orbital inner HTML and remove filled class
+        for (let subshell of ['1s', '2s', '2p']) {
+            boxes[subshell].forEach(box => {
+                box.innerHTML = '';
+                box.classList.remove('filled');
+            });
+        }
+        
+        // iterate stateMap and draw arrows
+        for (let [key, spinsArray] of stateMap.entries()) {
+            const [subshell, orbIdxStr] = key.split('|');
+            const orbIdx = parseInt(orbIdxStr, 10);
+            if (boxes[subshell] && boxes[subshell][orbIdx]) {
+                const targetBox = boxes[subshell][orbIdx];
+                if (spinsArray.length > 0) targetBox.classList.add('filled');
+                // draw arrows according to stored order (up then down typically)
+                spinsArray.forEach(spin => {
+                    const arrowSpan = document.createElement('span');
+                    arrowSpan.className = `spin-arrow ${spin === 'up' ? 'spin-up' : 'spin-down'}`;
+                    arrowSpan.innerText = spin === 'up' ? '↑' : '↓';
+                    targetBox.appendChild(arrowSpan);
+                });
+            }
+        }
+        // update electron count display
+        electronCountSpan.innerText = `⚡ Electrons: ${currentElectronCount}`;
+    }
 
-    // Update lesson message
-    document.getElementById('msg').innerHTML = lessons[totalE];
-    totalE++;
-}
+    // update lesson panel message based on current electron count (0..10)
+    function updateMessage() {
+        if (currentElectronCount === 0) {
+            dynamicMsgDiv.innerHTML = `<strong>✨ Empty atom</strong><br>Click "Add Electron" to start building. Follow Aufbau (1s → 2s → 2p) and Hund's Rule.`;
+        } else if (currentElectronCount <= STEP_MESSAGES.length) {
+            dynamicMsgDiv.innerHTML = STEP_MESSAGES[currentElectronCount - 1];
+        } else {
+            dynamicMsgDiv.innerHTML = `<strong>🎉 Complete configuration (Neon-like)</strong><br>All orbitals filled according to quantum rules. Press reset to explore again.`;
+        }
+        // animate message glow (optional)
+        dynamicMsgDiv.style.transition = "0.1s";
+        dynamicMsgDiv.style.opacity = "0.95";
+        setTimeout(() => { dynamicMsgDiv.style.opacity = "1"; }, 50);
+    }
 
-function reset(){
-    totalE = 0;
-    document.querySelectorAll('.box').forEach(b=>{
-        b.innerHTML = '';
-        b.classList.remove('active');
+    // core: add electron based on FILLING_SEQUENCE
+    function addElectron() {
+        if (currentElectronCount >= FILLING_SEQUENCE.length) {
+            // show max reached hint
+            dynamicMsgDiv.innerHTML = `<strong>⚠️ Maximum electrons reached (10)</strong><br>Neon configuration: 1s² 2s² 2p⁶. Press Reset to start over.`;
+            return;
+        }
+        
+        const step = FILLING_SEQUENCE[currentElectronCount];
+        const { subshell, orbIdx, spin } = step;
+        const key = orbitalKey(subshell, orbIdx);
+        let currentSpins = stateMap.get(key) || [];
+        
+        // validation: cannot exceed 2 electrons per orbital (Pauli)
+        if (currentSpins.length >= 2) {
+            console.warn("orbital full, should not happen");
+            return;
+        }
+        
+        // add spin
+        currentSpins.push(spin);
+        // sort to always show up then down visually (nice)
+        currentSpins.sort((a,b) => (a === 'up' ? -1 : 1));
+        stateMap.set(key, currentSpins);
+        
+        // animate the box that received electron
+        const targetBox = boxes[subshell] ? boxes[subshell][orbIdx] : null;
+        if (targetBox) {
+            targetBox.classList.add('electron-added');
+            setTimeout(() => targetBox.classList.remove('electron-added'), 200);
+        }
+        
+        currentElectronCount++;
+        renderOrbitals();
+        updateMessage();
+        
+        // auto expand panel if needed on first adds (just gentle)
+        if (currentElectronCount === 1 && !infoPanel.classList.contains('open')) {
+            infoPanel.classList.add('open');
+            toggleIcon.innerText = '▲';
+        }
+    }
+    
+    function resetSystem() {
+        currentElectronCount = 0;
+        initState();          // fresh map with empty arrays
+        renderOrbitals();
+        updateMessage();
+        dynamicMsgDiv.innerHTML = `<strong>⟳ Atom reset</strong><br>All orbitals empty. Follow Aufbau & Hund's Rule by adding electrons again.`;
+        // keep panel open if user likes, but reset message stays
+        if (!infoPanel.classList.contains('open')) {
+            // optional: do nothing, but keep consistent
+        }
+        dynamicMsgDiv.style.borderLeftColor = "#22d3ee";
+    }
+    
+    // Event listeners
+    addBtn.addEventListener('click', addElectron);
+    resetBtn.addEventListener('click', resetSystem);
+    
+    // Accordion / info panel toggle
+    function toggleInfoPanel() {
+        infoPanel.classList.toggle('open');
+        if (infoPanel.classList.contains('open')) {
+            toggleIcon.innerText = '▲';
+        } else {
+            toggleIcon.innerText = '▼';
+        }
+    }
+    infoHeader.addEventListener('click', toggleInfoPanel);
+    
+    // Optional: clicking on any orbital shows principle tooltip (educational)
+    document.querySelectorAll('.orbital-box').forEach(box => {
+        box.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // extract info from data attributes
+            const parent = box.closest('.subshell');
+            let subshellName = '?';
+            if (parent && parent.dataset && parent.dataset.sub) subshellName = parent.dataset.sub;
+            else {
+                if (box.parentElement && box.parentElement.parentElement) {
+                    const subshellDiv = box.parentElement.parentElement;
+                    if (subshellDiv.dataset && subshellDiv.dataset.sub) subshellName = subshellDiv.dataset.sub;
+                }
+            }
+            dynamicMsgDiv.innerHTML = `<strong>⚛️ Orbital info: ${subshellName}</strong><br>Max 2 electrons (Pauli). Hund's Rule: electrons occupy degenerate orbitals singly first.`;
+            setTimeout(() => {
+                if (currentElectronCount > 0) updateMessage();
+                else dynamicMsgDiv.innerHTML = `<strong>✨ Empty atom</strong><br>Click "Add Electron" to start building.`;
+            }, 2000);
+        });
     });
-    document.getElementById('msg').innerHTML = "<b>Reset:</b> Start filling from 1s. Observe Aufbau, Pauli, Hund rules.";
-}
+    
+    // initial render
+    renderOrbitals();
+    updateMessage();
+    
+    // set default panel closed? we start closed for clean UI, but user can open
+    // but it's better to keep closed to reduce text but show header.
+    if (!infoPanel.classList.contains('open')) {
+        infoPanel.classList.remove('open');
+        toggleIcon.innerText = '▼';
+    }
+    
+    // small additional: add keyboard shortcut 'e' for add electron
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'e' || e.key === 'E') {
+            e.preventDefault();
+            addElectron();
+        } else if (e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            resetSystem();
+        }
+    });
+    
+    // tooltip style for shortcuts
+    const style = document.createElement('style');
+    style.textContent = `.btn::after { content: none; } .btn-primary:active { transform: scale(0.96); }`;
+    document.head.appendChild(style);
+    
+    // responsive manual adjust for tiny screens - no extra needed
 </script>
-
 </body>
 </html>

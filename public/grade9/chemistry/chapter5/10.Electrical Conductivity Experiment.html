@@ -2,226 +2,233 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>⚡ conductivity lab · mobile ions & brightness</title>
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            user-select: none;
         }
 
         body {
-            background: linear-gradient(145deg, #0b1120 0%, #1a2639 100%);
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(circle at 10% 30%, #0a0f1e, #020617);
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 30px 20px;
+            padding: 24px 20px;
             color: #e2e8f0;
         }
 
         h1 {
-            font-weight: 500;
-            font-size: 2.2rem;
-            letter-spacing: -0.5px;
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
             background: linear-gradient(135deg, #b0e0ff, #fde047);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
-            text-shadow: 0 4px 12px rgba(0,30,50,0.5);
+            -webkit-background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            text-align: center;
         }
 
         .subhead {
             color: #94a3b8;
-            margin-bottom: 30px;
-            font-size: 1rem;
+            margin-bottom: 32px;
+            font-size: 0.9rem;
             border-bottom: 1px dashed #334155;
             padding-bottom: 12px;
+            text-align: center;
         }
 
+        /* lab bench flex */
         .lab-bench {
             display: flex;
-            gap: 30px;
+            gap: 28px;
             justify-content: center;
             flex-wrap: wrap;
             align-items: flex-end;
-            margin: 40px 0 30px;
+            margin: 20px 0 30px;
         }
 
+        /* beaker card */
         .beaker-setup {
-            background: rgba(30, 41, 59, 0.8);
-            backdrop-filter: blur(4px);
-            padding: 25px 20px 20px;
-            border-radius: 40px 40px 25px 25px;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 22px 18px 20px;
+            border-radius: 44px 44px 32px 32px;
             width: 280px;
             display: flex;
             flex-direction: column;
             align-items: center;
             border: 2px solid #334155;
-            box-shadow: 0 20px 30px -10px rgba(0,0,0,0.7);
-            transition: all 0.2s ease;
+            box-shadow: 0 25px 35px -12px rgba(0,0,0,0.6);
+            transition: all 0.25s ease;
             cursor: pointer;
             position: relative;
         }
 
         .beaker-setup:hover {
             border-color: #60a5fa;
-            transform: translateY(-5px);
+            transform: translateY(-6px);
+            background: rgba(30, 41, 59, 0.9);
         }
 
         .beaker-setup.active {
             border-color: #fde047;
-            box-shadow: 0 0 30px #fde04740, 0 20px 30px -10px black;
+            box-shadow: 0 0 28px rgba(253, 224, 71, 0.5), 0 20px 30px -8px black;
         }
 
+        /* bulb */
         .bulb {
-            width: 60px;
-            height: 60px;
-            border-radius: 50% 50% 40% 40%;
-            background: #334155;
+            width: 64px;
+            height: 64px;
+            border-radius: 50% 50% 45% 45%;
+            background: #2d3a4e;
             margin-bottom: 20px;
             position: relative;
-            transition: background 0.15s, box-shadow 0.15s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+            transition: background 0.12s, box-shadow 0.12s;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.5);
         }
 
         .bulb::after {
             content: '';
             position: absolute;
-            bottom: -8px;
-            left: 20px;
+            bottom: -10px;
+            left: 22px;
             width: 20px;
-            height: 12px;
+            height: 14px;
             background: #475569;
-            border-radius: 4px 4px 0 0;
+            border-radius: 5px 5px 0 0;
         }
 
-        /* dynamic brightness will be set via inline style for solution */
-        .beaker-setup.active .bulb {
-            background: #fde047;  /* fallback */
-            box-shadow: 0 0 40px #fde047;
-        }
-
+        /* beaker glass */
         .beaker {
-            width: 150px;
+            width: 160px;
             height: 180px;
-            border: 4px solid #94a3b8;
+            border: 3px solid #94a3b8;
             border-top: 2px solid #cbd5e1;
-            border-radius: 0 0 30px 30px;
+            border-radius: 0 0 32px 32px;
             position: relative;
             overflow: hidden;
-            background: #0f172a80;
+            background: #0f172a60;
             backdrop-filter: blur(2px);
-            margin: 10px 0;
-            box-shadow: inset 0 -8px 8px rgba(0,0,0,0.4);
+            margin: 12px 0;
+            box-shadow: inset 0 -6px 6px rgba(0,0,0,0.3);
         }
 
         .liquid {
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 70%;
-            background: linear-gradient(180deg, #38bdf880, #0284c7);
-            border-radius: 0 0 26px 26px;
+            height: 68%;
+            background: linear-gradient(180deg, #38bdf8cc, #0284c7);
+            border-radius: 0 0 28px 28px;
             z-index: 1;
+            transition: background 0.2s;
         }
 
         .electrode {
             position: absolute;
-            top: -4px;
-            width: 12px;
-            height: 110%;
+            top: -6px;
+            width: 14px;
+            height: 112%;
             background: linear-gradient(90deg, #9ca3af, #4b5563);
-            border-radius: 20px 20px 0 0;
+            border-radius: 30px 30px 0 0;
             z-index: 3;
-            box-shadow: 0 4px 0 #1e293b;
+            box-shadow: 0 2px 6px #00000055;
         }
 
-        .electrode.left { left: 35px; }
-        .electrode.right { right: 35px; }
+        .electrode.left { left: 32px; }
+        .electrode.right { right: 32px; }
 
-        /* ions styling */
+        /* ions floating */
         .ion {
             position: absolute;
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 12px;
-            box-shadow: 0 2px 5px black;
-            z-index: 10;
-            transition: transform 1.5s ease-in-out;
+            font-weight: 800;
+            font-size: 13px;
+            box-shadow: 0 3px 8px black;
+            z-index: 15;
+            transition: transform 0.8s cubic-bezier(0.2, 0.7, 0.4, 1);
             pointer-events: none;
+            animation: gentleFloat 3s infinite alternate;
         }
 
-        .na-ion { background: #4ade80; color: #14532d; }
-        .cl-ion { background: #fbbf24; color: #7b341e; }
+        @keyframes gentleFloat {
+            0% { transform: translateY(0px) translateX(0px); }
+            100% { transform: translateY(-6px) translateX(3px); }
+        }
+
+        .na-ion { background: #4ade80; color: #064e3b; box-shadow: 0 0 4px #4ade80; }
+        .cl-ion { background: #fbbf24; color: #7b341e; box-shadow: 0 0 4px #fbbf24; }
 
         /* solid salt grid */
         .salt-grid {
             position: absolute;
             bottom: 0;
             width: 100%;
-            height: 45%;
+            height: 52%;
             display: grid;
             grid-template-columns: repeat(6, 1fr);
-            gap: 2px;
-            background: #cbd5e1;
-            padding: 4px;
-            border-radius: 8px 8px 0 0;
+            gap: 3px;
+            background: #94a3b8;
+            padding: 6px 4px;
+            border-radius: 12px 12px 0 0;
             z-index: 5;
         }
         .salt-grid div {
-            background: #94a3b8;
-            border-radius: 3px;
+            background: #cbd5e1;
+            border-radius: 6px;
+            transition: 0.1s;
         }
-        .salt-grid div:nth-child(even) { background: #4ade80; } /* Na+ green */
-        .salt-grid div:nth-child(odd) { background: #fbbf24; } /* Cl- yellow */
+        .salt-grid div:nth-child(even) { background: #4ade80; } /* Na+ */
+        .salt-grid div:nth-child(odd) { background: #fbbf24; } /* Cl- */
 
         .label {
-            margin-top: 18px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #f1f5f9;
-        }
-        .desc {
-            font-size: 0.8rem;
-            color: #9ca3af;
-            text-align: center;
-            margin: 5px 0 10px;
+            margin-top: 16px;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: -0.2px;
         }
 
-        /* concentration slider – only visible for third beaker */
+        .desc {
+            font-size: 0.7rem;
+            color: #a0b3d9;
+            text-align: center;
+            margin: 4px 0 6px;
+        }
+
+        /* concentration slider */
         .slider-container {
             width: 100%;
-            margin-top: 15px;
+            margin-top: 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 6px;
-            opacity: 0.9;
-            transition: 0.2s;
         }
         .slider-container label {
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #cbd5e1;
-            letter-spacing: 0.3px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #fde047;
+            text-transform: uppercase;
         }
         input[type=range] {
             width: 90%;
             height: 6px;
-            background: linear-gradient(90deg, #fde047, #eab308);
+            background: linear-gradient(90deg, #64748b, #fde047);
             border-radius: 10px;
-            -webkit-appearance: none;
-            appearance: none;
+           
         }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
@@ -229,69 +236,84 @@
             height: 18px;
             background: white;
             border-radius: 50%;
-            box-shadow: 0 0 10px gold;
+            box-shadow: 0 0 8px gold;
             border: 2px solid #fde047;
             cursor: pointer;
         }
         .concentration-value {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             background: #1e293b;
-            padding: 2px 10px;
-            border-radius: 20px;
-            border: 1px solid #fde047;
-        }
-
-        .summary-card {
-            max-width: 800px;
-            background: #1e293b;
+            padding: 2px 12px;
             border-radius: 30px;
-            padding: 25px;
-            margin-top: 30px;
-            border: 1px solid #334155;
-            box-shadow: 0 10px 25px -5px #00000080;
+            font-weight: 600;
+            color: #fde047;
         }
 
+        /* summary card responsive */
+        .summary-card {
+            max-width: 900px;
+            background: #0f172ad9;
+            backdrop-filter: blur(12px);
+            border-radius: 36px;
+            padding: 24px;
+            margin-top: 35px;
+            border: 1px solid #334155;
+            box-shadow: 0 20px 35px -10px black;
+        }
         .summary-card h3 {
             color: #fde047;
-            margin-bottom: 15px;
-            font-weight: 500;
-            font-size: 1.4rem;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 1.3rem;
         }
-
         .summary-table {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
+            gap: 16px;
             text-align: center;
             margin: 20px 0;
         }
         .table-item {
-            background: #0f172a;
-            padding: 15px 5px;
-            border-radius: 20px;
+            background: #0a0f1e;
+            padding: 14px 6px;
+            border-radius: 24px;
             border-left: 4px solid;
         }
         .item1 { border-color: #38bdf8; }
         .item2 { border-color: #cbd5e1; }
         .item3 { border-color: #fde047; }
-
         .footnote {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #94a3b8;
             border-top: 1px solid #334155;
             padding-top: 18px;
-            margin-top: 10px;
+            margin-top: 8px;
+        }
+        @media (max-width: 780px) {
+            .lab-bench { gap: 18px; }
+            .beaker-setup { width: 260px; padding: 18px 12px; }
+            .beaker { width: 140px; height: 160px; }
+            .summary-table { gap: 8px; }
+        }
+        @media (max-width: 550px) {
+            h1 { font-size: 1.4rem; }
+            .beaker-setup { width: 100%; max-width: 280px; }
+        }
+        button, .beaker-setup { cursor: pointer; }
+        .bulb-off {
+            background: #2d3a4e;
+            box-shadow: none;
         }
     </style>
 </head>
 <body>
 
 <h1>⚡ IONS IN MOTION · CONDUCTIVITY LAB</h1>
-<div class="subhead">⬇️  click a beaker to close the circuit — then turn up the concentration</div>
+<div class="subhead">⬇️  click a beaker to close the circuit — then increase concentration</div>
 
 <div class="lab-bench">
     <!-- BEAKER 1: distilled water -->
-    <div class="beaker-setup" id="beaker-water" onclick="selectBeaker('water')">
+    <div class="beaker-setup" id="beaker-water" data-type="water">
         <div class="bulb" id="bulb-water"></div>
         <div class="beaker">
             <div class="liquid"></div>
@@ -303,10 +325,10 @@
     </div>
 
     <!-- BEAKER 2: solid salt -->
-    <div class="beaker-setup" id="beaker-solid" onclick="selectBeaker('solid')">
+    <div class="beaker-setup" id="beaker-solid" data-type="solid">
         <div class="bulb" id="bulb-solid"></div>
         <div class="beaker">
-            <div class="salt-grid" id="solid-grid"></div>
+            <div class="salt-grid" id="solidGrid"></div>
             <div class="electrode left"></div>
             <div class="electrode right"></div>
         </div>
@@ -315,22 +337,22 @@
     </div>
 
     <!-- BEAKER 3: salt solution + concentration slider -->
-    <div class="beaker-setup" id="beaker-solution" onclick="selectBeaker('solution')">
+    <div class="beaker-setup" id="beaker-solution" data-type="solution">
         <div class="bulb" id="bulb-solution"></div>
-        <div class="beaker" id="solution-beaker-container">
+        <div class="beaker" id="solution-beaker">
             <div class="liquid" style="background: linear-gradient(180deg, #7dd3fc, #0ea5e9);"></div>
             <div class="electrode left"></div>
             <div class="electrode right"></div>
-            <div id="floating-ions"></div> <!-- ions inserted via js -->
+            <div id="floating-ions" style="position: absolute; width:100%; height:100%; top:0; left:0; pointer-events:none; z-index:12;"></div>
         </div>
         <div class="label">🧪 salt solution (Na⁺ + Cl⁻)</div>
         <div class="desc">free-moving ions · conductivity ⚡</div>
         
         <!-- concentration slider -->
-        <div class="slider-container" onclick="event.stopPropagation()"> <!-- prevent beaker click when sliding -->
+        <div class="slider-container" id="sliderBlock">
             <label>🔆 concentration / brightness</label>
-            <input type="range" id="concSlider" min="0" max="100" value="60" step="1">
-            <span class="concentration-value" id="concValue">60%</span>
+            <input type="range" id="concSlider" min="0" max="100" value="65" step="1">
+            <span class="concentration-value" id="concValue">65%</span>
         </div>
     </div>
 </div>
@@ -339,41 +361,51 @@
 <div class="summary-card">
     <h3>📘 why the bulb lights (or not)</h3>
     <div class="summary-table">
-        <div class="table-item item1"><strong>💧 distilled water</strong><br>❌ no ions → no flow</div>
+        <div class="table-item item1"><strong>💧 distilled water</strong><br>❌ no free ions → no flow</div>
         <div class="table-item item2"><strong>🧂 solid salt</strong><br>❌ ions locked → no flow</div>
         <div class="table-item item3"><strong>🧪 salt solution</strong><br>✅ mobile ions → current ⚡</div>
     </div>
-    <p style="margin: 10px 0; font-style: italic;">✨ <strong>short circuit effect:</strong> more dissolved ions = lower resistance = brighter bulb!<br> Use the slider above to increase the concentration — watch the ions multiply and the bulb glow stronger.</p>
+    <p style="margin: 12px 0; font-style: italic;">✨ <strong>short circuit effect:</strong> more dissolved ions = lower resistance = brighter bulb!<br> Use the slider to increase concentration — watch the ions multiply and the bulb glow stronger.</p>
     <div class="footnote">
-        ⚡ mobile charge carriers are essential. in ionic compounds, ions must be free to move (dissolved or molten).
+        ⚡ mobile charge carriers are essential. In ionic compounds, ions must be free to move (dissolved or molten).
     </div>
 </div>
 
 <script>
-    (function() {
-        // ----- references -----
-        const waterBeaker = document.getElementById('beaker-water');
-        const solidBeaker = document.getElementById('beaker-solid');
-        const solBeaker = document.getElementById('beaker-solution');
+    (function(){
+        // DOM elements
+        const waterCard = document.getElementById('beaker-water');
+        const solidCard = document.getElementById('beaker-solid');
+        const solutionCard = document.getElementById('beaker-solution');
         const bulbWater = document.getElementById('bulb-water');
         const bulbSolid = document.getElementById('bulb-solid');
         const bulbSol = document.getElementById('bulb-solution');
         const ionsContainer = document.getElementById('floating-ions');
-        const slider = document.getElementById('concSlider');
+        const concSlider = document.getElementById('concSlider');
         const concSpan = document.getElementById('concValue');
-
-        // current active beaker type: 'water', 'solid', 'solution' (or null)
-        let activeType = null;
-
-        // initial ion pool (will be regenerated on slider)
-        let ionElements = [];
-
-        // ----- helper: regenerate ions based on concentration (0-100) -----
-        function updateIonCount(concentration) {
+        
+        let activeType = null; // 'water', 'solid', 'solution'
+        let ionAnimationInterval = null;
+        
+        // ---------- UTILITIES: remove active class + reset bulbs ----------
+        function resetAllBulbs() {
+            // reset to default (off state)
+            bulbWater.style.background = '';
+            bulbWater.style.boxShadow = '';
+            bulbSolid.style.background = '';
+            bulbSolid.style.boxShadow = '';
+            bulbSol.style.background = '';
+            bulbSol.style.boxShadow = '';
+            // remove active card borders
+            [waterCard, solidCard, solutionCard].forEach(card => card.classList.remove('active'));
+        }
+        
+        // ---------- generate ions inside solution beaker based on concentration (0-100) ----------
+        function regenerateIons(concentration) {
             if (!ionsContainer) return;
-            // remove all existing ions
             ionsContainer.innerHTML = '';
-            const count = Math.floor(concentration / 100 * 30) + 4;  // range 4 .. ~34 ions
+            // ion count: min 4, max 44 based on percentage
+            const count = Math.min(44, Math.floor(concentration / 100 * 45) + 4);
             for (let i = 0; i < count; i++) {
                 const ion = document.createElement('div');
                 ion.className = 'ion';
@@ -385,121 +417,192 @@
                     ion.classList.add('cl-ion');
                     ion.textContent = '−';
                 }
-                // random position inside beaker (20px to 130px left, 50px to 150px top)
-                ion.style.left = Math.random() * 110 + 20 + 'px';
-                ion.style.top = Math.random() * 100 + 50 + 'px';
-                ionsContainer.appendChild(ion);
-                // small floating animation (random drift)
+                // random position inside the beaker container (relative to .beaker)
+                const leftPos = Math.random() * 110 + 20; // px from left edge
+                const topPos = Math.random() * 110 + 40;
+                ion.style.left = leftPos + 'px';
+                ion.style.top = topPos + 'px';
+                // add subtle random horizontal drift
+                const driftX = (Math.random() - 0.5) * 12;
+                const driftY = (Math.random() - 0.5) * 8;
+                ion.style.transition = `transform 2s ease-in-out`;
                 setInterval(() => {
-                    if (Math.random() > 0.7) {
-                        ion.style.transform = `translate(${(Math.random()-0.5)*8}px, ${(Math.random()-0.5)*8}px)`;
+                    if (ion && ion.style) {
+                        const newX = (Math.random() - 0.5) * 18;
+                        const newY = (Math.random() - 0.5) * 14;
+                        ion.style.transform = `translate(${newX}px, ${newY}px)`;
                     }
-                }, 1200);
+                }, 1800);
+                ionsContainer.appendChild(ion);
             }
         }
-
-        // ----- brightness update for solution bulb (only if active) -----
-        function updateBrightness(value) {
+        
+        // ---------- update bulb brightness for solution based on concentration (only if active) ----------
+        function updateSolutionBrightness(value) {
             if (activeType !== 'solution') return;
-            // value 0..100
-            const intensity = value / 100;  // 0..1
-            // map to color: from dim #b8860b to bright #fde047 and huge glow
-            const r = 253 + Math.floor(30 * intensity);      // ~253 → 253
-            const g = 200 + Math.floor(55 * intensity);      // 200 → 255
-            const b = 71  + Math.floor(30 * intensity);      // 71  → 101
-            const bgColor = `rgb(${r}, ${g}, ${b})`;
-            const glowSize = 20 + 60 * intensity; // 20px to 80px
-            bulbSol.style.background = bgColor;
-            bulbSol.style.boxShadow = `0 0 ${glowSize}px ${bgColor}`;
-
-            // also update concentration readout
-            concSpan.textContent = value + '%';
-
-            // optional: modify liquid color slightly?
-            // not needed, but you could.
+            const intensity = Math.min(1, Math.max(0, value / 100));
+            // brightness mapping: from dim gold to brilliant yellow-white
+            const r = 220 + Math.floor(35 * intensity);
+            const g = 180 + Math.floor(75 * intensity);
+            const b = 60 + Math.floor(50 * intensity);
+            const glowIntensity = 12 + 70 * intensity;
+            const finalColor = `rgb(${r}, ${g}, ${b})`;
+            bulbSol.style.background = finalColor;
+            bulbSol.style.boxShadow = `0 0 ${glowIntensity}px ${finalColor}`;
+            // also slightly modify liquid background to reflect conductivity (optional)
+            const liquidDiv = document.querySelector('#beaker-solution .liquid');
+            if (liquidDiv) {
+                const blueIntensity = 0.5 + intensity * 0.5;
+                liquidDiv.style.background = `linear-gradient(180deg, #7dd3fc, rgba(14, 165, 233, ${0.7 + intensity*0.3}))`;
+            }
         }
-
-        // ----- select beaker (called from onclick) -----
-        window.selectBeaker = function(type) {
-            // remove active class from all
-            [waterBeaker, solidBeaker, solBeaker].forEach(b => b.classList.remove('active'));
-
-            // reset bulbs to off (except solution will be set later if active)
-            bulbWater.style.background = '';      // revert to css default (--bulb-off)
-            bulbWater.style.boxShadow = '';
-            bulbSolid.style.background = '';
-            bulbSolid.style.boxShadow = '';
-            bulbSol.style.background = '';
-            bulbSol.style.boxShadow = '';
-
+        
+        // ---------- select active beaker ----------
+        function selectBeaker(type) {
+            resetAllBulbs();
             if (type === 'water') {
-                waterBeaker.classList.add('active');
                 activeType = 'water';
-                // bulb off (already off)
-            } else if (type === 'solid') {
-                solidBeaker.classList.add('active');
+                waterCard.classList.add('active');
+                // bulb remains off (already reset)
+            } 
+            else if (type === 'solid') {
                 activeType = 'solid';
+                solidCard.classList.add('active');
                 // bulb off
-            } else if (type === 'solution') {
-                solBeaker.classList.add('active');
+            } 
+            else if (type === 'solution') {
                 activeType = 'solution';
-                // apply current slider brightness
-                const val = parseInt(slider.value, 10);
-                updateBrightness(val);
+                solutionCard.classList.add('active');
+                const currentVal = parseInt(concSlider.value, 10);
+                updateSolutionBrightness(currentVal);
             }
-        };
-
-        // ----- slider event -----
-        slider.addEventListener('input', function(e) {
-            const val = parseInt(e.target.value, 10);
-            concSpan.textContent = val + '%';
-            // regenerate ions based on new concentration
-            updateIonCount(val);
-            // if solution is active, update brightness
+        }
+        
+        // ---------- slider handler: regenerate ions and update brightness if needed ----------
+        function onConcentrationChange() {
+            const val = parseInt(concSlider.value, 10);
+            concSpan.innerText = val + '%';
+            regenerateIons(val);
+            // if solution is currently active, update brightness instantly
             if (activeType === 'solution') {
-                updateBrightness(val);
+                updateSolutionBrightness(val);
+            } else {
+                // if not active, just update ions silently (no bulb change)
+                // but when user later clicks solution, brightness will sync.
             }
-        });
-
-        // ----- initial population: solid grid, solution ions, default slider-----
-        // solid grid already in HTML but fill with alternating colors (done by css nth-child)
-        // no need to populate, it's static.
-
-        // initial ions for solution (based on default slider=60)
-        updateIonCount(60);
-
-        // set initial brightness for solution (though not active yet, just visual preview? we keep inactive)
-        // but we want slider to show but bulb off. fine.
-
-        // Make sure clicks on slider don't trigger beaker click
-        document.querySelectorAll('.slider-container input, .slider-container label, .slider-container span').forEach(el => {
-            el.addEventListener('click', (e) => e.stopPropagation());
-        });
-
-        // extra: click on solution beaker activates and sets brightness from slider
-        // (already done via onclick selectBeaker)
-        // also ensure that when solution is active, we set correct brightness.
-        // done.
-
-        // optional: demo hint: pre-select solution? no, start with none selected.
-        // But we want to showcase the slider anyway, so leave inactive.
-        // However, to demonstrate, we could set active solution at start? better not, to encourage click.
-        // But let's set a subtle default: highlight solution?
-        // We'll just let user click.
-
-        // also add a tiny note that slider changes ion count.
-        console.log('ready');
-
-        // bonus: when solution beaker is clicked, we already call selectBeaker -> active, then updateBrightness(slider.value)
-        // and ions are already there.
-        // we also want to reset other bulbs.
-        // Perfect.
-
-        // Edge: if user moves slider while water active, it will change ions but not bulb (activeType = water, so no updateBrightness). Good.
-        // The ions update regardless – that's fine, shows concentration but bulb stays off.
+        }
+        
+        // ----- manually generate solid grid with alternating pattern -----
+        function buildSolidGrid() {
+            const gridContainer = document.getElementById('solidGrid');
+            if (!gridContainer) return;
+            gridContainer.innerHTML = '';
+            // 6x6 approx grid (36 blocks)
+            for (let i = 0; i < 36; i++) {
+                const block = document.createElement('div');
+                // even/odd based on i creates alternating pattern (Na/Cl)
+                gridContainer.appendChild(block);
+            }
+        }
+        
+        // ----- helper: initial ions based on default slider (65) -----
+        function initIons() {
+            regenerateIons(65);
+        }
+        
+        // ----- event binding with stopPropagation on slider to avoid beaker click -----
+        function bindEvents() {
+            waterCard.addEventListener('click', () => selectBeaker('water'));
+            solidCard.addEventListener('click', () => selectBeaker('solid'));
+            solutionCard.addEventListener('click', () => selectBeaker('solution'));
+            
+            // prevent slider container click from triggering beaker selection
+            const sliderBlock = document.getElementById('sliderBlock');
+            if (sliderBlock) {
+                sliderBlock.addEventListener('click', (e) => e.stopPropagation());
+            }
+            concSlider.addEventListener('input', onConcentrationChange);
+        }
+        
+        // Add animated hint for active solution ions bouncing
+        function addAmbientParticles() {
+            setInterval(() => {
+                if (activeType === 'solution') {
+                    const ionNodes = document.querySelectorAll('#floating-ions .ion');
+                    ionNodes.forEach(ion => {
+                        if (Math.random() > 0.7) {
+                            const deltaX = (Math.random() - 0.5) * 12;
+                            const deltaY = (Math.random() - 0.5) * 8;
+                            ion.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+                            setTimeout(() => {
+                                if (ion) ion.style.transform = '';
+                            }, 500);
+                        }
+                    });
+                }
+            }, 1800);
+        }
+        
+        // extra small feature: when solution active, we also show conductivity text effect
+        function updateConductivityMessage() {
+            setInterval(() => {
+                if (activeType === 'solution') {
+                    const val = parseInt(concSlider.value, 10);
+                    const bulbMsg = document.querySelector('#beaker-solution .desc');
+                    if (bulbMsg && val > 70) {
+                        bulbMsg.style.color = '#fde047';
+                        bulbMsg.style.fontWeight = 'bold';
+                    } else if (bulbMsg) {
+                        bulbMsg.style.color = '#a0b3d9';
+                        bulbMsg.style.fontWeight = 'normal';
+                    }
+                }
+            }, 300);
+        }
+        
+        // ----- Add floating particles for solid grid animation (cosmetic) -----
+        function animateSolidCrystal() {
+            const blocks = document.querySelectorAll('#solidGrid div');
+            setInterval(() => {
+                blocks.forEach(block => {
+                    if (activeType === 'solid' && Math.random() > 0.85) {
+                        block.style.transform = 'scale(0.95)';
+                        setTimeout(() => { block.style.transform = 'scale(1)'; }, 150);
+                    } else if (activeType !== 'solid') {
+                        block.style.transform = 'scale(1)';
+                    }
+                });
+            }, 1200);
+        }
+        
+        // ensure that when solution becomes active we also sync brightness after a possible slider move while inactive
+        // but it's already handled in selectBeaker. Additionally, slider event always regenerates ions.
+        // Reset all states
+        function fullReset() {
+            activeType = null;
+            resetAllBulbs();
+            regenerateIons(parseInt(concSlider.value, 10));
+        }
+        
+        // Build solid grid once
+        buildSolidGrid();
+        initIons();
+        bindEvents();
+        addAmbientParticles();
+        animateSolidCrystal();
+        updateConductivityMessage();
+        
+        // set initial solution brightness (if ever active later) but not active now
+        // also update concentration display default
+        concSpan.innerText = concSlider.value + '%';
+        
+        // optional: clicking elsewhere doesn't break
+        console.log('lab ready — mobile charge carriers determine conductivity');
+        
+        // tiny improvement: if slider changes and solution is not active, we want to show ions count anyway (good)
+        // in case the user clicks solution later, brightness applies
+        window.selectBeakerForDebug = selectBeaker;
     })();
 </script>
-
-<!-- small note: style the solid grid a bit better (already did) -->
 </body>
 </html>

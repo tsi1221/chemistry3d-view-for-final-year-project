@@ -2,249 +2,697 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Solubility & Dissociation Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Solubility & Dissociation Lab · Like Dissolves Like</title>
 <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+}
+
 :root {
-    --bg: #020617;
-    --panel: #0f172a;
-    --water: #38bdf8;
-    --oil: #fbbf24;
-    --na: #4ade80;
-    --cl: #fbbf24;
-    --text: #f1f5f9;
-    --hydration: rgba(56,189,248,0.3);
-    --conductive: #22c55e;
+    --bg-deep: #020617;
+    --panel-bg: #0f172a;
+    --water-primary: #0ea5e9;
+    --water-glow: rgba(14, 165, 233, 0.4);
+    --oil-primary: #fbbf24;
+    --oil-glow: rgba(251, 191, 36, 0.3);
+    --na-color: #4ade80;
+    --cl-color: #fbbf24;
+    --conductive-color: #22c55e;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --card-border: rgba(255, 255, 255, 0.08);
 }
 
 body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-main);
     margin: 0;
-    font-family: 'Inter', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    display: flex;
     height: 100vh;
     overflow: hidden;
+    touch-action: pan-x pan-y;
 }
 
+/* main layout */
+.lab-container {
+    display: flex;
+    height: 100vh;
+    position: relative;
+}
+
+/* sidebar */
 .sidebar {
-    width: 360px;
-    background: var(--panel);
-    padding: 25px;
+    width: 320px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    border-right: 1px solid var(--card-border);
+    padding: 28px 22px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    border-right: 1px solid rgba(255,255,255,0.1);
+    gap: 24px;
+    z-index: 20;
+    overflow-y: auto;
+    transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
 }
 
-.sidebar h2 {
-    margin: 0;
-    color: var(--water);
+.title-section h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #38bdf8, #fbbf24);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
 }
 
+.title-section p {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* cards */
 .card {
-    background: rgba(255,255,255,0.05);
-    padding: 15px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 24px;
+    padding: 18px;
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(4px);
 }
 
-button {
+.card p {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+}
+
+.btn {
     width: 100%;
-    padding: 12px;
+    padding: 14px 18px;
+    border-radius: 60px;
     border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    margin-bottom: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
     cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-water {
+    background: linear-gradient(105deg, #0ea5e9, #0284c7);
+    color: white;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
+
+.btn-water:active { transform: scale(0.96); }
+
+.btn-oil {
+    background: linear-gradient(105deg, #fbbf24, #f59e0b);
+    color: #0f172a;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.btn-oil:active { transform: scale(0.96); }
+
+.btn-reset {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    margin-top: 8px;
+}
+
+.btn-reset:active { transform: scale(0.97); background: #475569; }
+
+/* status box */
+.status-box {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 20px;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
     transition: 0.2s;
 }
 
-.btn-water { background: var(--water); color: #000; }
-.btn-water:hover { background: #0ea5e9; }
-.btn-oil { background: var(--oil); color: #000; }
-.btn-oil:hover { background: #f59e0b; }
-
-.reset-btn { background:#334155; color:white; }
-.reset-btn:hover { background:#1e293b; }
-
-.status-box {
-    text-align: center;
-    font-size: 0.9rem;
-    padding: 10px;
-    border-radius: 8px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
-    font-weight: bold;
+.conductivity-wrapper {
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 40px;
+    height: 12px;
+    overflow: hidden;
+    margin: 12px 0 8px;
 }
 
-.conductivity {
-    height: 20px;
-    width: 100%;
-    background: rgba(255,255,255,0.1);
-    border-radius: 8px;
-    margin-top: 5px;
+.conductivity-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+    border-radius: 40px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px #22c55e;
+}
+
+.conduction-label {
+    font-size: 0.7rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* viewport canvas */
+.viewport {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(circle at 20% 30%, #0a0f1a, #000000);
     overflow: hidden;
 }
 
-.conductivity-inner {
-    height: 100%;
-    width: 0%;
-    background: var(--conductive);
-    transition: width 0.3s ease;
-    border-radius: 8px;
-}
-
-.viewport {
-    flex-grow: 1;
-    position: relative;
-    background: #000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
 canvas {
+    display: block;
     width: 100%;
     height: 100%;
-    border-left: 2px solid rgba(255,255,255,0.05);
+}
+
+/* legend items */
+.legend-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+.legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 14px;
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+/* accordion for extra theory (hides secondary text) */
+.accordion {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #38bdf8;
+    background: rgba(0, 0, 0, 0.25);
+}
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease-out;
+    padding: 0 14px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+.accordion.open .accordion-content {
+    max-height: 200px;
+    padding: 0 14px 16px 14px;
+}
+
+/* mobile responsive */
+.menu-toggle {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #38bdf8;
+    color: #0f172a;
+    border: none;
+    border-radius: 60px;
+    padding: 12px 20px;
+    font-weight: bold;
+    z-index: 30;
+    cursor: pointer;
+    gap: 6px;
+    align-items: center;
+    box-shadow: 0 4px 14px black;
+}
+
+@media (max-width: 720px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100%;
+        transform: translateX(-100%);
+        width: 85%;
+        max-width: 280px;
+        background: rgba(2, 6, 23, 0.98);
+        backdrop-filter: blur(20px);
+        z-index: 40;
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .menu-toggle {
+        display: flex;
+    }
 }
 </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2>Solubility Lab</h2>
-
-    <div class="card">
-        <label style="font-size:0.75rem; color:#94a3b8;">SELECT SOLVENT</label>
-        <button class="btn-water" onclick="setSolvent('water')">Water (Polar)</button>
-        <button class="btn-oil" onclick="setSolvent('oil')">Oil (Non-Polar)</button>
-    </div>
-
-    <div class="card">
-        <div class="status-box" id="status">Crystal is stable.</div>
-        <div class="conductivity">
-            <div class="conductivity-inner" id="conductivityBar"></div>
+<div class="lab-container">
+    <div class="sidebar" id="sidebar">
+        <div class="title-section">
+            <h2>🧪 Solubility Lab</h2>
+            <p>like dissolves like · dissociation & conductivity</p>
         </div>
-        <button class="reset-btn" onclick="reset()">Reset Simulation</button>
-    </div>
 
-    <div class="card" style="font-size:0.8rem; color:#94a3b8; line-height:1.5;">
-        <b>Observation Rule:</b> "Like Dissolves Like."
-        <br><br>
-        Polar solvents like water can pull ions away from the crystal lattice, forming free ions surrounded by a <b>hydration shell</b>. Non-polar solvents like oil do not interact with ions; the crystal remains intact.
+        <div class="card">
+            <label style="font-size:0.7rem; color:#94a3b8; text-transform: uppercase;">Select solvent</label>
+            <button class="btn btn-water" id="waterBtn">💧 Water (Polar solvent)</button>
+            <button class="btn btn-oil" id="oilBtn">🛢️ Oil (Non-polar solvent)</button>
+        </div>
+
+        <div class="card">
+            <div class="status-box" id="statusMsg">🧂 Crystal lattice · intact</div>
+            <div class="conductivity-wrapper">
+                <div class="conductivity-bar" id="conductivityBar"></div>
+            </div>
+            <div class="conduction-label" id="conductText">⚡ conductivity: 0%</div>
+            <button class="btn btn-reset" id="resetBtn">⟳ Reset / crystal regrowth</button>
+        </div>
+
+        <div class="legend-row">
+            <span><i class="legend-dot" style="background:#4ade80;"></i> Na⁺</span>
+            <span><i class="legend-dot" style="background:#fbbf24;"></i> Cl⁻</span>
+            <span><i class="legend-dot" style="background:#38bdf8;"></i> hydration shell</span>
+        </div>
+
+        <!-- Accordion: hidden explanatory text -->
+        <div class="accordion" id="theoryAccordion">
+            <div class="accordion-header" id="accordionHead">
+                <span>📘 Why does water dissolve salt?</span>
+                <span id="accordionIcon">▼</span>
+            </div>
+            <div class="accordion-content">
+                <strong>Polar water molecules</strong> surround Na⁺ and Cl⁻ ions, overcoming electrostatic lattice energy → <strong>dissociation</strong>. Free ions conduct electricity. <br>
+                <strong>Oil (non-polar)</strong> cannot stabilize ions → crystal remains intact → no conductivity.
+            </div>
+        </div>
+        <div style="font-size:0.65rem; text-align:center; color:#475569;">⚡ dissociation ↔ conductivity</div>
+    </div>
+    <div class="viewport">
+        <canvas id="solCanvas"></canvas>
     </div>
 </div>
-
-<div class="viewport">
-    <canvas id="solCanvas"></canvas>
-</div>
+<button class="menu-toggle" id="menuToggleBtn">🧪 Menu</button>
 
 <script>
-const canvas = document.getElementById('solCanvas');
-const ctx = canvas.getContext('2d');
-let solvent = 'none';
-const ions = [];
-const spacing = 40;
-const rows = 6;
-const cols = 6;
-let conductivity = 0;
-
-function reset() {
-    ions.length = 0;
-    solvent = 'none';
-    conductivity = 0;
-    document.getElementById('status').innerText = "Crystal is stable.";
-    document.getElementById('conductivityBar').style.width = '0%';
-
-    const startX = canvas.width/2 - (cols*spacing)/2;
-    const startY = canvas.height/2 - (rows*spacing)/2;
-
-    for(let r=0; r<rows; r++){
-        for(let c=0; c<cols; c++){
-            ions.push({
-                x: startX + c*spacing,
-                y: startY + r*spacing,
-                origX: startX + c*spacing,
-                origY: startY + r*spacing,
-                isNa: (r+c)%2===0,
-                vx: (Math.random()-0.5)*2,
-                vy: (Math.random()-0.5)*2,
-                dissolved: false
-            });
+(function(){
+    // DOM elements
+    const canvas = document.getElementById('solCanvas');
+    const ctx = canvas.getContext('2d');
+    const waterBtn = document.getElementById('waterBtn');
+    const oilBtn = document.getElementById('oilBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const statusMsgDiv = document.getElementById('statusMsg');
+    const conductivityBar = document.getElementById('conductivityBar');
+    const conductTextSpan = document.getElementById('conductText');
+    
+    // Simulation params
+    let solvent = 'none';      // 'none', 'water', 'oil'
+    let ions = [];
+    const ROWS = 6;
+    const COLS = 6;
+    let spacing = 48;
+    let animationId = null;
+    let startTime = 0;
+    let dissociationActive = false;     // for water dissolution kinetic
+    
+    // ----- Helper functions
+    function getCanvasSize() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        return { width: canvas.width, height: canvas.height };
+    }
+    
+    // Build crystal lattice
+    function buildCrystal() {
+        const { width, height } = getCanvasSize();
+        const startX = width/2 - (COLS * spacing)/2;
+        const startY = height/2 - (ROWS * spacing)/2;
+        const newIons = [];
+        for(let r = 0; r < ROWS; r++) {
+            for(let c = 0; c < COLS; c++) {
+                const isNa = (r + c) % 2 === 0;
+                newIons.push({
+                    id: `${r}-${c}`,
+                    origX: startX + c * spacing,
+                    origY: startY + r * spacing,
+                    x: startX + c * spacing,
+                    y: startY + r * spacing,
+                    isNa: isNa,
+                    vx: (Math.random() - 0.5) * 1.2,
+                    vy: (Math.random() - 0.5) * 1.2,
+                    dissolved: false,
+                    hydrationGlow: 0
+                });
+            }
+        }
+        return newIons;
+    }
+    
+    function resetSimulation() {
+        solvent = 'none';
+        dissociationActive = false;
+        ions = buildCrystal();
+        updateStatusAndConductivity(0);
+        statusMsgDiv.innerHTML = '🧂 Crystal lattice · intact';
+        statusMsgDiv.style.color = '#cbd5e1';
+    }
+    
+    // Update UI based on dissolved count
+    function updateStatusAndConductivity(dissolvedPercent) {
+        const percent = Math.min(100, Math.floor(dissolvedPercent));
+        conductivityBar.style.width = percent + '%';
+        conductTextSpan.innerText = `⚡ conductivity: ${percent}%`;
+        
+        if (solvent === 'water') {
+            if (percent >= 98) {
+                statusMsgDiv.innerHTML = '✨ Fully dissociated · free ions conduct electricity ✨';
+                statusMsgDiv.style.color = '#4ade80';
+            } else if (percent > 0) {
+                statusMsgDiv.innerHTML = `💧 Dissolving · ions separating (${percent}% dissociated)`;
+                statusMsgDiv.style.color = '#38bdf8';
+            } else {
+                statusMsgDiv.innerHTML = '💧 Water added · dissociation starting...';
+                statusMsgDiv.style.color = '#38bdf8';
+            }
+        } else if (solvent === 'oil') {
+            statusMsgDiv.innerHTML = '🛢️ Oil (nonpolar) · crystal remains intact, no dissociation';
+            statusMsgDiv.style.color = '#fbbf24';
+        } else {
+            statusMsgDiv.innerHTML = '🧂 Crystal lattice · select solvent';
+            statusMsgDiv.style.color = '#94a3b8';
         }
     }
-}
-
-function setSolvent(type){
-    solvent = type;
-    if(type==='water'){
-        document.getElementById('status').innerText = "Dissociation in progress...";
-    } else {
-        document.getElementById('status').innerText = "Crystal is insoluble.";
-    }
-}
-
-function animate(){
-    ctx.fillStyle = solvent === 'oil' ? '#1a1a05' : solvent==='water' ? '#081c2e' : '#000';
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    let dissolvedCount = 0;
-
-    ions.forEach((ion)=>{
-        if(solvent==='water'){
-            const delay = (Math.abs(ion.origX-canvas.width/2)+Math.abs(ion.origY-canvas.height/2))*3;
-            if(Date.now()%5000>delay){
-                ion.dissolved = true;
+    
+    // Water dissociation kinetics (progressive)
+    function updateWaterDissociation() {
+        if (solvent !== 'water') return;
+        let totalIons = ions.length;
+        let dissolvedCount = 0;
+        
+        // progressive dissociation: ions far from center dissolve faster? simulate realistic random walk
+        // each frame, probability to dissolve remaining crystal ions
+        let anyChange = false;
+        for (let i = 0; i < ions.length; i++) {
+            const ion = ions[i];
+            if (!ion.dissolved) {
+                // Probability factor: time & distance from center
+                const centerX = canvas.width/2;
+                const centerY = canvas.height/2;
+                const distToCenter = Math.hypot(ion.origX - centerX, ion.origY - centerY);
+                const dissolveProb = 0.008 + (1 - Math.min(1, distToCenter / 250)) * 0.02;
+                if (Math.random() < dissolveProb) {
+                    ion.dissolved = true;
+                    // give random velocity for free movement
+                    ion.vx = (Math.random() - 0.5) * 1.6;
+                    ion.vy = (Math.random() - 0.5) * 1.6;
+                    anyChange = true;
+                }
             }
-            if(ion.dissolved){
+            if (ion.dissolved) dissolvedCount++;
+        }
+        
+        const percent = (dissolvedCount / totalIons) * 100;
+        updateStatusAndConductivity(percent);
+        
+        // after full dissociation, we can slightly animate but fine.
+        return percent;
+    }
+    
+    // Update oil (crystal remains, but tiny thermal jitter)
+    function updateOilBehavior() {
+        for (let ion of ions) {
+            if (!ion.dissolved) {
+                // small jitter, no dissociation
+                ion.x = ion.origX + (Math.random() - 0.5) * 1.2;
+                ion.y = ion.origY + (Math.random() - 0.5) * 1.2;
+            } else {
+                // ensure dissolved can't happen in oil
+                ion.dissolved = false;
+                ion.x = ion.origX;
+                ion.y = ion.origY;
+            }
+        }
+        // conductivity = 0
+        updateStatusAndConductivity(0);
+    }
+    
+    // Update positions for water dissolved ions (Brownian motion + boundary bounce)
+    function updateDissolvedMotion() {
+        for (let ion of ions) {
+            if (ion.dissolved && solvent === 'water') {
                 ion.x += ion.vx;
                 ion.y += ion.vy;
-
-                if(ion.x<20 || ion.x>canvas.width-20) ion.vx*=-1;
-                if(ion.y<20 || ion.y>canvas.height-20) ion.vy*=-1;
-
-                dissolvedCount++;
+                // soft boundary collisions
+                const margin = 18;
+                if (ion.x < margin) { ion.x = margin; ion.vx = -ion.vx * 0.9; }
+                if (ion.x > canvas.width - margin) { ion.x = canvas.width - margin; ion.vx = -ion.vx * 0.9; }
+                if (ion.y < margin) { ion.y = margin; ion.vy = -ion.vy * 0.9; }
+                if (ion.y > canvas.height - margin) { ion.y = canvas.height - margin; ion.vy = -ion.vy * 0.9; }
+                // slight damping
+                ion.vx *= 0.998;
+                ion.vy *= 0.998;
+            } else if (solvent !== 'water') {
+                // keep in lattice position if not water
+                if (!ion.dissolved) {
+                    ion.x = ion.origX;
+                    ion.y = ion.origY;
+                }
             }
-        } else if(solvent==='oil'){
-            ion.x = ion.origX + (Math.random()-0.5);
-            ion.y = ion.origY + (Math.random()-0.5);
         }
-
-        ctx.fillStyle = ion.isNa ? '#4ade80' : '#fbbf24';
-        ctx.beginPath();
-        ctx.arc(ion.x, ion.y, ion.isNa?8:12, 0, Math.PI*2);
-        ctx.fill();
-
-        if(solvent==='water' && ion.dissolved){
-            ctx.strokeStyle = 'rgba(56,189,248,0.3)';
-            ctx.lineWidth = 2;
+    }
+    
+    // Drawing routine
+    function draw() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Background based on solvent
+        if (solvent === 'water') {
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#071a2e');
+            grad.addColorStop(1, '#04202e');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // water ripple effect
+            ctx.fillStyle = 'rgba(56,189,248,0.05)';
+            for(let i=0;i<40;i++) {
+                ctx.beginPath();
+                ctx.arc(canvas.width/2 + Math.sin(Date.now()*0.002 + i)*30, canvas.height/2 + Math.cos(i)*20, 40, 0, Math.PI*2);
+                ctx.fill();
+            }
+        } else if (solvent === 'oil') {
+            ctx.fillStyle = '#1e1b0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#fbbf2410';
+            for(let i=0;i<60;i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random()*canvas.width, Math.random()*canvas.height, 15, 0, Math.PI*2);
+                ctx.fill();
+            }
+        } else {
+            ctx.fillStyle = '#050b14';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // draw ions
+        for (let ion of ions) {
+            // ion shape
             ctx.beginPath();
-            ctx.arc(ion.x, ion.y, 20, 0, Math.PI*2);
-            ctx.stroke();
+            ctx.arc(ion.x, ion.y, ion.isNa ? 10 : 12, 0, Math.PI*2);
+            ctx.fillStyle = ion.isNa ? '#4ade80' : '#fbbf24';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = ion.isNa ? '#4ade8066' : '#fbbf2466';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#0f172a';
+            ctx.font = `bold ${ion.isNa ? 14 : 14}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(ion.isNa ? '+' : '−', ion.x, ion.y);
+            
+            // hydration shell (if water & dissolved)
+            if (solvent === 'water' && ion.dissolved) {
+                ctx.beginPath();
+                ctx.arc(ion.x, ion.y, 21, 0, Math.PI*2);
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 6]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // faint glow
+                ctx.beginPath();
+                ctx.arc(ion.x, ion.y, 18, 0, Math.PI*2);
+                ctx.fillStyle = 'rgba(56,189,248,0.08)';
+                ctx.fill();
+            }
         }
+        
+        // lattice lines (if not fully dissociated and solvent is water or none)
+        if (solvent !== 'oil') {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 0.8;
+            for (let i = 0; i < ions.length; i++) {
+                const ion = ions[i];
+                if (ion.dissolved && solvent === 'water') continue;
+                // draw connections to neighbors (simple)
+                const col = i % COLS;
+                const row = Math.floor(i / COLS);
+                if (col + 1 < COLS) {
+                    const rightNeighbor = ions[row * COLS + (col+1)];
+                    if (rightNeighbor && (!rightNeighbor.dissolved || solvent !== 'water')) {
+                        ctx.beginPath();
+                        ctx.moveTo(ion.x, ion.y);
+                        ctx.lineTo(rightNeighbor.x, rightNeighbor.y);
+                        ctx.stroke();
+                    }
+                }
+                if (row + 1 < ROWS) {
+                    const downNeighbor = ions[(row+1) * COLS + col];
+                    if (downNeighbor && (!downNeighbor.dissolved || solvent !== 'water')) {
+                        ctx.beginPath();
+                        ctx.moveTo(ion.x, ion.y);
+                        ctx.lineTo(downNeighbor.x, downNeighbor.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+        requestAnimationFrame(draw);
+    }
+    
+    // Main simulation loop (physics update)
+    function simUpdate() {
+        if (solvent === 'water') {
+            updateWaterDissociation();
+            updateDissolvedMotion();
+        } else if (solvent === 'oil') {
+            updateOilBehavior();
+            // ensure all ions are not dissolved
+            for (let ion of ions) ion.dissolved = false;
+        } else {
+            // no solvent: everything stays in lattice
+            for (let ion of ions) {
+                ion.x = ion.origX;
+                ion.y = ion.origY;
+                ion.dissolved = false;
+            }
+            updateStatusAndConductivity(0);
+        }
+        requestAnimationFrame(simUpdate);
+    }
+    
+    // ----- Event Handlers
+    function setWater() {
+        solvent = 'water';
+        // Reset crystal but preserve new dissolution start
+        ions = buildCrystal();
+        dissociationActive = true;
+        statusMsgDiv.innerHTML = '💧 Water added · dissociation in progress...';
+        statusMsgDiv.style.color = '#38bdf8';
+        conductivityBar.style.width = '0%';
+        conductTextSpan.innerText = '⚡ conductivity: 0%';
+    }
+    
+    function setOil() {
+        solvent = 'oil';
+        ions = buildCrystal();  // fresh lattice
+        statusMsgDiv.innerHTML = '🛢️ Oil (nonpolar) · crystal remains intact, no dissociation';
+        statusMsgDiv.style.color = '#fbbf24';
+        conductivityBar.style.width = '0%';
+        conductTextSpan.innerText = '⚡ conductivity: 0%';
+    }
+    
+    function handleReset() {
+        solvent = 'none';
+        ions = buildCrystal();
+        updateStatusAndConductivity(0);
+        statusMsgDiv.innerHTML = '🧂 Crystal lattice · intact';
+        statusMsgDiv.style.color = '#cbd5e1';
+        conductivityBar.style.width = '0%';
+        conductTextSpan.innerText = '⚡ conductivity: 0%';
+    }
+    
+    // Window resize handler
+    function onResize() {
+        const oldIons = ions;
+        getCanvasSize();
+        const newIons = buildCrystal();
+        // preserve dissolution state?
+        if (solvent === 'water' && oldIons.length === newIons.length) {
+            for (let i=0; i<newIons.length; i++) {
+                newIons[i].dissolved = oldIons[i]?.dissolved || false;
+                newIons[i].vx = oldIons[i]?.vx || (Math.random()-0.5)*1.2;
+                newIons[i].vy = oldIons[i]?.vy || (Math.random()-0.5)*1.2;
+            }
+        }
+        ions = newIons;
+    }
+    
+    // attach events
+    waterBtn.addEventListener('click', setWater);
+    oilBtn.addEventListener('click', setOil);
+    resetBtn.addEventListener('click', handleReset);
+    window.addEventListener('resize', () => {
+        getCanvasSize();
+        onResize();
     });
-
-    // Update conductivity bar
-    conductivity = Math.round((dissolvedCount/(rows*cols))*100);
-    document.getElementById('conductivityBar').style.width = conductivity+'%';
-    document.getElementById('status').innerText = solvent==='water' ? `Dissociation in progress... (${conductivity}%)` : document.getElementById('status').innerText;
-
-    requestAnimationFrame(animate);
-}
-
-window.addEventListener('resize', ()=>{
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    reset();
-});
-
-canvas.width = canvas.offsetWidth;
-canvas.height = canvas.offsetHeight;
-reset();
-animate();
+    
+    // accordion toggle
+    const accordion = document.getElementById('theoryAccordion');
+    const accordionHead = document.getElementById('accordionHead');
+    const accordionIcon = document.getElementById('accordionIcon');
+    if (accordionHead) {
+        accordionHead.addEventListener('click', () => {
+            accordion.classList.toggle('open');
+            accordionIcon.innerText = accordion.classList.contains('open') ? '▲' : '▼';
+        });
+    }
+    
+    // mobile menu
+    const menuToggle = document.getElementById('menuToggleBtn');
+    const sidebar = document.getElementById('sidebar');
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+        });
+        canvas.addEventListener('click', () => {
+            if (window.innerWidth <= 720 && sidebar.classList.contains('open')) sidebar.classList.remove('open');
+        });
+    }
+    
+    // initialization
+    getCanvasSize();
+    ions = buildCrystal();
+    draw();
+    simUpdate();
+})();
 </script>
-
 </body>
 </html>

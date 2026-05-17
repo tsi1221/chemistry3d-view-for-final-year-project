@@ -2,176 +2,742 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mass Spectrometry Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mass Spec Simulator | Magnetic Sector</title>
     <style>
+        /* ---------- RESET & GLOBAL ---------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
-            --bg: #020617;
-            --panel: #1e293b;
-            --mag: #8b5cf6;
-            --text: #f1f5f9;
-            --iso1: #4ade80; /* Light */
-            --iso2: #fbbf24; /* Medium */
-            --iso3: #f87171; /* Heavy */
+            --bg-deep: #020617;
+            --surface: #0f172a;
+            --panel-surface: #1e293b;
+            --accent-primary: #8b5cf6;
+            --accent-glow: rgba(139, 92, 246, 0.3);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --iso-light: #4ade80;
+            --iso-mid: #fbbf24;
+            --iso-heavy: #f87171;
+            --border-subtle: rgba(255,255,255,0.08);
+            --card-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            --transition-default: all 0.2s ease;
         }
 
         body {
-            font-family: 'Inter', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
+            font-family: system-ui, 'Inter', -apple-system, 'Segoe UI', sans-serif;
+            background: var(--bg-deep);
+            color: var(--text-main);
             height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ---------- TOP NAVBAR (Responsive) ---------- */
+        .navbar {
+            background: var(--surface);
+            backdrop-filter: blur(4px);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            z-index: 20;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            background: var(--accent-primary);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .logo-text {
+            font-weight: 600;
+            font-size: 1.2rem;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #c084fc, #a855f7);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        /* hamburger button (mobile) */
+        .hamburger {
+            display: none;
+            background: none;
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 0.5rem 0.8rem;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 1.5rem;
+            line-height: 1;
+            transition: var(--transition-default);
+        }
+
+        .hamburger:hover {
+            background: var(--panel-surface);
+        }
+
+        /* desktop nav menu */
+        .nav-menu {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: var(--transition-default);
+        }
+
+        .nav-btn.active, .nav-btn:hover {
+            background: var(--panel-surface);
+            color: var(--text-main);
+        }
+
+        /* dropdown container */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--panel-surface);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            min-width: 220px;
+            padding: 0.5rem 0;
+            margin-top: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.2s;
+            z-index: 100;
+            box-shadow: var(--card-shadow);
+        }
+
+        .dropdown.open .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu button {
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            padding: 0.7rem 1.2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition-default);
+        }
+
+        .dropdown-menu button:hover {
+            background: rgba(139, 92, 246, 0.2);
+            color: white;
+        }
+
+        /* mobile collapse */
+        @media (max-width: 768px) {
+            .hamburger {
+                display: block;
+            }
+            .nav-menu {
+                position: fixed;
+                top: 70px;
+                left: -100%;
+                flex-direction: column;
+                background: var(--surface);
+                width: 75%;
+                height: calc(100% - 70px);
+                backdrop-filter: blur(20px);
+                padding: 1.5rem;
+                gap: 1rem;
+                transition: 0.25s ease;
+                border-right: 1px solid var(--border-subtle);
+                z-index: 30;
+                align-items: flex-start;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.5);
+            }
+            .nav-menu.open {
+                left: 0;
+            }
+            .dropdown-menu {
+                position: static;
+                background: rgba(0,0,0,0.3);
+                margin-top: 0.25rem;
+                width: 100%;
+                box-shadow: none;
+                border: none;
+            }
+            .dropdown.open .dropdown-menu {
+                transform: none;
+            }
+        }
+
+        /* MAIN LAYOUT */
+        .app-layout {
+            display: flex;
+            flex: 1;
             overflow: hidden;
         }
 
+        /* SIDEBAR (condensed, collapsible on mobile via nav) */
         .sidebar {
-            width: 320px;
-            background: var(--panel);
-            padding: 25px;
-            border-right: 1px solid rgba(255,255,255,0.1);
+            width: 280px;
+            background: var(--surface);
+            border-right: 1px solid var(--border-subtle);
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            gap: 1.5rem;
+            padding: 1.5rem;
+            overflow-y: auto;
+            transition: var(--transition-default);
         }
 
-        .viewport { flex-grow: 1; position: relative; background: #000; }
-        canvas { width: 100%; height: 100%; }
+        /* on small screens, sidebar becomes hidden and replaced by mobile menu */
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .mobile-sidebar-active .sidebar {
+                display: flex;
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 85%;
+                height: calc(100% - 70px);
+                z-index: 25;
+                background: var(--surface);
+                border-right: 1px solid var(--border-subtle);
+                box-shadow: 4px 0 20px black;
+            }
+        }
 
         .card {
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
+            background: var(--panel-surface);
+            border-radius: 24px;
+            padding: 1rem 1.2rem;
+            border: 1px solid var(--border-subtle);
+            transition: var(--transition-default);
         }
 
-        h1 { font-size: 1.2rem; color: var(--mag); margin: 0; }
-        label { display: block; font-size: 0.75rem; color: #94a3b8; margin: 15px 0 5px; text-transform: uppercase; }
-        
-        input[type=range] { width: 100%; accent-color: var(--mag); cursor: pointer; }
+        .card h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-        .detector-readout {
+        /* range slider */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-primary);
+            background: var(--bg-deep);
+            height: 4px;
+            border-radius: 4px;
+        }
+        .value-display {
             font-family: monospace;
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.4);
+            padding: 0.2rem 0.6rem;
+            border-radius: 40px;
+            display: inline-block;
+        }
+
+        /* detector readout */
+        .detector-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .isotope-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px dashed var(--border-subtle);
+            padding-bottom: 0.5rem;
+        }
+        .isotope-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .badge-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 20px;
+        }
+        .count {
+            font-family: monospace;
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+
+        /* ACCORDION (physics principle hidden) */
+        .accordion {
+            margin-top: 0.5rem;
+        }
+        .accordion-header {
+            background: rgba(0,0,0,0.3);
+            padding: 0.7rem;
+            border-radius: 40px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-size: 0.8rem;
-            color: #4ade80;
+            font-weight: 500;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            margin-top: 0.5rem;
+            padding: 0 0.8rem;
+        }
+        .accordion-content p {
+            padding: 1rem 0;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .accordion.open .accordion-content {
+            max-height: 200px;
+        }
+
+        button.reset-btn {
+            background: #334155;
+            border: none;
+            padding: 10px;
+            border-radius: 40px;
+            font-weight: 500;
+            cursor: pointer;
+            color: white;
+            width: 100%;
+            transition: 0.2s;
+        }
+        button.reset-btn:hover {
+            background: #475569;
+        }
+
+        /* VIEWPORT (Canvas) */
+        .viewport {
+            flex: 1;
+            position: relative;
+            background: #000000;
+            overflow: hidden;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* tiny status */
+        .field-value {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--accent-primary);
+        }
+
+        /* scroll */
+        ::-webkit-scrollbar {
+            width: 4px;
         }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <h1>Mass Spectrometer</h1>
-    
-    <div class="card">
-        <label>Magnetic Field Strength (B)</label>
-        <input type="range" id="magField" min="5" max="50" value="25">
+<nav class="navbar">
+    <div class="logo-area">
+        <div class="logo-icon">⚛️</div>
+        <span class="logo-text">MassSpec Lab</span>
     </div>
-
-    <div class="card detector-readout">
-        <div style="color:var(--iso1)">● Light Isotope: <span id="hit1">0</span></div>
-        <div style="color:var(--iso2)">● Mid Isotope: <span id="hit2">0</span></div>
-        <div style="color:var(--iso3)">● Heavy Isotope: <span id="hit3">0</span></div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Menu">☰</button>
+    <div class="nav-menu" id="navMenu">
+        <button class="nav-btn active" data-tab="sim">Simulator</button>
+        <div class="dropdown" id="infoDropdown">
+            <button class="nav-btn" id="dropdownToggle">Resources ▼</button>
+            <div class="dropdown-menu">
+                <button id="showPhysicsBtn">⚡ Physics principle</button>
+                <button id="showIsotopeBtn">🧪 Isotope info</button>
+                <button id="howToBtn">🎯 How to use</button>
+            </div>
+        </div>
+        <button class="nav-btn" id="resetNavBtn">Reset counts</button>
     </div>
+</nav>
 
-    <div class="card" style="font-size: 0.8rem; color: #94a3b8; line-height: 1.5;">
-        <b>Physics Principle:</b> F = qvB. 
-        Higher mass means higher momentum, making it harder for the magnetic field to "bend" the particle's path.
+<div class="app-layout" id="appLayout">
+    <!-- Sidebar / control panel -->
+    <aside class="sidebar" id="sidebar">
+        <div class="card">
+            <h3>🔧 Magnetic Field</h3>
+            <div class="slider-container">
+                <input type="range" id="magField" min="5" max="50" value="25" step="1">
+                <div><span class="value-display" id="fieldValueDisplay">25.0 mT</span></div>
+                <div style="font-size:0.7rem; color:#64748b;">Higher B → stronger deflection</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>📡 Detector counts</h3>
+            <div class="detector-panel">
+                <div class="isotope-row">
+                    <div class="isotope-badge"><div class="badge-color" style="background: var(--iso-light);"></div> Light (¹⁰B)</div>
+                    <span class="count" id="hit1">0</span>
+                </div>
+                <div class="isotope-row">
+                    <div class="isotope-badge"><div class="badge-color" style="background: var(--iso-mid);"></div> Mid (²⁰Ne)</div>
+                    <span class="count" id="hit2">0</span>
+                </div>
+                <div class="isotope-row">
+                    <div class="isotope-badge"><div class="badge-color" style="background: var(--iso-heavy);"></div> Heavy (³⁰Si)</div>
+                    <span class="count" id="hit3">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accordion: hidden heavy text -->
+        <div class="accordion" id="physicsAccordion">
+            <div class="accordion-header">
+                <span>⚡ Physics Principle (click)</span>
+                <span>▼</span>
+            </div>
+            <div class="accordion-content">
+                <p><strong>Magnetic sector MS:</strong> Ions with charge q, velocity v enter perpendicular magnetic field B. Lorentz force F = qvB provides centripetal acceleration: m·v²/r = qvB → r = mv/(qB).<br>
+                ➜ Heavier isotopes (higher m) have larger radius → less deflection → hit detector further down.<br>
+                ➜ Slider changes B field strength: higher B bends light isotopes more, adjusting which masses reach the detector.</p>
+            </div>
+        </div>
+        <button class="reset-btn" id="resetSidebarBtn">⟳ Reset detector</button>
+    </aside>
+
+    <div class="viewport">
+        <canvas id="specCanvas"></canvas>
     </div>
-    
-    <button onclick="clearHits()" style="background:#334155; color:white; border:none; padding:10px; border-radius:6px; cursor:pointer;">Reset Detector</button>
-</div>
-
-<div class="viewport">
-    <canvas id="specCanvas"></canvas>
 </div>
 
 <script>
-    const canvas = document.getElementById('specCanvas');
-    const ctx = canvas.getContext('2d');
-    let particles = [];
-    let hits = [0, 0, 0];
+    (function() {
+        // ----- CANVAS SIMULATION (classic mass spectrometer model)
+        const canvas = document.getElementById('specCanvas');
+        let ctx = canvas.getContext('2d');
+        let particles = [];
+        let hits = [0, 0, 0];   // Light, Mid, Heavy
 
-    function resize() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
-    }
-    window.addEventListener('resize', resize);
-    resize();
-
-    function createParticle() {
-        const types = [
-            { m: 10, color: '#4ade80', id: 0 }, // Light
-            { m: 20, color: '#fbbf24', id: 1 }, // Mid
-            { m: 30, color: '#f87171', id: 2 }  // Heavy
+        // Isotope definitions (mass / color mapping)
+        const ISOTOPES = [
+            { m: 10, color: '#4ade80', id: 0, name: 'Light' },   // m=10
+            { m: 20, color: '#fbbf24', id: 1, name: 'Mid' },     // m=20
+            { m: 30, color: '#f87171', id: 2, name: 'Heavy' }    // m=30
         ];
-        const type = types[Math.floor(Math.random() * 3)];
-        return {
-            x: 50,
-            y: canvas.height - 50,
-            vx: 6,
-            vy: 0,
-            ...type,
-            active: true
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        // Spawn particle from left side (ion source)
+        function createParticle() {
+            const idx = Math.floor(Math.random() * 3);
+            const type = ISOTOPES[idx];
+            return {
+                x: 50,
+                y: canvas.height - 60,   // near bottom
+                vx: 5.8,
+                vy: 0,
+                m: type.m,
+                color: type.color,
+                id: type.id,
+                active: true
+            };
+        }
+
+        function updateReadoutUI() {
+            document.getElementById('hit1').innerText = hits[0];
+            document.getElementById('hit2').innerText = hits[1];
+            document.getElementById('hit3').innerText = hits[2];
+        }
+
+        window.clearHits = function() {
+            hits = [0, 0, 0];
+            updateReadoutUI();
         };
-    }
 
-    function clearHits() {
-        hits = [0, 0, 0];
-        updateReadout();
-    }
+        // Reset from any button
+        function resetDetector() {
+            hits = [0, 0, 0];
+            updateReadoutUI();
+        }
 
-    function updateReadout() {
-        document.getElementById('hit1').innerText = hits[0];
-        document.getElementById('hit2').innerText = hits[1];
-        document.getElementById('hit3').innerText = hits[2];
-    }
+        // Simulation update loop
+        let animationId;
+        let currentB = 0.025; // default 25/1000 = 0.025
 
-    function update() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        function getMagneticField() {
+            const sliderVal = parseFloat(document.getElementById('magField').value);
+            const Btesla = sliderVal / 1000;   // convert mT -> T
+            return Btesla;
+        }
 
-        const B = parseFloat(document.getElementById('magField').value) / 1000;
-
-        // Draw Magnetic Region
-        ctx.fillStyle = "rgba(139, 92, 246, 0.05)";
-        ctx.fillRect(150, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = "rgba(139, 92, 246, 0.2)";
-        ctx.strokeRect(150, 0, canvas.width, canvas.height);
-
-        // Spawn
-        if (Math.random() < 0.2) particles.push(createParticle());
-
-        particles.forEach((p, i) => {
-            if (p.x > 150) {
-                // Centripetal force: a = (q*v*B)/m
-                // We simplify: delta_vy = (vx * B) / mass
-                const force = (p.vx * B * 50) / p.m;
-                p.vy -= force; 
-            }
-
-            p.x += p.vx;
-            p.y += p.vy;
-
-            ctx.fillStyle = p.color;
+        function updateSimulation() {
+            if (!ctx) return;
+            // semi-transparent trailing effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const B = getMagneticField();
+            // draw magnetic sector region (visual)
+            ctx.fillStyle = "rgba(139, 92, 246, 0.05)";
+            ctx.fillRect(140, 0, canvas.width - 140, canvas.height);
+            ctx.strokeStyle = "rgba(139, 92, 246, 0.3)";
+            ctx.setLineDash([6, 8]);
+            ctx.strokeRect(140, 0, canvas.width - 140, canvas.height);
+            ctx.setLineDash([]);
+            
+            // draw detector wall (right side)
             ctx.beginPath();
-            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.strokeStyle = "#4ade80aa";
+            ctx.lineWidth = 2;
+            ctx.moveTo(canvas.width - 20, 0);
+            ctx.lineTo(canvas.width - 20, canvas.height);
+            ctx.stroke();
+            ctx.fillStyle = "#ffffff20";
+            ctx.fillRect(canvas.width - 22, 0, 4, canvas.height);
 
-            // Hit detection (right wall)
-            if (p.x > canvas.width - 20 && p.active) {
-                hits[p.id]++;
-                p.active = false;
-                updateReadout();
+            // spawn particles dynamically (approx rate)
+            if (Math.random() < 0.22) {
+                particles.push(createParticle());
             }
 
-            if (p.x > canvas.width || p.y < 0) particles.splice(i, 1);
+            // iterate backwards for safe removal
+            for (let i = particles.length-1; i >= 0; i--) {
+                const p = particles[i];
+                // apply magnetic deflection only after entry region (x > 140)
+                if (p.x > 140) {
+                    // simplified physics: centripetal force effect on vy
+                    // a = (q*vx*B)/m ; we set q=1, scaling factor for visual appeal (factor 40)
+                    const forceFactor = (p.vx * B * 42) / p.m;
+                    p.vy -= forceFactor;
+                    // also small damping to keep within screen
+                    if (p.vy > 5) p.vy = 5;
+                    if (p.vy < -6) p.vy = -6;
+                }
+                // update position
+                p.x += p.vx;
+                p.y += p.vy;
+
+                // drawing particles
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = p.color + 'aa';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // hit detector (right wall)
+                if (p.x >= canvas.width - 22 && p.active) {
+                    hits[p.id]++;
+                    p.active = false;
+                    updateReadoutUI();
+                    particles.splice(i,1);
+                    continue;
+                }
+                // out of bounds removal (top/bottom/left)
+                if (p.x > canvas.width + 30 || p.x < -30 || p.y < -30 || p.y > canvas.height + 50) {
+                    particles.splice(i,1);
+                }
+            }
+            
+            animationId = requestAnimationFrame(updateSimulation);
+        }
+
+        // init canvas & sync
+        function initCanvasAndSim() {
+            resizeCanvas();
+            if (ctx) cancelAnimationFrame(animationId);
+            ctx = canvas.getContext('2d');
+            particles = [];
+            updateSimulation();
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
         });
 
-        requestAnimationFrame(update);
-    }
+        // dynamic field display
+        const fieldSlider = document.getElementById('magField');
+        const fieldValSpan = document.getElementById('fieldValueDisplay');
+        if (fieldSlider) {
+            fieldSlider.addEventListener('input', (e) => {
+                const val = e.target.value;
+                fieldValSpan.innerText = parseFloat(val).toFixed(1) + ' mT';
+            });
+        }
 
-    update();
+        // ---------- RESPONSIVE & UI MODULES ----------
+        // Hamburger menu + mobile sidebar toggle
+        const hamburger = document.getElementById('hamburgerBtn');
+        const navMenu = document.getElementById('navMenu');
+        const appLayout = document.getElementById('appLayout');
+        const sidebar = document.getElementById('sidebar');
+
+        function closeAllMenus() {
+            if (navMenu) navMenu.classList.remove('open');
+            const dropdown = document.getElementById('infoDropdown');
+            if (dropdown) dropdown.classList.remove('open');
+            if (appLayout) appLayout.classList.remove('mobile-sidebar-active');
+        }
+
+        if (hamburger) {
+            hamburger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = navMenu.classList.contains('open');
+                if (isOpen) {
+                    navMenu.classList.remove('open');
+                    if (window.innerWidth <= 768) appLayout.classList.remove('mobile-sidebar-active');
+                } else {
+                    closeAllMenus();
+                    navMenu.classList.add('open');
+                    if (window.innerWidth <= 768) {
+                        // on mobile, open sidebar via class
+                        appLayout.classList.add('mobile-sidebar-active');
+                    }
+                }
+            });
+        }
+
+        // dropdown toggle inside nav
+        const dropdownToggle = document.getElementById('dropdownToggle');
+        const infoDropdown = document.getElementById('infoDropdown');
+        if (dropdownToggle && infoDropdown) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                infoDropdown.classList.toggle('open');
+            });
+        }
+
+        // close dropdown when clicking doc
+        document.addEventListener('click', (e) => {
+            if (infoDropdown && !infoDropdown.contains(e.target) && dropdownToggle && !dropdownToggle.contains(e.target)) {
+                infoDropdown.classList.remove('open');
+            }
+            // if click outside nav menu on mobile, close
+            if (window.innerWidth <= 768 && navMenu && !navMenu.contains(e.target) && !hamburger.contains(e.target)) {
+                navMenu.classList.remove('open');
+                appLayout.classList.remove('mobile-sidebar-active');
+            }
+        });
+
+        // accordion physics logic
+        const physicsAcc = document.getElementById('physicsAccordion');
+        if (physicsAcc) {
+            const header = physicsAcc.querySelector('.accordion-header');
+            header.addEventListener('click', () => {
+                physicsAcc.classList.toggle('open');
+            });
+        }
+
+        // dropdown menu buttons actions
+        const showPhysicsBtn = document.getElementById('showPhysicsBtn');
+        if (showPhysicsBtn) {
+            showPhysicsBtn.addEventListener('click', () => {
+                physicsAcc.classList.add('open');
+                if (infoDropdown) infoDropdown.classList.remove('open');
+                // scroll into view if needed (desktop)
+                physicsAcc.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        }
+        const showIsotopeBtn = document.getElementById('showIsotopeBtn');
+        if (showIsotopeBtn) {
+            showIsotopeBtn.addEventListener('click', () => {
+                alert('🔬 Isotope masses: Light (m=10), Mid (m=20), Heavy (m=30). Heavier isotopes deflect less, hit detector at higher positions.');
+                if (infoDropdown) infoDropdown.classList.remove('open');
+            });
+        }
+        const howToBtn = document.getElementById('howToBtn');
+        if (howToBtn) {
+            howToBtn.addEventListener('click', () => {
+                alert('🎯 How to use:\n• Adjust magnetic field slider → observe deflection change.\n• Particles spawn continuously; each isotope hits right wall detector.\n• Reset counts to start fresh.\n• Physics accordion explains mass separation.');
+                if (infoDropdown) infoDropdown.classList.remove('open');
+            });
+        }
+
+        // reset buttons
+        const resetSidebar = document.getElementById('resetSidebarBtn');
+        const resetNav = document.getElementById('resetNavBtn');
+        if (resetSidebar) resetSidebar.addEventListener('click', resetDetector);
+        if (resetNav) resetNav.addEventListener('click', resetDetector);
+
+        // nav active tab style
+        const navBtns = document.querySelectorAll('.nav-btn');
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (this.id === 'dropdownToggle') return;
+                if (this.id === 'resetNavBtn') return;
+                navBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // load canvas after layout ready
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            initCanvasAndSim();
+            // sync initial field value
+            if (fieldSlider && fieldValSpan) fieldValSpan.innerText = fieldSlider.value + ' mT';
+        });
+    })();
 </script>
 </body>
 </html>
